@@ -139,6 +139,36 @@ export function registerRunRoutes(app: Express): void {
   });
 
   /**
+   * POST /api/runs/:runId/next
+   * Calculate and navigate to the next section in the workflow
+   * Updates run state (currentSectionId, progress) and returns navigation info
+   */
+  app.post('/api/runs/:runId/next', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized - no user ID" });
+      }
+
+      const { runId } = req.params;
+      const navigation = await runService.next(runId, userId);
+
+      res.json({
+        success: true,
+        data: navigation,
+      });
+    } catch (error) {
+      console.error("Error calculating next section:", error);
+      const message = error instanceof Error ? error.message : "Failed to calculate next section";
+      const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : message.includes("already completed") ? 400 : 500;
+      res.status(status).json({
+        success: false,
+        error: message
+      });
+    }
+  });
+
+  /**
    * PUT /api/runs/:runId/complete
    * Mark a run as complete (with validation)
    */

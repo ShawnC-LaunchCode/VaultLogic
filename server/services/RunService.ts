@@ -8,6 +8,7 @@ import {
 } from "../repositories";
 import type { WorkflowRun, InsertWorkflowRun, InsertStepValue } from "@shared/schema";
 import { workflowService } from "./WorkflowService";
+import { logicService, type NavigationResult } from "./LogicService";
 import { evaluateRules, validateRequiredSteps, getEffectiveRequiredSteps } from "@shared/workflowLogic";
 
 /**
@@ -21,6 +22,7 @@ export class RunService {
   private stepRepo: typeof stepRepository;
   private logicRuleRepo: typeof logicRuleRepository;
   private workflowSvc: typeof workflowService;
+  private logicSvc: typeof logicService;
 
   constructor(
     runRepo?: typeof workflowRunRepository,
@@ -29,7 +31,8 @@ export class RunService {
     sectionRepo?: typeof sectionRepository,
     stepRepo?: typeof stepRepository,
     logicRuleRepo?: typeof logicRuleRepository,
-    workflowSvc?: typeof workflowService
+    workflowSvc?: typeof workflowService,
+    logicSvc?: typeof logicService
   ) {
     this.runRepo = runRepo || workflowRunRepository;
     this.valueRepo = valueRepo || stepValueRepository;
@@ -38,6 +41,7 @@ export class RunService {
     this.stepRepo = stepRepo || stepRepository;
     this.logicRuleRepo = logicRuleRepo || logicRuleRepository;
     this.workflowSvc = workflowSvc || workflowService;
+    this.logicSvc = logicSvc || logicService;
   }
 
   /**
@@ -129,6 +133,39 @@ export class RunService {
   }
 
   /**
+   * Calculate next section and update run state
+   *
+   * @param runId - Run ID
+   * @param userId - User ID (for authorization)
+   * @returns Navigation result with next section info
+   */
+  async next(runId: string, userId: string): Promise<NavigationResult> {
+    const run = await this.getRun(runId, userId);
+
+    if (run.completed) {
+      throw new Error("Run is already completed");
+    }
+
+    // Evaluate navigation using LogicService
+    const navigation = await this.logicSvc.evaluateNavigation(
+      run.workflowId,
+      runId,
+      run.currentSectionId ?? null
+    );
+
+    // Update run with next section and progress
+    if (navigation.nextSectionId !== run.currentSectionId) {
+      await this.runRepo.update(runId, {
+        currentSectionId: navigation.nextSectionId,
+        progress: navigation.currentProgress,
+        updatedAt: new Date(),
+      });
+    }
+
+    return navigation;
+  }
+
+  /**
    * Complete a workflow run (with validation)
    */
   async completeRun(runId: string, userId: string): Promise<WorkflowRun> {
@@ -138,43 +175,26 @@ export class RunService {
       throw new Error("Run is already completed");
     }
 
-    // Get all workflow data
+    // Get workflow
     const workflow = await this.workflowRepo.findById(run.workflowId);
     if (!workflow) {
       throw new Error("Workflow not found");
     }
 
-    const sections = await this.sectionRepo.findByWorkflowId(workflow.id);
-    const sectionIds = sections.map((s) => s.id);
-    const steps = await this.stepRepo.findBySectionIds(sectionIds);
-    const logicRules = await this.logicRuleRepo.findByWorkflowId(workflow.id);
-    const currentValues = await this.valueRepo.findByRunId(runId);
-
-    // Build data object for evaluation
-    const data: Record<string, any> = {};
-    currentValues.forEach((v) => {
-      data[v.stepId] = v.value;
-    });
-
-    // Get initially required steps
-    const initialRequiredSteps = new Set(steps.filter((s) => s.required).map((s) => s.id));
-
-    // Evaluate logic to get effective required steps
-    const effectiveRequiredSteps = getEffectiveRequiredSteps(
-      initialRequiredSteps,
-      logicRules,
-      data
-    );
-
-    // Validate all required steps have values
-    const validation = validateRequiredSteps(effectiveRequiredSteps, data);
+    // Validate using LogicService
+    const validation = await this.logicSvc.validateCompletion(run.workflowId, runId);
 
     if (!validation.valid) {
-      throw new Error(`Missing required steps: ${validation.missingSteps.join(', ')}`);
+      const stepTitles = validation.missingStepTitles?.join(', ') || validation.missingSteps.join(', ');
+      throw new Error(`Missing required steps: ${stepTitles}`);
     }
 
-    // Mark run as complete
-    return await this.runRepo.markComplete(runId);
+    // Mark run as complete with 100% progress
+    return await this.runRepo.update(runId, {
+      completed: true,
+      completedAt: new Date(),
+      progress: 100,
+    });
   }
 
   /**
