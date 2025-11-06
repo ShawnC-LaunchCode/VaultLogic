@@ -13,8 +13,7 @@ import { IndividualResponses } from "@/components/results/IndividualResponses";
 import { OverallSummary } from "@/components/results/OverallSummary";
 import { QuestionDetails } from "@/components/results/QuestionDetails";
 import { AiInsights } from "@/components/results/AiInsights";
-import { SurveyRecipientsTab } from "@/components/results/SurveyRecipientsTab";
-import { ArrowLeft, Users, BarChart3, Download, XCircle, ListChecks, Sparkles, UserCheck } from "lucide-react";
+import { ArrowLeft, Users, BarChart3, Download, XCircle, ListChecks, Sparkles } from "lucide-react";
 
 export default function SurveyResults() {
   const { surveyId } = useParams();
@@ -119,7 +118,7 @@ export default function SurveyResults() {
 
         <div className="flex-1 overflow-auto p-4 sm:p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-auto">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
               <TabsTrigger value="questions" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
                 <ListChecks className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Question Details</span>
@@ -134,11 +133,6 @@ export default function SurveyResults() {
                 <BarChart3 className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Overall Summary</span>
                 <span className="sm:hidden">Summary</span>
-              </TabsTrigger>
-              <TabsTrigger value="recipients" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
-                <UserCheck className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">Recipients</span>
-                <span className="sm:hidden">Recipients</span>
               </TabsTrigger>
               <TabsTrigger value="ai-insights" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
                 <Sparkles className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
@@ -157,10 +151,6 @@ export default function SurveyResults() {
 
             <TabsContent value="overall" className="space-y-4 sm:space-y-6">
               <OverallSummary surveyId={surveyId!} />
-            </TabsContent>
-
-            <TabsContent value="recipients" className="space-y-4 sm:space-y-6">
-              <SurveyRecipientsTab surveyId={surveyId!} />
             </TabsContent>
 
             <TabsContent value="ai-insights" className="space-y-4 sm:space-y-6">
