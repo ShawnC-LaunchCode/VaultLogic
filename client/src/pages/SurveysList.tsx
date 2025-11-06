@@ -109,7 +109,7 @@ export default function SurveysList() {
       
       <main className="flex-1 flex flex-col overflow-hidden">
         <Header
-          title="My Surveys"
+          title="My Workflows"
           description="Create, manage, and analyze your surveys"
           actions={
             <div className="flex items-center gap-0">
