@@ -38,8 +38,7 @@ export default function Sidebar() {
 
   const navigation = [
     { name: "Dashboard", href: "/", icon: "fas fa-home" },
-    { name: "My Surveys", href: "/surveys", icon: "fas fa-list-ul" },
-    { name: "Recipients", href: "/recipients", icon: "fas fa-users" },
+    { name: "Workflows", href: "/surveys", icon: "fas fa-list-ul" },
     { name: "Settings", href: "/settings", icon: "fas fa-cog" },
   ];
 
