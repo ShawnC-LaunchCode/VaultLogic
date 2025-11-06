@@ -130,6 +130,21 @@ function StepCanvas({ step, sectionId }: { step: any; sectionId: string }) {
             />
           </div>
 
+          {/* Variable Alias */}
+          <div className="space-y-2">
+            <Label htmlFor="step-alias">Variable (alias)</Label>
+            <Input
+              id="step-alias"
+              value={step.alias || ""}
+              onChange={(e) => handleUpdate("alias", e.target.value || null)}
+              placeholder="e.g., firstName, age, department"
+              className="font-mono text-sm"
+            />
+            <p className="text-xs text-muted-foreground">
+              Optional: A human-friendly name to reference this step's answer in logic and blocks
+            </p>
+          </div>
+
           {/* Type */}
           <div className="space-y-2">
             <Label htmlFor="step-type">Input Type</Label>

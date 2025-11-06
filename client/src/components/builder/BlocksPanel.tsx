@@ -214,6 +214,9 @@ function BlockEditor({
                 Easy mode: JSON configuration is available for all block types.
               </p>
             )}
+            <p className="text-xs text-muted-foreground mb-1">
+              Use step IDs or aliases to reference variables. Aliases make configs more readable.
+            </p>
             <Textarea
               value={JSON.stringify(formData.config, null, 2)}
               onChange={(e) => {
@@ -224,7 +227,7 @@ function BlockEditor({
               }}
               rows={10}
               className="font-mono text-xs"
-              placeholder={`Example for prefill:\n{\n  "mode": "static",\n  "staticMap": { "key": "value" }\n}`}
+              placeholder={`Example for prefill:\n{\n  "mode": "static",\n  "staticMap": { "firstName": "John" }\n}`}
             />
           </div>
 

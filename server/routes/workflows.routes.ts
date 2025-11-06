@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { isAuthenticated } from "../googleAuth";
 import { insertWorkflowSchema } from "@shared/schema";
 import { workflowService } from "../services/WorkflowService";
+import { variableService } from "../services/VariableService";
 import { z } from "zod";
 
 /**
@@ -252,6 +253,29 @@ export function registerWorkflowRoutes(app: Express): void {
                      message.includes("Access denied") ? 403 :
                      message.includes("Invalid") ? 400 : 500;
       res.status(status).json({ success: false, error: message });
+    }
+  });
+
+  /**
+   * GET /api/workflows/:workflowId/variables
+   * Get all variables (steps with aliases) for a workflow
+   * Returns array of WorkflowVariable objects ordered by section/step order
+   */
+  app.get('/api/workflows/:workflowId/variables', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized - no user ID" });
+      }
+
+      const { workflowId } = req.params;
+      const variables = await variableService.listVariables(workflowId, userId);
+      res.json(variables);
+    } catch (error) {
+      console.error("Error fetching workflow variables:", error);
+      const message = error instanceof Error ? error.message : "Failed to fetch workflow variables";
+      const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
+      res.status(status).json({ message });
     }
   });
 }
