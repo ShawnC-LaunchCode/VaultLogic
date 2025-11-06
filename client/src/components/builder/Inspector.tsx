@@ -62,8 +62,17 @@ export function Inspector({ workflowId }: { workflowId: string }) {
         <TabsContent value="logic" className="flex-1 overflow-y-auto p-4">
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Logic rules coming soon...
+              Logic rules coming soon... When implemented, use VariableSelect component from components/common/VariableSelect.tsx to allow selecting variables by alias or key.
             </p>
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p>Available features:</p>
+              <ul className="list-disc list-inside space-y-1 ml-2">
+                <li>Variables API: GET /api/workflows/:id/variables</li>
+                <li>Hook: useWorkflowVariables(workflowId)</li>
+                <li>Component: VariableSelect with alias/key display</li>
+                <li>Resolver: server/utils/variableResolver.ts</li>
+              </ul>
+            </div>
           </div>
         </TabsContent>
       </Tabs>

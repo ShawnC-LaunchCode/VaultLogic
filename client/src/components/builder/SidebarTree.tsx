@@ -8,6 +8,7 @@ import { useSections, useSteps, useCreateSection, useCreateStep, useReorderSecti
 import { useWorkflowBuilder } from "@/store/workflow-builder";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
   DndContext,
@@ -169,6 +170,11 @@ function StepItem({ step, sectionId }: { step: any; sectionId: string }) {
       <GripVertical className="h-3 w-3 text-muted-foreground" />
       <FileText className="h-3 w-3 text-muted-foreground" />
       <span className="flex-1 truncate">{step.title}</span>
+      {step.alias && (
+        <Badge variant="secondary" className="text-xs font-mono px-1.5 py-0">
+          {step.alias}
+        </Badge>
+      )}
       {step.required && <span className="text-xs text-destructive">*</span>}
     </div>
   );

@@ -21,6 +21,38 @@ export class StepService {
   }
 
   /**
+   * Validate that an alias is unique within a workflow
+   */
+  private async validateAliasUniqueness(
+    workflowId: string,
+    alias: string | null | undefined,
+    excludeStepId?: string
+  ): Promise<void> {
+    // Skip validation if alias is null/undefined/empty
+    if (!alias || alias.trim() === '') {
+      return;
+    }
+
+    // Get all sections for the workflow
+    const sections = await this.sectionRepo.findByWorkflowId(workflowId);
+    const sectionIds = sections.map(s => s.id);
+
+    // Get all steps for these sections
+    const allSteps = await this.stepRepo.findBySectionIds(sectionIds);
+
+    // Check if alias is already used by another step
+    const conflictingStep = allSteps.find(
+      s => s.alias?.toLowerCase() === alias.toLowerCase() && s.id !== excludeStepId
+    );
+
+    if (conflictingStep) {
+      throw new Error(
+        `Alias "${alias}" is already in use by another step in this workflow. Please choose a unique alias.`
+      );
+    }
+  }
+
+  /**
    * Create a new step
    */
   async createStep(
@@ -35,6 +67,11 @@ export class StepService {
     const section = await this.sectionRepo.findByIdAndWorkflow(sectionId, workflowId);
     if (!section) {
       throw new Error("Section not found");
+    }
+
+    // Validate alias uniqueness if provided
+    if (data.alias) {
+      await this.validateAliasUniqueness(workflowId, data.alias);
     }
 
     // Get current steps to determine next order
@@ -70,6 +107,11 @@ export class StepService {
     const section = await this.sectionRepo.findById(step.sectionId);
     if (!section || section.workflowId !== workflowId) {
       throw new Error("Step not found in this workflow");
+    }
+
+    // Validate alias uniqueness if alias is being changed
+    if (data.alias !== undefined && data.alias !== step.alias) {
+      await this.validateAliasUniqueness(workflowId, data.alias, stepId);
     }
 
     return await this.stepRepo.update(stepId, data);

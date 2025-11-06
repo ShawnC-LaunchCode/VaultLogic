@@ -3,6 +3,10 @@
  *
  * This module provides conditional logic evaluation for Vault-Logic workflows.
  * It extends the base conditional logic to support both step-level and section-level targeting.
+ *
+ * NOTE: When using logic rules with step aliases, operands should be resolved to canonical
+ * step keys before evaluation using the VariableResolver utility (server/utils/variableResolver.ts).
+ * This allows rules to reference steps by either alias or key, with everything normalized to keys.
  */
 
 import type { LogicRule } from './schema';

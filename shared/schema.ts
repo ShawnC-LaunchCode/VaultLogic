@@ -782,6 +782,7 @@ export const steps = pgTable("steps", {
   description: text("description"),
   required: boolean("required").default(false),
   options: jsonb("options"), // For multiple choice, radio options
+  alias: text("alias"), // Optional human-friendly variable name for logic/blocks
   order: integer("order").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
@@ -1057,3 +1058,14 @@ export type TransformBlock = typeof transformBlocks.$inferSelect;
 export type InsertTransformBlock = typeof insertTransformBlockSchema._type;
 export type TransformBlockRun = typeof transformBlockRuns.$inferSelect;
 export type InsertTransformBlockRun = typeof insertTransformBlockRunSchema._type;
+
+// Workflow variable type (for step aliases and variable references)
+export interface WorkflowVariable {
+  key: string;           // canonical step ID
+  alias?: string | null; // human-friendly variable name
+  label: string;         // step title
+  type: string;          // step type
+  sectionId: string;
+  sectionTitle: string;  // section title for grouping
+  stepId: string;
+}

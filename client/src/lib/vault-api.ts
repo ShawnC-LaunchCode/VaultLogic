@@ -131,6 +131,25 @@ export const workflowAPI = {
 };
 
 // ============================================================================
+// Workflow Variables (Step Aliases)
+// ============================================================================
+
+export interface ApiWorkflowVariable {
+  key: string;           // canonical step ID
+  alias?: string | null; // human-friendly variable name
+  label: string;         // step title
+  type: string;          // step type
+  sectionId: string;
+  sectionTitle: string;  // section title for grouping
+  stepId: string;
+}
+
+export const variableAPI = {
+  list: (workflowId: string) =>
+    fetchAPI<ApiWorkflowVariable[]>(`/api/workflows/${workflowId}/variables`),
+};
+
+// ============================================================================
 // Sections
 // ============================================================================
 

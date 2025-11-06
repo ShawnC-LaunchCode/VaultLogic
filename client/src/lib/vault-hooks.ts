@@ -3,7 +3,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient, type UseQueryOptions } from "@tanstack/react-query";
-import { projectAPI, workflowAPI, sectionAPI, stepAPI, blockAPI, transformBlockAPI, runAPI, accountAPI, workflowModeAPI, type ApiProject, type ApiProjectWithWorkflows, type ApiWorkflow, type ApiSection, type ApiStep, type ApiBlock, type ApiTransformBlock, type ApiRun, type AccountPreferences, type WorkflowModeResponse } from "./vault-api";
+import { projectAPI, workflowAPI, variableAPI, sectionAPI, stepAPI, blockAPI, transformBlockAPI, runAPI, accountAPI, workflowModeAPI, type ApiProject, type ApiProjectWithWorkflows, type ApiWorkflow, type ApiWorkflowVariable, type ApiSection, type ApiStep, type ApiBlock, type ApiTransformBlock, type ApiRun, type AccountPreferences, type WorkflowModeResponse } from "./vault-api";
 
 // ============================================================================
 // Query Keys
@@ -16,6 +16,7 @@ export const queryKeys = {
   workflows: ["workflows"] as const,
   workflowsUnfiled: ["workflows", "unfiled"] as const,
   workflow: (id: string) => ["workflows", id] as const,
+  variables: (workflowId: string) => ["workflows", workflowId, "variables"] as const,
   sections: (workflowId: string) => ["sections", workflowId] as const,
   steps: (sectionId: string) => ["steps", sectionId] as const,
   blocks: (workflowId: string, phase?: string) => ["blocks", workflowId, phase] as const,
@@ -189,6 +190,18 @@ export function useMoveWorkflow() {
 }
 
 // ============================================================================
+// Workflow Variables
+// ============================================================================
+
+export function useWorkflowVariables(workflowId: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.variables(workflowId!),
+    queryFn: () => variableAPI.list(workflowId!),
+    enabled: !!workflowId,
+  });
+}
+
+// ============================================================================
 // Sections
 // ============================================================================
 
@@ -272,8 +285,15 @@ export function useUpdateStep() {
   return useMutation({
     mutationFn: ({ id, sectionId, ...data }: Partial<ApiStep> & { id: string; sectionId: string }) =>
       stepAPI.update(id, data),
-    onSuccess: (_, variables) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.steps(variables.sectionId) });
+      // Invalidate variables when step alias changes
+      const section = data?.sectionId;
+      if (section) {
+        // Get workflowId from the section - we'll need to query for it
+        // For simplicity, just invalidate all workflow variables queries
+        queryClient.invalidateQueries({ queryKey: ["workflows"] });
+      }
     },
   });
 }
