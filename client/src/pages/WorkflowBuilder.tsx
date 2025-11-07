@@ -15,6 +15,7 @@ import { SidebarTree } from "@/components/builder/SidebarTree";
 import { CanvasEditor } from "@/components/builder/CanvasEditor";
 import { Inspector } from "@/components/builder/Inspector";
 import { RunnerPreview } from "@/components/builder/RunnerPreview";
+import { WorkflowSettings } from "@/components/builder/WorkflowSettings";
 import { useToast } from "@/hooks/use-toast";
 import { getModeLabel, type Mode } from "@/lib/mode";
 import {
@@ -24,6 +25,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export default function WorkflowBuilder() {
   const { id: workflowId } = useParams<{ id: string }>();
@@ -33,6 +42,8 @@ export default function WorkflowBuilder() {
   const setWorkflowModeMutation = useSetWorkflowMode();
   const createRunMutation = useCreateRun();
   const { toast } = useToast();
+
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const {
     isPreviewOpen,
@@ -174,10 +185,23 @@ export default function WorkflowBuilder() {
             Preview
           </Toggle>
 
-          <Button variant="outline" size="sm">
-            <Settings className="w-4 h-4 mr-2" />
-            Settings
-          </Button>
+          <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Settings className="w-4 h-4 mr-2" />
+                Settings
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Workflow Settings</DialogTitle>
+                <DialogDescription>
+                  Configure settings for "{workflow.title}"
+                </DialogDescription>
+              </DialogHeader>
+              <WorkflowSettings workflowId={workflowId!} />
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
