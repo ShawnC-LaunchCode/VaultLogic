@@ -1,7 +1,9 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
-import { Pool } from 'pg';
+import pg from 'pg';
 import dotenv from 'dotenv';
+
+const { Pool } = pg;
 
 // Load environment variables
 dotenv.config();
