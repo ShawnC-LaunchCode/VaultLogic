@@ -12,6 +12,7 @@ import SurveyBuilder from "@/pages/SurveyBuilder";
 import SurveyPlayer from "@/pages/SurveyPlayer";
 import SurveyPreview from "@/pages/SurveyPreview";
 import SurveysList from "@/pages/SurveysList";
+import WorkflowsList from "@/pages/WorkflowsList";
 import Responses from "@/pages/Responses";
 import ResponseDetails from "@/pages/ResponseDetails";
 import SurveyAnalytics from "@/pages/SurveyAnalytics";
@@ -58,7 +59,7 @@ function Router() {
             <Route path="/workflows" component={WorkflowDashboard} />
             <Route path="/workflows/:id/builder" component={WorkflowBuilder} />
 
-            <Route path="/surveys" component={SurveysList} />
+            <Route path="/surveys" component={WorkflowsList} />
             <Route path="/surveys/new" component={SurveyBuilder} />
             <Route path="/ai-survey" component={AISurveyCreator} />
             <Route path="/templates" component={TemplatesPage} />
