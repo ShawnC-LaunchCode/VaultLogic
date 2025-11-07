@@ -28,6 +28,7 @@ import SettingsPage from "@/pages/SettingsPage";
 import FeedbackWidget from "@/components/FeedbackWidget";
 import WorkflowDashboard from "@/pages/WorkflowDashboard";
 import WorkflowBuilder from "@/pages/WorkflowBuilder";
+import NewWorkflow from "@/pages/NewWorkflow";
 import { WorkflowRunner } from "@/pages/WorkflowRunner";
 
 function Router() {
@@ -57,6 +58,7 @@ function Router() {
 
             {/* Workflow routes */}
             <Route path="/workflows" component={WorkflowDashboard} />
+            <Route path="/workflows/new" component={NewWorkflow} />
             <Route path="/workflows/:id/builder" component={WorkflowBuilder} />
 
             <Route path="/surveys" component={WorkflowsList} />
