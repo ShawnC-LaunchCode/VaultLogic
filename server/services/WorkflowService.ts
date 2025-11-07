@@ -119,7 +119,10 @@ export class WorkflowService {
     data: Partial<InsertWorkflow>
   ): Promise<Workflow> {
     await this.verifyOwnership(workflowId, userId);
-    return await this.workflowRepo.update(workflowId, data);
+    return await this.workflowRepo.update(workflowId, {
+      ...data,
+      updatedAt: new Date(),
+    });
   }
 
   /**
@@ -139,7 +142,10 @@ export class WorkflowService {
     status: 'draft' | 'active' | 'archived'
   ): Promise<Workflow> {
     await this.verifyOwnership(workflowId, userId);
-    return await this.workflowRepo.update(workflowId, { status });
+    return await this.workflowRepo.update(workflowId, {
+      status,
+      updatedAt: new Date(),
+    });
   }
 
   /**
@@ -207,6 +213,7 @@ export class WorkflowService {
 
     return await this.workflowRepo.update(workflowId, {
       modeOverride,
+      updatedAt: new Date(),
     });
   }
 
