@@ -8,6 +8,48 @@
       "when": 1760382745966,
       "tag": "0000_daffy_roughhouse",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1760382745967,
+      "tag": "0001_remove_participants",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1760382745968,
+      "tag": "0002_add_mode_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1760382745969,
+      "tag": "0003_add_step_aliases",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1760382745970,
+      "tag": "0004_add_teams_and_acls",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1760382745971,
+      "tag": "0005_add_transform_block_phases",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1760382745972,
+      "tag": "0006_add_updated_at_columns",
+      "breakpoints": true
     }
   ]
 }
