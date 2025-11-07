@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import NotFound from "@/pages/not-found";
-import Landing from "@/marketing/LandingPage";
+import Landing from "@/pages/Landing";
 import Dashboard from "@/pages/Dashboard";
 import SurveyBuilder from "@/pages/SurveyBuilder";
 import SurveyPlayer from "@/pages/SurveyPlayer";
