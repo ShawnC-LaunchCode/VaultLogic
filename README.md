@@ -1,15 +1,10 @@
-# Vault-Logic 🧠
+# VaultLogic 🧠
+
+[![CI](https://github.com/ShawnC-LaunchCode/VaultLogic/workflows/CI/badge.svg)](https://github.com/ShawnC-LaunchCode/VaultLogic/actions/workflows/ci.yml)
 
 **Workflow Builder and Automation Logic Engine**
 
-> Vault-Logic lets you design and execute intelligent workflows with dynamic page and question logic — built for creators, consultants, and automation developers.
-﻿# Vault-Logic
-
-[![CI](https://github.com/ShawnC-LaunchCode/Vault-Logic/workflows/CI/badge.svg)](https://github.com/ShawnC-LaunchCode/Vault-Logic/actions/workflows/ci.yml)
-
-**Vault-Logic** is a comprehensive workflow builder and survey platform built with modern web technologies. Create, distribute, and analyze surveys and workflows with advanced features like conditional logic, multi-page workflows, and detailed analytics.
-
-[![CI](https://github.com/ShawnC-LaunchCode/VaultLogic/workflows/CI/badge.svg)](https://github.com/ShawnC-LaunchCode/VaultLogic/actions/workflows/ci.yml)
+VaultLogic is a comprehensive workflow builder and survey platform built with modern web technologies. Create, distribute, and analyze surveys and workflows with advanced features like conditional logic, multi-page workflows, and detailed analytics.
 
 Originally inspired by Poll-Vault, rebuilt for next-generation workflow automation.
 
@@ -354,12 +349,20 @@ Originally inspired by Poll-Vault, rebuilt for next-generation workflow automati
 
 ---
 
-## 📚 Additional Resources
+## 📚 Documentation
 
-- [API Documentation](./docs/) - Detailed API reference
-- [Architecture Guide](./CLAUDE.md) - Implementation strategy and design patterns
-- [Testing Guide](./tests/README.md) - Testing approach and conventions
+VaultLogic has comprehensive documentation organized by topic:
+
+- **[Documentation Index](./docs/INDEX.md)** - Complete documentation map
+- **[API Reference](./docs/api/API.md)** - Complete Workflow API documentation
+- **[Developer Reference](./docs/reference/DEVELOPER_REFERENCE.md)** - Comprehensive technical guide
+- **[Testing Framework](./docs/testing/TESTING.md)** - Testing infrastructure and guidelines
+- **[Frontend Guide](./docs/guides/FRONTEND.md)** - Frontend development guide
+- **[Error Handling](./docs/architecture/ERROR_HANDLING.md)** - Centralized error handler
+- **[Troubleshooting](./docs/troubleshooting/TROUBLESHOOTING.md)** - Common issues and solutions
+
+For a complete list of available documentation, see the [Documentation Index](./docs/INDEX.md).
 
 ---
 
-**Last Updated:** 2025-11-05
+**Last Updated:** 2025-11-07

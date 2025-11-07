@@ -1,8 +1,26 @@
 # Centralized Error Handler Middleware
 
-This module provides a comprehensive error handling infrastructure for Express routes, replacing the duplicate error handling pattern that appears 50+ times across route files.
+A comprehensive error handling infrastructure for Express routes that eliminates duplicate error handling patterns and provides type-safe error classes with automatic error classification.
 
-## Features
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Quick Start](#quick-start)
+- [Usage Patterns](#usage-patterns)
+- [Custom Error Classes](#custom-error-classes)
+- [Helper Functions](#helper-functions)
+- [Migration Guide](#migration-guide)
+- [Integration Checklist](#integration-checklist)
+- [Best Practices](#best-practices)
+- [API Reference](#api-reference)
+
+---
+
+## Overview
+
+### Features
 
 - **Custom Error Classes**: Type-safe error classes for common HTTP error codes
 - **Automatic Error Classification**: Intelligently maps error messages to appropriate status codes
@@ -12,20 +30,40 @@ This module provides a comprehensive error handling infrastructure for Express r
 - **Helper Functions**: Utilities for common error patterns
 - **Async Route Wrapper**: Eliminates boilerplate try/catch blocks
 
-## Installation
+### Benefits
 
-### 1. Register Error Handler Middleware
+| Before | After |
+|--------|-------|
+| Manual try/catch in every route | Automatic error catching with asyncHandler |
+| Manual status code mapping | Automatic status code inference |
+| console.error for logging | Structured logging with request context |
+| Inconsistent error responses | Standardized error responses |
+| ~15-20 lines of error handling | ~5-7 lines of business logic |
+| Error logic mixed with route logic | Clear separation of concerns |
+| Hard to test error cases | Easy to test by throwing errors |
 
-In your main server file (e.g., `server/index.ts`), register the error handler **after all routes**:
+---
+
+## Quick Start
+
+### Step 1: Register Error Handler
+
+Add the error handler to your main server file **after all route registrations**:
 
 ```typescript
+// In server/index.ts (or wherever you configure your Express app)
+
 import { errorHandler } from './middleware/errorHandler';
+// OR use the index export:
+// import { errorHandler } from './middleware';
 
-// ... route registrations ...
+// ... all your middleware ...
+// ... all your route registrations ...
 
-// Register error handler LAST (before server start)
+// IMPORTANT: Register error handler LAST (before starting server)
 app.use(errorHandler);
 
+const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
@@ -33,13 +71,30 @@ app.listen(port, () => {
 
 **IMPORTANT**: The error handler must be the last middleware registered!
 
-### 2. Update Route Files
+### Step 2: Start Using in Routes
 
-Replace manual error handling with the new infrastructure. See examples below.
+```typescript
+// In any route file
+import { asyncHandler, NotFoundError, ForbiddenError } from '../middleware/errorHandler';
 
-## Usage
+// Wrap async handlers with asyncHandler
+app.get('/api/surveys/:id', isAuthenticated, asyncHandler(async (req: any, res) => {
+  const survey = await getSurvey(req.params.id);
 
-### Option 1: Using asyncHandler (Recommended)
+  // Throw custom errors - they'll be caught automatically
+  if (!survey) {
+    throw new NotFoundError("Survey not found");
+  }
+
+  res.json(survey);
+}));
+```
+
+---
+
+## Usage Patterns
+
+### Pattern 1: Using asyncHandler with Custom Errors (Recommended)
 
 The `asyncHandler` wrapper automatically catches errors and passes them to the error handler:
 
@@ -62,7 +117,7 @@ app.get('/api/surveys/:id', isAuthenticated, asyncHandler(async (req: any, res) 
 }));
 ```
 
-### Option 2: Using Helper Functions (Most Concise)
+### Pattern 2: Using Helper Functions (Most Concise)
 
 Helper functions provide assertion-style error handling:
 
@@ -81,26 +136,19 @@ app.get('/api/surveys/:id', isAuthenticated, asyncHandler(async (req: any, res) 
 }));
 ```
 
-### Option 3: Throwing from Services
+### Pattern 3: Throwing from Services
 
 Services can throw custom errors that are automatically handled:
 
 ```typescript
 // In service file
-import { NotFoundError, ForbiddenError } from '../middleware/errorHandler';
+import { NotFoundError, ForbiddenError, assertFound, assertAuthorized } from '../middleware/errorHandler';
 
 class SurveyService {
   async getSurvey(id: string, userId: string) {
     const survey = await db.findSurvey(id);
-
-    if (!survey) {
-      throw new NotFoundError("Survey not found");
-    }
-
-    if (survey.creatorId !== userId) {
-      throw new ForbiddenError("Access denied");
-    }
-
+    assertFound(survey, "Survey not found");
+    assertAuthorized(survey.creatorId === userId, "Access denied");
     return survey;
   }
 }
@@ -111,6 +159,8 @@ app.get('/api/surveys/:id', isAuthenticated, asyncHandler(async (req: any, res) 
   res.json(survey);
 }));
 ```
+
+---
 
 ## Custom Error Classes
 
@@ -164,6 +214,8 @@ throw new ConflictError("Survey with this name already exists");
 throw new ConflictError(); // Default: "Resource conflict"
 ```
 
+---
+
 ## Helper Functions
 
 ### assertFound
@@ -203,63 +255,7 @@ const data = validateInput(createSurveySchema, req.body);
 // If validation fails, ZodError is thrown and handled automatically
 ```
 
-## Automatic Error Classification
-
-For generic Error objects, the middleware automatically classifies based on message content:
-
-### 404 Not Found
-- "not found"
-- "does not exist"
-- "cannot find"
-- "could not find"
-
-### 403 Forbidden
-- "access denied"
-- "forbidden"
-- "permission denied"
-- "not authorized to"
-- "you do not own"
-- "you are not a member"
-- "admin access required"
-- "insufficient permissions"
-
-### 401 Unauthorized
-- "unauthorized"
-- "no user id"
-- "not logged in"
-- "authentication required"
-- "invalid token"
-- "token expired"
-- "must be logged in"
-
-This means existing service code that throws Error objects will still work:
-
-```typescript
-// This will automatically return 404:
-throw new Error("Survey not found");
-
-// This will automatically return 403:
-throw new Error("Access denied - you are not a member of this team");
-```
-
-## Zod Validation Errors
-
-Zod validation errors are automatically handled and return 400 status with details:
-
-```typescript
-app.post('/api/surveys', isAuthenticated, asyncHandler(async (req: any, res) => {
-  // If validation fails, error handler returns:
-  // {
-  //   "message": "Validation error",
-  //   "error": "Invalid input",
-  //   "details": [{ path: [...], message: "..." }]
-  // }
-  const data = createSurveySchema.parse(req.body);
-
-  const survey = await createSurvey(data);
-  res.json(survey);
-}));
-```
+---
 
 ## Migration Guide
 
@@ -308,7 +304,7 @@ app.get('/api/surveys/:id', isAuthenticated, asyncHandler(async (req: any, res) 
 }));
 ```
 
-**Benefits:**
+**Results:**
 - 15 lines → 7 lines (53% reduction)
 - No try/catch boilerplate
 - Automatic error handling
@@ -316,95 +312,67 @@ app.get('/api/surveys/:id', isAuthenticated, asyncHandler(async (req: any, res) 
 - Type-safe assertions
 - Consistent error responses
 
-## Response Format
+### Gradual Migration Strategy
 
-### Success Response
-```json
-{
-  "id": "123",
-  "title": "My Survey",
-  "status": "draft"
-}
-```
+You don't need to migrate all routes at once. The error handler works alongside existing error handling patterns.
 
-### Error Response (Production)
-```json
-{
-  "message": "Survey not found"
-}
-```
+#### Phase 1: Register Middleware (Day 1)
 
-### Error Response (Development)
-```json
-{
-  "message": "Survey not found",
-  "error": "Survey not found",
-  "stack": "Error: Survey not found\n    at ..."
-}
-```
+1. Register `errorHandler` middleware in main server file
+2. Test that existing routes still work
+3. No code changes needed yet
 
-### Validation Error Response
-```json
-{
-  "message": "Validation error",
-  "error": "Invalid input",
-  "details": [
-    {
-      "code": "too_small",
-      "minimum": 1,
-      "type": "string",
-      "path": ["title"],
-      "message": "String must contain at least 1 character(s)"
-    }
-  ]
-}
-```
+#### Phase 2: New Routes Use New Pattern (Ongoing)
 
-## Logging
+For any new routes you create, use the new pattern from the start.
 
-All errors are automatically logged with request context:
+#### Phase 3: Migrate Existing Routes (As Needed)
+
+Migrate existing routes gradually, starting with the most error-prone or frequently modified routes.
+
+---
+
+## Integration Checklist
+
+- [ ] Register `errorHandler` middleware in main server file (after all routes)
+- [ ] Test that server starts successfully
+- [ ] Test existing routes still work
+- [ ] Create a test route using new pattern to verify error handler works
+- [ ] Update any new routes to use new pattern
+- [ ] Gradually migrate existing routes (optional but recommended)
+
+### Testing the Integration
+
+Create a test route to verify the error handler is working:
 
 ```typescript
-// Error log format:
-{
-  "level": "error",
-  "requestId": "abc123",
-  "method": "GET",
-  "url": "/api/surveys/123",
-  "statusCode": 404,
-  "userId": "user-123",
-  "error": {
-    "name": "NotFoundError",
-    "message": "Survey not found",
-    "stack": "..."
-  },
-  "msg": "Client error: Survey not found"
+// Add this temporary test route
+if (process.env.NODE_ENV === 'development') {
+  app.get('/api/test-errors/404', asyncHandler(async (req, res) => {
+    throw new NotFoundError("Test 404");
+  }));
+
+  app.get('/api/test-errors/403', asyncHandler(async (req, res) => {
+    throw new ForbiddenError("Test 403");
+  }));
+
+  app.get('/api/test-errors/401', asyncHandler(async (req, res) => {
+    throw new UnauthorizedError("Test 401");
+  }));
+
+  app.get('/api/test-errors/500', asyncHandler(async (req, res) => {
+    throw new Error("Test 500");
+  }));
 }
 ```
 
-Server errors (500+) are logged at `error` level.
-Client errors (400-499) are logged at `warn` level.
-
-## Testing
-
-```typescript
-import request from 'supertest';
-import { NotFoundError } from '../middleware/errorHandler';
-
-describe('Error Handler', () => {
-  it('should return 404 for NotFoundError', async () => {
-    app.get('/test', asyncHandler(async (req, res) => {
-      throw new NotFoundError("Test not found");
-    }));
-
-    const response = await request(app)
-      .get('/test')
-      .expect(404);
-
-    expect(response.body.message).toBe("Test not found");
-  });
-});
+Test the routes:
+```bash
+curl http://localhost:3000/api/test-errors/404
+# Should return: {"message": "Test 404"} with status 404
 ```
+
+---
 
 ## Best Practices
 
@@ -415,6 +383,8 @@ describe('Error Handler', () => {
 5. **Provide descriptive error messages** - they're shown to clients
 6. **Don't catch errors in routes** - let the error handler deal with them
 7. **Use Zod schemas** for validation and let errors bubble up
+
+---
 
 ## API Reference
 
@@ -439,6 +409,120 @@ describe('Error Handler', () => {
 - `assertAuthenticated(value, message?)` - Assert value is truthy (throws UnauthorizedError)
 - `validateInput<T>(schema, data)` - Validate with Zod schema (throws ZodError)
 
+### Response Formats
+
+#### Success Response
+```json
+{
+  "id": "123",
+  "title": "My Survey",
+  "status": "draft"
+}
+```
+
+#### Error Response (Production)
+```json
+{
+  "message": "Survey not found"
+}
+```
+
+#### Error Response (Development)
+```json
+{
+  "message": "Survey not found",
+  "error": "Survey not found",
+  "stack": "Error: Survey not found\n    at ..."
+}
+```
+
+#### Validation Error Response
+```json
+{
+  "message": "Validation error",
+  "error": "Invalid input",
+  "details": [
+    {
+      "code": "too_small",
+      "minimum": 1,
+      "type": "string",
+      "path": ["title"],
+      "message": "String must contain at least 1 character(s)"
+    }
+  ]
+}
+```
+
+### Automatic Error Classification
+
+For generic Error objects, the middleware automatically classifies based on message content:
+
+**404 Not Found:**
+- "not found"
+- "does not exist"
+- "cannot find"
+- "could not find"
+
+**403 Forbidden:**
+- "access denied"
+- "forbidden"
+- "permission denied"
+- "not authorized to"
+- "you do not own"
+- "you are not a member"
+- "admin access required"
+- "insufficient permissions"
+
+**401 Unauthorized:**
+- "unauthorized"
+- "no user id"
+- "not logged in"
+- "authentication required"
+- "invalid token"
+- "token expired"
+- "must be logged in"
+
+### Logging
+
+All errors are automatically logged with request context:
+
+```typescript
+// Error log format:
+{
+  "level": "error",
+  "requestId": "abc123",
+  "method": "GET",
+  "url": "/api/surveys/123",
+  "statusCode": 404,
+  "userId": "user-123",
+  "error": {
+    "name": "NotFoundError",
+    "message": "Survey not found",
+    "stack": "..."
+  },
+  "msg": "Client error: Survey not found"
+}
+```
+
+Server errors (500+) are logged at `error` level.
+Client errors (400-499) are logged at `warn` level.
+
+### Zod Validation Errors
+
+Zod validation errors are automatically handled and return 400 status with details:
+
+```typescript
+app.post('/api/surveys', isAuthenticated, asyncHandler(async (req: any, res) => {
+  // If validation fails, error handler returns formatted response automatically
+  const data = createSurveySchema.parse(req.body);
+
+  const survey = await createSurvey(data);
+  res.json(survey);
+}));
+```
+
+---
+
 ## Troubleshooting
 
 ### Error handler not catching errors
@@ -461,3 +545,32 @@ const survey = await getSurvey(id);
 assertFound(survey, "Survey not found");
 // TypeScript knows survey is not null here
 ```
+
+---
+
+## Testing
+
+```typescript
+import request from 'supertest';
+import { NotFoundError } from '../middleware/errorHandler';
+
+describe('Error Handler', () => {
+  it('should return 404 for NotFoundError', async () => {
+    app.get('/test', asyncHandler(async (req, res) => {
+      throw new NotFoundError("Test not found");
+    }));
+
+    const response = await request(app)
+      .get('/test')
+      .expect(404);
+
+    expect(response.body.message).toBe("Test not found");
+  });
+});
+```
+
+---
+
+**Status:** ✅ Implemented and Available
+**Last Updated:** 2025-11-07
+**Location:** `server/middleware/errorHandler.ts`
