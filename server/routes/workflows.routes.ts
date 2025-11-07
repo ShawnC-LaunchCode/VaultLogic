@@ -61,7 +61,7 @@ export function registerWorkflowRoutes(app: Express): void {
   /**
    * GET /api/workflows/unfiled
    * Get all unfiled workflows (workflows not in any project) for the authenticated user
-   * NOTE: This must come BEFORE /api/workflows/:workflowId to avoid treating "unfiled" as a UUID
+   * NOTE: This must come BEFORE /api/workflows/:workflowId to avoid "unfiled" being treated as a workflowId
    */
   app.get('/api/workflows/unfiled', isAuthenticated, async (req: Request, res: Response) => {
     try {
