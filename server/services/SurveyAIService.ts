@@ -8,6 +8,7 @@ import {
 } from "../repositories";
 import { surveys, surveyPages, questions } from "@shared/schema";
 import type { Survey, Question } from "@shared/schema";
+import { logger } from "../logger";
 
 type QuestionType = Question['type'];
 
@@ -177,11 +178,11 @@ export class SurveyAIService {
         })
         .returning();
 
-      console.log('AI Survey created:', {
+      logger.info({
         id: survey.id,
         title: survey.title,
         pageCount: surveyData.pages.length
-      });
+      }, 'AI Survey created');
 
       // Create pages and questions
       let pageOrder = 1;
@@ -195,11 +196,11 @@ export class SurveyAIService {
           })
           .returning();
 
-        console.log('Page created:', {
+        logger.info({
           pageId: page.id,
           title: page.title,
           questionCount: pageData.questions.length
-        });
+        }, 'Page created');
 
         // Create questions for this page
         let questionOrder = 1;

@@ -7,6 +7,7 @@ import {
 import type { TransformBlock, InsertTransformBlock } from "@shared/schema";
 import { executeCode } from "../utils/sandboxExecutor";
 import { workflowService } from "./WorkflowService";
+import { logger } from "../logger";
 
 /**
  * Service layer for transform block business logic
@@ -224,10 +225,10 @@ export class TransformBlockService {
           await this.valueRepo.upsert({
             runId,
             stepId: block.outputKey, // Use outputKey as identifier
-            value: result.output,
+            value: result.output as Record<string, unknown> | string | number | boolean | null,
           });
         } catch (error) {
-          console.error(`Failed to persist transform block output for ${block.name}:`, error);
+          logger.error({ error }, `Failed to persist transform block output for ${block.name}`);
           // Continue execution even if persistence fails
         }
       } else {
