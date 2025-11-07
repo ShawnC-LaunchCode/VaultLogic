@@ -63,7 +63,8 @@ export const conditionalActionEnum = pgEnum('conditional_action', [
   'show',
   'hide',
   'require',
-  'make_optional'
+  'make_optional',
+  'skip_to'  // Skip to a specific section (workflow navigation)
 ]);
 
 // Users table for Google Auth
@@ -819,8 +820,8 @@ export const workflowRuns = pgTable("workflow_runs", {
   workflowId: uuid("workflow_id").references(() => workflows.id, { onDelete: 'cascade' }).notNull(),
   runToken: text("run_token").notNull().unique(), // UUID token for run-specific auth
   createdBy: text("created_by"), // "creator:<userId>" or "anon"
-  currentSectionId: uuid("current_section_id").references(() => sections.id),
-  progress: integer("progress").default(0), // percentage 0-100
+  currentSectionId: uuid("current_section_id").references(() => sections.id), // Track current section in workflow execution
+  progress: integer("progress").default(0), // Progress percentage (0-100)
   completed: boolean("completed").default(false),
   completedAt: timestamp("completed_at"),
   metadata: jsonb("metadata"), // Run-specific metadata
@@ -830,6 +831,7 @@ export const workflowRuns = pgTable("workflow_runs", {
   index("workflow_runs_workflow_idx").on(table.workflowId),
   index("workflow_runs_completed_idx").on(table.completed),
   index("workflow_runs_run_token_idx").on(table.runToken),
+  index("workflow_runs_current_section_idx").on(table.currentSectionId),
 ]);
 
 // Step values table (captured values per step in a run)

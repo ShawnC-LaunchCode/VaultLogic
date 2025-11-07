@@ -8,11 +8,8 @@ import {
 } from "../repositories";
 import type { WorkflowRun, InsertWorkflowRun, InsertStepValue } from "@shared/schema";
 import { workflowService } from "./WorkflowService";
-import { transformBlockService } from "./TransformBlockService";
+import { logicService, type NavigationResult } from "./LogicService";
 import { evaluateRules, validateRequiredSteps, getEffectiveRequiredSteps } from "@shared/workflowLogic";
-import { blockRunner } from "./BlockRunner";
-import type { BlockContext } from "@shared/types/blocks";
-import { randomUUID } from "crypto";
 
 /**
  * Service layer for workflow run-related business logic
@@ -25,7 +22,7 @@ export class RunService {
   private stepRepo: typeof stepRepository;
   private logicRuleRepo: typeof logicRuleRepository;
   private workflowSvc: typeof workflowService;
-  private transformSvc: typeof transformBlockService;
+  private logicSvc: typeof logicService;
 
   constructor(
     runRepo?: typeof workflowRunRepository,
@@ -35,7 +32,7 @@ export class RunService {
     stepRepo?: typeof stepRepository,
     logicRuleRepo?: typeof logicRuleRepository,
     workflowSvc?: typeof workflowService,
-    transformSvc?: typeof transformBlockService
+    logicSvc?: typeof logicService
   ) {
     this.runRepo = runRepo || workflowRunRepository;
     this.valueRepo = valueRepo || stepValueRepository;
@@ -44,120 +41,37 @@ export class RunService {
     this.stepRepo = stepRepo || stepRepository;
     this.logicRuleRepo = logicRuleRepo || logicRuleRepository;
     this.workflowSvc = workflowSvc || workflowService;
-    this.transformSvc = transformSvc || transformBlockService;
+    this.logicSvc = logicSvc || logicService;
   }
 
   /**
    * Create a new workflow run
-   * Executes onRunStart blocks to prefill initial data
-   *
-   * @param workflowId - The workflow to run
-   * @param userId - Creator user ID (optional for anonymous runs)
-   * @param data - Additional run data
-   * @param queryParams - Query parameters for prefill blocks
-   * @param isAnonymous - Whether this is an anonymous run (via publicLink)
    */
   async createRun(
     workflowId: string,
-    userId: string | null,
-    data: Omit<InsertWorkflowRun, 'workflowId' | 'runToken' | 'createdBy'>,
-    queryParams?: Record<string, any>,
-    isAnonymous: boolean = false
-  ): Promise<WorkflowRun & { runToken: string }> {
-    // For authenticated runs, verify ownership
-    if (userId && !isAnonymous) {
-      await this.workflowSvc.verifyOwnership(workflowId, userId);
-    }
+    userId: string,
+    data: Omit<InsertWorkflowRun, 'workflowId'>
+  ): Promise<WorkflowRun> {
+    await this.workflowSvc.verifyOwnership(workflowId, userId);
 
-    // For anonymous runs, verify workflow is active and has publicLink
-    if (isAnonymous) {
-      const workflow = await this.workflowRepo.findById(workflowId);
-      if (!workflow) {
-        throw new Error("Workflow not found");
-      }
-      if (workflow.status !== 'active') {
-        throw new Error("Workflow is not active");
-      }
-      if (!workflow.publicLink) {
-        throw new Error("Workflow does not allow anonymous access");
-      }
-    }
-
-    // Generate unique run token
-    const runToken = randomUUID();
-    const createdBy = isAnonymous ? "anon" : `creator:${userId}`;
-
-    const run = await this.runRepo.create({
+    return await this.runRepo.create({
       ...data,
       workflowId,
-      runToken,
-      createdBy,
       completed: false,
     });
-
-    // Execute onRunStart blocks to prefill data
-    const context: BlockContext = {
-      workflowId,
-      runId: run.id,
-      phase: "onRunStart",
-      data: {},
-      queryParams,
-    };
-
-    const result = await blockRunner.runPhase(context);
-
-    // Persist any prefilled data to step_values
-    if (result.data && Object.keys(result.data).length > 0) {
-      for (const [stepId, value] of Object.entries(result.data)) {
-        await this.valueRepo.upsert({
-          runId: run.id,
-          stepId,
-          value,
-        });
-      }
-    }
-
-    // Return run with runToken for client
-    return { ...run, runToken };
-  }
-
-  /**
-   * Verify access to a run (either by creator ownership or valid runToken)
-   */
-  private async verifyRunAccess(
-    run: WorkflowRun,
-    userId: string | null,
-    runToken?: string
-  ): Promise<void> {
-    // If runToken provided and matches, grant access
-    if (runToken && run.runToken === runToken) {
-      return;
-    }
-
-    // Otherwise, verify creator ownership
-    if (!userId) {
-      throw new Error("Access denied - authentication required");
-    }
-
-    await this.workflowSvc.verifyOwnership(run.workflowId, userId);
   }
 
   /**
    * Get run by ID
-   * Access granted to creator or valid runToken holder
    */
-  async getRun(
-    runId: string,
-    userId: string | null,
-    runToken?: string
-  ): Promise<WorkflowRun> {
+  async getRun(runId: string, userId: string): Promise<WorkflowRun> {
     const run = await this.runRepo.findById(runId);
     if (!run) {
       throw new Error("Run not found");
     }
 
-    // Verify access
-    await this.verifyRunAccess(run, userId, runToken);
+    // Verify ownership of the workflow
+    await this.workflowSvc.verifyOwnership(run.workflowId, userId);
 
     return run;
   }
@@ -165,12 +79,8 @@ export class RunService {
   /**
    * Get run with all values
    */
-  async getRunWithValues(
-    runId: string,
-    userId: string | null,
-    runToken?: string
-  ) {
-    const run = await this.getRun(runId, userId, runToken);
+  async getRunWithValues(runId: string, userId: string) {
+    const run = await this.getRun(runId, userId);
     const values = await this.valueRepo.findByRunId(runId);
 
     return {
@@ -184,11 +94,10 @@ export class RunService {
    */
   async upsertStepValue(
     runId: string,
-    userId: string | null,
-    data: InsertStepValue,
-    runToken?: string
+    userId: string,
+    data: InsertStepValue
   ): Promise<void> {
-    const run = await this.getRun(runId, userId, runToken);
+    const run = await this.getRun(runId, userId);
 
     // Verify step belongs to the workflow
     const step = await this.stepRepo.findById(data.stepId);
@@ -209,185 +118,83 @@ export class RunService {
    */
   async bulkUpsertValues(
     runId: string,
-    userId: string | null,
-    values: Array<{ stepId: string; value: any }>,
-    runToken?: string
+    userId: string,
+    values: Array<{ stepId: string; value: any }>
   ): Promise<void> {
-    const run = await this.getRun(runId, userId, runToken);
+    const run = await this.getRun(runId, userId);
 
     for (const { stepId, value } of values) {
       await this.upsertStepValue(runId, userId, {
         runId,
         stepId,
         value,
-      }, runToken);
+      });
     }
   }
 
   /**
-   * Submit section values with validation
-   * Executes onSectionSubmit blocks to validate data
+   * Calculate next section and update run state
+   *
+   * @param runId - Run ID
+   * @param userId - User ID (for authorization)
+   * @returns Navigation result with next section info
    */
-  async submitSectionValues(
-    runId: string,
-    userId: string | null,
-    sectionId: string,
-    values: Array<{ stepId: string; value: any }>,
-    runToken?: string
-  ): Promise<{ success: boolean; errors?: string[] }> {
-    const run = await this.getRun(runId, userId, runToken);
-
-    // Verify section belongs to workflow
-    const section = await this.sectionRepo.findById(sectionId);
-    if (!section || section.workflowId !== run.workflowId) {
-      throw new Error("Section does not belong to this workflow");
-    }
-
-    // Get current data
-    const currentValues = await this.valueRepo.findByRunId(runId);
-    const data: Record<string, any> = {};
-    currentValues.forEach((v) => {
-      data[v.stepId] = v.value;
-    });
-
-    // Merge in new values (staging)
-    const stagedData = { ...data };
-    values.forEach(({ stepId, value }) => {
-      stagedData[stepId] = value;
-    });
-
-    // Execute onSectionSubmit validation blocks
-    const context: BlockContext = {
-      workflowId: run.workflowId,
-      runId,
-      phase: "onSectionSubmit",
-      sectionId,
-      data: stagedData,
-    };
-
-    const result = await blockRunner.runPhase(context);
-
-    // If validation failed, return errors
-    if (!result.success && result.errors) {
-      return { success: false, errors: result.errors };
-    }
-
-    // Validation passed, persist the values
-    for (const { stepId, value } of values) {
-      await this.upsertStepValue(runId, userId, {
-        runId,
-        stepId,
-        value,
-      }, runToken);
-    }
-
-    return { success: true };
-  }
-
-  /**
-   * Navigate to next section
-   * Executes onNext blocks to determine branching
-   */
-  async navigateNext(
-    runId: string,
-    userId: string | null,
-    currentSectionId: string,
-    runToken?: string
-  ): Promise<{ nextSectionId?: string }> {
-    const run = await this.getRun(runId, userId, runToken);
-
-    // Get current data
-    const currentValues = await this.valueRepo.findByRunId(runId);
-    const data: Record<string, any> = {};
-    currentValues.forEach((v) => {
-      data[v.stepId] = v.value;
-    });
-
-    // Execute onNext blocks to determine next section
-    const context: BlockContext = {
-      workflowId: run.workflowId,
-      runId,
-      phase: "onNext",
-      sectionId: currentSectionId,
-      data,
-    };
-
-    const result = await blockRunner.runPhase(context);
-
-    return { nextSectionId: result.nextSectionId };
-  }
-
-  /**
-   * Complete a workflow run (with validation)
-   */
-  async completeRun(
-    runId: string,
-    userId: string | null,
-    runToken?: string
-  ): Promise<WorkflowRun> {
-    const run = await this.getRun(runId, userId, runToken);
+  async next(runId: string, userId: string): Promise<NavigationResult> {
+    const run = await this.getRun(runId, userId);
 
     if (run.completed) {
       throw new Error("Run is already completed");
     }
 
-    // Get all workflow data
+    // Evaluate navigation using LogicService
+    const navigation = await this.logicSvc.evaluateNavigation(
+      run.workflowId,
+      runId,
+      run.currentSectionId ?? null
+    );
+
+    // Update run with next section and progress
+    if (navigation.nextSectionId !== run.currentSectionId) {
+      await this.runRepo.update(runId, {
+        currentSectionId: navigation.nextSectionId,
+        progress: navigation.currentProgress,
+        updatedAt: new Date(),
+      });
+    }
+
+    return navigation;
+  }
+
+  /**
+   * Complete a workflow run (with validation)
+   */
+  async completeRun(runId: string, userId: string): Promise<WorkflowRun> {
+    const run = await this.getRun(runId, userId);
+
+    if (run.completed) {
+      throw new Error("Run is already completed");
+    }
+
+    // Get workflow
     const workflow = await this.workflowRepo.findById(run.workflowId);
     if (!workflow) {
       throw new Error("Workflow not found");
     }
 
-    const sections = await this.sectionRepo.findByWorkflowId(workflow.id);
-    const sectionIds = sections.map((s) => s.id);
-    const steps = await this.stepRepo.findBySectionIds(sectionIds);
-    const logicRules = await this.logicRuleRepo.findByWorkflowId(workflow.id);
-    const currentValues = await this.valueRepo.findByRunId(runId);
-
-    // Build data object for evaluation
-    const data: Record<string, any> = {};
-    currentValues.forEach((v) => {
-      data[v.stepId] = v.value;
-    });
-
-    // ===================================================================
-    // Execute transform blocks BEFORE validation
-    // This allows transform blocks to compute derived values that may be
-    // required for validation or subsequent logic
-    // ===================================================================
-    const transformResult = await this.transformSvc.executeAllForWorkflow({
-      workflowId: workflow.id,
-      runId,
-      data,
-    });
-
-    // Use updated data from transform blocks (includes computed outputs)
-    const finalData = transformResult.data || data;
-
-    // If transform blocks had errors, log them but continue
-    // (transform errors don't prevent run completion unless critical)
-    if (transformResult.errors && transformResult.errors.length > 0) {
-      console.warn(`Transform block errors during run ${runId}:`, transformResult.errors);
-    }
-
-    // Get initially required steps
-    const initialRequiredSteps = new Set(steps.filter((s) => s.required).map((s) => s.id));
-
-    // Evaluate logic to get effective required steps
-    const effectiveRequiredSteps = getEffectiveRequiredSteps(
-      initialRequiredSteps,
-      logicRules,
-      finalData
-    );
-
-    // Validate all required steps have values
-    const validation = validateRequiredSteps(effectiveRequiredSteps, finalData);
+    // Validate using LogicService
+    const validation = await this.logicSvc.validateCompletion(run.workflowId, runId);
 
     if (!validation.valid) {
-      throw new Error(`Missing required steps: ${validation.missingSteps.join(', ')}`);
+      const stepTitles = validation.missingStepTitles?.join(', ') || validation.missingSteps.join(', ');
+      throw new Error(`Missing required steps: ${stepTitles}`);
     }
 
-    // Mark run as complete
-    return await this.runRepo.markComplete(runId);
+    // Mark run as complete with 100% progress
+    return await this.runRepo.update(runId, {
+      completed: true,
+      completedAt: new Date(),
+      progress: 100,
+    });
   }
 
   /**

@@ -32,7 +32,8 @@ export interface WorkflowEvaluationResult {
   visibleSections: Set<string>;
   visibleSteps: Set<string>;
   requiredSteps: Set<string>;
-  skipToSectionId?: string;
+  skipToSectionId?: string; // Section to skip to based on logic
+  nextSectionId?: string; // Next section in normal flow
 }
 
 /**
@@ -70,11 +71,10 @@ export function evaluateRules(
           break;
         case 'hide':
           result.visibleSections.delete(targetId);
-          // Find skip target if exists
-          const nextVisibleSection = findNextVisibleSection(rule, rules, data);
-          if (nextVisibleSection) {
-            result.skipToSectionId = nextVisibleSection;
-          }
+          break;
+        case 'skip_to':
+          // Set the skip target - this takes precedence over normal flow
+          result.skipToSectionId = targetId;
           break;
       }
     }
@@ -258,17 +258,73 @@ function isEmpty(value: any): boolean {
 }
 
 /**
- * Finds the next visible section after a hidden one
+ * Calculates the next section based on current section, section order, and visibility
+ *
+ * @param currentSectionId - Current section ID (null if at start)
+ * @param sections - Array of sections ordered by their 'order' field
+ * @param visibleSections - Set of visible section IDs
+ * @returns Next section ID or null if completed
  */
-function findNextVisibleSection(
-  currentRule: LogicRule,
-  allRules: LogicRule[],
-  data: Record<string, any>
-): string | undefined {
-  // This would need section order information
-  // For now, return undefined
-  // In a real implementation, you'd look at section.order and find the next one
-  return undefined;
+export function calculateNextSection(
+  currentSectionId: string | null,
+  sections: Array<{ id: string; order: number }>,
+  visibleSections: Set<string>
+): string | null {
+  // Sort sections by order
+  const sortedSections = [...sections].sort((a, b) => a.order - b.order);
+
+  // If no current section, return first visible section
+  if (!currentSectionId) {
+    const firstVisible = sortedSections.find(s => visibleSections.has(s.id));
+    return firstVisible?.id ?? null;
+  }
+
+  // Find current section index
+  const currentIndex = sortedSections.findIndex(s => s.id === currentSectionId);
+  if (currentIndex === -1) {
+    return null;
+  }
+
+  // Find next visible section after current
+  for (let i = currentIndex + 1; i < sortedSections.length; i++) {
+    const section = sortedSections[i];
+    if (visibleSections.has(section.id)) {
+      return section.id;
+    }
+  }
+
+  // No more visible sections - workflow complete
+  return null;
+}
+
+/**
+ * Resolves the actual next section considering skip logic
+ *
+ * @param nextSectionId - Normal next section
+ * @param skipToSectionId - Skip target section (takes precedence)
+ * @param sections - Array of sections ordered by their 'order' field
+ * @param visibleSections - Set of visible section IDs
+ * @returns Resolved next section ID or null if completed
+ */
+export function resolveNextSection(
+  nextSectionId: string | null,
+  skipToSectionId: string | undefined,
+  sections: Array<{ id: string; order: number }>,
+  visibleSections: Set<string>
+): string | null {
+  // Skip logic takes precedence
+  if (skipToSectionId) {
+    // If skip target is visible, use it
+    if (visibleSections.has(skipToSectionId)) {
+      return skipToSectionId;
+    }
+
+    // If skip target is not visible, find next visible after it
+    return calculateNextSection(skipToSectionId, sections, visibleSections);
+  }
+
+  // Use normal next section if no skip
+  return nextSectionId;
 }
 
 /**
