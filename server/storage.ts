@@ -20,10 +20,6 @@ import {
   type ConditionalRule,
   type InsertConditionalRule,
   type QuestionWithSubquestions,
-  type Recipient,
-  type InsertRecipient,
-  type GlobalRecipient,
-  type InsertGlobalRecipient,
   type Response,
   type InsertResponse,
   type Answer,
@@ -58,7 +54,6 @@ import {
   surveyRepository,
   pageRepository,
   questionRepository,
-  recipientRepository,
   responseRepository,
   analyticsRepository,
   fileRepository,
@@ -117,29 +112,10 @@ export interface IStorage {
   deleteConditionalRule(id: string): Promise<void>;
   deleteConditionalRulesBySurvey(surveyId: string): Promise<void>;
   
-  // Recipient operations
-  createRecipient(recipient: InsertRecipient): Promise<Recipient>;
-  getRecipient(id: string): Promise<Recipient | undefined>;
-  getRecipientByToken(token: string): Promise<Recipient | undefined>;
-  getRecipientsBySurvey(surveyId: string): Promise<Recipient[]>;
-  updateRecipient(id: string, updates: Partial<InsertRecipient>): Promise<Recipient>;
-  
-  // Global recipient operations
-  createGlobalRecipient(globalRecipient: InsertGlobalRecipient): Promise<GlobalRecipient>;
-  getGlobalRecipient(id: string): Promise<GlobalRecipient | undefined>;
-  getGlobalRecipientsByCreator(creatorId: string): Promise<GlobalRecipient[]>;
-  updateGlobalRecipient(id: string, updates: Partial<InsertGlobalRecipient>): Promise<GlobalRecipient>;
-  deleteGlobalRecipient(id: string): Promise<void>;
-  getGlobalRecipientByCreatorAndEmail(creatorId: string, email: string): Promise<GlobalRecipient | undefined>;
-  bulkDeleteGlobalRecipients(ids: string[], creatorId: string): Promise<BulkOperationResult>;
-  bulkAddGlobalRecipientsToSurvey(surveyId: string, globalRecipientIds: string[], creatorId: string): Promise<Recipient[]>;
-  checkRecipientDuplicatesInSurvey(surveyId: string, emails: string[]): Promise<string[]>;
-  
   // Response operations
   createResponse(response: InsertResponse): Promise<Response>;
   getResponse(id: string): Promise<Response | undefined>;
   getResponsesBySurvey(surveyId: string): Promise<Response[]>;
-  getResponseByRecipient(recipientId: string): Promise<Response | undefined>;
   updateResponse(id: string, updates: Partial<InsertResponse>): Promise<Response>;
   
   // Answer operations
@@ -356,64 +332,6 @@ export class DatabaseStorage implements IStorage {
     await questionRepository.deleteConditionalRulesBySurvey(surveyId);
   }
   
-  // Recipient operations
-  async createRecipient(recipient: InsertRecipient): Promise<Recipient> {
-    return await recipientRepository.create(recipient);
-  }
-
-  async getRecipient(id: string): Promise<Recipient | undefined> {
-    return await recipientRepository.findById(id);
-  }
-
-  async getRecipientByToken(token: string): Promise<Recipient | undefined> {
-    return await recipientRepository.findByToken(token);
-  }
-
-  async getRecipientsBySurvey(surveyId: string): Promise<Recipient[]> {
-    return await recipientRepository.findBySurvey(surveyId);
-  }
-
-  async updateRecipient(id: string, updates: Partial<InsertRecipient>): Promise<Recipient> {
-    return await recipientRepository.update(id, updates);
-  }
-
-  // Global recipient operations
-  async createGlobalRecipient(globalRecipient: InsertGlobalRecipient): Promise<GlobalRecipient> {
-    return await recipientRepository.createGlobal(globalRecipient);
-  }
-
-  async getGlobalRecipient(id: string): Promise<GlobalRecipient | undefined> {
-    return await recipientRepository.findGlobalById(id);
-  }
-
-  async getGlobalRecipientsByCreator(creatorId: string): Promise<GlobalRecipient[]> {
-    return await recipientRepository.findGlobalByCreator(creatorId);
-  }
-
-  async updateGlobalRecipient(id: string, updates: Partial<InsertGlobalRecipient>): Promise<GlobalRecipient> {
-    return await recipientRepository.updateGlobal(id, updates);
-  }
-
-  async deleteGlobalRecipient(id: string): Promise<void> {
-    await recipientRepository.deleteGlobal(id);
-  }
-
-  async getGlobalRecipientByCreatorAndEmail(creatorId: string, email: string): Promise<GlobalRecipient | undefined> {
-    return await recipientRepository.findGlobalByCreatorAndEmail(creatorId, email);
-  }
-
-  async bulkDeleteGlobalRecipients(ids: string[], creatorId: string): Promise<BulkOperationResult> {
-    return await recipientRepository.bulkDeleteGlobal(ids, creatorId);
-  }
-
-  async bulkAddGlobalRecipientsToSurvey(surveyId: string, globalRecipientIds: string[], creatorId: string): Promise<Recipient[]> {
-    return await recipientRepository.bulkAddGlobalToSurvey(surveyId, globalRecipientIds, creatorId);
-  }
-
-  async checkRecipientDuplicatesInSurvey(surveyId: string, emails: string[]): Promise<string[]> {
-    return await recipientRepository.checkDuplicates(surveyId, emails);
-  }
-  
   // Response operations
   async createResponse(response: InsertResponse): Promise<Response> {
     return await responseRepository.create(response);
@@ -425,10 +343,6 @@ export class DatabaseStorage implements IStorage {
 
   async getResponsesBySurvey(surveyId: string): Promise<Response[]> {
     return await responseRepository.findBySurvey(surveyId);
-  }
-
-  async getResponseByRecipient(recipientId: string): Promise<Response | undefined> {
-    return await responseRepository.findByRecipient(recipientId);
   }
 
   async updateResponse(id: string, updates: Partial<InsertResponse>): Promise<Response> {
