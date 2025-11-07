@@ -39,15 +39,28 @@ export default function Header({ title, description, actions }: HeaderProps) {
     }
   };
 
+  // Check if user is admin
+  const isAdmin = (user as any)?.role === 'admin';
+
   const navigation = [
     { name: "Dashboard", href: "/", icon: "fas fa-home" },
     { name: "Workflows", href: "/surveys", icon: "fas fa-list-ul" },
     { name: "Templates", href: "/templates", icon: "fas fa-puzzle-piece" },
   ];
 
+  const adminNavigation = [
+    { name: "Admin Dashboard", href: "/admin", icon: "fas fa-shield-alt" },
+    { name: "Manage Users", href: "/admin/users", icon: "fas fa-users-cog" },
+    { name: "Activity Logs", href: "/admin/logs", icon: "fas fa-clipboard-list" },
+  ];
+
   const isActive = (href: string) => {
     if (href === "/") {
       return location === "/";
+    }
+    // For admin routes, check for exact match to avoid highlighting both
+    if (href === "/admin") {
+      return location === "/admin";
     }
     return location.startsWith(href);
   };
@@ -92,6 +105,32 @@ export default function Header({ title, description, actions }: HeaderProps) {
                     </div>
                   </Link>
                 ))}
+
+                {/* Admin Section */}
+                {isAdmin && (
+                  <>
+                    <div className="pt-4 pb-2">
+                      <div className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Administration
+                      </div>
+                    </div>
+                    {adminNavigation.map((item) => (
+                      <Link key={item.name} href={item.href}>
+                        <div
+                          onClick={() => setMobileMenuOpen(false)}
+                          className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors cursor-pointer ${
+                            isActive(item.href)
+                              ? "bg-purple-600 text-white"
+                              : "text-muted-foreground hover:text-foreground hover:bg-purple-50"
+                          }`}
+                        >
+                          <i className={`${item.icon} w-5`}></i>
+                          <span className="font-medium">{item.name}</span>
+                        </div>
+                      </Link>
+                    ))}
+                  </>
+                )}
               </nav>
 
               <div className="p-4 border-t border-border">

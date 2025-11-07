@@ -74,6 +74,20 @@ export function registerAdminRoutes(app: Express): void {
         });
       }
 
+      // Critical: Prevent demoting the last admin
+      if (role === 'creator') {
+        const allUsers = await userRepository.findAllUsers();
+        const adminCount = allUsers.filter(u => u.role === 'admin').length;
+
+        // Check if the user being demoted is currently an admin
+        const targetUser = allUsers.find(u => u.id === userId);
+        if (targetUser?.role === 'admin' && adminCount <= 1) {
+          return res.status(400).json({
+            message: "Cannot demote the last admin. Promote another user to admin first."
+          });
+        }
+      }
+
       const updatedUser = await userRepository.updateRole(userId, role);
 
       logger.info(
