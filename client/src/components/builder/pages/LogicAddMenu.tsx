@@ -86,6 +86,7 @@ export function LogicAddMenu({ workflowId, sectionId, nextOrder }: LogicAddMenuP
           inputKeys: [],
           outputKey: "computed_value",
           timeoutMs: 1000,
+          display: "invisible", // invisible = no UI in runner, visible = shows as question-like block
         };
         phase = "onSectionSubmit";
       }

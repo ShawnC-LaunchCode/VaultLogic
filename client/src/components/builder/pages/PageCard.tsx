@@ -35,6 +35,7 @@ import { combinePageItems, recomputeOrders, getNextOrder } from "@/lib/dnd";
 import { QuestionAddMenu } from "./QuestionAddMenu";
 import { LogicAddMenu } from "./LogicAddMenu";
 import { BlockCard } from "./BlockCard";
+import { QuestionCard } from "../questions/QuestionCard";
 import { UI_LABELS } from "@/lib/labels";
 import type { ApiSection, ApiBlock } from "@/lib/vault-api";
 
@@ -50,9 +51,12 @@ export function PageCard({ workflowId, page, blocks }: PageCardProps) {
   const deleteSectionMutation = useDeleteSection();
   const reorderStepsMutation = useReorderSteps();
   const reorderBlocksMutation = useReorderBlocks();
-  const { selectSection } = useWorkflowBuilder();
+  const { selectSection, selection } = useWorkflowBuilder();
   const { toast } = useToast();
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [expandedStepIds, setExpandedStepIds] = useState<Set<string>>(new Set());
+  const [autoFocusStepId, setAutoFocusStepId] = useState<string | null>(null);
+  const prevSelectionRef = useRef<typeof selection>(null);
 
   // Local state for title and description to prevent stuttering
   const [localTitle, setLocalTitle] = useState(page.title);
@@ -70,6 +74,28 @@ export function PageCard({ workflowId, page, blocks }: PageCardProps) {
   useEffect(() => {
     setLocalDescription(page.description || "");
   }, [page.description]);
+
+  // Auto-expand and focus newly selected steps
+  useEffect(() => {
+    // Check if a new step was just selected
+    if (
+      selection?.type === "step" &&
+      selection.id &&
+      prevSelectionRef.current?.id !== selection.id
+    ) {
+      // Check if this step belongs to this page
+      const stepInThisPage = steps.find((s) => s.id === selection.id);
+      if (stepInThisPage) {
+        // Expand and auto-focus
+        setExpandedStepIds((prev) => new Set(prev).add(selection.id!));
+        setAutoFocusStepId(selection.id);
+
+        // Clear auto-focus after a short delay
+        setTimeout(() => setAutoFocusStepId(null), 100);
+      }
+    }
+    prevSelectionRef.current = selection;
+  }, [selection, steps]);
 
   // Make the page card sortable for page reordering
   const {
@@ -181,6 +207,18 @@ export function PageCard({ workflowId, page, blocks }: PageCardProps) {
 
   const nextOrder = getNextOrder(items);
 
+  const handleToggleExpand = (stepId: string) => {
+    setExpandedStepIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(stepId)) {
+        next.delete(stepId);
+      } else {
+        next.add(stepId);
+      }
+      return next;
+    });
+  };
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -279,14 +317,29 @@ export function PageCard({ workflowId, page, blocks }: PageCardProps) {
               strategy={verticalListSortingStrategy}
             >
               <div className="space-y-2">
-                {items.map((item) => (
-                  <BlockCard
-                    key={item.id}
-                    item={item}
-                    workflowId={workflowId}
-                    sectionId={page.id}
-                  />
-                ))}
+                {items.map((item) => {
+                  if (item.kind === "step") {
+                    return (
+                      <QuestionCard
+                        key={item.id}
+                        step={item.data}
+                        sectionId={page.id}
+                        isExpanded={expandedStepIds.has(item.id)}
+                        autoFocus={autoFocusStepId === item.id}
+                        onToggleExpand={() => handleToggleExpand(item.id)}
+                      />
+                    );
+                  } else {
+                    return (
+                      <BlockCard
+                        key={item.id}
+                        item={item}
+                        workflowId={workflowId}
+                        sectionId={page.id}
+                      />
+                    );
+                  }
+                })}
               </div>
             </SortableContext>
           </DndContext>
