@@ -13,6 +13,13 @@ import {
   ChevronDown,
   ChevronRight,
   Trash2,
+  Type,
+  AlignLeft,
+  Circle,
+  CheckSquare,
+  ToggleLeft,
+  Calendar,
+  Upload,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,6 +57,28 @@ const STEP_TYPE_OPTIONS: Array<{ value: StepType; label: string }> = [
   { value: "date_time", label: "Date/Time" },
   { value: "file_upload", label: "File Upload" },
 ];
+
+// Get icon for each question type
+function getQuestionTypeIcon(type: StepType) {
+  switch (type) {
+    case "short_text":
+      return <Type className="h-4 w-4 text-muted-foreground" />;
+    case "long_text":
+      return <AlignLeft className="h-4 w-4 text-muted-foreground" />;
+    case "radio":
+      return <Circle className="h-4 w-4 text-muted-foreground" />;
+    case "multiple_choice":
+      return <CheckSquare className="h-4 w-4 text-muted-foreground" />;
+    case "yes_no":
+      return <ToggleLeft className="h-4 w-4 text-muted-foreground" />;
+    case "date_time":
+      return <Calendar className="h-4 w-4 text-muted-foreground" />;
+    case "file_upload":
+      return <Upload className="h-4 w-4 text-muted-foreground" />;
+    default:
+      return <FileText className="h-4 w-4 text-muted-foreground" />;
+  }
+}
 
 export function QuestionCard({
   step,
@@ -225,7 +254,7 @@ export function QuestionCard({
 
             {/* Icon */}
             <div className="mt-2">
-              <FileText className="h-4 w-4 text-muted-foreground" />
+              {getQuestionTypeIcon(localType)}
             </div>
 
             {/* Content */}
@@ -280,22 +309,63 @@ export function QuestionCard({
                     />
                   </div>
 
-                  {/* Type Selector */}
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground">Question Type</Label>
-                    <Select value={localType} onValueChange={handleTypeChange}>
-                      <SelectTrigger className="h-9 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {STEP_TYPE_OPTIONS.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {/* Type Selector - Toggle for text types (short/long) */}
+                  {(localType === "short_text" || localType === "long_text") && (
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">Question Type</Label>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant={localType === "short_text" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handleTypeChange("short_text")}
+                          className="flex-1"
+                        >
+                          <Type className="h-3 w-3 mr-1" />
+                          Short Text
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={localType === "long_text" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handleTypeChange("long_text")}
+                          className="flex-1"
+                        >
+                          <AlignLeft className="h-3 w-3 mr-1" />
+                          Long Text
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Type Selector - Toggle for choice types (radio/multiple) */}
+                  {(localType === "radio" || localType === "multiple_choice") && (
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">Question Type</Label>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant={localType === "radio" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handleTypeChange("radio")}
+                          className="flex-1"
+                        >
+                          <Circle className="h-3 w-3 mr-1" />
+                          Radio
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={localType === "multiple_choice" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handleTypeChange("multiple_choice")}
+                          className="flex-1"
+                        >
+                          <CheckSquare className="h-3 w-3 mr-1" />
+                          Multiple Choice
+                        </Button>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Required Toggle */}
                   <div className="flex items-center justify-between py-1">
