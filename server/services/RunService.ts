@@ -11,6 +11,8 @@ import { workflowService } from "./WorkflowService";
 import { logicService, type NavigationResult } from "./LogicService";
 import { blockRunner } from "./BlockRunner";
 import { evaluateRules, validateRequiredSteps, getEffectiveRequiredSteps } from "@shared/workflowLogic";
+import { runJsVm2 } from "../utils/sandboxExecutor";
+import { isJsQuestionConfig, type JsQuestionConfig } from "@shared/types/steps";
 
 /**
  * Service layer for workflow run-related business logic
@@ -163,6 +165,79 @@ export class RunService {
   }
 
   /**
+   * Execute JS questions for a section
+   * Finds all js_question steps, executes their code, and persists outputs
+   *
+   * @param runId - Run ID
+   * @param sectionId - Section ID to execute JS questions for
+   * @param dataMap - Current data map (stepId -> value)
+   * @returns Object with success flag and any errors
+   */
+  private async executeJsQuestions(
+    runId: string,
+    sectionId: string,
+    dataMap: Record<string, any>
+  ): Promise<{ success: boolean; errors?: string[] }> {
+    const errors: string[] = [];
+
+    // Find all js_question steps in this section
+    const allSteps = await this.stepRepo.findBySectionId(sectionId);
+    const jsQuestions = allSteps.filter(step => step.type === 'js_question');
+
+    for (const step of jsQuestions) {
+      // Skip if no options or invalid config
+      if (!step.options || !isJsQuestionConfig(step.options)) {
+        continue;
+      }
+
+      const config = step.options as JsQuestionConfig;
+
+      // Build input object with only whitelisted keys
+      const input: Record<string, any> = {};
+      for (const key of config.inputKeys) {
+        // Try to find step by alias or ID
+        const inputStep = allSteps.find(s => s.alias === key || s.id === key);
+        if (inputStep && dataMap[inputStep.id] !== undefined) {
+          input[key] = dataMap[inputStep.id];
+        }
+      }
+
+      try {
+        // Execute the code
+        const result = await runJsVm2(
+          config.code,
+          input,
+          config.timeoutMs || 1000
+        );
+
+        if (!result.ok) {
+          errors.push(`JS Question "${step.title}" failed: ${result.error}`);
+          continue;
+        }
+
+        // Store the output using the step's own ID as the key in dataMap
+        // This allows the output to be referenced by the step's alias in blocks
+        await this.valueRepo.upsert({
+          runId,
+          stepId: step.id,
+          value: result.result,
+        });
+
+        // Update dataMap for subsequent operations
+        dataMap[step.id] = result.result;
+
+      } catch (error: any) {
+        errors.push(`JS Question "${step.title}" execution error: ${error.message}`);
+      }
+    }
+
+    return {
+      success: errors.length === 0,
+      errors: errors.length > 0 ? errors : undefined,
+    };
+  }
+
+  /**
    * Submit section values with validation
    * Executes onSectionSubmit blocks (transform + validate)
    */
@@ -193,6 +268,15 @@ export class RunService {
       acc[v.stepId] = v.value;
       return acc;
     }, {} as Record<string, any>);
+
+    // Execute JS questions for this section
+    const jsResult = await this.executeJsQuestions(runId, sectionId, dataMap);
+    if (!jsResult.success) {
+      return {
+        success: false,
+        errors: jsResult.errors,
+      };
+    }
 
     // Execute onSectionSubmit blocks (transform + validate)
     const blockResult = await blockRunner.runPhase({
@@ -230,6 +314,13 @@ export class RunService {
       acc[v.stepId] = v.value;
       return acc;
     }, {} as Record<string, any>);
+
+    // Execute JS questions for the current section (if any)
+    if (run.currentSectionId) {
+      await this.executeJsQuestions(runId, run.currentSectionId, dataMap);
+      // Note: We ignore errors here as next() shouldn't fail on JS question errors
+      // The errors would have been caught during submitSection
+    }
 
     // Execute onNext blocks (transform + branch)
     const blockResult = await blockRunner.runPhase({

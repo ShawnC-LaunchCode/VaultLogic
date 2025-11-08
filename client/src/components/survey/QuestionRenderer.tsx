@@ -323,6 +323,35 @@ export default function QuestionRenderer({ question, value, onChange, onFocus, o
       case 'loop_group':
         return renderLoopGroup();
 
+      case 'js_question':
+        // JS questions execute on backend during submit/next
+        // Display mode determines if UI is shown
+        const jsConfig = question.options as any;
+        if (jsConfig?.display === 'visible') {
+          return (
+            <div className="p-4 border border-blue-200 rounded-lg bg-blue-50 dark:bg-blue-950/20 dark:border-blue-800">
+              <div className="flex items-start gap-2">
+                <div className="text-blue-600 dark:text-blue-400 mt-0.5">⚡</div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+                    Computed Question
+                  </p>
+                  {jsConfig.helpText && (
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                      {jsConfig.helpText}
+                    </p>
+                  )}
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                    This value will be computed automatically when you submit this page.
+                  </p>
+                </div>
+              </div>
+            </div>
+          );
+        }
+        // Hidden mode: render nothing
+        return null;
+
       default:
         return (
           <div className="p-4 border border-destructive rounded-lg bg-destructive/10">

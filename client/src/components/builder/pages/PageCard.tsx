@@ -365,7 +365,11 @@ export function PageCard({ workflowId, page, blocks }: PageCardProps) {
 
         {/* Add buttons at the bottom */}
         <div className="flex items-center gap-2 pt-2">
-          <QuestionAddMenu sectionId={page.id} nextOrder={nextOrder} />
+          <QuestionAddMenu
+            sectionId={page.id}
+            nextOrder={nextOrder}
+            workflowId={workflowId}
+          />
           <LogicAddMenu
             workflowId={workflowId}
             sectionId={page.id}
