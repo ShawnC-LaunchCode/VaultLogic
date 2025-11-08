@@ -2,9 +2,14 @@ import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Code, Play, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Code, Play, CheckCircle2, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { VariablePalette } from "@/components/builder/pages/VariablePalette";
+import { useWorkflowVariables } from "@/lib/vault-hooks";
 import { cn } from "@/lib/utils";
 
 interface JSBlockEditorProps {
@@ -15,14 +20,32 @@ interface JSBlockEditorProps {
 
 export const JSBlockEditor: React.FC<JSBlockEditorProps> = ({ block, onChange, workflowId }) => {
   const [code, setCode] = useState(block.config?.code || "");
+  const [displayMode, setDisplayMode] = useState<"invisible" | "visible">(
+    block.config?.display || "invisible"
+  );
+  const [inputKeys, setInputKeys] = useState<string[]>(block.config?.inputKeys || []);
+  const [outputKey, setOutputKey] = useState(block.config?.outputKey || "computed_value");
+  const [timeoutMs, setTimeoutMs] = useState(block.config?.timeoutMs || 1000);
   const [error, setError] = useState<string | null>(null);
   const [showPalette, setShowPalette] = useState(false);
+  const [showInputKeySelector, setShowInputKeySelector] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
+  const { data: variables = [] } = useWorkflowVariables(workflowId || "");
 
   useEffect(() => {
-    onChange({ ...block, config: { ...block.config, code } });
-  }, [code]);
+    onChange({
+      ...block,
+      config: {
+        ...block.config,
+        code,
+        display: displayMode,
+        inputKeys,
+        outputKey,
+        timeoutMs,
+      },
+    });
+  }, [code, displayMode, inputKeys, outputKey, timeoutMs]);
 
   const handleInsertVariable = (key: string) => {
     const textarea = textareaRef.current;
@@ -49,6 +72,17 @@ export const JSBlockEditor: React.FC<JSBlockEditorProps> = ({ block, onChange, w
       title: "Variable inserted",
       description: `"${key}" inserted at cursor position`,
     });
+  };
+
+  const handleAddInputKey = (key: string) => {
+    if (!inputKeys.includes(key)) {
+      setInputKeys([...inputKeys, key]);
+    }
+    setShowInputKeySelector(false);
+  };
+
+  const handleRemoveInputKey = (key: string) => {
+    setInputKeys(inputKeys.filter((k) => k !== key));
   };
 
   const validateCode = () => {
@@ -130,7 +164,120 @@ export const JSBlockEditor: React.FC<JSBlockEditorProps> = ({ block, onChange, w
           </p>
         </CardHeader>
         <CardContent className="p-4 pt-2">
-          <div className="space-y-3">
+          <div className="space-y-4">
+            {/* Display Mode */}
+            <div className="space-y-2">
+              <Label className="text-sm">Display Mode</Label>
+              <RadioGroup
+                value={displayMode}
+                onValueChange={(v: "invisible" | "visible") => setDisplayMode(v)}
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="invisible" id="display-invisible" />
+                  <Label htmlFor="display-invisible" className="font-normal cursor-pointer">
+                    Invisible Transform (runs in background)
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="visible" id="display-visible" />
+                  <Label htmlFor="display-visible" className="font-normal cursor-pointer">
+                    Visible Interactive (shows as question-like block)
+                  </Label>
+                </div>
+              </RadioGroup>
+              {displayMode === "visible" && (
+                <p className="text-xs text-muted-foreground pl-6">
+                  Visible mode allows you to create interactive blocks that appear in the runner.
+                </p>
+              )}
+            </div>
+
+            {/* Input Keys */}
+            <div className="space-y-2">
+              <Label className="text-sm">Input Variables</Label>
+              <div className="flex flex-wrap gap-1.5 min-h-[32px] p-2 border rounded-md">
+                {inputKeys.map((key) => (
+                  <Badge key={key} variant="secondary" className="font-mono text-xs">
+                    {key}
+                    <button
+                      onClick={() => handleRemoveInputKey(key)}
+                      className="ml-1.5 hover:text-destructive"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+                {showInputKeySelector ? (
+                  <div className="relative">
+                    <select
+                      className="text-xs border rounded px-2 py-1"
+                      onChange={(e) => handleAddInputKey(e.target.value)}
+                      value=""
+                    >
+                      <option value="">Select variable...</option>
+                      {variables
+                        .filter((v) => !inputKeys.includes(v.key))
+                        .map((v) => (
+                          <option key={v.key} value={v.key}>
+                            {v.alias || v.key}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-6 text-xs"
+                    onClick={() => setShowInputKeySelector(true)}
+                  >
+                    + Add Variable
+                  </Button>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Select which variables this block can access via the{" "}
+                <code className="bg-muted px-1 py-0.5 rounded">input</code> object
+              </p>
+            </div>
+
+            {/* Output Key */}
+            <div className="space-y-2">
+              <Label htmlFor="outputKey" className="text-sm">
+                Output Variable Key
+              </Label>
+              <Input
+                id="outputKey"
+                value={outputKey}
+                onChange={(e) => setOutputKey(e.target.value)}
+                placeholder="e.g., computed_value, full_name, total"
+                className="font-mono text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                The key under which the returned value will be stored
+              </p>
+            </div>
+
+            {/* Timeout */}
+            <div className="space-y-2">
+              <Label htmlFor="timeout" className="text-sm">
+                Timeout (ms)
+              </Label>
+              <Input
+                id="timeout"
+                type="number"
+                value={timeoutMs}
+                onChange={(e) => setTimeoutMs(parseInt(e.target.value) || 1000)}
+                min={100}
+                max={10000}
+                className="text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                Maximum execution time in milliseconds (100-10000)
+              </p>
+            </div>
+
+            {/* JavaScript Code */}
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-2 block">
                 JavaScript Code

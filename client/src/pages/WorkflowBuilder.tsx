@@ -16,6 +16,7 @@ import { CanvasEditor } from "@/components/builder/CanvasEditor";
 import { Inspector } from "@/components/builder/Inspector";
 import { RunnerPreview } from "@/components/builder/RunnerPreview";
 import { WorkflowSettings } from "@/components/builder/WorkflowSettings";
+import { AdvancedModeBanner } from "@/components/builder/AdvancedModeBanner";
 import { PageCanvas } from "@/components/builder/pages/PageCanvas";
 import { UI_LABELS } from "@/lib/labels";
 import { useToast } from "@/hooks/use-toast";
@@ -206,6 +207,13 @@ export default function WorkflowBuilder() {
           </Dialog>
         </div>
       </div>
+
+      {/* Advanced Mode Banner */}
+      {mode === 'advanced' && (
+        <div className="px-6 py-3">
+          <AdvancedModeBanner />
+        </div>
+      )}
 
       {/* 3-Pane Layout */}
       <div className="flex-1 flex overflow-hidden">
