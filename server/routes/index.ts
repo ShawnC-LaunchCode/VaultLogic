@@ -18,6 +18,7 @@ import { registerProjectRoutes } from "./projects.routes";
 import { registerWorkflowRoutes } from "./workflows.routes";
 import { registerSectionRoutes } from "./sections.routes";
 import { registerStepRoutes } from "./steps.routes";
+import { registerBlockRoutes } from "./blocks.routes";
 import { registerRunRoutes } from "./runs.routes";
 import { registerWorkflowExportRoutes } from "./workflowExports.routes";
 import { registerTransformBlockRoutes } from "./transformBlocks.routes";
@@ -91,6 +92,9 @@ export function registerAllRoutes(app: Express): void {
 
   // Step management routes
   registerStepRoutes(app);
+
+  // Block management routes
+  registerBlockRoutes(app);
 
   // Transform block routes (custom logic execution)
   registerTransformBlockRoutes(app);
