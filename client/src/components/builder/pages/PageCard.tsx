@@ -56,8 +56,10 @@ export function PageCard({ workflowId, page, blocks }: PageCardProps) {
   const { toast } = useToast();
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [expandedStepIds, setExpandedStepIds] = useState<Set<string>>(new Set());
+  const [expandedBlockIds, setExpandedBlockIds] = useState<Set<string>>(new Set());
   const [autoFocusStepId, setAutoFocusStepId] = useState<string | null>(null);
   const prevSelectionRef = useRef<typeof selection>(null);
+  const prevItemsLengthRef = useRef<number>(0);
 
   // Local state for title and description to prevent stuttering
   const [localTitle, setLocalTitle] = useState(page.title);
@@ -76,7 +78,7 @@ export function PageCard({ workflowId, page, blocks }: PageCardProps) {
     setLocalDescription(page.description || "");
   }, [page.description]);
 
-  // Auto-expand and focus newly selected steps
+  // Auto-expand and focus newly selected items
   useEffect(() => {
     // Check if a new step was just selected
     if (
@@ -95,8 +97,40 @@ export function PageCard({ workflowId, page, blocks }: PageCardProps) {
         setTimeout(() => setAutoFocusStepId(null), 100);
       }
     }
+
+    // Check if a new block was just selected
+    if (
+      selection?.type === "block" &&
+      selection.id &&
+      prevSelectionRef.current?.id !== selection.id
+    ) {
+      // Check if this block belongs to this page
+      const blockInThisPage = allPageBlocks.find((b) => b.id === selection.id);
+      if (blockInThisPage) {
+        // Expand the block
+        setExpandedBlockIds((prev) => new Set(prev).add(selection.id!));
+      }
+    }
     prevSelectionRef.current = selection;
-  }, [selection, steps]);
+  }, [selection, steps, allPageBlocks]);
+
+  // Auto-expand newly created items
+  useEffect(() => {
+    if (items.length > prevItemsLengthRef.current && prevItemsLengthRef.current > 0) {
+      // A new item was just added, find it and expand it
+      const newItem = items[items.length - 1];
+      if (newItem) {
+        if (newItem.kind === "step") {
+          setExpandedStepIds((prev) => new Set(prev).add(newItem.id));
+          setAutoFocusStepId(newItem.id);
+          setTimeout(() => setAutoFocusStepId(null), 100);
+        } else {
+          setExpandedBlockIds((prev) => new Set(prev).add(newItem.id));
+        }
+      }
+    }
+    prevItemsLengthRef.current = items.length;
+  }, [items]);
 
   // Make the page card sortable for page reordering
   const {
@@ -246,6 +280,18 @@ export function PageCard({ workflowId, page, blocks }: PageCardProps) {
     });
   };
 
+  const handleToggleBlockExpand = (blockId: string) => {
+    setExpandedBlockIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(blockId)) {
+        next.delete(blockId);
+      } else {
+        next.add(blockId);
+      }
+      return next;
+    });
+  };
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -380,6 +426,8 @@ export function PageCard({ workflowId, page, blocks }: PageCardProps) {
                         item={item}
                         workflowId={workflowId}
                         sectionId={page.id}
+                        isExpanded={expandedBlockIds.has(item.id)}
+                        onToggleExpand={() => handleToggleBlockExpand(item.id)}
                         onEnterNext={handleEnterNext}
                       />
                     );
