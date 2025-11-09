@@ -291,14 +291,28 @@ export function QuestionCard({
               <GripVertical className="h-4 w-4 text-muted-foreground" />
             </button>
 
-            {/* Icon */}
-            <div className="mt-2">
-              {getQuestionTypeIcon(localType)}
+            {/* Icon and Collapse Button (stacked vertically) */}
+            <div className="flex flex-col items-center gap-1">
+              <div className="mt-2">
+                {getQuestionTypeIcon(localType)}
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-5 w-5"
+                onClick={onToggleExpand}
+              >
+                {isExpanded ? (
+                  <ChevronDown className="h-3 w-3" />
+                ) : (
+                  <ChevronRight className="h-3 w-3" />
+                )}
+              </Button>
             </div>
 
             {/* Content */}
             <div className="flex-1 min-w-0 space-y-3">
-              {/* Header Row - Title and Expand Toggle */}
+              {/* Header Row - Title and Delete */}
               <div className="flex items-start gap-2">
                 <div className="flex-1">
                   <Input
@@ -316,18 +330,6 @@ export function QuestionCard({
                     className="font-medium text-sm border-transparent hover:border-input focus:border-input"
                   />
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={onToggleExpand}
-                >
-                  {isExpanded ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4" />
-                  )}
-                </Button>
                 <Button
                   variant="ghost"
                   size="icon"

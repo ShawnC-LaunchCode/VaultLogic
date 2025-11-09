@@ -7,21 +7,24 @@
 import { useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, FileText, Code2, Database, CheckCircle, GitBranch, Trash2 } from "lucide-react";
+import { GripVertical, FileText, Code2, Database, CheckCircle, GitBranch, Trash2, ChevronDown, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useWorkflowBuilder } from "@/store/workflow-builder";
-import { useDeleteStep, useDeleteBlock, useDeleteTransformBlock, useUpdateStep } from "@/lib/vault-hooks";
+import { useDeleteStep, useDeleteBlock, useDeleteTransformBlock, useUpdateStep, useUpdateTransformBlock } from "@/lib/vault-hooks";
 import { useToast } from "@/hooks/use-toast";
+import { JSBlockEditor } from "@/components/blocks/JSBlockEditor";
 import type { PageItem } from "@/lib/dnd";
 
 interface BlockCardProps {
   item: PageItem;
   workflowId: string;
   sectionId: string;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
   onEnterNext?: () => void;
 }
 
@@ -49,7 +52,7 @@ const BLOCK_TYPE_LABELS: Record<string, string> = {
   js: "JS Transform",
 };
 
-export function BlockCard({ item, workflowId, sectionId, onEnterNext }: BlockCardProps) {
+export function BlockCard({ item, workflowId, sectionId, isExpanded = false, onToggleExpand, onEnterNext }: BlockCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id });
 
@@ -63,6 +66,7 @@ export function BlockCard({ item, workflowId, sectionId, onEnterNext }: BlockCar
   const deleteBlockMutation = useDeleteBlock();
   const deleteTransformBlockMutation = useDeleteTransformBlock();
   const updateStepMutation = useUpdateStep();
+  const updateTransformBlockMutation = useUpdateTransformBlock();
   const { toast } = useToast();
 
   const [editingTitle, setEditingTitle] = useState(false);
@@ -186,6 +190,20 @@ export function BlockCard({ item, workflowId, sectionId, onEnterNext }: BlockCar
     }
   };
 
+  const handleJSBlockChange = (updated: any) => {
+    if (item.kind === "block" && item.data.type === "js") {
+      updateTransformBlockMutation.mutate({
+        id: item.id,
+        workflowId,
+        name: updated.config?.name,
+        code: updated.config?.code,
+        inputKeys: updated.config?.inputKeys,
+        outputKey: updated.config?.outputKey,
+        timeoutMs: updated.config?.timeoutMs,
+      });
+    }
+  };
+
   return (
     <div ref={setNodeRef} style={style}>
       <Card
@@ -207,16 +225,33 @@ export function BlockCard({ item, workflowId, sectionId, onEnterNext }: BlockCar
               <GripVertical className="h-4 w-4 text-muted-foreground" />
             </button>
 
-            {/* Icon */}
-            <div className="mt-0.5">
-              {item.kind === "step" ? (
-                <FileText className="h-4 w-4 text-muted-foreground" />
-              ) : (
-                (() => {
-                  const Icon = BLOCK_TYPE_ICONS[item.data.type] || Code2;
-                  return <Icon className="h-4 w-4 text-muted-foreground" />;
-                })()
-              )}
+            {/* Icon and Collapse Button (stacked vertically) */}
+            <div className="flex flex-col items-center gap-1">
+              <div className="mt-0.5">
+                {item.kind === "step" ? (
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  (() => {
+                    const Icon = BLOCK_TYPE_ICONS[item.data.type] || Code2;
+                    return <Icon className="h-4 w-4 text-muted-foreground" />;
+                  })()
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-5 w-5"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleExpand?.();
+                }}
+              >
+                {isExpanded ? (
+                  <ChevronDown className="h-3 w-3" />
+                ) : (
+                  <ChevronRight className="h-3 w-3" />
+                )}
+              </Button>
             </div>
 
             {/* Content */}
@@ -337,6 +372,17 @@ export function BlockCard({ item, workflowId, sectionId, onEnterNext }: BlockCar
               <Trash2 className="h-3 w-3" />
             </Button>
           </div>
+
+          {/* Expanded Content - JS Block Editor */}
+          {isExpanded && item.kind === "block" && item.data.type === "js" && (
+            <div className="mt-3 pt-3 border-t">
+              <JSBlockEditor
+                block={item.data}
+                onChange={handleJSBlockChange}
+                workflowId={workflowId}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
