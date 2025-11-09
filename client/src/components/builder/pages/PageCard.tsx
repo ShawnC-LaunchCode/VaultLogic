@@ -69,6 +69,36 @@ export function PageCard({ workflowId, page, blocks }: PageCardProps) {
   const titleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const descriptionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Combine steps and blocks into sortable items
+  const pageBlocks = blocks.filter((b) => b.sectionId === page.id);
+
+  // Convert transform blocks to ApiBlock format for this section
+  const pageTransformBlocks: ApiBlock[] = transformBlocks
+    .filter((tb) => tb.sectionId === page.id)
+    .map((tb) => ({
+      id: tb.id,
+      workflowId: tb.workflowId,
+      sectionId: tb.sectionId,
+      type: "js" as const,
+      phase: tb.phase as any,
+      config: {
+        name: tb.name,
+        language: tb.language,
+        code: tb.code,
+        inputKeys: tb.inputKeys,
+        outputKey: tb.outputKey,
+        timeoutMs: tb.timeoutMs,
+      },
+      enabled: tb.enabled,
+      order: tb.order,
+      createdAt: tb.createdAt,
+      updatedAt: tb.updatedAt,
+    }));
+
+  // Combine regular blocks and transform blocks
+  const allPageBlocks = [...pageBlocks, ...pageTransformBlocks];
+  const items = combinePageItems(steps, allPageBlocks);
+
   // Sync local state when page prop changes (e.g., from server update)
   useEffect(() => {
     setLocalTitle(page.title);
@@ -141,36 +171,6 @@ export function PageCard({ workflowId, page, blocks }: PageCardProps) {
     transition,
     isDragging,
   } = useSortable({ id: page.id });
-
-  // Combine steps and blocks into sortable items
-  const pageBlocks = blocks.filter((b) => b.sectionId === page.id);
-
-  // Convert transform blocks to ApiBlock format for this section
-  const pageTransformBlocks: ApiBlock[] = transformBlocks
-    .filter((tb) => tb.sectionId === page.id)
-    .map((tb) => ({
-      id: tb.id,
-      workflowId: tb.workflowId,
-      sectionId: tb.sectionId,
-      type: "js" as const,
-      phase: tb.phase as any,
-      config: {
-        name: tb.name,
-        language: tb.language,
-        code: tb.code,
-        inputKeys: tb.inputKeys,
-        outputKey: tb.outputKey,
-        timeoutMs: tb.timeoutMs,
-      },
-      enabled: tb.enabled,
-      order: tb.order,
-      createdAt: tb.createdAt,
-      updatedAt: tb.updatedAt,
-    }));
-
-  // Combine regular blocks and transform blocks
-  const allPageBlocks = [...pageBlocks, ...pageTransformBlocks];
-  const items = combinePageItems(steps, allPageBlocks);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
