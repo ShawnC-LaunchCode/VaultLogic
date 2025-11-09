@@ -194,7 +194,7 @@ export const sectionAPI = {
 // Steps
 // ============================================================================
 
-export type StepType = "short_text" | "long_text" | "multiple_choice" | "radio" | "yes_no" | "date_time" | "file_upload";
+export type StepType = "short_text" | "long_text" | "multiple_choice" | "radio" | "yes_no" | "date_time" | "file_upload" | "js_question";
 
 export interface ApiStep {
   id: string;

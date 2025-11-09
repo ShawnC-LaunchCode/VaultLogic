@@ -20,6 +20,7 @@ import {
   ToggleLeft,
   Calendar,
   Upload,
+  Zap,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ import { cn } from "@/lib/utils";
 import { useUpdateStep, useDeleteStep } from "@/lib/vault-hooks";
 import { useToast } from "@/hooks/use-toast";
 import { OptionsEditor } from "./OptionsEditor";
+import { JSQuestionEditor, type JSQuestionConfig } from "./JSQuestionEditor";
 import type { ApiStep, StepType } from "@/lib/vault-api";
 
 interface QuestionCardProps {
@@ -57,6 +59,7 @@ const STEP_TYPE_OPTIONS: Array<{ value: StepType; label: string }> = [
   { value: "yes_no", label: "Yes/No" },
   { value: "date_time", label: "Date/Time" },
   { value: "file_upload", label: "File Upload" },
+  { value: "js_question", label: "JS Question" },
 ];
 
 // Get icon for each question type
@@ -76,6 +79,8 @@ function getQuestionTypeIcon(type: StepType) {
       return <Calendar className="h-4 w-4 text-muted-foreground" />;
     case "file_upload":
       return <Upload className="h-4 w-4 text-muted-foreground" />;
+    case "js_question":
+      return <Zap className="h-4 w-4 text-yellow-500" />;
     default:
       return <FileText className="h-4 w-4 text-muted-foreground" />;
   }
@@ -103,6 +108,18 @@ export function QuestionCard({
     step.type === "radio" || step.type === "multiple_choice"
       ? step.options?.options || []
       : []
+  );
+  const [localJsConfig, setLocalJsConfig] = useState<JSQuestionConfig>(
+    step.type === "js_question" && step.options
+      ? (step.options as JSQuestionConfig)
+      : {
+          display: "hidden",
+          code: "return input;",
+          inputKeys: [],
+          outputKey: "computed_value",
+          timeoutMs: 1000,
+          helpText: "",
+        }
   );
 
   // Debounce refs
@@ -199,12 +216,23 @@ export function QuestionCard({
   const handleTypeChange = (type: StepType) => {
     setLocalType(type);
 
-    // Initialize options for radio/multiple_choice
+    // Initialize type-specific options
     const updates: any = { id: step.id, sectionId, type };
     if (type === "radio" || type === "multiple_choice") {
       const defaultOptions = ["Option 1", "Option 2", "Option 3"];
       updates.options = { options: defaultOptions };
       setLocalOptions(defaultOptions);
+    } else if (type === "js_question") {
+      const defaultConfig: JSQuestionConfig = {
+        display: "hidden",
+        code: "return input;",
+        inputKeys: [],
+        outputKey: "computed_value",
+        timeoutMs: 1000,
+        helpText: "",
+      };
+      updates.options = defaultConfig;
+      setLocalJsConfig(defaultConfig);
     } else {
       updates.options = null;
       setLocalOptions([]);
@@ -219,6 +247,15 @@ export function QuestionCard({
       id: step.id,
       sectionId,
       options: { options },
+    });
+  };
+
+  const handleJsConfigChange = (config: JSQuestionConfig) => {
+    setLocalJsConfig(config);
+    updateStepMutation.mutate({
+      id: step.id,
+      sectionId,
+      options: config,
     });
   };
 
@@ -409,6 +446,14 @@ export function QuestionCard({
                     <OptionsEditor
                       options={localOptions}
                       onChange={handleOptionsChange}
+                    />
+                  )}
+
+                  {/* JS Question Editor (for js_question) */}
+                  {localType === "js_question" && (
+                    <JSQuestionEditor
+                      config={localJsConfig}
+                      onChange={handleJsConfigChange}
                     />
                   )}
                 </div>

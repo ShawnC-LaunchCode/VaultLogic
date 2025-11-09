@@ -724,7 +724,8 @@ export const stepTypeEnum = pgEnum('step_type', [
   'yes_no',
   'date_time',
   'file_upload',
-  'loop_group'
+  'loop_group',
+  'js_question'
 ]);
 
 // Logic rule target type enum
