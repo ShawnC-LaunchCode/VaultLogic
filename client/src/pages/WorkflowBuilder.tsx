@@ -3,11 +3,12 @@
  * Sidebar: Section/Step tree | Canvas: Editor | Inspector: Properties/Blocks
  */
 
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { useState } from "react";
 import { Settings, Play, Eye, EyeOff, ChevronDown } from "lucide-react";
 import { useWorkflow, useSections, useCreateRun, useWorkflowMode, useSetWorkflowMode } from "@/lib/vault-hooks";
 import { useWorkflowBuilder } from "@/store/workflow-builder";
+import { usePreviewStore } from "@/store/preview";
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/toggle";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -40,6 +41,7 @@ import {
 
 export default function WorkflowBuilder() {
   const { id: workflowId } = useParams<{ id: string }>();
+  const [, navigate] = useLocation();
   const { data: workflow, isLoading } = useWorkflow(workflowId);
   const { data: sections } = useSections(workflowId);
   const { data: workflowMode, isLoading: modeLoading } = useWorkflowMode(workflowId);
@@ -48,6 +50,7 @@ export default function WorkflowBuilder() {
   const { toast } = useToast();
 
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [launchingPreview, setLaunchingPreview] = useState(false);
 
   const {
     isPreviewOpen,
@@ -56,16 +59,41 @@ export default function WorkflowBuilder() {
     stopPreview,
   } = useWorkflowBuilder();
 
+  const { setToken } = usePreviewStore();
+
   const mode = workflowMode?.mode || 'easy';
 
   const handleStartPreview = async () => {
     if (!workflowId) return;
 
     try {
-      const run = await createRunMutation.mutateAsync({ workflowId, metadata: { preview: true } });
-      startPreview(run.id);
+      setLaunchingPreview(true);
+      const result = await createRunMutation.mutateAsync({
+        workflowId,
+        metadata: { preview: true }
+      });
+
+      // Extract runId and runToken from response
+      const runId = result.data?.runId || result.id;
+      const runToken = result.data?.runToken || result.runToken;
+
+      if (!runId || !runToken) {
+        throw new Error("Invalid response from server - missing runId or runToken");
+      }
+
+      // Store token in preview store
+      setToken(runId, runToken);
+
+      // Navigate to preview page
+      navigate(`/preview/${runId}`);
     } catch (error) {
-      toast({ title: "Error", description: "Failed to start preview", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to start preview",
+        variant: "destructive"
+      });
+    } finally {
+      setLaunchingPreview(false);
     }
   };
 
@@ -174,20 +202,25 @@ export default function WorkflowBuilder() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Preview Toggle */}
-          <Toggle
-            pressed={isPreviewOpen}
-            onPressedChange={(pressed) => {
-              if (pressed) {
-                handleStartPreview();
-              } else {
-                stopPreview();
-              }
-            }}
+          {/* Preview Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleStartPreview}
+            disabled={launchingPreview}
           >
-            {isPreviewOpen ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
-            Preview
-          </Toggle>
+            {launchingPreview ? (
+              <>
+                <Play className="w-4 h-4 mr-2 animate-spin" />
+                Launching...
+              </>
+            ) : (
+              <>
+                <Eye className="w-4 h-4 mr-2" />
+                Preview
+              </>
+            )}
+          </Button>
 
           <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
             <DialogTrigger asChild>
