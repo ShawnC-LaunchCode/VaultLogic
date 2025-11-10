@@ -27,6 +27,61 @@ async function fetchAPI<T>(
   return response.json();
 }
 
+/**
+ * Creates an API client that includes a Bearer token for authentication
+ * Used for preview mode where runs are accessed via runToken instead of session
+ */
+export function apiWithToken(runToken: string) {
+  return {
+    get: <T>(endpoint: string) =>
+      fetch(`${API_BASE}${endpoint}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${runToken}`,
+        },
+      }).then(async (res) => {
+        if (!res.ok) {
+          const error = await res.json().catch(() => ({ message: res.statusText }));
+          throw new Error(error.message || `HTTP ${res.status}`);
+        }
+        return res.json() as Promise<T>;
+      }),
+
+    post: <T>(endpoint: string, body?: any) =>
+      fetch(`${API_BASE}${endpoint}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${runToken}`,
+        },
+        body: body ? JSON.stringify(body) : undefined,
+      }).then(async (res) => {
+        if (!res.ok) {
+          const error = await res.json().catch(() => ({ message: res.statusText }));
+          throw new Error(error.message || `HTTP ${res.status}`);
+        }
+        return res.json() as Promise<T>;
+      }),
+
+    put: <T>(endpoint: string, body?: any) =>
+      fetch(`${API_BASE}${endpoint}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${runToken}`,
+        },
+        body: body ? JSON.stringify(body) : undefined,
+      }).then(async (res) => {
+        if (!res.ok) {
+          const error = await res.json().catch(() => ({ message: res.statusText }));
+          throw new Error(error.message || `HTTP ${res.status}`);
+        }
+        return res.json() as Promise<T>;
+      }),
+  };
+}
+
 // ============================================================================
 // Projects
 // ============================================================================
@@ -378,7 +433,7 @@ export interface ApiStepValue {
 export const runAPI = {
   create: (workflowId: string, data: { participantId?: string; metadata?: any }, queryParams?: Record<string, string>) => {
     const params = queryParams ? `?${new URLSearchParams(queryParams)}` : "";
-    return fetchAPI<ApiRun>(`/api/workflows/${workflowId}/runs${params}`, {
+    return fetchAPI<{ success: boolean; data: { runId: string; runToken: string } }>(`/api/workflows/${workflowId}/runs${params}`, {
       method: "POST",
       body: JSON.stringify(data),
     });

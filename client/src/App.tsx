@@ -30,6 +30,7 @@ import WorkflowDashboard from "@/pages/WorkflowDashboard";
 import WorkflowBuilder from "@/pages/WorkflowBuilder";
 import NewWorkflow from "@/pages/NewWorkflow";
 import { WorkflowRunner } from "@/pages/WorkflowRunner";
+import PreviewRunner from "@/pages/PreviewRunner";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -44,6 +45,9 @@ function Router() {
         <Route path="/run/:id">
           {(params) => <WorkflowRunner runId={params.id} />}
         </Route>
+
+        {/* Preview runner - available to everyone (uses bearer token) */}
+        <Route path="/preview/:id" component={PreviewRunner} />
 
         {isLoading || !isAuthenticated ? (
           <>
