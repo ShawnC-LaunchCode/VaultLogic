@@ -121,7 +121,7 @@ export class TransformBlockService {
   async executeBlock(params: {
     block: TransformBlock;
     data: Record<string, unknown>;
-  }): Promise<{ ok: boolean; output?: unknown; error?: string }> {
+  }): Promise<{ ok: boolean; output?: unknown; error?: string; errorDetails?: { message: string; stack?: string; name?: string; line?: number; column?: number } }> {
     const { block, data } = params;
 
     // Build input object with only whitelisted keys
@@ -146,7 +146,7 @@ export class TransformBlockService {
     blockId: string,
     userId: string,
     data: Record<string, unknown>
-  ): Promise<{ success: boolean; data?: { output: unknown }; error?: string }> {
+  ): Promise<{ success: boolean; data?: { output: unknown }; error?: string; errorDetails?: { message: string; stack?: string; name?: string; line?: number; column?: number } }> {
     const block = await this.getBlock(blockId, userId);
 
     const result = await this.executeBlock({ block, data });
@@ -157,9 +157,23 @@ export class TransformBlockService {
         data: { output: result.output },
       };
     } else {
+      // Format detailed error message
+      let formattedError = result.error || "Unknown error";
+      if (result.errorDetails) {
+        const details = result.errorDetails;
+        const parts = [formattedError];
+
+        if (details.line !== undefined) {
+          parts.push(`at line ${details.line}${details.column !== undefined ? `, column ${details.column}` : ''}`);
+        }
+
+        formattedError = parts.join('\n');
+      }
+
       return {
         success: false,
-        error: result.error,
+        error: formattedError,
+        errorDetails: result.errorDetails,
       };
     }
   }
@@ -236,18 +250,37 @@ export class TransformBlockService {
         // Determine if it's a timeout or error
         const status = result.error?.includes("TimeoutError") ? "timeout" : "error";
 
+        // Format detailed error message
+        let detailedError = result.error || "Unknown error";
+        if (result.errorDetails) {
+          const details = result.errorDetails;
+          const parts = [detailedError];
+
+          if (details.line !== undefined) {
+            parts.push(`at line ${details.line}${details.column !== undefined ? `, column ${details.column}` : ''}`);
+          }
+
+          if (details.stack) {
+            // Include relevant parts of the stack trace
+            parts.push('\nStack trace:');
+            parts.push(details.stack.slice(0, 2000)); // Include up to 2000 chars of stack
+          }
+
+          detailedError = parts.join('\n');
+        }
+
         // Update audit log
         await this.runRepo.completeRun(auditRun.id, {
           finishedAt,
           status,
-          errorMessage: result.error?.slice(0, 1000), // Truncate long error messages
+          errorMessage: detailedError.slice(0, 3000), // Allow more space for detailed errors
         });
 
-        // Collect error
+        // Collect error with details
         errors.push({
           blockId: block.id,
           blockName: block.name,
-          error: result.error || "Unknown error",
+          error: detailedError,
         });
 
         // Continue to next block (don't stop execution)

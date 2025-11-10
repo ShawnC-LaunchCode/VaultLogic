@@ -211,7 +211,26 @@ export class RunService {
         );
 
         if (!result.ok) {
-          errors.push(`JS Question "${step.title}" failed: ${result.error}`);
+          // Format detailed error message
+          let detailedError = result.error || "Unknown error";
+          if (result.errorDetails) {
+            const details = result.errorDetails;
+            const parts = [detailedError];
+
+            if (details.line !== undefined) {
+              parts.push(`at line ${details.line}${details.column !== undefined ? `, column ${details.column}` : ''}`);
+            }
+
+            if (details.stack) {
+              // Include relevant parts of the stack trace
+              parts.push('\nStack trace:');
+              parts.push(details.stack.slice(0, 1000)); // Include up to 1000 chars of stack
+            }
+
+            detailedError = parts.join('\n');
+          }
+
+          errors.push(`JS Question "${step.title}" failed:\n${detailedError}`);
           continue;
         }
 
@@ -220,11 +239,11 @@ export class RunService {
         await this.valueRepo.upsert({
           runId,
           stepId: step.id,
-          value: result.result,
+          value: result.output,
         });
 
         // Update dataMap for subsequent operations
-        dataMap[step.id] = result.result;
+        dataMap[step.id] = result.output;
 
       } catch (error: any) {
         errors.push(`JS Question "${step.title}" execution error: ${error.message}`);
