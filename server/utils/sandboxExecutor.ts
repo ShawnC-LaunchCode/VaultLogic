@@ -18,6 +18,13 @@ interface ExecutionResult {
   ok: boolean;
   output?: Record<string, unknown> | string | number | boolean | null;
   error?: string;
+  errorDetails?: {
+    message: string;
+    stack?: string;
+    name?: string;
+    line?: number;
+    column?: number;
+  };
 }
 
 /**
@@ -104,12 +111,44 @@ export async function runJsVm2(
         return {
           ok: false,
           error: "TimeoutError: Execution exceeded time limit",
+          errorDetails: {
+            message: error.message,
+            name: error.name,
+            stack: error.stack,
+          },
         };
+      }
+
+      // Parse stack trace to extract line and column numbers
+      const stackLines = error.stack?.split('\n') || [];
+      let line: number | undefined;
+      let column: number | undefined;
+
+      // Look for line numbers in stack trace
+      // VM2 stack format: "    at <anonymous>:X:Y" where X is line, Y is column
+      for (const stackLine of stackLines) {
+        const match = stackLine.match(/:(\d+):(\d+)/);
+        if (match) {
+          line = parseInt(match[1], 10);
+          column = parseInt(match[2], 10);
+          // Adjust line number to account for wrapper function (subtract 2 lines)
+          if (line > 2) {
+            line = line - 2;
+          }
+          break;
+        }
       }
 
       return {
         ok: false,
         error: `SandboxError: ${error.message}`,
+        errorDetails: {
+          message: error.message,
+          name: error.name,
+          stack: error.stack,
+          line,
+          column,
+        },
       };
     }
 
@@ -163,9 +202,35 @@ async function runJsNodeVm(
     };
   } catch (error) {
     if (error instanceof Error) {
+      // Parse stack trace to extract line and column numbers
+      const stackLines = error.stack?.split('\n') || [];
+      let line: number | undefined;
+      let column: number | undefined;
+
+      // Look for line numbers in stack trace
+      for (const stackLine of stackLines) {
+        const match = stackLine.match(/:(\d+):(\d+)/);
+        if (match) {
+          line = parseInt(match[1], 10);
+          column = parseInt(match[2], 10);
+          // Adjust line number to account for wrapper function (subtract 2 lines)
+          if (line > 2) {
+            line = line - 2;
+          }
+          break;
+        }
+      }
+
       return {
         ok: false,
         error: `SandboxError: ${error.message}`,
+        errorDetails: {
+          message: error.message,
+          name: error.name,
+          stack: error.stack,
+          line,
+          column,
+        },
       };
     }
 

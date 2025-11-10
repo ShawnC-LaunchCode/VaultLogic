@@ -144,12 +144,14 @@ export function WorkflowRunner({ runId, isPreview = false }: WorkflowRunnerProps
             />
 
             {errors.length > 0 && (
-              <div className="p-4 bg-destructive/10 border border-destructive rounded-md">
-                <ul className="text-sm text-destructive list-disc list-inside">
-                  {errors.map((error, i) => (
-                    <li key={i}>{error}</li>
-                  ))}
-                </ul>
+              <div className="p-4 bg-destructive/10 border border-destructive rounded-md space-y-3">
+                {errors.map((error, i) => (
+                  <div key={i} className="text-sm text-destructive">
+                    <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed overflow-x-auto">
+                      {error}
+                    </pre>
+                  </div>
+                ))}
               </div>
             )}
           </CardContent>
