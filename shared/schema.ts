@@ -722,6 +722,7 @@ export const stepTypeEnum = pgEnum('step_type', [
   'multiple_choice',
   'radio',
   'yes_no',
+  'computed', // Virtual steps created by transform blocks
   'date_time',
   'file_upload',
   'loop_group',
@@ -791,9 +792,11 @@ export const steps = pgTable("steps", {
   options: jsonb("options"), // For multiple choice, radio options
   alias: text("alias"), // Optional human-friendly variable name for logic/blocks
   order: integer("order").notNull(),
+  isVirtual: boolean("is_virtual").default(false).notNull(), // Virtual steps are hidden from UI
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("steps_section_idx").on(table.sectionId),
+  index("steps_is_virtual_idx").on(table.isVirtual),
 ]);
 
 // Logic rules table (conditional logic for workflows)
@@ -1000,6 +1003,7 @@ export const transformBlocks = pgTable("transform_blocks", {
   code: text("code").notNull(), // User-supplied function body or script
   inputKeys: text("input_keys").array().notNull(), // Whitelisted keys read from data
   outputKey: varchar("output_key").notNull(), // Single key to write back to data
+  virtualStepId: uuid("virtual_step_id").references(() => steps.id, { onDelete: 'set null' }), // Link to virtual step that stores output
   enabled: boolean("enabled").default(true).notNull(),
   order: integer("order").notNull(),
   timeoutMs: integer("timeout_ms").default(1000), // Default 1000ms
@@ -1009,6 +1013,7 @@ export const transformBlocks = pgTable("transform_blocks", {
   index("transform_blocks_workflow_idx").on(table.workflowId),
   index("transform_blocks_workflow_order_idx").on(table.workflowId, table.order),
   index("transform_blocks_phase_idx").on(table.workflowId, table.phase),
+  index("transform_blocks_virtual_step_idx").on(table.virtualStepId),
 ]);
 
 // Transform block runs table (audit log)

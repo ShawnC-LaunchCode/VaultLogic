@@ -44,6 +44,7 @@ export class TransformBlockService {
 
   /**
    * Create a new transform block
+   * Also creates a virtual step to store the block's output
    */
   async createBlock(
     workflowId: string,
@@ -63,10 +64,48 @@ export class TransformBlockService {
       throw new Error("Timeout must be between 100ms and 3000ms");
     }
 
-    return await this.blockRepo.create({
+    // Determine which section to attach the virtual step to
+    // If transform block is section-scoped, use that section
+    // If workflow-scoped (sectionId is null), attach to the first section
+    let targetSectionId = data.sectionId;
+
+    if (!targetSectionId) {
+      // For workflow-scoped blocks, we need a section to attach the virtual step
+      // Get the first section of the workflow
+      const sections = await this.sectionRepo.findByWorkflowId(workflowId);
+      if (sections.length === 0) {
+        throw new Error("Cannot create transform block: workflow has no sections. Please add at least one section first.");
+      }
+      targetSectionId = sections[0].id;
+    }
+
+    // Create the virtual step first
+    // This step will store the transform block's output value
+    const virtualStep = await this.stepRepo.create({
+      sectionId: targetSectionId,
+      type: 'computed',
+      title: `Computed: ${data.name}`,
+      description: `Virtual step for transform block: ${data.name}`,
+      alias: data.outputKey, // Use the outputKey as the alias for easy lookup
+      required: false,
+      order: -1, // Negative order ensures it's sorted before user-visible steps
+      isVirtual: true, // Mark as virtual so we can filter it from UI
+    });
+
+    // Now create the transform block with the virtual step ID
+    const block = await this.blockRepo.create({
       ...data,
       workflowId,
+      virtualStepId: virtualStep.id,
     });
+
+    logger.info({
+      blockId: block.id,
+      virtualStepId: virtualStep.id,
+      outputKey: data.outputKey,
+    }, "Created transform block with virtual step");
+
+    return block;
   }
 
   /**
@@ -94,6 +133,7 @@ export class TransformBlockService {
 
   /**
    * Update a transform block
+   * Also updates the virtual step if outputKey changes
    */
   async updateBlock(
     blockId: string,
@@ -112,14 +152,57 @@ export class TransformBlockService {
       throw new Error("Timeout must be between 100ms and 3000ms");
     }
 
+    // If outputKey is changing, update the virtual step's alias
+    if (data.outputKey && data.outputKey !== block.outputKey && block.virtualStepId) {
+      await this.stepRepo.update(block.virtualStepId, {
+        alias: data.outputKey,
+        title: `Computed: ${data.name || block.name}`,
+      });
+
+      logger.info({
+        blockId: block.id,
+        virtualStepId: block.virtualStepId,
+        oldOutputKey: block.outputKey,
+        newOutputKey: data.outputKey,
+      }, "Updated virtual step alias for transform block");
+    }
+
+    // Also update virtual step title if name changes
+    if (data.name && data.name !== block.name && block.virtualStepId) {
+      await this.stepRepo.update(block.virtualStepId, {
+        title: `Computed: ${data.name}`,
+      });
+    }
+
     return await this.blockRepo.update(blockId, data);
   }
 
   /**
    * Delete a transform block
+   * Also deletes the associated virtual step
    */
   async deleteBlock(blockId: string, userId: string): Promise<void> {
-    await this.getBlock(blockId, userId); // Verify ownership
+    const block = await this.getBlock(blockId, userId); // Verify ownership
+
+    // Delete the virtual step first (if it exists)
+    if (block.virtualStepId) {
+      try {
+        await this.stepRepo.delete(block.virtualStepId);
+        logger.info({
+          blockId: block.id,
+          virtualStepId: block.virtualStepId,
+        }, "Deleted virtual step for transform block");
+      } catch (error) {
+        // Log but don't fail - the step might have been manually deleted
+        logger.warn({
+          error,
+          blockId: block.id,
+          virtualStepId: block.virtualStepId,
+        }, "Failed to delete virtual step (may not exist)");
+      }
+    }
+
+    // Delete the transform block
     await this.blockRepo.delete(blockId);
   }
 
@@ -133,9 +216,10 @@ export class TransformBlockService {
     const { block, data } = params;
 
     // Fetch all steps for the workflow to build alias-to-ID mapping
+    // Include virtual steps so transform blocks can reference outputs from other blocks
     const sections = await this.sectionRepo.findByWorkflowId(block.workflowId);
     const sectionIds = sections.map(s => s.id);
-    const steps = await this.stepRepo.findBySectionIds(sectionIds);
+    const steps = await this.stepRepo.findBySectionIds(sectionIds, undefined, true); // includeVirtual=true
 
     // Create maps for both alias-to-ID and ID lookups
     const aliasToIdMap = new Map<string, string>();
@@ -271,18 +355,33 @@ export class TransformBlockService {
           outputSample: result.output as Record<string, unknown> | string | number | boolean | null,
         });
 
-        // Persist output to step_values
-        // Note: We store the computed value using the outputKey as a pseudo-step
+        // Persist output to step_values using the virtual step ID
         // This allows the value to be referenced in subsequent logic or blocks
-        try {
-          await this.valueRepo.upsert({
-            runId,
-            stepId: block.outputKey, // Use outputKey as identifier
-            value: result.output as Record<string, unknown> | string | number | boolean | null,
-          });
-        } catch (error) {
-          logger.error({ error }, `Failed to persist transform block output for ${block.name}`);
-          // Continue execution even if persistence fails
+        if (block.virtualStepId) {
+          try {
+            await this.valueRepo.upsert({
+              runId,
+              stepId: block.virtualStepId, // Use virtual step's UUID
+              value: result.output as Record<string, unknown> | string | number | boolean | null,
+            });
+            logger.debug({
+              blockId: block.id,
+              virtualStepId: block.virtualStepId,
+              outputKey: block.outputKey,
+            }, `Persisted transform block output to virtual step`);
+          } catch (error) {
+            logger.error({
+              error,
+              blockId: block.id,
+              virtualStepId: block.virtualStepId,
+            }, `Failed to persist transform block output for ${block.name}`);
+            // Continue execution even if persistence fails
+          }
+        } else {
+          logger.warn({
+            blockId: block.id,
+            blockName: block.name,
+          }, `Transform block has no virtual step - output will not be persisted. This block may need migration.`);
         }
       } else {
         // Determine if it's a timeout or error
@@ -397,16 +496,32 @@ export class TransformBlockService {
           outputSample: result.output as Record<string, unknown> | string | number | boolean | null,
         });
 
-        // Persist output to step_values
-        try {
-          await this.valueRepo.upsert({
-            runId,
-            stepId: block.outputKey, // Use outputKey as identifier
-            value: result.output as Record<string, unknown> | string | number | boolean | null,
-          });
-        } catch (error) {
-          logger.error({ error }, `Failed to persist transform block output for ${block.name}`);
-          // Continue execution even if persistence fails
+        // Persist output to step_values using the virtual step ID
+        if (block.virtualStepId) {
+          try {
+            await this.valueRepo.upsert({
+              runId,
+              stepId: block.virtualStepId, // Use virtual step's UUID
+              value: result.output as Record<string, unknown> | string | number | boolean | null,
+            });
+            logger.debug({
+              blockId: block.id,
+              virtualStepId: block.virtualStepId,
+              outputKey: block.outputKey,
+            }, `Persisted transform block output to virtual step`);
+          } catch (error) {
+            logger.error({
+              error,
+              blockId: block.id,
+              virtualStepId: block.virtualStepId,
+            }, `Failed to persist transform block output for ${block.name}`);
+            // Continue execution even if persistence fails
+          }
+        } else {
+          logger.warn({
+            blockId: block.id,
+            blockName: block.name,
+          }, `Transform block has no virtual step - output will not be persisted. This block may need migration.`);
         }
       } else {
         // Determine if it's a timeout or error

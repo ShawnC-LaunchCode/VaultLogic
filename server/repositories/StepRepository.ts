@@ -1,6 +1,6 @@
 import { BaseRepository, type DbTransaction } from "./BaseRepository";
 import { steps, type Step, type InsertStep } from "@shared/schema";
-import { eq, asc, inArray } from "drizzle-orm";
+import { eq, asc, inArray, and } from "drizzle-orm";
 import { db } from "../db";
 
 /**
@@ -13,27 +13,50 @@ export class StepRepository extends BaseRepository<typeof steps, Step, InsertSte
 
   /**
    * Find steps by section ID (ordered by order field)
+   * By default, excludes virtual steps (computed steps from transform blocks)
+   * Set includeVirtual=true to include virtual steps
    */
-  async findBySectionId(sectionId: string, tx?: DbTransaction): Promise<Step[]> {
+  async findBySectionId(
+    sectionId: string,
+    tx?: DbTransaction,
+    includeVirtual = false
+  ): Promise<Step[]> {
     const database = this.getDb(tx);
+
+    const conditions = [eq(steps.sectionId, sectionId)];
+    if (!includeVirtual) {
+      conditions.push(eq(steps.isVirtual, false));
+    }
+
     return await database
       .select()
       .from(steps)
-      .where(eq(steps.sectionId, sectionId))
+      .where(and(...conditions))
       .orderBy(asc(steps.order));
   }
 
   /**
    * Find steps by multiple section IDs
+   * By default, excludes virtual steps (computed steps from transform blocks)
+   * Set includeVirtual=true to include virtual steps
    */
-  async findBySectionIds(sectionIds: string[], tx?: DbTransaction): Promise<Step[]> {
+  async findBySectionIds(
+    sectionIds: string[],
+    tx?: DbTransaction,
+    includeVirtual = false
+  ): Promise<Step[]> {
     const database = this.getDb(tx);
     if (sectionIds.length === 0) return [];
+
+    const conditions = [inArray(steps.sectionId, sectionIds)];
+    if (!includeVirtual) {
+      conditions.push(eq(steps.isVirtual, false));
+    }
 
     return await database
       .select()
       .from(steps)
-      .where(inArray(steps.sectionId, sectionIds))
+      .where(and(...conditions))
       .orderBy(asc(steps.order));
   }
 
