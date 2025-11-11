@@ -20,6 +20,7 @@ interface JSBlockEditorProps {
 }
 
 export const JSBlockEditor: React.FC<JSBlockEditorProps> = ({ block, onChange, workflowId }) => {
+  const [blockName, setBlockName] = useState(block.config?.name || "");
   const [code, setCode] = useState(block.config?.code || "");
   const [displayMode, setDisplayMode] = useState<"invisible" | "visible">(
     block.config?.display || "invisible"
@@ -43,6 +44,7 @@ export const JSBlockEditor: React.FC<JSBlockEditorProps> = ({ block, onChange, w
       ...block,
       config: {
         ...block.config,
+        name: blockName,
         code,
         display: displayMode,
         inputKeys,
@@ -51,7 +53,7 @@ export const JSBlockEditor: React.FC<JSBlockEditorProps> = ({ block, onChange, w
         testData,
       },
     });
-  }, [code, displayMode, inputKeys, outputKey, timeoutMs, testData]);
+  }, [blockName, code, displayMode, inputKeys, outputKey, timeoutMs, testData]);
 
   // Listen for Insert events from DevPanel
   useEffect(() => {
@@ -281,6 +283,23 @@ export const JSBlockEditor: React.FC<JSBlockEditorProps> = ({ block, onChange, w
         </CardHeader>
         <CardContent className="p-4 pt-2">
           <div className="space-y-4">
+            {/* Block Name/Title */}
+            <div className="space-y-2">
+              <Label htmlFor="blockName" className="text-sm">
+                Block Title (optional)
+              </Label>
+              <Input
+                id="blockName"
+                value={blockName}
+                onChange={(e) => setBlockName(e.target.value)}
+                placeholder="e.g., Calculate Total, Format Name, Validate Input"
+                className="text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                Give this block a descriptive title to identify its purpose
+              </p>
+            </div>
+
             {/* Display Mode */}
             <div className="space-y-2">
               <Label className="text-sm">Display Mode</Label>
