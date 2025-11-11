@@ -127,6 +127,24 @@ export class RunService {
   }
 
   /**
+   * Get run with all values without ownership check
+   * Used for preview/run token authentication
+   */
+  async getRunWithValuesNoAuth(runId: string) {
+    const run = await this.runRepo.findById(runId);
+    if (!run) {
+      throw new Error("Run not found");
+    }
+
+    const values = await this.valueRepo.findByRunId(runId);
+
+    return {
+      ...run,
+      values,
+    };
+  }
+
+  /**
    * Upsert a step value
    */
   async upsertStepValue(

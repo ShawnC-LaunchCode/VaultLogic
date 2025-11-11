@@ -107,6 +107,19 @@ export function registerRunRoutes(app: Express): void {
     try {
       const { runId } = req.params;
       const userId = req.user?.claims?.sub;
+      const runAuth = req.runAuth;
+
+      // For run token auth, verify the runId matches
+      if (runAuth) {
+        if (runAuth.runId !== runId) {
+          return res.status(403).json({ success: false, error: "Access denied - run mismatch" });
+        }
+        // Fetch run without userId check
+        const run = await runService.getRunWithValuesNoAuth(runId);
+        return res.json({ success: true, data: run });
+      }
+
+      // For session auth, we need userId
       if (!userId) {
         return res.status(401).json({ success: false, error: "Unauthorized - no user ID" });
       }
