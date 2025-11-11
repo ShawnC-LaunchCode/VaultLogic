@@ -79,16 +79,14 @@ function PreviewContent({ runId, runToken }: PreviewContentProps) {
   const run = runData?.data;
 
   // Fetch sections
-  const { data: sectionsData, isLoading: loadingSections } = useQuery({
+  const { data: sections, isLoading: loadingSections } = useQuery({
     queryKey: ["preview-sections", run?.workflowId],
     queryFn: () =>
-      api.get<{ success: boolean; data: ApiSection[] }>(
+      api.get<ApiSection[]>(
         `/api/workflows/${run?.workflowId}/sections`
       ),
     enabled: !!run?.workflowId,
   });
-
-  const sections = sectionsData?.data;
 
   // Initialize form values from run values
   useEffect(() => {
@@ -305,13 +303,11 @@ interface SectionStepsProps {
 function SectionSteps({ runId, runToken, sectionId, values, onChange }: SectionStepsProps) {
   const api = apiWithToken(runToken);
 
-  const { data: stepsData, isLoading } = useQuery({
+  const { data: steps, isLoading } = useQuery({
     queryKey: ["preview-steps", sectionId],
     queryFn: () =>
-      api.get<{ success: boolean; data: ApiStep[] }>(`/api/sections/${sectionId}/steps`),
+      api.get<ApiStep[]>(`/api/sections/${sectionId}/steps`),
   });
-
-  const steps = stepsData?.data;
 
   if (isLoading) {
     return (
