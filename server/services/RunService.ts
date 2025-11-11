@@ -13,6 +13,7 @@ import { blockRunner } from "./BlockRunner";
 import { evaluateRules, validateRequiredSteps, getEffectiveRequiredSteps } from "@shared/workflowLogic";
 import { runJsVm2 } from "../utils/sandboxExecutor";
 import { isJsQuestionConfig, type JsQuestionConfig } from "@shared/types/steps";
+import { randomUUID } from "crypto";
 
 /**
  * Service layer for workflow run-related business logic
@@ -54,14 +55,18 @@ export class RunService {
   async createRun(
     workflowId: string,
     userId: string,
-    data: Omit<InsertWorkflowRun, 'workflowId'>
+    data: Omit<InsertWorkflowRun, 'workflowId' | 'runToken'>
   ): Promise<WorkflowRun> {
     await this.workflowSvc.verifyOwnership(workflowId, userId);
+
+    // Generate a unique token for this run
+    const runToken = randomUUID();
 
     // Create the run
     const run = await this.runRepo.create({
       ...data,
       workflowId,
+      runToken,
       completed: false,
     });
 
