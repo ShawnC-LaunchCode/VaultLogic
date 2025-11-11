@@ -100,7 +100,9 @@ export async function creatorOrRunTokenAuth(
   next: NextFunction
 ): Promise<void> {
   // Check if user is authenticated via session
-  if ((req as any).isAuthenticated && (req as any).isAuthenticated()) {
+  // The session stores the user object in req.user or req.session.user
+  const sessionUser = (req as any).user || (req as any).session?.user;
+  if (sessionUser) {
     // User is authenticated via session, continue
     return next();
   }

@@ -99,12 +99,22 @@ export function registerStepRoutes(app: Express): void {
    */
   app.get('/api/sections/:sectionId/steps', creatorOrRunTokenAuth, async (req: RunAuthRequest, res: Response) => {
     try {
+      // Get userId from either session auth or bearer token auth
       const userId = req.user?.claims?.sub;
+      const runAuth = req.runAuth;
+
+      const { sectionId } = req.params;
+
+      // For run token auth, fetch steps without userId check
+      if (runAuth) {
+        const steps = await stepService.getStepsBySectionIdNoAuth(sectionId, runAuth.workflowId);
+        return res.json(steps);
+      }
+
+      // For session auth, we need userId
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized - no user ID" });
       }
-
-      const { sectionId } = req.params;
 
       // Look up the section to get its workflowId
       const steps = await stepService.getStepsBySectionId(sectionId, userId);

@@ -44,7 +44,22 @@ export function registerSectionRoutes(app: Express): void {
    */
   app.get('/api/workflows/:workflowId/sections', creatorOrRunTokenAuth, async (req: RunAuthRequest, res: Response) => {
     try {
+      // Get userId from either session auth or bearer token auth
       const userId = req.user?.claims?.sub;
+      const runAuth = req.runAuth;
+
+      // For run token auth, we need to verify the workflowId matches
+      if (runAuth) {
+        const { workflowId } = req.params;
+        if (runAuth.workflowId !== workflowId) {
+          return res.status(403).json({ message: "Access denied - workflow mismatch" });
+        }
+        // For preview runs, we can fetch sections without userId check
+        const sections = await sectionService.getSectionsByWorkflowId(workflowId);
+        return res.json(sections);
+      }
+
+      // For session auth, we need userId
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized - no user ID" });
       }

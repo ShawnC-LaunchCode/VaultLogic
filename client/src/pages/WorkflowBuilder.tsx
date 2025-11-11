@@ -5,7 +5,7 @@
 
 import { useParams, useLocation } from "wouter";
 import { useState } from "react";
-import { Settings, Play, Eye, EyeOff, ChevronDown } from "lucide-react";
+import { Settings, Play, Eye, EyeOff, ChevronDown, ArrowLeft } from "lucide-react";
 import { useWorkflow, useSections, useCreateRun, useWorkflowMode, useSetWorkflowMode } from "@/lib/vault-hooks";
 import { useWorkflowBuilder } from "@/store/workflow-builder";
 import { usePreviewStore } from "@/store/preview";
@@ -158,6 +158,15 @@ export default function WorkflowBuilder() {
       {/* Header */}
       <div className="border-b px-6 py-3 flex items-center justify-between bg-card">
         <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/workflows')}
+            className="mr-2"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
           <h1 className="text-xl font-semibold">{workflow.title}</h1>
           <span className="text-sm text-muted-foreground">
             {sections?.length || 0} {sections?.length === 1 ? UI_LABELS.PAGE.toLowerCase() : UI_LABELS.PAGES.toLowerCase()}

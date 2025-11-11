@@ -194,6 +194,26 @@ export class StepService {
   }
 
   /**
+   * Get steps for a section without ownership check
+   * Used for preview/run token authentication
+   * Validates that the section belongs to the expected workflow
+   */
+  async getStepsBySectionIdNoAuth(sectionId: string, expectedWorkflowId: string): Promise<Step[]> {
+    // Look up the section
+    const section = await this.sectionRepo.findById(sectionId);
+    if (!section) {
+      throw new Error("Section not found");
+    }
+
+    // Verify the section belongs to the expected workflow
+    if (section.workflowId !== expectedWorkflowId) {
+      throw new Error("Section does not belong to the specified workflow");
+    }
+
+    return await this.stepRepo.findBySectionId(sectionId);
+  }
+
+  /**
    * Create a new step (workflow looked up automatically)
    */
   async createStepBySectionId(

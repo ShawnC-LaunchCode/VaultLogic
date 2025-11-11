@@ -104,6 +104,14 @@ export class SectionService {
   }
 
   /**
+   * Get sections for a workflow without ownership check
+   * Used for preview/run token authentication
+   */
+  async getSectionsByWorkflowId(workflowId: string): Promise<Section[]> {
+    return await this.sectionRepo.findByWorkflowId(workflowId);
+  }
+
+  /**
    * Get section with steps
    */
   async getSectionWithSteps(sectionId: string, workflowId: string, userId: string) {
