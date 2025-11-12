@@ -23,25 +23,33 @@ import {
   type TemplateNodeInput,
   type TemplateNodeOutput,
 } from './nodes/template';
+import {
+  executeHttpNode,
+  type HttpNodeConfig,
+  type HttpNodeInput,
+  type HttpNodeOutput,
+} from './nodes/http';
 
 /**
  * Node Executor Registry
  * Central registry for all node type executors
  */
 
-export type NodeType = 'question' | 'compute' | 'branch' | 'template';
+export type NodeType = 'question' | 'compute' | 'branch' | 'template' | 'http';
 
 export type NodeConfig =
   | QuestionNodeConfig
   | ComputeNodeConfig
   | BranchNodeConfig
-  | TemplateNodeConfig;
+  | TemplateNodeConfig
+  | HttpNodeConfig;
 
 export type NodeOutput =
   | QuestionNodeOutput
   | ComputeNodeOutput
   | BranchNodeOutput
-  | TemplateNodeOutput;
+  | TemplateNodeOutput
+  | HttpNodeOutput;
 
 export interface Node {
   id: string;
@@ -53,6 +61,7 @@ export interface ExecuteNodeInput {
   node: Node;
   context: EvalContext;
   tenantId: string;
+  projectId?: string; // For HTTP nodes (secret/connection resolution)
   userInputs?: Record<string, any>; // For question nodes
 }
 
@@ -104,6 +113,19 @@ export async function executeNode(input: ExecuteNodeInput): Promise<NodeOutput> 
       return await executeTemplateNode(templateInput);
     }
 
+    case 'http': {
+      if (!projectId) {
+        throw new Error('projectId is required for HTTP nodes');
+      }
+      const httpInput: HttpNodeInput = {
+        nodeId: node.id,
+        config: node.config as HttpNodeConfig,
+        context,
+        projectId,
+      };
+      return await executeHttpNode(httpInput);
+    }
+
     default:
       throw new Error(`Unknown node type: ${(node as any).type}`);
   }
@@ -113,7 +135,7 @@ export async function executeNode(input: ExecuteNodeInput): Promise<NodeOutput> 
  * Get all supported node types
  */
 export function getSupportedNodeTypes(): NodeType[] {
-  return ['question', 'compute', 'branch', 'template'];
+  return ['question', 'compute', 'branch', 'template', 'http'];
 }
 
 /**

@@ -24,6 +24,8 @@ import { registerWorkflowExportRoutes } from "./workflowExports.routes";
 import { registerTransformBlockRoutes } from "./transformBlocks.routes";
 import { registerTeamRoutes } from "./teams.routes";
 import { registerTenantRoutes } from "./tenant.routes";
+import { registerSecretsRoutes } from "./secrets.routes";
+import { registerConnectionsRoutes } from "./connections.routes";
 import { registerApiProjectRoutes } from "./api.projects.routes";
 import { registerApiWorkflowRoutes } from "./api.workflows.routes";
 import { registerApiTemplateRoutes } from "./api.templates.routes";
@@ -106,6 +108,12 @@ export function registerAllRoutes(app: Express): void {
 
   // Transform block routes (custom logic execution)
   registerTransformBlockRoutes(app);
+
+  // Secrets management routes (Stage 9)
+  registerSecretsRoutes(app);
+
+  // External connections routes (Stage 9)
+  registerConnectionsRoutes(app);
 
   // Workflow run and execution routes
   registerRunRoutes(app);
