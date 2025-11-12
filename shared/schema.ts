@@ -898,17 +898,43 @@ export const runs = pgTable("runs", {
   index("runs_created_at_idx").on(table.createdAt),
 ]);
 
+// Secret type enum
+export const secretTypeEnum = pgEnum('secret_type', ['api_key', 'bearer', 'oauth2', 'basic_auth']);
+
 // Secrets table for encrypted API keys and credentials
 export const secrets = pgTable("secrets", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   projectId: uuid("project_id").references(() => projects.id, { onDelete: 'cascade' }).notNull(),
   key: varchar("key", { length: 255 }).notNull(),
   valueEnc: text("value_enc").notNull(),
+  type: secretTypeEnum("type").default('api_key').notNull(),
+  metadata: jsonb("metadata").default(sql`'{}'::jsonb`), // OAuth2 config, etc.
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
   index("secrets_project_idx").on(table.projectId),
   index("secrets_project_key_idx").on(table.projectId, table.key),
+  index("secrets_type_idx").on(table.type),
+]);
+
+// External connections table for reusable API configurations
+export const externalConnections = pgTable("external_connections", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  projectId: uuid("project_id").references(() => projects.id, { onDelete: 'cascade' }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  baseUrl: varchar("base_url", { length: 500 }).notNull(),
+  authType: varchar("auth_type", { length: 50 }).notNull(), // 'api_key' | 'bearer' | 'oauth2' | 'basic_auth' | 'none'
+  secretId: uuid("secret_id").references(() => secrets.id, { onDelete: 'set null' }),
+  defaultHeaders: jsonb("default_headers").default(sql`'{}'::jsonb`),
+  timeoutMs: integer("timeout_ms").default(8000),
+  retries: integer("retries").default(2),
+  backoffMs: integer("backoff_ms").default(250),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("external_connections_project_idx").on(table.projectId),
+  index("external_connections_project_name_idx").on(table.projectId, table.name),
+  index("external_connections_secret_idx").on(table.secretId),
 ]);
 
 // AuditEvent table for audit logging
@@ -1083,6 +1109,7 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   templates: many(templates),
   secrets: many(secrets),
   apiKeys: many(apiKeys),
+  externalConnections: many(externalConnections),
 }));
 
 export const workflowsRelations = relations(workflows, ({ one, many }) => ({
@@ -1132,10 +1159,22 @@ export const runsRelations = relations(runs, ({ one, many }) => ({
   logs: many(runLogs),
 }));
 
-export const secretsRelations = relations(secrets, ({ one }) => ({
+export const secretsRelations = relations(secrets, ({ one, many }) => ({
   project: one(projects, {
     fields: [secrets.projectId],
     references: [projects.id],
+  }),
+  connections: many(externalConnections),
+}));
+
+export const externalConnectionsRelations = relations(externalConnections, ({ one }) => ({
+  project: one(projects, {
+    fields: [externalConnections.projectId],
+    references: [projects.id],
+  }),
+  secret: one(secrets, {
+    fields: [externalConnections.secretId],
+    references: [secrets.id],
   }),
 }));
 
@@ -1239,6 +1278,7 @@ export const insertWorkflowVersionSchema = createInsertSchema(workflowVersions).
 export const insertTemplateSchema = createInsertSchema(templates).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertRunSchema = createInsertSchema(runs).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertSecretSchema = createInsertSchema(secrets).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertExternalConnectionSchema = createInsertSchema(externalConnections).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertAuditEventSchema = createInsertSchema(auditEvents).omit({ id: true, ts: true, createdAt: true });
 export const insertApiKeySchema = createInsertSchema(apiKeys).omit({ id: true, createdAt: true, updatedAt: true, lastUsedAt: true });
 export const insertRunLogSchema = createInsertSchema(runLogs).omit({ id: true, createdAt: true });
@@ -1518,6 +1558,8 @@ export type Run = typeof runs.$inferSelect;
 export type InsertRun = typeof insertRunSchema._type;
 export type Secret = typeof secrets.$inferSelect;
 export type InsertSecret = typeof insertSecretSchema._type;
+export type ExternalConnection = typeof externalConnections.$inferSelect;
+export type InsertExternalConnection = typeof insertExternalConnectionSchema._type;
 export type AuditEvent = typeof auditEvents.$inferSelect;
 export type InsertAuditEvent = typeof insertAuditEventSchema._type;
 export type ApiKey = typeof apiKeys.$inferSelect;

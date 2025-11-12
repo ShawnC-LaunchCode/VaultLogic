@@ -1,7 +1,7 @@
 # VaultLogic - Architecture & Current State
 
 **Last Updated:** November 12, 2025
-**Version:** 1.0.0
+**Version:** 1.1.0 - Stage 9 Complete
 **Status:** Production Ready
 
 ---
@@ -13,6 +13,9 @@ VaultLogic is a **comprehensive workflow automation platform** that combines vis
 **Key Differentiators:**
 - Visual workflow builder with drag-and-drop interface
 - Sandboxed JavaScript/Python execution for data transformation
+- **HTTP/API integration with comprehensive authentication** 🆕
+- **Encrypted secrets management for API credentials** 🆕
+- **OAuth2 Client Credentials flow with intelligent caching** 🆕
 - Token-based run authentication (creator + anonymous modes)
 - Step aliases (human-friendly variable names)
 - Virtual steps architecture for computed values
@@ -450,7 +453,48 @@ GET    /api/workflows/:id/export/pdf                 # Export responses (PDF)
 
 ## Recent Major Changes (Nov 2025)
 
-### 1. Virtual Steps for Transform Blocks (Nov 11, 2025)
+### 1. HTTP/Fetch Node + Secrets Management (Nov 12, 2025) - Stage 9 🆕
+**Major Feature:** External API integration and secure credential management
+
+**HTTP Node Engine:**
+- Full-featured HTTP/API request node for workflows
+- Methods: GET, POST, PUT, PATCH, DELETE
+- Auth types: API Key, Bearer Token, OAuth2 Client Credentials, Basic Auth, None
+- Features: timeout control, automatic retries, exponential backoff, response caching
+- JSONPath response mapping to workflow variables
+- Template variable interpolation (`{{var}}` in URLs, headers, body)
+
+**Secrets Management:**
+- AES-256-GCM encrypted storage for API keys, tokens, OAuth2 credentials
+- Envelope encryption with master key (`VL_MASTER_KEY` env var)
+- Secret types: api_key, bearer, oauth2, basic_auth
+- Complete CRUD API with RBAC (Owner/Builder only)
+- Never exposes plaintext values via API
+- Redacted logging for all secret values
+
+**External Connections:**
+- Reusable API connection configurations
+- Centralized credential management
+- Default headers, timeout, retry settings
+- Easy credential rotation
+
+**Supporting Services:**
+- OAuth2 Client Credentials service with intelligent token caching
+- In-memory LRU cache for tokens and HTTP responses
+- JSONPath selector utility for response mapping
+- Comprehensive encryption utilities
+
+**Schema Changes:**
+- Added `secretTypeEnum`: api_key, bearer, oauth2, basic_auth
+- Updated `secrets` table with `type` and `metadata` columns
+- Created `externalConnections` table
+- Unique constraints on (projectId, key) and (projectId, name)
+
+**Migration:** `migrations/0009_add_external_connections_and_secret_types.sql`
+
+**Documentation:** See `docs/STAGE_9_HTTP_SECRETS.md` for complete guide
+
+### 2. Virtual Steps for Transform Blocks (Nov 11, 2025)
 **Problem:** Transform block outputs couldn't be persisted because `outputKey` (string) was used as `stepId` (UUID required)
 
 **Solution:** Virtual steps architecture
@@ -545,12 +589,20 @@ SESSION_SECRET=your-super-secret-32-character-minimum-session-key
 # CORS (hostnames only)
 ALLOWED_ORIGIN=localhost,127.0.0.1
 
+# Secrets Management (Stage 9 - REQUIRED)
+VL_MASTER_KEY=your-base64-encoded-32-byte-master-key
+
 # Optional Services
 SENDGRID_API_KEY=your-sendgrid-api-key
 SENDGRID_FROM_EMAIL=noreply@yourdomain.com
 GEMINI_API_KEY=your-google-gemini-api-key
 MAX_FILE_SIZE=10485760
 UPLOAD_DIR=./uploads
+```
+
+**Important:** Generate `VL_MASTER_KEY` using:
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 ```
 
 ---
