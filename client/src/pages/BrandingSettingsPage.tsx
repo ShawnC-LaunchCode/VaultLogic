@@ -218,6 +218,12 @@ export default function BrandingSettingsPage() {
                     Manage Domains
                   </Button>
                 </Link>
+                <Link href={`/projects/${projectId}/settings/email-templates`}>
+                  <Button variant="outline" size="sm">
+                    <Mail className="h-4 w-4 mr-2" />
+                    Email Templates
+                  </Button>
+                </Link>
                 <Button
                   variant="outline"
                   size="sm"

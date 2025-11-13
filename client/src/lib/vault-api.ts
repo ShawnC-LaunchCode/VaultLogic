@@ -796,3 +796,76 @@ export const brandingAPI = {
       method: "DELETE",
     }),
 };
+
+// =====================================================================
+// EMAIL TEMPLATE METADATA API
+// =====================================================================
+
+export interface EmailTemplateMetadata {
+  id: string;
+  templateKey: string;
+  name: string;
+  description?: string | null;
+  subjectPreview?: string | null;
+  brandingTokens?: Record<string, boolean> | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface GetEmailTemplatesResponse {
+  templates: EmailTemplateMetadata[];
+  total: number;
+}
+
+export interface GetEmailTemplateResponse {
+  template: EmailTemplateMetadata;
+}
+
+export interface UpdateEmailTemplateMetadataRequest {
+  name?: string;
+  description?: string | null;
+  subjectPreview?: string | null;
+  brandingTokens?: Record<string, boolean> | null;
+}
+
+export interface UpdateEmailTemplateMetadataResponse {
+  message: string;
+  template: EmailTemplateMetadata;
+}
+
+export const emailTemplateAPI = {
+  /**
+   * Get all email template metadata
+   */
+  listTemplates: () =>
+    fetchAPI<GetEmailTemplatesResponse>("/api/email-templates"),
+
+  /**
+   * Get a specific email template metadata
+   */
+  getTemplate: (templateId: string) =>
+    fetchAPI<GetEmailTemplateResponse>(`/api/email-templates/${templateId}`),
+
+  /**
+   * Update email template metadata
+   */
+  updateTemplateMetadata: (
+    templateId: string,
+    metadata: UpdateEmailTemplateMetadataRequest
+  ) =>
+    fetchAPI<UpdateEmailTemplateMetadataResponse>(
+      `/api/email-templates/${templateId}/metadata`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(metadata),
+      }
+    ),
+
+  /**
+   * Get templates that use a specific branding token
+   */
+  getTemplatesByToken: (tokenKey: string) =>
+    fetchAPI<{ templates: EmailTemplateMetadata[]; total: number; tokenKey: string }>(
+      `/api/email-templates/token/${tokenKey}`
+    ),
+};

@@ -24,6 +24,8 @@ export { default as BrandingPreview } from './BrandingPreview';
 export type { BrandingPreviewProps } from './BrandingPreview';
 export { default as AddDomainModal } from './AddDomainModal';
 export type { AddDomainModalProps } from './AddDomainModal';
+export { default as EmailPreview } from './EmailPreview';
+export type { EmailPreviewProps } from './EmailPreview';
 
 // Theme utilities
 export {
