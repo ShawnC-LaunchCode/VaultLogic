@@ -5,7 +5,8 @@
 
 import type { EvalContext } from '../expr';
 import { evaluateExpression } from '../expr';
-import { resolveConnection } from '../../services/externalConnections';
+import { resolveConnection as resolveOldConnection } from '../../services/externalConnections';
+import { resolveConnection as resolveNewConnection, markConnectionUsed } from '../../services/connections';
 import { getSecretValue } from '../../services/secrets';
 import { getOAuth2Token } from '../../services/oauth2';
 import { httpCache } from '../../services/cache';
@@ -183,6 +184,7 @@ export async function executeHttpNode(input: HttpNodeInput): Promise<HttpNodeOut
 
 /**
  * Resolve request configuration from connection or direct config
+ * Tries new connections service first (Stage 16), then falls back to old externalConnections (Stage 9)
  */
 async function resolveRequestConfig(
   config: HttpNodeConfig,
@@ -194,24 +196,86 @@ async function resolveRequestConfig(
   timeoutMs: number;
   retries: number;
   backoffMs: number;
+  accessToken?: string; // For OAuth2 3-legged flow
+  connectionId?: string; // For marking as used
 }> {
   if (config.connectionId) {
-    const connection = await resolveConnection(projectId, config.connectionId);
-    if (!connection) {
-      throw new Error(`Connection not found: ${config.connectionId}`);
-    }
+    // Try new connections service first (Stage 16)
+    try {
+      const resolved = await resolveNewConnection(projectId, config.connectionId);
+      const connection = resolved.connection;
 
-    return {
-      baseUrl: connection.baseUrl,
-      auth: {
-        type: connection.authType as any,
-        secretRef: connection.secretValue,
-      },
-      defaultHeaders: connection.defaultHeaders,
-      timeoutMs: connection.timeoutMs,
-      retries: connection.retries,
-      backoffMs: connection.backoffMs,
-    };
+      // Mark connection as used
+      markConnectionUsed(config.connectionId).catch(err => {
+        console.error('Failed to mark connection as used:', err);
+      });
+
+      // Build auth config based on connection type
+      let auth: HttpNodeConfig['auth'] | undefined;
+      if (connection.type === 'api_key') {
+        auth = {
+          type: 'api_key',
+          location: connection.authConfig.apiKeyLocation || 'header',
+          keyName: connection.authConfig.apiKeyName || 'X-API-Key',
+          secretRef: resolved.secrets[connection.authConfig.apiKeyRef || 'apiKey'],
+        };
+      } else if (connection.type === 'bearer') {
+        auth = {
+          type: 'bearer',
+          tokenRef: resolved.secrets[connection.authConfig.tokenRef || 'token'],
+        };
+      } else if (connection.type === 'oauth2_client_credentials') {
+        auth = {
+          type: 'oauth2',
+          oauth2: {
+            tokenUrl: connection.authConfig.tokenUrl,
+            clientIdRef: resolved.secrets[connection.authConfig.clientIdRef],
+            clientSecretRef: resolved.secrets[connection.authConfig.clientSecretRef],
+            scope: connection.authConfig.scope,
+          },
+        };
+      } else if (connection.type === 'oauth2_3leg') {
+        // For 3-legged OAuth, use the access token directly
+        auth = {
+          type: 'bearer',
+          tokenRef: resolved.accessToken || '',
+        };
+      }
+
+      return {
+        baseUrl: connection.baseUrl || '',
+        auth,
+        defaultHeaders: connection.defaultHeaders || {},
+        timeoutMs: connection.timeoutMs,
+        retries: connection.retries,
+        backoffMs: connection.backoffMs,
+        accessToken: resolved.accessToken,
+        connectionId: config.connectionId,
+      };
+    } catch (error) {
+      console.log('New connection not found, trying old externalConnection:', {
+        connectionId: config.connectionId,
+        error: (error as Error).message,
+      });
+
+      // Fall back to old externalConnections service
+      const connection = await resolveOldConnection(projectId, config.connectionId);
+      if (!connection) {
+        throw new Error(`Connection not found: ${config.connectionId}`);
+      }
+
+      return {
+        baseUrl: connection.baseUrl,
+        auth: {
+          type: connection.authType as any,
+          secretRef: connection.secretValue,
+        },
+        defaultHeaders: connection.defaultHeaders,
+        timeoutMs: connection.timeoutMs,
+        retries: connection.retries,
+        backoffMs: connection.backoffMs,
+      };
+    }
   }
 
   if (!config.baseUrl) {

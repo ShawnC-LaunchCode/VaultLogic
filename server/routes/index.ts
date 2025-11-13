@@ -26,6 +26,7 @@ import { registerTeamRoutes } from "./teams.routes";
 import { registerTenantRoutes } from "./tenant.routes";
 import { registerSecretsRoutes } from "./secrets.routes";
 import { registerConnectionsRoutes } from "./connections.routes";
+import { registerConnectionsV2Routes } from "./connections-v2.routes";
 import { registerApiProjectRoutes } from "./api.projects.routes";
 import { registerApiWorkflowRoutes } from "./api.workflows.routes";
 import { registerApiTemplateRoutes } from "./api.templates.routes";
@@ -117,6 +118,9 @@ export function registerAllRoutes(app: Express): void {
 
   // External connections routes (Stage 9)
   registerConnectionsRoutes(app);
+
+  // Connections routes (Stage 16 - Integrations Hub)
+  registerConnectionsV2Routes(app);
 
   // Workflow run and execution routes
   registerRunRoutes(app);

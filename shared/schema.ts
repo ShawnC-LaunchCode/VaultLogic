@@ -929,6 +929,14 @@ export const runs = pgTable("runs", {
 // Secret type enum
 export const secretTypeEnum = pgEnum('secret_type', ['api_key', 'bearer', 'oauth2', 'basic_auth']);
 
+// Connection type enum (Stage 16)
+export const connectionTypeEnum = pgEnum('connection_type', [
+  'api_key',
+  'bearer',
+  'oauth2_client_credentials',
+  'oauth2_3leg'
+]);
+
 // Secrets table for encrypted API keys and credentials
 export const secrets = pgTable("secrets", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -945,7 +953,7 @@ export const secrets = pgTable("secrets", {
   index("secrets_type_idx").on(table.type),
 ]);
 
-// External connections table for reusable API configurations
+// External connections table for reusable API configurations (DEPRECATED - use connections table)
 export const externalConnections = pgTable("external_connections", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   projectId: uuid("project_id").references(() => projects.id, { onDelete: 'cascade' }).notNull(),
@@ -963,6 +971,50 @@ export const externalConnections = pgTable("external_connections", {
   index("external_connections_project_idx").on(table.projectId),
   index("external_connections_project_name_idx").on(table.projectId, table.name),
   index("external_connections_secret_idx").on(table.secretId),
+]);
+
+// =====================================================================
+// STAGE 16: INTEGRATIONS HUB - CONNECTIONS TABLE
+// =====================================================================
+
+// Connections table - unified integration connection management
+export const connections = pgTable("connections", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  projectId: uuid("project_id").references(() => projects.id, { onDelete: 'cascade' }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  type: connectionTypeEnum("type").notNull(),
+  baseUrl: varchar("base_url", { length: 500 }),
+
+  // Provider-specific configuration (tokenUrl, authUrl, scopes, etc.)
+  authConfig: jsonb("auth_config").default(sql`'{}'::jsonb`),
+
+  // References to secrets (e.g., { apiKey: 'secret-key-1', clientId: 'secret-key-2' })
+  secretRefs: jsonb("secret_refs").default(sql`'{}'::jsonb`),
+
+  // OAuth2 3-legged flow state (access token, refresh token, expiry, scopes)
+  oauthState: jsonb("oauth_state"),
+
+  // Connection configuration
+  defaultHeaders: jsonb("default_headers").default(sql`'{}'::jsonb`),
+  timeoutMs: integer("timeout_ms").default(8000),
+  retries: integer("retries").default(2),
+  backoffMs: integer("backoff_ms").default(250),
+
+  // Metadata
+  enabled: boolean("enabled").default(true).notNull(),
+  lastTestedAt: timestamp("last_tested_at"),
+  lastUsedAt: timestamp("last_used_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("connections_tenant_idx").on(table.tenantId),
+  index("connections_project_idx").on(table.projectId),
+  index("connections_project_name_idx").on(table.projectId, table.name),
+  index("connections_type_idx").on(table.type),
+  index("connections_enabled_idx").on(table.enabled),
+  // Ensure unique connection names per project
+  index("connections_project_name_unique_idx").on(table.projectId, table.name).unique(),
 ]);
 
 // AuditEvent table for audit logging

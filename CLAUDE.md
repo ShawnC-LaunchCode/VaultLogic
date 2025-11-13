@@ -1,7 +1,7 @@
 # VaultLogic - Architecture & Current State
 
 **Last Updated:** November 13, 2025
-**Version:** 1.3.0 - Stage 15 Complete (Backend)
+**Version:** 1.4.0 - Stage 16 Complete (Backend)
 **Status:** Production Ready (Backend), Frontend Pending
 
 ---
@@ -459,7 +459,68 @@ GET    /api/workflows/:id/export/pdf                 # Export responses (PDF)
 
 ## Recent Major Changes (Nov 2025)
 
-### 1. AI-Assisted Workflow Builder (Nov 13, 2025) - Stage 15 🆕
+### 1. Integrations Hub (Nov 13, 2025) - Stage 16 🆕
+**Major Feature:** Unified connection management, OAuth2 3-legged flow, and webhook node
+
+**Unified Connection Model:**
+- Single `connections` table for all connection types (api_key, bearer, oauth2_client_credentials, oauth2_3leg)
+- Replaces and extends Stage 9 `externalConnections` with enhanced capabilities
+- Support for multiple secret references per connection
+- Connection health tracking (last tested, last used timestamps)
+- Automatic migration from old to new connection model
+
+**OAuth2 3-Legged Authorization Flow:**
+- Full authorization code grant implementation with CSRF protection
+- User-initiated OAuth flows with state token validation
+- Automatic token refresh when expired
+- Encrypted storage of access and refresh tokens
+- Support for Google, Microsoft, Dropbox, and other OAuth2 providers
+
+**Enhanced HTTP Node:**
+- Automatic detection of new vs old connections
+- Seamless OAuth2 token injection and rotation
+- Connection usage tracking
+- Backward compatible with Stage 9 external connections
+
+**Webhook Node (NEW):**
+- Fire-and-forget or blocking modes
+- Connection-based auth support
+- Automatic retries with exponential backoff
+- Template variable interpolation in URL, headers, and body
+- Response body capture (limited to 512 bytes)
+- Conditional execution support
+
+**ConnectionService:**
+- Complete CRUD operations for connections
+- Connection resolution with secret decryption
+- OAuth2 flow initiation and callback handling
+- Connection testing and status monitoring
+- Refresh token management
+
+**API Endpoints:**
+- `GET/POST/PATCH/DELETE /api/projects/:id/connections` - Connection CRUD
+- `POST /api/projects/:id/connections/:id/test` - Test connection
+- `GET /api/connections/oauth/start` - Initiate OAuth2 flow
+- `GET /api/connections/oauth/callback` - Handle OAuth2 callback
+- `GET /api/projects/:id/connections/:id/status` - Get connection status
+
+**Database Schema:**
+- Added `connection_type` enum: api_key, bearer, oauth2_client_credentials, oauth2_3leg
+- New `connections` table with tenant/project scoping
+- `authConfig` JSONB for provider-specific settings
+- `secretRefs` JSONB for multiple secret references
+- `oauthState` JSONB for encrypted token storage
+- Unique constraint on (project_id, name)
+
+**Migration:** `migrations/0016_add_connections_table.sql` with automatic data migration
+
+**Documentation:** See `docs/STAGE_16_INTEGRATIONS_HUB.md` for complete guide
+
+**Status:** Backend complete, frontend UI TODO
+
+---
+
+### 2. AI-Assisted Workflow Builder (Nov 13, 2025) - Stage 15 🆕
 **Major Feature:** AI-powered workflow generation using OpenAI and Anthropic
 
 **AI Workflow Generation:**
