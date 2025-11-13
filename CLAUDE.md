@@ -1,8 +1,8 @@
 # VaultLogic - Architecture & Current State
 
-**Last Updated:** November 12, 2025
-**Version:** 1.1.0 - Stage 9 Complete
-**Status:** Production Ready
+**Last Updated:** November 13, 2025
+**Version:** 1.2.0 - Stage 14 Complete (Backend)
+**Status:** Production Ready (Backend), Frontend Pending
 
 ---
 
@@ -13,9 +13,12 @@ VaultLogic is a **comprehensive workflow automation platform** that combines vis
 **Key Differentiators:**
 - Visual workflow builder with drag-and-drop interface
 - Sandboxed JavaScript/Python execution for data transformation
-- **HTTP/API integration with comprehensive authentication** 🆕
-- **Encrypted secrets management for API credentials** 🆕
-- **OAuth2 Client Credentials flow with intelligent caching** 🆕
+- **HTTP/API integration with comprehensive authentication**
+- **Encrypted secrets management for API credentials**
+- **OAuth2 Client Credentials flow with intelligent caching**
+- **Human-in-the-loop workflows with review and e-signature nodes** 🆕
+- **Document review portals with approval/rejection workflow** 🆕
+- **Native e-signature support with token-based signing** 🆕
 - Token-based run authentication (creator + anonymous modes)
 - Step aliases (human-friendly variable names)
 - Virtual steps architecture for computed values
@@ -453,7 +456,56 @@ GET    /api/workflows/:id/export/pdf                 # Export responses (PDF)
 
 ## Recent Major Changes (Nov 2025)
 
-### 1. HTTP/Fetch Node + Secrets Management (Nov 12, 2025) - Stage 9 🆕
+### 1. E-Signature Node + Document Review Portal (Nov 13, 2025) - Stage 14 🆕
+**Major Feature:** Human-in-the-loop workflow capabilities with review gates and e-signatures
+
+**REVIEW Node:**
+- Human review/approval gates for workflows
+- Internal or external reviewer support
+- Approve, request changes, or reject decisions
+- Workflow pauses until review is completed
+- Automatic workflow resumption after approval
+
+**ESIGN Node:**
+- Native e-signature support for documents
+- Token-based public signing links (no login required)
+- Signature request tracking and audit trail
+- Support for DocuSign and HelloSign (stubs for future)
+- Configurable expiration (default 72 hours)
+- Email/name variable resolution from workflow context
+
+**Database Schema:**
+- Added run statuses: `waiting_review`, `waiting_signature`
+- New `review_tasks` table for review tracking
+- New `signature_requests` table for signature workflows
+- New `signature_events` table for audit trail
+- New enums: `review_task_status`, `signature_request_status`, `signature_provider`, `signature_event_type`
+
+**Backend Services:**
+- `ReviewTaskService`: Review task management and decision processing
+- `SignatureRequestService`: Signature request creation and token management
+- `resumeRunFromNode()`: Workflow resumption mechanism after waiting states
+
+**API Endpoints:**
+- `/api/review/tasks/:id` - Review task management
+- `/api/review/tasks/:id/decision` - Approve/reject/request changes
+- `/api/sign/:token` - Public signature portal (no auth)
+- `/api/signatures/requests/:id` - Signature request management
+
+**Engine Integration:**
+- REVIEW and ESIGN nodes registered in engine
+- Nodes return 'waiting' status to pause execution
+- Service layer creates database records and updates run status
+
+**Migration:** `migrations/0015_add_review_and_esign_tables.sql`
+
+**Documentation:** See `docs/STAGE_14_REVIEW_ESIGN.md` for complete guide
+
+**Status:** Backend complete, frontend portals TODO
+
+---
+
+### 2. HTTP/Fetch Node + Secrets Management (Nov 12, 2025) - Stage 9
 **Major Feature:** External API integration and secure credential management
 
 **HTTP Node Engine:**

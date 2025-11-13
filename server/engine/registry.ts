@@ -29,27 +29,43 @@ import {
   type HttpNodeInput,
   type HttpNodeOutput,
 } from './nodes/http';
+import {
+  executeReviewNode,
+  type ReviewNodeConfig,
+  type ReviewNodeInput,
+  type ReviewNodeOutput,
+} from './nodes/review';
+import {
+  executeEsignNode,
+  type EsignNodeConfig,
+  type EsignNodeInput,
+  type EsignNodeOutput,
+} from './nodes/esign';
 
 /**
  * Node Executor Registry
  * Central registry for all node type executors
  */
 
-export type NodeType = 'question' | 'compute' | 'branch' | 'template' | 'http';
+export type NodeType = 'question' | 'compute' | 'branch' | 'template' | 'http' | 'review' | 'esign';
 
 export type NodeConfig =
   | QuestionNodeConfig
   | ComputeNodeConfig
   | BranchNodeConfig
   | TemplateNodeConfig
-  | HttpNodeConfig;
+  | HttpNodeConfig
+  | ReviewNodeConfig
+  | EsignNodeConfig;
 
 export type NodeOutput =
   | QuestionNodeOutput
   | ComputeNodeOutput
   | BranchNodeOutput
   | TemplateNodeOutput
-  | HttpNodeOutput;
+  | HttpNodeOutput
+  | ReviewNodeOutput
+  | EsignNodeOutput;
 
 export interface Node {
   id: string;
@@ -63,6 +79,9 @@ export interface ExecuteNodeInput {
   tenantId: string;
   projectId?: string; // For HTTP nodes (secret/connection resolution)
   userInputs?: Record<string, any>; // For question nodes
+  runId?: string; // For review/esign nodes
+  workflowId?: string; // For review/esign nodes
+  outputRefs?: Record<string, any>; // For esign nodes (document references)
 }
 
 /**
@@ -114,16 +133,49 @@ export async function executeNode(input: ExecuteNodeInput): Promise<NodeOutput> 
     }
 
     case 'http': {
-      if (!projectId) {
+      if (!input.projectId) {
         throw new Error('projectId is required for HTTP nodes');
       }
       const httpInput: HttpNodeInput = {
         nodeId: node.id,
         config: node.config as HttpNodeConfig,
         context,
-        projectId,
+        projectId: input.projectId,
       };
       return await executeHttpNode(httpInput);
+    }
+
+    case 'review': {
+      if (!input.runId || !input.workflowId || !input.projectId) {
+        throw new Error('runId, workflowId, and projectId are required for REVIEW nodes');
+      }
+      const reviewInput: ReviewNodeInput = {
+        nodeId: node.id,
+        config: node.config as ReviewNodeConfig,
+        context,
+        runId: input.runId,
+        workflowId: input.workflowId,
+        tenantId,
+        projectId: input.projectId,
+      };
+      return await executeReviewNode(reviewInput);
+    }
+
+    case 'esign': {
+      if (!input.runId || !input.workflowId || !input.projectId) {
+        throw new Error('runId, workflowId, and projectId are required for ESIGN nodes');
+      }
+      const esignInput: EsignNodeInput = {
+        nodeId: node.id,
+        config: node.config as EsignNodeConfig,
+        context,
+        runId: input.runId,
+        workflowId: input.workflowId,
+        tenantId,
+        projectId: input.projectId,
+        outputRefs: input.outputRefs,
+      };
+      return await executeEsignNode(esignInput);
     }
 
     default:
@@ -135,7 +187,7 @@ export async function executeNode(input: ExecuteNodeInput): Promise<NodeOutput> 
  * Get all supported node types
  */
 export function getSupportedNodeTypes(): NodeType[] {
-  return ['question', 'compute', 'branch', 'template', 'http'];
+  return ['question', 'compute', 'branch', 'template', 'http', 'review', 'esign'];
 }
 
 /**

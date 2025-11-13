@@ -36,5 +36,9 @@ export { TransformBlockRepository, transformBlockRepository, TransformBlockRunRe
 export { TeamRepository, teamRepository, TeamMemberRepository, teamMemberRepository } from "./TeamRepository";
 export { ProjectAccessRepository, projectAccessRepository, WorkflowAccessRepository, workflowAccessRepository } from "./AclRepository";
 
+// Stage 14: Review & E-Signature repositories
+export { ReviewTaskRepository, reviewTaskRepository } from "./ReviewTaskRepository";
+export { SignatureRequestRepository, signatureRequestRepository } from "./SignatureRequestRepository";
+
 // Export type for Insert operations
 export type { InsertAnalyticsEvent } from "./AnalyticsRepository";
