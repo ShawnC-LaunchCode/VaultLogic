@@ -22,6 +22,8 @@ export type { BrandingContextValue, BrandingProviderProps } from './BrandingCont
 // Components
 export { default as BrandingPreview } from './BrandingPreview';
 export type { BrandingPreviewProps } from './BrandingPreview';
+export { default as AddDomainModal } from './AddDomainModal';
+export type { AddDomainModalProps } from './AddDomainModal';
 
 // Theme utilities
 export {

@@ -36,6 +36,7 @@ import RunsDashboard from "@/pages/RunsDashboard"; // Stage 8
 import RunDetails from "@/pages/RunDetails"; // Stage 8
 import RunsCompare from "@/pages/RunsCompare"; // Stage 8
 import BrandingSettingsPage from "@/pages/BrandingSettingsPage"; // Stage 17
+import DomainSettingsPage from "@/pages/DomainSettingsPage"; // Stage 17
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -92,6 +93,7 @@ function Router() {
             <Route path="/settings" component={SettingsPage} />
             {/* Stage 17: Branding Settings */}
             <Route path="/projects/:id/settings/branding" component={BrandingSettingsPage} />
+            <Route path="/projects/:id/settings/branding/domains" component={DomainSettingsPage} />
             {/* Admin routes */}
             <Route path="/admin" component={AdminDashboard} />
             <Route path="/admin/users" component={AdminUsers} />

@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'wouter';
+import { useParams, Link } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { brandingAPI, type TenantBranding } from '@/lib/vault-api';
@@ -32,6 +32,7 @@ import {
   Save,
   RotateCcw,
   Eye,
+  Globe,
 } from 'lucide-react';
 import BrandingPreview from '@/components/branding/BrandingPreview';
 import { isValidHexColor, normalizeHexColor } from '@/lib/colorUtils';
@@ -202,6 +203,12 @@ export default function BrandingSettingsPage() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
+                <Link href={`/projects/${projectId}/settings/branding/domains`}>
+                  <Button variant="outline" size="sm">
+                    <Globe className="h-4 w-4 mr-2" />
+                    Manage Domains
+                  </Button>
+                </Link>
                 <Button
                   variant="outline"
                   size="sm"
