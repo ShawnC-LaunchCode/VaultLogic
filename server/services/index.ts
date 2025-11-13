@@ -15,6 +15,10 @@ export { AnalyticsService, analyticsService } from "./AnalyticsService";
 export { ProjectService, projectService } from "./ProjectService";
 export { WorkflowService, workflowService } from "./WorkflowService";
 
+// Stage 14: Review & E-Signature services
+export { ReviewTaskService, reviewTaskService } from "./ReviewTaskService";
+export { SignatureRequestService, signatureRequestService } from "./SignatureRequestService";
+
 // Export existing utility services
 // Note: Not re-exporting emailService and sendgrid to avoid conflicts
 export * from "./exportService";

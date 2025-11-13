@@ -784,10 +784,22 @@ export const versionStatusEnum = pgEnum('version_status', ['draft', 'published']
 export const templateTypeEnum = pgEnum('template_type', ['docx', 'html']);
 
 // Run status enum
-export const runStatusEnum = pgEnum('run_status', ['pending', 'success', 'error']);
+export const runStatusEnum = pgEnum('run_status', ['pending', 'success', 'error', 'waiting_review', 'waiting_signature']);
 
 // Log level enum
 export const logLevelEnum = pgEnum('log_level', ['info', 'warn', 'error']);
+
+// Stage 14: Review task status enum
+export const reviewTaskStatusEnum = pgEnum('review_task_status', ['pending', 'approved', 'changes_requested', 'rejected']);
+
+// Stage 14: Signature request status enum
+export const signatureRequestStatusEnum = pgEnum('signature_request_status', ['pending', 'signed', 'declined', 'expired']);
+
+// Stage 14: Signature provider enum
+export const signatureProviderEnum = pgEnum('signature_provider', ['native', 'docusign', 'hellosign']);
+
+// Stage 14: Signature event type enum
+export const signatureEventTypeEnum = pgEnum('signature_event_type', ['sent', 'viewed', 'signed', 'declined']);
 
 // Step (question) type enum - reuse question types
 export const stepTypeEnum = pgEnum('step_type', [
@@ -996,6 +1008,79 @@ export const runLogs = pgTable("run_logs", {
   index("run_logs_run_idx").on(table.runId),
   index("run_logs_level_idx").on(table.level),
   index("run_logs_created_at_idx").on(table.createdAt),
+]);
+
+// =====================================================================
+// STAGE 14: REVIEW & E-SIGNATURE TABLES
+// =====================================================================
+
+// Review tasks table for human review gates
+export const reviewTasks = pgTable("review_tasks", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  runId: uuid("run_id").references(() => runs.id, { onDelete: 'cascade' }).notNull(),
+  workflowId: uuid("workflow_id").references(() => workflows.id, { onDelete: 'cascade' }).notNull(),
+  nodeId: text("node_id").notNull(),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  projectId: uuid("project_id").references(() => projects.id, { onDelete: 'cascade' }).notNull(),
+  status: reviewTaskStatusEnum("status").default('pending').notNull(),
+  reviewerId: varchar("reviewer_id").references(() => users.id, { onDelete: 'set null' }),
+  reviewerEmail: varchar("reviewer_email", { length: 255 }),
+  message: text("message"),
+  comment: text("comment"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  resolvedAt: timestamp("resolved_at"),
+}, (table) => [
+  index("review_tasks_run_idx").on(table.runId),
+  index("review_tasks_workflow_idx").on(table.workflowId),
+  index("review_tasks_node_idx").on(table.nodeId),
+  index("review_tasks_status_idx").on(table.status),
+  index("review_tasks_tenant_idx").on(table.tenantId),
+  index("review_tasks_project_idx").on(table.projectId),
+  index("review_tasks_reviewer_idx").on(table.reviewerId),
+]);
+
+// Signature requests table for e-signature workflows
+export const signatureRequests = pgTable("signature_requests", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  runId: uuid("run_id").references(() => runs.id, { onDelete: 'cascade' }).notNull(),
+  workflowId: uuid("workflow_id").references(() => workflows.id, { onDelete: 'cascade' }).notNull(),
+  nodeId: text("node_id").notNull(),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  projectId: uuid("project_id").references(() => projects.id, { onDelete: 'cascade' }).notNull(),
+  signerEmail: varchar("signer_email", { length: 255 }).notNull(),
+  signerName: varchar("signer_name", { length: 255 }),
+  status: signatureRequestStatusEnum("status").default('pending').notNull(),
+  provider: signatureProviderEnum("provider").default('native').notNull(),
+  providerRequestId: text("provider_request_id"),
+  token: text("token").notNull().unique(),
+  documentUrl: text("document_url"),
+  redirectUrl: text("redirect_url"),
+  message: text("message"),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  signedAt: timestamp("signed_at"),
+}, (table) => [
+  index("signature_requests_run_idx").on(table.runId),
+  index("signature_requests_workflow_idx").on(table.workflowId),
+  index("signature_requests_node_idx").on(table.nodeId),
+  index("signature_requests_status_idx").on(table.status),
+  index("signature_requests_tenant_idx").on(table.tenantId),
+  index("signature_requests_project_idx").on(table.projectId),
+  index("signature_requests_token_idx").on(table.token),
+]);
+
+// Signature events table for audit logging
+export const signatureEvents = pgTable("signature_events", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  signatureRequestId: uuid("signature_request_id").references(() => signatureRequests.id, { onDelete: 'cascade' }).notNull(),
+  type: signatureEventTypeEnum("type").notNull(),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  payload: jsonb("payload"),
+}, (table) => [
+  index("signature_events_request_idx").on(table.signatureRequestId),
+  index("signature_events_type_idx").on(table.type),
 ]);
 
 // Sections table (equivalent to survey pages)
@@ -1298,6 +1383,12 @@ export const insertExternalConnectionSchema = createInsertSchema(externalConnect
 export const insertAuditEventSchema = createInsertSchema(auditEvents).omit({ id: true, ts: true, createdAt: true });
 export const insertApiKeySchema = createInsertSchema(apiKeys).omit({ id: true, createdAt: true, updatedAt: true, lastUsedAt: true });
 export const insertRunLogSchema = createInsertSchema(runLogs).omit({ id: true, createdAt: true });
+
+// Stage 14: Review & E-Signature insert schemas
+export const insertReviewTaskSchema = createInsertSchema(reviewTasks).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertSignatureRequestSchema = createInsertSchema(signatureRequests).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertSignatureEventSchema = createInsertSchema(signatureEvents).omit({ id: true, timestamp: true });
+
 export const insertSectionSchema = createInsertSchema(sections).omit({ id: true, createdAt: true });
 export const insertStepSchema = createInsertSchema(steps).omit({ id: true, createdAt: true });
 export const insertLogicRuleSchema = createInsertSchema(logicRules).omit({ id: true, createdAt: true });
@@ -1769,6 +1860,15 @@ export type ApiKey = typeof apiKeys.$inferSelect;
 export type InsertApiKey = typeof insertApiKeySchema._type;
 export type RunLog = typeof runLogs.$inferSelect;
 export type InsertRunLog = typeof insertRunLogSchema._type;
+
+// Stage 14: Review & E-Signature types
+export type ReviewTask = typeof reviewTasks.$inferSelect;
+export type InsertReviewTask = typeof insertReviewTaskSchema._type;
+export type SignatureRequest = typeof signatureRequests.$inferSelect;
+export type InsertSignatureRequest = typeof insertSignatureRequestSchema._type;
+export type SignatureEvent = typeof signatureEvents.$inferSelect;
+export type InsertSignatureEvent = typeof insertSignatureEventSchema._type;
+
 export type Section = typeof sections.$inferSelect;
 export type InsertSection = typeof insertSectionSchema._type;
 export type Step = typeof steps.$inferSelect;
