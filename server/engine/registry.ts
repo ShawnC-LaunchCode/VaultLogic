@@ -41,13 +41,19 @@ import {
   type EsignNodeInput,
   type EsignNodeOutput,
 } from './nodes/esign';
+import {
+  executeWebhookNode,
+  type WebhookNodeConfig,
+  type WebhookNodeInput,
+  type WebhookNodeOutput,
+} from './nodes/webhook';
 
 /**
  * Node Executor Registry
  * Central registry for all node type executors
  */
 
-export type NodeType = 'question' | 'compute' | 'branch' | 'template' | 'http' | 'review' | 'esign';
+export type NodeType = 'question' | 'compute' | 'branch' | 'template' | 'http' | 'review' | 'esign' | 'webhook';
 
 export type NodeConfig =
   | QuestionNodeConfig
@@ -56,7 +62,8 @@ export type NodeConfig =
   | TemplateNodeConfig
   | HttpNodeConfig
   | ReviewNodeConfig
-  | EsignNodeConfig;
+  | EsignNodeConfig
+  | WebhookNodeConfig;
 
 export type NodeOutput =
   | QuestionNodeOutput
@@ -65,7 +72,8 @@ export type NodeOutput =
   | TemplateNodeOutput
   | HttpNodeOutput
   | ReviewNodeOutput
-  | EsignNodeOutput;
+  | EsignNodeOutput
+  | WebhookNodeOutput;
 
 export interface Node {
   id: string;
@@ -178,6 +186,16 @@ export async function executeNode(input: ExecuteNodeInput): Promise<NodeOutput> 
       return await executeEsignNode(esignInput);
     }
 
+    case 'webhook': {
+      const webhookInput: WebhookNodeInput = {
+        nodeId: node.id,
+        config: node.config as WebhookNodeConfig,
+        context,
+        projectId: input.projectId,
+      };
+      return await executeWebhookNode(webhookInput);
+    }
+
     default:
       throw new Error(`Unknown node type: ${(node as any).type}`);
   }
@@ -187,7 +205,7 @@ export async function executeNode(input: ExecuteNodeInput): Promise<NodeOutput> 
  * Get all supported node types
  */
 export function getSupportedNodeTypes(): NodeType[] {
-  return ['question', 'compute', 'branch', 'template', 'http', 'review', 'esign'];
+  return ['question', 'compute', 'branch', 'template', 'http', 'review', 'esign', 'webhook'];
 }
 
 /**
