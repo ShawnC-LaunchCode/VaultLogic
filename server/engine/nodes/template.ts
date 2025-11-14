@@ -2,20 +2,31 @@ import type { EvalContext } from '../expr';
 import { evaluateExpression } from '../expr';
 import { db } from '../../db';
 import * as schema from '@shared/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { renderTemplate } from '../../services/templates';
+import { renderDocx2 } from '../../services/docxRenderer2';
+import { getTemplateFilePath, getOutputFilePath } from '../../services/templates';
+import fs from 'fs/promises';
+import path from 'path';
 
 /**
- * Template Node Executor
- * Handles document generation from templates
+ * Template Node Executor (Stage 21 - Multi-Template Support)
+ * Handles document generation from templates with support for:
+ * - Direct templateId (backward compatible)
+ * - Template key resolution via workflowTemplates mapping (new)
+ * - Enhanced DOCX rendering with loops/conditionals/helpers
+ * - Output tracking in runOutputs table
  */
 
 export interface TemplateNodeConfig {
-  templateId: string;              // Reference to template document
+  templateId?: string;             // Direct reference to template (legacy)
+  templateKey?: string;            // Key to resolve from workflowTemplates mapping (new)
   bindings: Record<string, string>; // Map of template placeholders to expressions
   outputName?: string;             // Optional output file name
   condition?: string;              // Optional conditional execution
   skipBehavior?: 'skip' | 'hide' | 'disable';
+  toPdf?: boolean;                 // Generate PDF version (Stage 21)
+  engine?: 'legacy' | 'v2';        // Which rendering engine to use (default: v2)
 }
 
 export interface TemplateNodeInput {
@@ -23,6 +34,8 @@ export interface TemplateNodeInput {
   config: TemplateNodeConfig;
   context: EvalContext;
   tenantId: string;
+  runId?: string;                  // Run ID for output tracking (Stage 21)
+  workflowVersionId?: string;      // Workflow version for template key resolution (Stage 21)
 }
 
 export interface TemplateNodeOutput {
@@ -39,7 +52,7 @@ export interface TemplateNodeOutput {
 }
 
 /**
- * Execute a template node
+ * Execute a template node (Stage 21 - Multi-Template Support)
  *
  * @param input - Node configuration and execution context
  * @returns Execution result
@@ -47,7 +60,7 @@ export interface TemplateNodeOutput {
 export async function executeTemplateNode(
   input: TemplateNodeInput
 ): Promise<TemplateNodeOutput> {
-  const { nodeId, config, context, tenantId } = input;
+  const { nodeId, config, context, tenantId, runId, workflowVersionId } = input;
 
   try {
     // Check condition if present
@@ -73,32 +86,108 @@ export async function executeTemplateNode(
       }
     }
 
-    // Fetch template from database
-    const template = await db.query.templates.findFirst({
-      where: eq(schema.templates.id, config.templateId),
-      with: {
-        project: true,
-      },
-    });
+    // Resolve template: either by templateKey (new) or templateId (legacy)
+    let template: any;
+    let templateKey: string | undefined;
 
-    if (!template) {
-      throw new Error(`Template ${config.templateId} not found`);
+    if (config.templateKey && workflowVersionId) {
+      // New path: resolve template from workflowTemplates mapping
+      templateKey = config.templateKey;
+
+      const mapping = await db.query.workflowTemplates.findFirst({
+        where: and(
+          eq(schema.workflowTemplates.workflowVersionId, workflowVersionId),
+          eq(schema.workflowTemplates.key, config.templateKey)
+        ),
+        with: {
+          template: {
+            with: {
+              project: true,
+            },
+          },
+        },
+      });
+
+      if (!mapping) {
+        throw new Error(
+          `Template with key '${config.templateKey}' not found in workflow version ${workflowVersionId}`
+        );
+      }
+
+      template = mapping.template;
+    } else if (config.templateId) {
+      // Legacy path: direct templateId lookup
+      template = await db.query.templates.findFirst({
+        where: eq(schema.templates.id, config.templateId),
+        with: {
+          project: true,
+        },
+      });
+
+      if (!template) {
+        throw new Error(`Template ${config.templateId} not found`);
+      }
+    } else {
+      throw new Error(
+        'Template node must specify either templateKey (with workflowVersionId) or templateId'
+      );
     }
 
     // Verify tenant access
     if (template.project.tenantId !== tenantId) {
-      throw new Error(`Access denied to template ${config.templateId}`);
+      throw new Error(`Access denied to template ${template.id}`);
     }
 
-    // Render the template with bindings
-    const result = await renderTemplate(
-      template.fileRef,
-      resolvedBindings,
-      {
+    // Choose rendering engine (default to v2)
+    const engine = config.engine || 'v2';
+    const toPdf = config.toPdf || false;
+
+    let result: { fileRef: string; pdfRef?: string; size: number; format: string };
+
+    if (engine === 'v2') {
+      // Use new docxRenderer2 with loops, conditionals, helpers
+      const templatePath = getTemplateFilePath(template.fileRef);
+      const outputDir = path.join(process.cwd(), 'server', 'files', 'outputs');
+
+      // Ensure output directory exists
+      await fs.mkdir(outputDir, { recursive: true });
+
+      const renderResult = await renderDocx2({
+        templatePath,
+        data: resolvedBindings,
+        outputDir,
         outputName: config.outputName,
-        toPdf: false, // Can be made configurable via node config
-      }
-    );
+        toPdf,
+      });
+
+      result = {
+        fileRef: path.basename(renderResult.docxPath),
+        pdfRef: renderResult.pdfPath ? path.basename(renderResult.pdfPath) : undefined,
+        size: renderResult.size,
+        format: 'docx',
+      };
+    } else {
+      // Legacy rendering engine
+      result = await renderTemplate(template.fileRef, resolvedBindings, {
+        outputName: config.outputName,
+        toPdf,
+      });
+    }
+
+    // Store output in runOutputs table if runId is provided
+    if (runId && workflowVersionId) {
+      const fileType = toPdf && result.pdfRef ? 'pdf' : 'docx';
+      const storagePath = toPdf && result.pdfRef ? result.pdfRef : result.fileRef;
+
+      await db.insert(schema.runOutputs).values({
+        runId,
+        workflowVersionId,
+        templateKey: templateKey || 'default',
+        fileType,
+        storagePath,
+        status: 'ready',
+      });
+    }
 
     return {
       status: 'executed',
@@ -112,6 +201,19 @@ export async function executeTemplateNode(
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'unknown error';
+
+    // Store failed output in runOutputs table if runId is provided
+    if (runId && workflowVersionId) {
+      await db.insert(schema.runOutputs).values({
+        runId,
+        workflowVersionId,
+        templateKey: config.templateKey || 'default',
+        fileType: config.toPdf ? 'pdf' : 'docx',
+        storagePath: '',
+        status: 'failed',
+        error: errorMessage,
+      });
+    }
 
     // Return error status instead of throwing
     // This allows the workflow to continue and log the error

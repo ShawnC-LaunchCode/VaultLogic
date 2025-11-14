@@ -37,6 +37,9 @@ import { registerVersionRoutes } from "./versions.routes";
 import { registerBrandingRoutes } from "./branding.routes";
 import { registerEmailTemplateRoutes } from "./emailTemplates.routes";
 import { registerCollectionsRoutes } from "./collections.routes";
+import { registerTemplateAnalysisRoutes } from "./templateAnalysis.routes";
+import { registerWorkflowTemplateRoutes } from "./workflowTemplates.routes";
+import { registerRunOutputsRoutes } from "./runOutputs.routes";
 
 /**
  * Register all modular routes
@@ -110,6 +113,9 @@ export function registerAllRoutes(app: Express): void {
   // Workflow management routes
   registerWorkflowRoutes(app);
 
+  // Workflow template mapping routes (Stage 21)
+  registerWorkflowTemplateRoutes(app);
+
   // Section management routes
   registerSectionRoutes(app);
 
@@ -149,6 +155,12 @@ export function registerAllRoutes(app: Express): void {
 
   // Templates API (file upload, placeholders)
   registerApiTemplateRoutes(app);
+
+  // Template Analysis API (Stage 21 - analyze, validate, sample data)
+  registerTemplateAnalysisRoutes(app);
+
+  // Run Outputs API (Stage 21 - view, download generated documents)
+  registerRunOutputsRoutes(app);
 
   // Runs API (workflow execution, logs, download)
   registerApiRunRoutes(app);
