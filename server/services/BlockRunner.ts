@@ -2,6 +2,8 @@ import { blockService } from "./BlockService";
 import { transformBlockService } from "./TransformBlockService";
 import { collectionService } from "./CollectionService";
 import { recordService } from "./RecordService";
+import { workflowService } from "./WorkflowService";
+import { db } from "../db";
 import type {
   BlockPhase,
   BlockContext,
@@ -402,6 +404,34 @@ export class BlockRunner {
   }
 
   /**
+   * Helper: Get tenantId from workflowId
+   */
+  private async getTenantIdFromWorkflow(workflowId: string): Promise<string | null> {
+    try {
+      const workflow = await workflowService.getWorkflow(workflowId);
+      if (!workflow || !workflow.projectId) {
+        logger.warn({ workflowId }, "Workflow not found or has no projectId");
+        return null;
+      }
+
+      // Fetch project to get tenantId
+      const project = await db.query.projects.findFirst({
+        where: (projects, { eq }) => eq(projects.id, workflow.projectId!),
+      });
+
+      if (!project) {
+        logger.warn({ projectId: workflow.projectId }, "Project not found");
+        return null;
+      }
+
+      return project.tenantId;
+    } catch (error) {
+      logger.error({ error, workflowId }, "Error fetching tenantId from workflow");
+      return null;
+    }
+  }
+
+  /**
    * Execute create_record block
    * Creates a new record in a collection
    */
@@ -410,9 +440,14 @@ export class BlockRunner {
     context: BlockContext
   ): Promise<BlockResult> {
     try {
-      // Get tenant ID from workflow (assuming it's available in context or we need to fetch it)
-      // For now, we'll need to fetch the workflow to get tenantId
-      // This is a limitation - we may need to add tenantId to BlockContext
+      // Get tenantId from workflow
+      const tenantId = await this.getTenantIdFromWorkflow(context.workflowId);
+      if (!tenantId) {
+        return {
+          success: false,
+          errors: ["Failed to resolve tenantId from workflow"],
+        };
+      }
 
       // Build record data from fieldMap
       const recordData: Record<string, any> = {};
@@ -423,18 +458,14 @@ export class BlockRunner {
         }
       }
 
-      // Create the record
-      // Note: This will require tenantId - we'll need to enhance BlockContext or fetch it
-      // For now, let's log a warning and return a placeholder implementation
-      logger.info({ config, recordData }, "Creating record via block");
+      logger.info({ tenantId, collectionId: config.collectionId, recordData }, "Creating record via block");
 
-      // TODO: Implement once tenantId is available in context
-      // const record = await recordService.createRecord(tenantId, config.collectionId, recordData);
+      // Create the record
+      const record = await recordService.createRecord(tenantId, config.collectionId, recordData);
 
       const updates: Record<string, any> = {};
       if (config.outputKey) {
-        // TODO: Set this to the actual record ID once implemented
-        updates[config.outputKey] = "placeholder-record-id";
+        updates[config.outputKey] = record.id;
       }
 
       return {
@@ -459,6 +490,15 @@ export class BlockRunner {
     context: BlockContext
   ): Promise<BlockResult> {
     try {
+      // Get tenantId from workflow
+      const tenantId = await this.getTenantIdFromWorkflow(context.workflowId);
+      if (!tenantId) {
+        return {
+          success: false,
+          errors: ["Failed to resolve tenantId from workflow"],
+        };
+      }
+
       const recordId = context.data[config.recordIdKey];
       if (!recordId) {
         return {
@@ -476,10 +516,10 @@ export class BlockRunner {
         }
       }
 
-      logger.info({ config, recordId, updateData }, "Updating record via block");
+      logger.info({ tenantId, collectionId: config.collectionId, recordId, updateData }, "Updating record via block");
 
-      // TODO: Implement once tenantId is available in context
-      // await recordService.updateRecord(tenantId, config.collectionId, recordId, updateData);
+      // Update the record
+      await recordService.updateRecord(tenantId, config.collectionId, recordId, updateData);
 
       return {
         success: true,
@@ -502,19 +542,27 @@ export class BlockRunner {
     context: BlockContext
   ): Promise<BlockResult> {
     try {
-      logger.info({ config }, "Finding records via block");
+      // Get tenantId from workflow
+      const tenantId = await this.getTenantIdFromWorkflow(context.workflowId);
+      if (!tenantId) {
+        return {
+          success: false,
+          errors: ["Failed to resolve tenantId from workflow"],
+        };
+      }
 
-      // TODO: Implement once tenantId is available in context
-      // const records = await recordService.findRecordsByFilters(
-      //   tenantId,
-      //   config.collectionId,
-      //   config.filters,
-      //   config.limit || 1
-      // );
+      logger.info({ tenantId, collectionId: config.collectionId, filters: config.filters }, "Finding records via block");
 
-      const records: any[] = []; // Placeholder
+      // Query records with filters
+      // Note: The recordService.findByFilters uses pagination, we'll use page=1 and limit from config
+      const result = await recordService.findByFilters(
+        tenantId,
+        config.collectionId,
+        config.filters,
+        { page: 1, limit: config.limit || 1 }
+      );
 
-      if (records.length === 0 && config.failIfNotFound) {
+      if (result.records.length === 0 && config.failIfNotFound) {
         return {
           success: false,
           errors: ["No records found matching the criteria"],
@@ -522,7 +570,8 @@ export class BlockRunner {
       }
 
       const updates: Record<string, any> = {};
-      updates[config.outputKey] = config.limit === 1 ? (records[0] || null) : records;
+      // If limit is 1, return single record, otherwise return array
+      updates[config.outputKey] = config.limit === 1 ? (result.records[0] || null) : result.records;
 
       return {
         success: true,
@@ -546,6 +595,15 @@ export class BlockRunner {
     context: BlockContext
   ): Promise<BlockResult> {
     try {
+      // Get tenantId from workflow
+      const tenantId = await this.getTenantIdFromWorkflow(context.workflowId);
+      if (!tenantId) {
+        return {
+          success: false,
+          errors: ["Failed to resolve tenantId from workflow"],
+        };
+      }
+
       const recordId = context.data[config.recordIdKey];
       if (!recordId) {
         return {
@@ -554,10 +612,10 @@ export class BlockRunner {
         };
       }
 
-      logger.info({ config, recordId }, "Deleting record via block");
+      logger.info({ tenantId, collectionId: config.collectionId, recordId }, "Deleting record via block");
 
-      // TODO: Implement once tenantId is available in context
-      // await recordService.deleteRecord(tenantId, config.collectionId, recordId);
+      // Delete the record
+      await recordService.deleteRecord(tenantId, config.collectionId, recordId);
 
       return {
         success: true,
