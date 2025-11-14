@@ -38,6 +38,7 @@ import { registerBrandingRoutes } from "./branding.routes";
 import { registerEmailTemplateRoutes } from "./emailTemplates.routes";
 import { registerCollectionsRoutes } from "./collections.routes";
 import { registerTemplateAnalysisRoutes } from "./templateAnalysis.routes";
+import { registerWorkflowTemplateRoutes } from "./workflowTemplates.routes";
 
 /**
  * Register all modular routes
@@ -110,6 +111,9 @@ export function registerAllRoutes(app: Express): void {
 
   // Workflow management routes
   registerWorkflowRoutes(app);
+
+  // Workflow template mapping routes (Stage 21)
+  registerWorkflowTemplateRoutes(app);
 
   // Section management routes
   registerSectionRoutes(app);
