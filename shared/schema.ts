@@ -964,6 +964,19 @@ export const connectionTypeEnum = pgEnum('connection_type', [
   'oauth2_3leg'
 ]);
 
+// Collection field type enum (Stage 19)
+export const collectionFieldTypeEnum = pgEnum('collection_field_type', [
+  'text',
+  'number',
+  'boolean',
+  'date',
+  'datetime',
+  'file',
+  'select',
+  'multi_select',
+  'json'
+]);
+
 // Secrets table for encrypted API keys and credentials
 export const secrets = pgTable("secrets", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -1042,6 +1055,66 @@ export const connections = pgTable("connections", {
   index("connections_enabled_idx").on(table.enabled),
   // Ensure unique connection names per project
   index("connections_project_name_unique_idx").on(table.projectId, table.name).unique(),
+]);
+
+// =====================================================================
+// STAGE 19: COLLECTIONS / DATASTORE SYSTEM
+// =====================================================================
+
+// Collections table - tenant-scoped data tables (similar to Airtable bases)
+export const collections = pgTable("collections", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 255 }).notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("collections_tenant_idx").on(table.tenantId),
+  index("collections_slug_idx").on(table.slug),
+  index("collections_created_at_idx").on(table.createdAt),
+  // Ensure unique slug per tenant
+  index("collections_tenant_slug_unique_idx").on(table.tenantId, table.slug).unique(),
+]);
+
+// Collection fields table - field definitions for collections
+export const collectionFields = pgTable("collection_fields", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  collectionId: uuid("collection_id").references(() => collections.id, { onDelete: 'cascade' }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 255 }).notNull(),
+  type: collectionFieldTypeEnum("type").notNull(),
+  isRequired: boolean("is_required").default(false).notNull(),
+  options: jsonb("options"), // For select/multi-select: array of valid options
+  defaultValue: jsonb("default_value"), // Default value for new records
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("collection_fields_collection_idx").on(table.collectionId),
+  index("collection_fields_slug_idx").on(table.slug),
+  index("collection_fields_type_idx").on(table.type),
+  // Ensure unique slug per collection
+  index("collection_fields_collection_slug_unique_idx").on(table.collectionId, table.slug).unique(),
+]);
+
+// Records table - data stored in collections (schemaless JSONB)
+export const records = pgTable("records", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  collectionId: uuid("collection_id").references(() => collections.id, { onDelete: 'cascade' }).notNull(),
+  data: jsonb("data").default(sql`'{}'::jsonb`).notNull(), // fieldSlug → value map
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: varchar("created_by").references(() => users.id, { onDelete: 'set null' }),
+  updatedBy: varchar("updated_by").references(() => users.id, { onDelete: 'set null' }),
+}, (table) => [
+  index("records_tenant_idx").on(table.tenantId),
+  index("records_collection_idx").on(table.collectionId),
+  index("records_created_at_idx").on(table.createdAt),
+  index("records_created_by_idx").on(table.createdBy),
+  // GIN index for JSONB data queries
+  index("records_data_gin_idx").on(table.data),
 ]);
 
 // AuditEvent table for audit logging
@@ -1279,6 +1352,8 @@ export const tenantsRelations = relations(tenants, ({ many }) => ({
   users: many(users),
   projects: many(projects),
   domains: many(tenantDomains), // Stage 17: Custom domains
+  collections: many(collections), // Stage 19: Collections/Datastore
+  records: many(records), // Stage 19: Records
 }));
 
 // Stage 17: Tenant domains relations
@@ -1299,6 +1374,42 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   secrets: many(secrets),
   apiKeys: many(apiKeys),
   externalConnections: many(externalConnections),
+}));
+
+// Stage 19: Collections/Datastore relations
+export const collectionsRelations = relations(collections, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [collections.tenantId],
+    references: [tenants.id],
+  }),
+  fields: many(collectionFields),
+  records: many(records),
+}));
+
+export const collectionFieldsRelations = relations(collectionFields, ({ one }) => ({
+  collection: one(collections, {
+    fields: [collectionFields.collectionId],
+    references: [collections.id],
+  }),
+}));
+
+export const recordsRelations = relations(records, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [records.tenantId],
+    references: [tenants.id],
+  }),
+  collection: one(collections, {
+    fields: [records.collectionId],
+    references: [collections.id],
+  }),
+  createdByUser: one(users, {
+    fields: [records.createdBy],
+    references: [users.id],
+  }),
+  updatedByUser: one(users, {
+    fields: [records.updatedBy],
+    references: [users.id],
+  }),
 }));
 
 export const workflowsRelations = relations(workflows, ({ one, many }) => ({
@@ -1478,6 +1589,11 @@ export const insertRunLogSchema = createInsertSchema(runLogs).omit({ id: true, c
 export const insertReviewTaskSchema = createInsertSchema(reviewTasks).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertSignatureRequestSchema = createInsertSchema(signatureRequests).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertSignatureEventSchema = createInsertSchema(signatureEvents).omit({ id: true, timestamp: true });
+
+// Stage 19: Collections/Datastore insert schemas
+export const insertCollectionSchema = createInsertSchema(collections).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertCollectionFieldSchema = createInsertSchema(collectionFields).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertRecordSchema = createInsertSchema(records).omit({ id: true, createdAt: true, updatedAt: true });
 
 export const insertSectionSchema = createInsertSchema(sections).omit({ id: true, createdAt: true });
 export const insertStepSchema = createInsertSchema(steps).omit({ id: true, createdAt: true });
@@ -1958,6 +2074,14 @@ export type SignatureRequest = typeof signatureRequests.$inferSelect;
 export type InsertSignatureRequest = typeof insertSignatureRequestSchema._type;
 export type SignatureEvent = typeof signatureEvents.$inferSelect;
 export type InsertSignatureEvent = typeof insertSignatureEventSchema._type;
+
+// Stage 19: Collections/Datastore types
+export type Collection = typeof collections.$inferSelect;
+export type InsertCollection = typeof insertCollectionSchema._type;
+export type CollectionField = typeof collectionFields.$inferSelect;
+export type InsertCollectionField = typeof insertCollectionFieldSchema._type;
+export type CollectionRecord = typeof records.$inferSelect;
+export type InsertCollectionRecord = typeof insertRecordSchema._type;
 
 export type Section = typeof sections.$inferSelect;
 export type InsertSection = typeof insertSectionSchema._type;
