@@ -1,0 +1,294 @@
+/**
+ * Intake Question Visibility Service (Stage 20 PR 3)
+ *
+ * Handles question-level conditional visibility for Intake Runner 2.0.
+ * Evaluates visibleIf conditions to determine which questions should be
+ * displayed within a page.
+ */
+
+import { stepRepository, stepValueRepository } from "../repositories";
+import { evaluateCondition, type ConditionExpression, type EvaluationContext } from "../workflows/conditions";
+import type { Step } from "@shared/schema";
+import { createLogger } from "../logger";
+
+const logger = createLogger({ module: "intake-question-visibility" });
+
+export interface QuestionVisibilityResult {
+  /** All question IDs for the page (including hidden) */
+  allQuestions: string[];
+
+  /** Visible question IDs in order */
+  visibleQuestions: string[];
+
+  /** Hidden question IDs */
+  hiddenQuestions: string[];
+
+  /** Map of questionId -> visibility reason (for debugging) */
+  visibilityReasons: Map<string, string>;
+}
+
+export interface QuestionValidationFilter {
+  /** Question IDs that should be validated (visible + required) */
+  requiredQuestions: string[];
+
+  /** Question IDs that should be skipped in validation (hidden or optional) */
+  skippedQuestions: string[];
+}
+
+export class IntakeQuestionVisibilityService {
+  /**
+   * Evaluates question visibility for a specific page
+   *
+   * @param sectionId - Page (section) ID
+   * @param runId - Current run ID
+   * @param recordData - Optional collection record data for prefill
+   * @returns Visibility result with visible/hidden question lists
+   */
+  async evaluatePageQuestions(
+    sectionId: string,
+    runId: string,
+    recordData?: Record<string, any>
+  ): Promise<QuestionVisibilityResult> {
+    // Load all questions for this page
+    const allQuestions = await stepRepository.findBySectionIds([sectionId]);
+    const sortedQuestions = allQuestions
+      .filter(q => !q.isVirtual) // Exclude virtual steps (transform block outputs)
+      .sort((a, b) => a.order - b.order);
+
+    // Load all step values for this run to build context
+    const stepValues = await stepValueRepository.findByRunId(runId);
+
+    // Load all steps to map stepId -> alias (for variable resolution)
+    const workflowId = allQuestions[0]?.sectionId; // Get workflow via section
+    // TODO: Better way to get workflowId from sectionId
+    const allSteps = sortedQuestions; // For now, just use page steps
+    const stepIdToAlias = new Map<string, string>();
+    for (const step of allSteps) {
+      if (step.alias) {
+        stepIdToAlias.set(step.id, step.alias);
+      }
+    }
+
+    // Build evaluation context
+    const variables: Record<string, any> = {};
+    for (const sv of stepValues) {
+      const alias = stepIdToAlias.get(sv.stepId);
+      const key = alias || sv.stepId;
+      variables[key] = sv.value;
+    }
+
+    const context: EvaluationContext = {
+      variables,
+      record: recordData,
+    };
+
+    // Evaluate visibility for each question
+    const visibleQuestions: string[] = [];
+    const hiddenQuestions: string[] = [];
+    const visibilityReasons = new Map<string, string>();
+
+    for (const question of sortedQuestions) {
+      let isVisible = true;
+      let reason = "Always visible (no condition)";
+
+      // Evaluate visibleIf condition
+      if (question.visibleIf) {
+        try {
+          const condition = question.visibleIf as unknown as ConditionExpression;
+          isVisible = evaluateCondition(condition, context);
+
+          if (isVisible) {
+            reason = "Visible by condition";
+          } else {
+            reason = "Hidden by visibleIf condition";
+            hiddenQuestions.push(question.id);
+            logger.debug(
+              { questionId: question.id, questionTitle: question.title },
+              "Question hidden by visibleIf condition"
+            );
+          }
+        } catch (error) {
+          logger.error(
+            { error, questionId: question.id, condition: question.visibleIf },
+            "Error evaluating visibleIf condition"
+          );
+          // Default to visible on error (fail-safe)
+          isVisible = true;
+          reason = "Visible (error evaluating condition - fail-safe)";
+        }
+      }
+
+      if (isVisible) {
+        visibleQuestions.push(question.id);
+      }
+
+      visibilityReasons.set(question.id, reason);
+    }
+
+    return {
+      allQuestions: sortedQuestions.map(q => q.id),
+      visibleQuestions,
+      hiddenQuestions,
+      visibilityReasons,
+    };
+  }
+
+  /**
+   * Determines which questions should be validated for a page submission
+   *
+   * Hidden questions are excluded from validation.
+   * Optional visible questions are included in validation (will allow empty).
+   *
+   * @param sectionId - Page (section) ID
+   * @param runId - Current run ID
+   * @param recordData - Optional collection record data
+   * @returns Validation filter with required/skipped question lists
+   */
+  async getValidationFilter(
+    sectionId: string,
+    runId: string,
+    recordData?: Record<string, any>
+  ): Promise<QuestionValidationFilter> {
+    const visibility = await this.evaluatePageQuestions(sectionId, runId, recordData);
+
+    // Load question details to check required status
+    const questions = await stepRepository.findBySectionIds([sectionId]);
+    const questionMap = new Map(questions.map(q => [q.id, q]));
+
+    const requiredQuestions: string[] = [];
+    const skippedQuestions: string[] = [];
+
+    for (const questionId of visibility.allQuestions) {
+      const question = questionMap.get(questionId);
+      if (!question) continue;
+
+      // Hidden questions are always skipped
+      if (visibility.hiddenQuestions.includes(questionId)) {
+        skippedQuestions.push(questionId);
+        continue;
+      }
+
+      // Visible required questions must be validated
+      if (question.required) {
+        requiredQuestions.push(questionId);
+      }
+    }
+
+    return {
+      requiredQuestions,
+      skippedQuestions,
+    };
+  }
+
+  /**
+   * Checks if a specific question is currently visible
+   *
+   * @param questionId - Question (step) ID
+   * @param runId - Current run ID
+   * @param recordData - Optional collection record data
+   * @returns True if question is visible
+   */
+  async isQuestionVisible(
+    questionId: string,
+    runId: string,
+    recordData?: Record<string, any>
+  ): Promise<boolean> {
+    // Load question to get sectionId
+    const questions = await stepRepository.findBySectionIds([questionId]);
+    if (questions.length === 0) {
+      return false;
+    }
+
+    const question = questions[0];
+    const visibility = await this.evaluatePageQuestions(question.sectionId, runId, recordData);
+
+    return visibility.visibleQuestions.includes(questionId);
+  }
+
+  /**
+   * Gets the count of visible questions for a page
+   * Useful for UI indicators and progress calculation
+   *
+   * @param sectionId - Page (section) ID
+   * @param runId - Current run ID
+   * @param recordData - Optional collection record data
+   * @returns Count of visible questions
+   */
+  async getVisibleQuestionCount(
+    sectionId: string,
+    runId: string,
+    recordData?: Record<string, any>
+  ): Promise<number> {
+    const visibility = await this.evaluatePageQuestions(sectionId, runId, recordData);
+    return visibility.visibleQuestions.length;
+  }
+
+  /**
+   * Validates question conditions for potential issues
+   *
+   * @param sectionId - Page (section) ID
+   * @returns Array of warning messages (empty if valid)
+   */
+  async validateQuestionConditions(sectionId: string): Promise<string[]> {
+    const warnings: string[] = [];
+    const questions = await stepRepository.findBySectionIds([sectionId]);
+
+    for (const question of questions) {
+      // Warn if required question has visibility condition (could be confusing)
+      if (question.required && question.visibleIf) {
+        warnings.push(
+          `Question "${question.title}" is marked as required but has a visibleIf condition. ` +
+          `It will only be required when visible.`
+        );
+      }
+
+      // Warn if virtual step has visibility condition (doesn't make sense)
+      if (question.isVirtual && question.visibleIf) {
+        warnings.push(
+          `Virtual step "${question.title}" has a visibleIf condition. ` +
+          `Virtual steps are always hidden, so this condition is unnecessary.`
+        );
+      }
+    }
+
+    return warnings;
+  }
+
+  /**
+   * Clears step values for hidden questions
+   * When a question becomes hidden, its previously entered value should be cleared
+   * to avoid validation issues and data inconsistencies.
+   *
+   * @param sectionId - Page (section) ID
+   * @param runId - Current run ID
+   * @param recordData - Optional collection record data
+   * @returns Array of cleared step IDs
+   */
+  async clearHiddenQuestionValues(
+    sectionId: string,
+    runId: string,
+    recordData?: Record<string, any>
+  ): Promise<string[]> {
+    const visibility = await this.evaluatePageQuestions(sectionId, runId, recordData);
+    const clearedSteps: string[] = [];
+
+    // For each hidden question, check if it has a value and clear it
+    for (const questionId of visibility.hiddenQuestions) {
+      const existingValue = await stepValueRepository.findByRunIdAndStepId(runId, questionId);
+
+      if (existingValue) {
+        await stepValueRepository.delete(existingValue.id);
+        clearedSteps.push(questionId);
+        logger.debug(
+          { runId, questionId },
+          "Cleared value for hidden question"
+        );
+      }
+    }
+
+    return clearedSteps;
+  }
+}
+
+// Singleton instance
+export const intakeQuestionVisibilityService = new IntakeQuestionVisibilityService();

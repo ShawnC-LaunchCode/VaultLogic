@@ -1262,6 +1262,8 @@ export const steps = pgTable("steps", {
   alias: text("alias"), // Optional human-friendly variable name for logic/blocks
   order: integer("order").notNull(),
   isVirtual: boolean("is_virtual").default(false).notNull(), // Virtual steps are hidden from UI
+  // Stage 20 PR 3: Question-level conditional logic
+  visibleIf: jsonb("visible_if"), // Condition expression for question visibility
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("steps_section_idx").on(table.sectionId),
