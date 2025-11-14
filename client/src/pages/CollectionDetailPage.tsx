@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   useCollection,
   useCollectionFields,
+  useCollectionRecords,
   useCreateCollectionField,
   useUpdateCollectionField,
   useDeleteCollectionField,
@@ -19,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Loader2, ArrowLeft, Database } from "lucide-react";
 import { FieldsList } from "@/components/collections/FieldsList";
 import { CreateFieldModal } from "@/components/collections/CreateFieldModal";
+import { RecordsList } from "@/components/collections/RecordsList";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,6 +43,19 @@ export default function CollectionDetailPage() {
 
   const { data: collection, isLoading: loadingCollection } = useCollection(tenantId, collectionId, false);
   const { data: fields, isLoading: loadingFields } = useCollectionFields(tenantId, collectionId);
+
+  // Records pagination state
+  const [recordsPage, setRecordsPage] = useState(1);
+  const recordsPageSize = 50;
+
+  const { data: recordsData, isLoading: loadingRecords } = useCollectionRecords(
+    tenantId,
+    collectionId,
+    {
+      page: recordsPage,
+      limit: recordsPageSize,
+    }
+  );
 
   const createFieldMutation = useCreateCollectionField();
   const updateFieldMutation = useUpdateCollectionField();
@@ -198,7 +213,7 @@ export default function CollectionDetailPage() {
             Fields ({fields?.length || 0})
           </TabsTrigger>
           <TabsTrigger value="records">
-            Records
+            Records ({recordsData?.total || 0})
           </TabsTrigger>
         </TabsList>
 
@@ -227,10 +242,29 @@ export default function CollectionDetailPage() {
         </TabsContent>
 
         {/* Records Tab */}
-        <TabsContent value="records">
-          <div className="text-center py-12 text-muted-foreground">
-            Records view coming in PR 6...
-          </div>
+        <TabsContent value="records" className="space-y-4">
+          {fields && fields.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <p>Please add fields to this collection before adding records.</p>
+            </div>
+          ) : (
+            <RecordsList
+              records={recordsData?.records || []}
+              fields={fields || []}
+              isLoading={loadingRecords}
+              page={recordsPage}
+              pageSize={recordsPageSize}
+              totalRecords={recordsData?.total || 0}
+              onPageChange={setRecordsPage}
+              onAddRecord={() => {
+                // TODO: Open record editor modal in PR 7
+                toast({
+                  title: "Coming soon",
+                  description: "Record creation will be available in PR 7",
+                });
+              }}
+            />
+          )}
         </TabsContent>
       </Tabs>
 
