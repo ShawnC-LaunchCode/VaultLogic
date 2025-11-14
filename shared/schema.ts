@@ -839,7 +839,8 @@ export const stepTypeEnum = pgEnum('step_type', [
   'date_time',
   'file_upload',
   'loop_group',
-  'js_question'
+  'js_question',
+  'repeater' // Stage 20 PR 4: Repeating groups
 ]);
 
 // Logic rule target type enum
@@ -1242,6 +1243,9 @@ export const sections = pgTable("sections", {
   title: varchar("title").notNull(),
   description: text("description"),
   order: integer("order").notNull(),
+  // Stage 20 PR 2: Page-level conditional logic
+  visibleIf: jsonb("visible_if"), // Condition expression for visibility
+  skipIf: jsonb("skip_if"), // Condition expression for skip logic
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("sections_workflow_idx").on(table.workflowId),
@@ -1259,6 +1263,10 @@ export const steps = pgTable("steps", {
   alias: text("alias"), // Optional human-friendly variable name for logic/blocks
   order: integer("order").notNull(),
   isVirtual: boolean("is_virtual").default(false).notNull(), // Virtual steps are hidden from UI
+  // Stage 20 PR 3: Question-level conditional logic
+  visibleIf: jsonb("visible_if"), // Condition expression for question visibility
+  // Stage 20 PR 4: Repeater configuration
+  repeaterConfig: jsonb("repeater_config"), // Configuration for repeater fields
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("steps_section_idx").on(table.sectionId),
