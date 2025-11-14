@@ -45,5 +45,8 @@ export { CollectionRepository, collectionRepository } from "./CollectionReposito
 export { CollectionFieldRepository, collectionFieldRepository } from "./CollectionFieldRepository";
 export { RecordRepository, recordRepository } from "./RecordRepository";
 
+// Stage 21: Document Generation Engine repositories
+export { DocumentTemplateRepository, documentTemplateRepository } from "./DocumentTemplateRepository";
+
 // Export type for Insert operations
 export type { InsertAnalyticsEvent } from "./AnalyticsRepository";
