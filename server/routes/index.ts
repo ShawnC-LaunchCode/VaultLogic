@@ -36,6 +36,7 @@ import { registerIntakeRoutes } from "./intake.routes";
 import { registerVersionRoutes } from "./versions.routes";
 import { registerBrandingRoutes } from "./branding.routes";
 import { registerEmailTemplateRoutes } from "./emailTemplates.routes";
+import { registerCollectionsRoutes } from "./collections.routes";
 
 /**
  * Register all modular routes
@@ -172,4 +173,11 @@ export function registerAllRoutes(app: Express): void {
 
   // Version management routes (publish, rollback, diff)
   registerVersionRoutes(app);
+
+  // ========================================================================
+  // Stage 19: Collections / Datastore System
+  // ========================================================================
+
+  // Collections/Datastore routes (tenant-scoped tables, fields, records)
+  registerCollectionsRoutes(app);
 }

@@ -40,5 +40,10 @@ export { ProjectAccessRepository, projectAccessRepository, WorkflowAccessReposit
 export { ReviewTaskRepository, reviewTaskRepository } from "./ReviewTaskRepository";
 export { SignatureRequestRepository, signatureRequestRepository } from "./SignatureRequestRepository";
 
+// Stage 19: Collections/Datastore repositories
+export { CollectionRepository, collectionRepository } from "./CollectionRepository";
+export { CollectionFieldRepository, collectionFieldRepository } from "./CollectionFieldRepository";
+export { RecordRepository, recordRepository } from "./RecordRepository";
+
 // Export type for Insert operations
 export type { InsertAnalyticsEvent } from "./AnalyticsRepository";
