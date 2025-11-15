@@ -2,9 +2,11 @@
  * Stage 21: Template Node Unit Tests
  *
  * Tests for multi-template node execution
+ * NOTE: These are integration tests that require database connectivity
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describeWithDb } from '../../helpers/dbTestHelper';
 import { db } from '../../../server/db';
 import {
   projects,
@@ -54,7 +56,7 @@ vi.mock('fs/promises', () => ({
   },
 }));
 
-describe('Template Node - Multi-Template Support', () => {
+describeWithDb('Template Node - Multi-Template Support', () => {
   let testProjectId: string;
   let testWorkflowId: string;
   let testVersionId: string;

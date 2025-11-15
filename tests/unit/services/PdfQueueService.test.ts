@@ -2,9 +2,12 @@
  * Stage 21: PDF Queue Service Unit Tests
  *
  * Tests for queue-based PDF conversion with retry logic
+ *
+ * NOTE: These are integration tests that require database connectivity
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi, beforeAll, afterAll } from 'vitest';
+import { describeWithDb } from '../../helpers/dbTestHelper';
 import { db } from '../../../server/db';
 import { projects, workflows, workflowVersions, runs, runOutputs } from '../../../shared/schema';
 import { PdfQueueService } from '../../../server/services/PdfQueueService';
@@ -37,7 +40,7 @@ vi.mock('fs/promises', () => ({
   },
 }));
 
-describe('PdfQueueService', () => {
+describeWithDb('PdfQueueService', () => {
   let service: PdfQueueService;
   let testProjectId: string;
   let testWorkflowId: string;

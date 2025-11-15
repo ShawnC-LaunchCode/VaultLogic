@@ -247,7 +247,7 @@ export class RepeaterService {
 
     const template = config.instanceTitleTemplate || 'Item #{index}';
 
-    return template.replace('#{index}', (instance.index + 1).toString());
+    return template.replace('{index}', (instance.index + 1).toString());
   }
 }
 

@@ -438,8 +438,8 @@ export function validateConditionExpression(expression: any): string[] {
     return errors;
   }
 
-  // Check if it's a comparison condition
-  if ('op' in expression) {
+  // Check if it looks like a comparison condition (has left/right but maybe missing op)
+  if ('left' in expression || 'right' in expression || 'op' in expression) {
     if (!expression.op || typeof expression.op !== 'string') {
       errors.push('Comparison condition must have an operator');
     }
