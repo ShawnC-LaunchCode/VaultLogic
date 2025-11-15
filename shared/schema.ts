@@ -2017,6 +2017,14 @@ export const metricsRollups = pgTable("metrics_rollups", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
+  // Unique index for upsert operations (includes COALESCE for nullable workflow_id)
+  uniqueIndex("metrics_rollups_unique_idx").on(
+    table.tenantId,
+    table.projectId,
+    sql`COALESCE(${table.workflowId}, '00000000-0000-0000-0000-000000000000'::uuid)`,
+    table.bucketStart,
+    table.bucket
+  ),
   index("metrics_rollups_project_bucket_idx").on(table.projectId, table.bucketStart, table.bucket),
   index("metrics_rollups_workflow_bucket_idx").on(table.workflowId, table.bucketStart, table.bucket),
   index("metrics_rollups_tenant_idx").on(table.tenantId),
