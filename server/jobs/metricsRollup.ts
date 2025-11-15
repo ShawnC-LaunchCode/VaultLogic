@@ -131,33 +131,54 @@ async function rollupSingleBucket(params: {
       queueDequeued: parseInt(row.queue_dequeued) || 0,
     };
 
-    // Upsert rollup
-    await db
-      .insert(metricsRollups)
-      .values(rollupData)
-      .onConflictDoUpdate({
-        target: [
-          metricsRollups.tenantId,
-          metricsRollups.projectId,
-          sql`COALESCE(${metricsRollups.workflowId}, '00000000-0000-0000-0000-000000000000'::uuid)`,
-          metricsRollups.bucketStart,
-          metricsRollups.bucket,
-        ],
-        set: {
-          runsCount: rollupData.runsCount,
-          runsSuccess: rollupData.runsSuccess,
-          runsError: rollupData.runsError,
-          durP50: rollupData.durP50,
-          durP95: rollupData.durP95,
-          pdfSuccess: rollupData.pdfSuccess,
-          pdfError: rollupData.pdfError,
-          docxSuccess: rollupData.docxSuccess,
-          docxError: rollupData.docxError,
-          queueEnqueued: rollupData.queueEnqueued,
-          queueDequeued: rollupData.queueDequeued,
-          updatedAt: new Date(),
-        },
-      });
+    // Upsert rollup using raw SQL (Drizzle doesn't support sql expressions in target array)
+    await db.execute(sql`
+      INSERT INTO metrics_rollups (
+        tenant_id, project_id, workflow_id, bucket_start, bucket,
+        runs_count, runs_success, runs_error, dur_p50, dur_p95,
+        pdf_success, pdf_error, docx_success, docx_error,
+        queue_enqueued, queue_dequeued, created_at, updated_at
+      ) VALUES (
+        ${rollupData.tenantId},
+        ${rollupData.projectId},
+        ${rollupData.workflowId},
+        ${rollupData.bucketStart},
+        ${rollupData.bucket},
+        ${rollupData.runsCount},
+        ${rollupData.runsSuccess},
+        ${rollupData.runsError},
+        ${rollupData.durP50},
+        ${rollupData.durP95},
+        ${rollupData.pdfSuccess},
+        ${rollupData.pdfError},
+        ${rollupData.docxSuccess},
+        ${rollupData.docxError},
+        ${rollupData.queueEnqueued},
+        ${rollupData.queueDequeued},
+        NOW(),
+        NOW()
+      )
+      ON CONFLICT (
+        tenant_id,
+        project_id,
+        COALESCE(workflow_id, '00000000-0000-0000-0000-000000000000'::uuid),
+        bucket_start,
+        bucket
+      )
+      DO UPDATE SET
+        runs_count = ${rollupData.runsCount},
+        runs_success = ${rollupData.runsSuccess},
+        runs_error = ${rollupData.runsError},
+        dur_p50 = ${rollupData.durP50},
+        dur_p95 = ${rollupData.durP95},
+        pdf_success = ${rollupData.pdfSuccess},
+        pdf_error = ${rollupData.pdfError},
+        docx_success = ${rollupData.docxSuccess},
+        docx_error = ${rollupData.docxError},
+        queue_enqueued = ${rollupData.queueEnqueued},
+        queue_dequeued = ${rollupData.queueDequeued},
+        updated_at = NOW()
+    `);
   }
 
   logger.debug({
