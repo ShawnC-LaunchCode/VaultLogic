@@ -96,7 +96,7 @@ export function useUserPreferences() {
       }
     };
 
-    applyTheme(currentPrefs.darkMode);
+    applyTheme(currentPrefs.darkMode ?? "system");
 
     // Listen for system theme changes when in system mode
     if (currentPrefs.darkMode === "system") {

@@ -71,10 +71,10 @@ export async function evaluateAndAlert(params: {
   // Check cooldown
   const cooldownKey = `${params.projectId}:${params.workflowId || 'project'}`;
   if (isInCooldown(cooldownKey, config.cooldownMinutes || 10)) {
-    logger.debug('Alert in cooldown period, skipping', {
+    logger.debug({
       projectId: params.projectId,
       workflowId: params.workflowId,
-    });
+    }, 'Alert in cooldown period, skipping');
     return;
   }
 
@@ -141,9 +141,9 @@ async function sendWebhook(url: string, alert: AlertPayload): Promise<void> {
       throw new Error(`Webhook returned ${response.status}: ${response.statusText}`);
     }
 
-    logger.info('Webhook alert sent', { url, severity: alert.severity });
+    logger.info({ url, severity: alert.severity }, 'Webhook alert sent');
   } catch (error) {
-    logger.error('Failed to send webhook alert', { error, url });
+    logger.error({ error, url }, 'Failed to send webhook alert');
     throw error;
   }
 }
@@ -155,11 +155,11 @@ async function sendEmailAlert(recipients: string[], alert: AlertPayload): Promis
   // TODO: Integrate with SendGrid or other email service
   // For now, just log the alert
 
-  logger.info('Email alert stub', {
+  logger.info({
     recipients,
     severity: alert.severity,
     title: alert.title,
-  });
+  }, 'Email alert stub');
 
   // Example SendGrid integration:
   /*
@@ -306,17 +306,17 @@ export async function batchEvaluateAlerts(): Promise<void> {
           workflowId: row.workflow_id,
         });
       } catch (error) {
-        logger.error('Failed to evaluate alert', {
+        logger.error({
           projectId: row.project_id,
           workflowId: row.workflow_id,
           error,
-        });
+        }, 'Failed to evaluate alert');
       }
     }
 
     logger.info('Batch alert evaluation completed');
   } catch (error) {
-    logger.error('Batch alert evaluation failed', { error });
+    logger.error({ error }, 'Batch alert evaluation failed');
   }
 }
 

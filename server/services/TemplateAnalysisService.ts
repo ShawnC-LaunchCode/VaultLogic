@@ -24,6 +24,8 @@ export interface PlaceholderInfo {
   path?: string; // For nested paths like "user.address.city"
   helperName?: string; // For helper calls like "upper name"
   context?: string; // Location in template (paragraph, table, etc.)
+  depth?: number; // Nesting depth for loops
+  conditionalType?: 'if' | 'unless'; // Type of conditional
 }
 
 export interface LoopInfo {

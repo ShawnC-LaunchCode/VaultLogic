@@ -2197,6 +2197,7 @@ export type CollectionField = typeof collectionFields.$inferSelect;
 export type InsertCollectionField = typeof insertCollectionFieldSchema._type;
 export type CollectionRecord = typeof records.$inferSelect;
 export type InsertCollectionRecord = typeof insertRecordSchema._type;
+export type InsertRecord = InsertCollectionRecord; // Alias for convenience
 
 export type Section = typeof sections.$inferSelect;
 export type InsertSection = typeof insertSectionSchema._type;

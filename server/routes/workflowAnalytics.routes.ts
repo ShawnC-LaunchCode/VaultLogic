@@ -145,7 +145,7 @@ router.get('/overview', requireAuth, async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error('Failed to get analytics overview', { error });
+    logger.error({ error }, 'Failed to get analytics overview');
     res.status(500).json({ error: 'Failed to get analytics overview' });
   }
 });
@@ -198,7 +198,7 @@ router.get('/timeseries', requireAuth, async (req, res) => {
       window: query.window,
     });
   } catch (error) {
-    logger.error('Failed to get timeseries data', { error });
+    logger.error({ error }, 'Failed to get timeseries data');
     res.status(500).json({ error: 'Failed to get timeseries data' });
   }
 });

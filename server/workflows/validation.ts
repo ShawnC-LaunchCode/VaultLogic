@@ -153,7 +153,7 @@ export function validatePage(
     } else {
       // Standard field validation
       const config: FieldValidationConfig = {
-        required: step.required,
+        required: step.required ?? undefined,
         // TODO: Extract from step.config if stored there
       };
 

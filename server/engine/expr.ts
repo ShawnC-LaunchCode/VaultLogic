@@ -235,7 +235,7 @@ export function evaluateExpression(
     try {
       // Note: expr-eval doesn't have built-in operation counting
       // but it's deterministic and safe by design
-      const result = parsed.evaluate(cleanVars);
+      const result = parsed.evaluate(cleanVars as any);
       clearTimeout(timeoutId);
       return result;
     } catch (evalError) {

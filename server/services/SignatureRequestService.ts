@@ -183,7 +183,7 @@ export class SignatureRequestService {
     );
 
     // Create 'declined' event
-    await this.signatureRequestRepository.createEvent(
+    await this.signatureRequestRepo.createEvent(
       request.id,
       'declined',
       {

@@ -137,7 +137,7 @@ export async function renderDocx2(options: RenderOptions2): Promise<RenderResult
       paragraphLoop: true, // Enable paragraph loops
       linebreaks: true, // Preserve line breaks
       nullGetter: () => '', // Return empty string for null/undefined values
-      parser: createExpressionParser(), // Custom parser for helper functions
+      parser: ((tag: string) => createExpressionParser()) as any, // Custom parser for helper functions
     });
 
     // Set data and render
@@ -222,7 +222,7 @@ export async function renderDocx2(options: RenderOptions2): Promise<RenderResult
  * Convert DOCX to PDF
  * Attempts multiple conversion methods in order of preference
  */
-async function convertDocxToPdf2(docxPath: string): Promise<string> {
+export async function convertDocxToPdf2(docxPath: string): Promise<string> {
   const pdfPath = docxPath.replace(/\.docx$/i, '.pdf');
 
   // Method 1: Try libreoffice-convert package
@@ -231,7 +231,7 @@ async function convertDocxToPdf2(docxPath: string): Promise<string> {
     const docxBuffer = await fs.readFile(docxPath);
 
     const pdfBuffer = await new Promise<Buffer>((resolve, reject) => {
-      libre.default(docxBuffer, '.pdf', undefined, (err: Error | null, result: Buffer) => {
+      (libre.default as any)(docxBuffer, '.pdf', undefined, (err: Error | null, result: Buffer) => {
         if (err) reject(err);
         else resolve(result);
       });

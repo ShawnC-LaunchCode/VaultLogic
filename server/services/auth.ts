@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import jwt, { type SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import { createLogger } from '../logger';
 import type { User } from '../../shared/schema';
@@ -36,10 +36,11 @@ export function createToken(user: User): string {
       role: user.tenantRole || null,
     };
 
-    const token = jwt.sign(payload, JWT_SECRET, {
+    const options: any = {
       expiresIn: JWT_EXPIRY,
       algorithm: 'HS256',
-    });
+    };
+    const token = jwt.sign(payload, JWT_SECRET, options);
 
     logger.debug({ userId: user.id, email: user.email }, 'JWT token created');
     return token;

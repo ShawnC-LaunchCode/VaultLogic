@@ -117,13 +117,11 @@ export class RecordRepository extends BaseRepository<typeof records, CollectionR
   async update(
     id: string,
     updates: Partial<InsertCollectionRecord>,
-    userId?: string,
     tx?: DbTransaction
   ): Promise<CollectionRecord> {
     const updatedData = {
       ...updates,
       updatedAt: new Date(),
-      ...(userId && { updatedBy: userId }),
     };
     return super.update(id, updatedData, tx);
   }

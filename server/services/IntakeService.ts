@@ -50,7 +50,7 @@ export class IntakeService {
     let tenantBranding;
     if (workflow.projectId) {
       const project = await projectRepository.findById(workflow.projectId);
-      if (project) {
+      if (project && project.name) {
         // TODO: Add tenant branding fields to schema
         tenantBranding = {
           name: project.name,
@@ -352,7 +352,7 @@ export class IntakeService {
     return {
       status: run.completed ? "completed" : "pending",
       runId: run.id,
-      completed: run.completed,
+      completed: run.completed ?? false,
     };
   }
 }

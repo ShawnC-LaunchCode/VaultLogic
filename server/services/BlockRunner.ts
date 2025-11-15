@@ -461,7 +461,11 @@ export class BlockRunner {
       logger.info({ tenantId, collectionId: config.collectionId, recordData }, "Creating record via block");
 
       // Create the record
-      const record = await recordService.createRecord(tenantId, config.collectionId, recordData);
+      const record = await recordService.createRecord({
+        tenantId,
+        collectionId: config.collectionId,
+        data: recordData,
+      });
 
       const updates: Record<string, any> = {};
       if (config.outputKey) {
@@ -519,7 +523,7 @@ export class BlockRunner {
       logger.info({ tenantId, collectionId: config.collectionId, recordId, updateData }, "Updating record via block");
 
       // Update the record
-      await recordService.updateRecord(tenantId, config.collectionId, recordId, updateData);
+      await recordService.updateRecord(recordId, tenantId, updateData);
 
       return {
         success: true,
