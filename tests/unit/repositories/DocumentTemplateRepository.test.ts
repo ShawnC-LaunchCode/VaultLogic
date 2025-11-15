@@ -13,19 +13,31 @@ describe('DocumentTemplateRepository', () => {
   let mockDb: any;
 
   beforeEach(() => {
-    // Mock database
+    // Mock database with chainable query builder
+    // The last method in the chain should be awaitable and resolve to mock data
+    let mockReturnValue: any = [];
+
     mockDb = {
       select: vi.fn().mockReturnThis(),
       from: vi.fn().mockReturnThis(),
       where: vi.fn().mockReturnThis(),
-      orderBy: vi.fn().mockReturnThis(),
+      orderBy: vi.fn(function(this: any) {
+        // orderBy is often the last in SELECT chains, make it resolve to mockReturnValue
+        return Promise.resolve(mockReturnValue);
+      }),
       insert: vi.fn().mockReturnThis(),
       values: vi.fn().mockReturnThis(),
       returning: vi.fn(),
       update: vi.fn().mockReturnThis(),
       set: vi.fn().mockReturnThis(),
       delete: vi.fn().mockReturnThis(),
-      limit: vi.fn().mockReturnThis(),
+      limit: vi.fn(function(this: any) {
+        // limit is also sometimes the last method
+        return Promise.resolve(mockReturnValue);
+      }),
+      then: vi.fn((resolve) => resolve(mockReturnValue)), // Make the chain directly awaitable
+      // Helper to set mock return value
+      _setMockReturnValue: (value: any) => { mockReturnValue = value; },
     };
 
     // @ts-ignore - mocking db for tests
@@ -60,7 +72,7 @@ describe('DocumentTemplateRepository', () => {
         },
       ];
 
-      mockDb.returning.mockResolvedValue(mockTemplates);
+      mockDb._setMockReturnValue(mockTemplates);
 
       const result = await repository.findByProjectId(projectId);
 
@@ -72,7 +84,7 @@ describe('DocumentTemplateRepository', () => {
     });
 
     it('should return empty array when no templates found', async () => {
-      mockDb.returning.mockResolvedValue([]);
+      mockDb._setMockReturnValue([]);
 
       const result = await repository.findByProjectId('proj-nonexistent');
 
@@ -98,7 +110,7 @@ describe('DocumentTemplateRepository', () => {
         },
       ];
 
-      mockDb.returning.mockResolvedValue(mockTemplates);
+      mockDb._setMockReturnValue(mockTemplates);
 
       const result = await repository.findByType(projectId, type);
 
@@ -121,7 +133,7 @@ describe('DocumentTemplateRepository', () => {
         updatedAt: new Date(),
       };
 
-      mockDb.returning.mockResolvedValue([mockTemplate]);
+      mockDb._setMockReturnValue([mockTemplate]);
 
       const result = await repository.findByIdAndProjectId('tpl-1', 'proj-123');
 
@@ -130,7 +142,7 @@ describe('DocumentTemplateRepository', () => {
     });
 
     it('should return undefined when template not found', async () => {
-      mockDb.returning.mockResolvedValue([]);
+      mockDb._setMockReturnValue([]);
 
       const result = await repository.findByIdAndProjectId('tpl-nonexistent', 'proj-123');
 
@@ -152,7 +164,7 @@ describe('DocumentTemplateRepository', () => {
         updatedAt: new Date(),
       };
 
-      mockDb.returning.mockResolvedValue([mockUpdated]);
+      mockDb._setMockReturnValue([mockUpdated]);
 
       const result = await repository.updateMetadata('tpl-1', 'proj-123', {
         name: 'Updated Name',
@@ -166,7 +178,7 @@ describe('DocumentTemplateRepository', () => {
     });
 
     it('should return undefined when template not found', async () => {
-      mockDb.returning.mockResolvedValue([]);
+      mockDb._setMockReturnValue([]);
 
       const result = await repository.updateMetadata('tpl-nonexistent', 'proj-123', {
         name: 'New Name',
@@ -190,7 +202,7 @@ describe('DocumentTemplateRepository', () => {
         updatedAt: new Date(),
       };
 
-      mockDb.returning.mockResolvedValue([mockUpdated]);
+      mockDb._setMockReturnValue([mockUpdated]);
 
       const result = await repository.updateFileRef(
         'tpl-1',
@@ -209,7 +221,7 @@ describe('DocumentTemplateRepository', () => {
 
   describe('deleteByIdAndProjectId', () => {
     it('should delete template and return true', async () => {
-      mockDb.returning.mockResolvedValue([{ id: 'tpl-1' }]);
+      mockDb._setMockReturnValue([{ id: 'tpl-1' }]);
 
       const result = await repository.deleteByIdAndProjectId('tpl-1', 'proj-123');
 
@@ -219,7 +231,7 @@ describe('DocumentTemplateRepository', () => {
     });
 
     it('should return false when template not found', async () => {
-      mockDb.returning.mockResolvedValue([]);
+      mockDb._setMockReturnValue([]);
 
       const result = await repository.deleteByIdAndProjectId('tpl-nonexistent', 'proj-123');
 
@@ -229,7 +241,7 @@ describe('DocumentTemplateRepository', () => {
 
   describe('existsByNameInProject', () => {
     it('should return true when template name exists', async () => {
-      mockDb.returning.mockResolvedValue([{ id: 'tpl-1' }]);
+      mockDb._setMockReturnValue([{ id: 'tpl-1' }]);
 
       const result = await repository.existsByNameInProject(
         'Existing Template',
@@ -241,7 +253,7 @@ describe('DocumentTemplateRepository', () => {
     });
 
     it('should return false when template name does not exist', async () => {
-      mockDb.returning.mockResolvedValue([]);
+      mockDb._setMockReturnValue([]);
 
       const result = await repository.existsByNameInProject(
         'Nonexistent Template',
@@ -252,7 +264,7 @@ describe('DocumentTemplateRepository', () => {
     });
 
     it('should exclude specific template ID when checking existence', async () => {
-      mockDb.returning.mockResolvedValue([]);
+      mockDb._setMockReturnValue([]);
 
       const result = await repository.existsByNameInProject(
         'Template Name',
@@ -284,7 +296,7 @@ describe('DocumentTemplateRepository', () => {
         updatedAt: new Date(),
       };
 
-      mockDb.returning.mockResolvedValue([mockCreated]);
+      mockDb._setMockReturnValue([mockCreated]);
 
       const result = await repository.create(insertData);
 
@@ -308,7 +320,7 @@ describe('DocumentTemplateRepository', () => {
         updatedAt: new Date(),
       };
 
-      mockDb.returning.mockResolvedValue([mockTemplate]);
+      mockDb._setMockReturnValue([mockTemplate]);
 
       const result = await repository.findById('tpl-1');
 

@@ -2,16 +2,19 @@
  * Stage 21: WorkflowTemplateService Unit Tests
  *
  * Tests for workflow template mapping business logic
+ *
+ * NOTE: These are integration tests that require database connectivity
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describeWithDb } from '../../helpers/dbTestHelper';
 import { db } from '../../../server/db';
 import { workflowTemplates, workflowVersions, workflows, projects, templates } from '../../../shared/schema';
 import { WorkflowTemplateService } from '../../../server/services/WorkflowTemplateService';
 import { eq } from 'drizzle-orm';
 import { createError } from '../../../server/utils/errors';
 
-describe('WorkflowTemplateService', () => {
+describeWithDb('WorkflowTemplateService', () => {
   const service = new WorkflowTemplateService();
 
   let testProjectId: string;

@@ -2,15 +2,17 @@
  * Stage 21: WorkflowTemplateRepository Unit Tests
  *
  * Tests for workflow template mapping repository operations
+ * NOTE: These are integration tests that require database connectivity
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describeWithDb } from '../../helpers/dbTestHelper';
 import { db } from '../../../server/db';
 import { workflowTemplates, workflowVersions, workflows, projects, templates } from '../../../shared/schema';
 import { WorkflowTemplateRepository } from '../../../server/repositories/WorkflowTemplateRepository';
 import { eq } from 'drizzle-orm';
 
-describe('WorkflowTemplateRepository', () => {
+describeWithDb('WorkflowTemplateRepository', () => {
   const repo = new WorkflowTemplateRepository();
 
   let testProjectId: string;

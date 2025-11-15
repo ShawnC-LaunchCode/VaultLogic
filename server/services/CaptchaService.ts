@@ -107,6 +107,12 @@ export class CaptchaService {
       challengeStore.delete(token);
       return { valid: true };
     } else {
+      // Check if this was the last attempt
+      if (challenge.attempts >= MAX_ATTEMPTS) {
+        challengeStore.delete(token);
+        return { valid: false, error: "Too many attempts. Please refresh." };
+      }
+
       // Update attempt count
       challengeStore.set(token, challenge);
       return {
