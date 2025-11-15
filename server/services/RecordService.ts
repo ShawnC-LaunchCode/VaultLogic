@@ -213,7 +213,10 @@ export class RecordService {
     await this.verifyCollectionExists(data.collectionId, tx);
 
     // Apply default values
-    const enrichedData = await this.applyDefaults(data.collectionId, data.data || {}, tx);
+    const recordData = (typeof data.data === 'object' && data.data !== null && !Array.isArray(data.data))
+      ? data.data as Record<string, any>
+      : {};
+    const enrichedData = await this.applyDefaults(data.collectionId, recordData, tx);
 
     // Validate record data
     await this.validateRecordData(data.collectionId, enrichedData, tx);
@@ -269,15 +272,20 @@ export class RecordService {
     const record = await this.verifyRecordOwnership(recordId, tenantId, undefined, tx);
 
     // Merge with existing data
-    const mergedData = { ...record.data, ...updates };
+    const existingData = (typeof record.data === 'object' && record.data !== null && !Array.isArray(record.data))
+      ? record.data as Record<string, any>
+      : {};
+    const mergedData = { ...existingData, ...updates };
 
     // Validate merged data
     await this.validateRecordData(record.collectionId, mergedData, tx);
 
     return await this.recordRepo.update(
       recordId,
-      { data: mergedData },
-      userId,
+      {
+        data: mergedData,
+        ...(userId && { updatedBy: userId }),
+      },
       tx
     );
   }

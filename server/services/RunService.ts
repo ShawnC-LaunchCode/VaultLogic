@@ -64,7 +64,7 @@ export class RunService {
       }
 
       const project = await this.projectRepo.findById(workflow.projectId);
-      if (!project) {
+      if (!project || !project.tenantId) {
         return null;
       }
 
@@ -332,7 +332,7 @@ export class RunService {
         await this.valueRepo.upsert({
           runId,
           stepId: step.id,
-          value: result.output,
+          value: result.output ?? null,
         });
 
         // Update dataMap for subsequent operations
@@ -510,6 +510,9 @@ export class RunService {
       navigation = {
         nextSectionId: blockResult.nextSectionId,
         currentProgress: 0, // Will be calculated if needed
+        visibleSections: [],
+        visibleSteps: [],
+        requiredSteps: [],
       };
     } else {
       // Use logic service to determine navigation
@@ -575,6 +578,9 @@ export class RunService {
       navigation = {
         nextSectionId: blockResult.nextSectionId,
         currentProgress: 0,
+        visibleSections: [],
+        visibleSteps: [],
+        requiredSteps: [],
       };
     } else {
       // Use logic service to determine navigation

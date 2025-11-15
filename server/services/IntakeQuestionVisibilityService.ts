@@ -274,7 +274,7 @@ export class IntakeQuestionVisibilityService {
 
     // For each hidden question, check if it has a value and clear it
     for (const questionId of visibility.hiddenQuestions) {
-      const existingValue = await stepValueRepository.findByRunIdAndStepId(runId, questionId);
+      const existingValue = await stepValueRepository.findByRunAndStep(runId, questionId);
 
       if (existingValue) {
         await stepValueRepository.delete(existingValue.id);

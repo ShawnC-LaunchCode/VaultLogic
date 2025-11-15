@@ -150,11 +150,11 @@ export class CaptchaService {
       if (data.success) {
         return { valid: true };
       } else {
-        logger.error("reCAPTCHA validation failed", { errors: data["error-codes"] });
+        logger.error({ errors: data["error-codes"] }, "reCAPTCHA validation failed");
         return { valid: false, error: "reCAPTCHA verification failed" };
       }
     } catch (error) {
-      logger.error("Error validating reCAPTCHA", { error });
+      logger.error({ error }, "Error validating reCAPTCHA");
       return { valid: false, error: "Failed to verify reCAPTCHA" };
     }
   }

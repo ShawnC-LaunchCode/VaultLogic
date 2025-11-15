@@ -145,6 +145,11 @@ router.post(
         const [workflow] = await tx
           .insert(schema.workflows)
           .values({
+            // Legacy fields (required)
+            title: data.name,
+            creatorId: userId,
+            ownerId: userId,
+            // New multi-tenant fields
             name: data.name,
             projectId: params.projectId,
             status: 'draft',

@@ -48,11 +48,11 @@ function compareGraphs(oldGraph: any, newGraph: any): GraphDiff {
   for (const [id, newNode] of newNodes) {
     const oldNode = oldNodes.get(id);
     if (!oldNode) {
-      diff.nodesAdded.push({ id, type: newNode.type || 'unknown' });
+      diff.nodesAdded.push({ id: id as string, type: (newNode as any).type || 'unknown' });
     } else {
-      const changes = compareObjects(oldNode, newNode, `nodes.${id}`);
+      const changes = compareObjects(oldNode, newNode, `nodes.${id as string}`);
       if (changes.length > 0) {
-        diff.nodesChanged.push({ id, changes });
+        diff.nodesChanged.push({ id: id as string, changes });
       }
     }
   }
@@ -60,7 +60,7 @@ function compareGraphs(oldGraph: any, newGraph: any): GraphDiff {
   // Find removed nodes
   for (const [id, oldNode] of oldNodes) {
     if (!newNodes.has(id)) {
-      diff.nodesRemoved.push({ id, type: oldNode.type || 'unknown' });
+      diff.nodesRemoved.push({ id: id as string, type: (oldNode as any).type || 'unknown' });
     }
   }
 
@@ -70,14 +70,14 @@ function compareGraphs(oldGraph: any, newGraph: any): GraphDiff {
 
   for (const edge of newEdges) {
     if (!oldEdges.has(edge)) {
-      const [from, to] = edge.split('->');
+      const [from, to] = (edge as string).split('->');
       diff.edgesAdded.push({ from, to });
     }
   }
 
   for (const edge of oldEdges) {
     if (!newEdges.has(edge)) {
-      const [from, to] = edge.split('->');
+      const [from, to] = (edge as string).split('->');
       diff.edgesRemoved.push({ from, to });
     }
   }

@@ -170,10 +170,11 @@ export default function CollectionsPage() {
           icon={Database}
           title="No collections yet"
           description="Create your first collection to start storing structured data"
-          action={{
-            label: "Create Collection",
-            onClick: () => setCreateModalOpen(true),
-          }}
+          action={
+            <Button onClick={() => setCreateModalOpen(true)}>
+              Create Collection
+            </Button>
+          }
         />
       )}
 

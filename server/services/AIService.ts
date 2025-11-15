@@ -74,17 +74,17 @@ export class AIService {
       this.validateWorkflowStructure(validated);
 
       const duration = Date.now() - startTime;
-      logger.info('AI workflow generation succeeded', {
+      logger.info({
         duration,
         sectionsCount: validated.sections.length,
         rulesCount: validated.logicRules.length,
         blocksCount: validated.transformBlocks.length,
-      });
+      }, 'AI workflow generation succeeded');
 
       return validated;
     } catch (error) {
       const duration = Date.now() - startTime;
-      logger.error('AI workflow generation failed', { error, duration });
+      logger.error({ error, duration }, 'AI workflow generation failed');
 
       if (error instanceof SyntaxError) {
         throw this.createError(
@@ -127,18 +127,18 @@ export class AIService {
       const validated = AIWorkflowSuggestionSchema.parse(parsed);
 
       const duration = Date.now() - startTime;
-      logger.info('AI workflow suggestion succeeded', {
+      logger.info({
         duration,
         newSectionsCount: validated.newSections.length,
         newRulesCount: validated.newLogicRules.length,
         newBlocksCount: validated.newTransformBlocks.length,
         modificationsCount: validated.modifications.length,
-      });
+      }, 'AI workflow suggestion succeeded');
 
       return validated;
     } catch (error) {
       const duration = Date.now() - startTime;
-      logger.error('AI workflow suggestion failed', { error, duration });
+      logger.error({ error, duration }, 'AI workflow suggestion failed');
 
       if (error instanceof SyntaxError) {
         throw this.createError(
@@ -178,15 +178,15 @@ export class AIService {
       const validated = AITemplateBindingsResponseSchema.parse(parsed);
 
       const duration = Date.now() - startTime;
-      logger.info('AI binding suggestion succeeded', {
+      logger.info({
         duration,
         suggestionsCount: validated.suggestions.length,
-      });
+      }, 'AI binding suggestion succeeded');
 
       return validated;
     } catch (error) {
       const duration = Date.now() - startTime;
-      logger.error('AI binding suggestion failed', { error, duration });
+      logger.error({ error, duration }, 'AI binding suggestion failed');
 
       if (error instanceof SyntaxError) {
         throw this.createError(

@@ -70,7 +70,7 @@ export function PageCard({ workflowId, page, blocks }: PageCardProps) {
     .map((tb) => ({
       id: tb.id,
       workflowId: tb.workflowId,
-      sectionId: tb.sectionId,
+      sectionId: tb.sectionId ?? null,
       type: "js" as const,
       phase: tb.phase as any,
       config: {

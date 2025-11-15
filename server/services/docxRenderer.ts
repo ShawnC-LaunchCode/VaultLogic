@@ -154,7 +154,7 @@ async function convertDocxToPdf(docxPath: string): Promise<string> {
     const docxBuffer = await fs.readFile(docxPath);
 
     const pdfBuffer = await new Promise<Buffer>((resolve, reject) => {
-      libre.default(docxBuffer, '.pdf', undefined, (err: Error | null, result: Buffer) => {
+      (libre.default as any)(docxBuffer, '.pdf', undefined, (err: Error | null, result: Buffer) => {
         if (err) reject(err);
         else resolve(result);
       });
