@@ -134,3 +134,49 @@ Tested with 2881 buckets (2 days of 1-minute rollups) - all completed successful
 - The fix ensures that metrics are properly scoped to tenants
 - All rollup buckets (1m, 5m, 1h, 1d) are now working correctly
 - The unique constraint now properly prevents duplicate rollups within the same tenant
+
+---
+
+## Update (November 15, 2025)
+
+### Additional Fix Required: Raw SQL for Upsert
+
+**Issue:** Even with the unique index in the database and schema, Drizzle ORM does not support `sql` expressions in the `target` array of `onConflictDoUpdate`.
+
+**Solution:** Changed from Drizzle's ORM upsert to raw SQL.
+
+**Code Change** (`server/jobs/metricsRollup.ts:135-181`):
+```typescript
+// OLD: Drizzle ORM approach (doesn't work with expression-based unique indexes)
+await db.insert(metricsRollups).values(rollupData).onConflictDoUpdate({
+  target: [
+    metricsRollups.tenantId,
+    metricsRollups.projectId,
+    sql`COALESCE(...)`, // ← Drizzle can't handle this in target array
+    ...
+  ],
+  set: { ... }
+});
+
+// NEW: Raw SQL approach (works correctly)
+await db.execute(sql`
+  INSERT INTO metrics_rollups (...) VALUES (...)
+  ON CONFLICT (
+    tenant_id,
+    project_id,
+    COALESCE(workflow_id, '00000000-0000-0000-0000-000000000000'::uuid),
+    bucket_start,
+    bucket
+  )
+  DO UPDATE SET ...
+`);
+```
+
+**Result:** ✅ Upsert now works correctly with the expression-based unique index.
+
+**Commits:**
+- `d31f72e` - Migration 0026 + code (initial attempt)
+- `0774499` - Added uniqueIndex to schema + documentation
+- `2ccdf23` - **Final fix**: Switched to raw SQL for upsert
+
+**Testing:** Verified with real database IDs - insert and update both work correctly.
