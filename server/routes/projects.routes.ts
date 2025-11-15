@@ -21,10 +21,23 @@ export function registerProjectRoutes(app: Express): void {
         return res.status(401).json({ message: "Unauthorized - no user ID" });
       }
 
+      // Get user's tenantId from database
+      const { userRepository } = await import('../repositories');
+      const user = await userRepository.findById(userId);
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
+      }
+      if (!user.tenantId) {
+        return res.status(400).json({ message: "User does not have a tenant assigned" });
+      }
+
       const projectData = insertProjectSchema.parse({
         ...req.body,
-        createdBy: userId,
+        title: req.body.name || req.body.title || 'Untitled Project', // Legacy field
+        creatorId: userId, // Legacy field
+        createdBy: userId, // New field (Stage 24)
         ownerId: userId, // Creator is also the initial owner
+        tenantId: user.tenantId, // Use user's tenant ID
       });
 
       const project = await projectService.createProject(projectData, userId);

@@ -860,10 +860,12 @@ export const logicRuleTargetTypeEnum = pgEnum('logic_rule_target_type', ['sectio
 // Projects table (for organizing workflows)
 export const projects = pgTable("projects", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: varchar("name", { length: 255 }).notNull(),
+  title: varchar("title", { length: 255 }).notNull(), // Legacy field, kept for compatibility
+  name: varchar("name", { length: 255 }), // New field (optional for migration)
   description: text("description"),
-  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
-  createdBy: varchar("created_by").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  creatorId: varchar("creator_id").references(() => users.id, { onDelete: 'cascade' }).notNull(), // Legacy field
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }),
+  createdBy: varchar("created_by").references(() => users.id, { onDelete: 'cascade' }), // New field (Stage 24)
   ownerId: varchar("owner_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
   status: projectStatusEnum("status").default('active').notNull(),
   archived: boolean("archived").default(false).notNull(), // DEPRECATED: Use status instead
@@ -872,6 +874,7 @@ export const projects = pgTable("projects", {
 }, (table) => [
   index("projects_tenant_idx").on(table.tenantId),
   index("projects_created_by_idx").on(table.createdBy),
+  index("projects_creator_idx").on(table.creatorId),
   index("projects_owner_idx").on(table.ownerId),
   index("projects_status_idx").on(table.status),
   index("projects_archived_idx").on(table.archived),

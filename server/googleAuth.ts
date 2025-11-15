@@ -99,6 +99,17 @@ function updateUserSession(user: any, payload: TokenPayload) {
 
 async function upsertUser(payload: TokenPayload) {
   try {
+    // Get default tenant for new users
+    const { getDb } = await import('./db');
+    const { tenants } = await import('@shared/schema');
+    const db = getDb();
+    const [defaultTenant] = await db.select().from(tenants).limit(1);
+
+    if (!defaultTenant) {
+      logger.error('No default tenant found in database');
+      throw new Error("System not properly configured - no tenant found");
+    }
+
     const userData = {
       id: payload.sub!,
       email: payload.email || "",
@@ -106,8 +117,9 @@ async function upsertUser(payload: TokenPayload) {
       lastName: payload.family_name || "",
       profileImageUrl: payload.picture || null,
       defaultMode: 'easy' as const,
+      tenantId: defaultTenant.id, // Assign default tenant to new users
     };
-    logger.debug({ userId: userData.id, email: userData.email }, 'Upserting user');
+    logger.debug({ userId: userData.id, email: userData.email, tenantId: defaultTenant.id }, 'Upserting user');
     await userRepository.upsert(userData);
     logger.info({ userId: userData.id }, 'User upserted successfully');
   } catch (error) {
