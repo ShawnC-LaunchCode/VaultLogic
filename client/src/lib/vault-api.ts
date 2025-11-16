@@ -10,12 +10,29 @@ async function fetchAPI<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const url = `${API_BASE}${endpoint}`;
+
+  // Check if we have a run token in localStorage for this run
+  // Extract runId from endpoint (e.g., /api/runs/:runId/values)
+  const runIdMatch = endpoint.match(/\/api\/runs\/([^\/]+)/);
+  let runToken: string | null = null;
+  if (runIdMatch) {
+    const runId = runIdMatch[1];
+    runToken = localStorage.getItem(`run_token_${runId}`);
+  }
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(options.headers as Record<string, string>),
+  };
+
+  // Add bearer token if we have one
+  if (runToken) {
+    headers["Authorization"] = `Bearer ${runToken}`;
+  }
+
   const response = await fetch(url, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
+    headers,
     credentials: "include", // Include cookies for auth
   });
 

@@ -65,6 +65,19 @@ export class WorkflowRepository extends BaseRepository<typeof workflows, Workflo
   }
 
   /**
+   * Find workflow by public link slug
+   */
+  async findByPublicLink(publicLink: string, tx?: DbTransaction): Promise<Workflow | null> {
+    const database = this.getDb(tx);
+    const [workflow] = await database
+      .select()
+      .from(workflows)
+      .where(eq(workflows.publicLink, publicLink))
+      .limit(1);
+    return workflow || null;
+  }
+
+  /**
    * Find workflow by ID or slug (helper for UUID/slug resolution)
    */
   async findByIdOrSlug(idOrSlug: string, tx?: DbTransaction): Promise<Workflow | null> {
