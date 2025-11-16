@@ -5,6 +5,7 @@ import { registerRoutes } from "./routes";
 import { log } from "./utils";
 import { serveStatic } from "./static";
 import { errorHandler } from "./middleware/errorHandler";
+import { logger } from "./logger";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -131,7 +132,7 @@ app.use((req, res, next) => {
             const { setupVite } = await import("./vite.js");
             await setupVite(app, server);
         } catch (error) {
-            console.error("Failed to load vite (this is expected in production):", error);
+            logger.error({ error }, "Failed to load vite (this is expected in production)");
             // Fallback to static serving if vite module is not available
             serveStatic(app);
         }

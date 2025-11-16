@@ -3,6 +3,7 @@ import { db } from '../db';
 import * as schema from '@shared/schema';
 import type { InsertRun, InsertRunLog } from '@shared/schema';
 import { createError } from '../utils/errors';
+import { logger } from '../logger';
 
 /**
  * Runs Service
@@ -17,7 +18,7 @@ export async function createRun(data: InsertRun): Promise<schema.Run> {
     const [run] = await db.insert(schema.runs).values(data).returning();
     return run;
   } catch (error) {
-    console.error('Failed to create run:', error);
+    logger.error({ error }, 'Failed to create run');
     throw createError.database('Failed to create run');
   }
 }
@@ -52,7 +53,7 @@ export async function updateRun(
     if (error instanceof Error && error.message.includes('not found')) {
       throw error;
     }
-    console.error('Failed to update run:', error);
+    logger.error({ error }, 'Failed to update run');
     throw createError.database('Failed to update run');
   }
 }
@@ -65,7 +66,7 @@ export async function createRunLog(data: InsertRunLog): Promise<schema.RunLog> {
     const [log] = await db.insert(schema.runLogs).values(data).returning();
     return log;
   } catch (error) {
-    console.error('Failed to create run log:', error);
+    logger.error({ error }, 'Failed to create run log');
     throw createError.database('Failed to create run log');
   }
 }
@@ -82,7 +83,7 @@ export async function createRunLogs(data: InsertRunLog[]): Promise<schema.RunLog
     const logs = await db.insert(schema.runLogs).values(data).returning();
     return logs;
   } catch (error) {
-    console.error('Failed to create run logs:', error);
+    logger.error({ error }, 'Failed to create run logs');
     throw createError.database('Failed to create run logs');
   }
 }
@@ -111,7 +112,7 @@ export async function getRunById(runId: string) {
     });
     return run;
   } catch (error) {
-    console.error('Failed to get run:', error);
+    logger.error({ error }, 'Failed to get run');
     throw createError.database('Failed to get run');
   }
 }
@@ -134,7 +135,7 @@ export async function getRunLogs(
     });
     return logs;
   } catch (error) {
-    console.error('Failed to get run logs:', error);
+    logger.error({ error }, 'Failed to get run logs');
     throw createError.database('Failed to get run logs');
   }
 }
@@ -216,7 +217,7 @@ export async function resumeRunFromNode(
       });
     }
   } catch (error) {
-    console.error('Failed to resume run:', error);
+    logger.error({ error }, 'Failed to resume run');
 
     // Log the error
     try {
@@ -227,7 +228,7 @@ export async function resumeRunFromNode(
         message: `Failed to resume workflow: ${error instanceof Error ? error.message : 'Unknown error'}`,
       });
     } catch (logError) {
-      console.error('Failed to log resume error:', logError);
+      logger.error({ error: logError }, 'Failed to log resume error');
     }
 
     throw error;

@@ -16,6 +16,7 @@ import { runJsVm2 } from "../utils/sandboxExecutor";
 import { isJsQuestionConfig, type JsQuestionConfig } from "@shared/types/steps";
 import { randomUUID } from "crypto";
 import { captureRunLifecycle } from "./metrics";
+import { logger } from "../logger";
 
 /**
  * Service layer for workflow run-related business logic
@@ -73,7 +74,7 @@ export class RunService {
         projectId: project.id,
       };
     } catch (error) {
-      console.error('Failed to get workflow context for metrics:', error);
+      logger.error({ error }, 'Failed to get workflow context for metrics');
       return null;
     }
   }
@@ -131,10 +132,10 @@ export class RunService {
 
       // If blocks produced errors, log them but don't fail run creation
       if (!blockResult.success && blockResult.errors) {
-        console.warn(`onRunStart block errors for run ${run.id}:`, blockResult.errors);
+        logger.warn({ runId: run.id, errors: blockResult.errors }, `onRunStart block errors for run ${run.id}`);
       }
     } catch (error) {
-      console.error(`Failed to execute onRunStart blocks for run ${run.id}:`, error);
+      logger.error({ runId: run.id, error }, `Failed to execute onRunStart blocks for run ${run.id}`);
       // Don't fail run creation if blocks fail
     }
 

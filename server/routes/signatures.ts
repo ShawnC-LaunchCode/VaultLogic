@@ -4,6 +4,7 @@ import { signatureRequestService } from "../services";
 import { resumeRunFromNode } from "../services/runs";
 import { createError } from "../utils/errors";
 import { z } from "zod";
+import { logger } from "../logger";
 
 const router = express.Router();
 
@@ -127,7 +128,7 @@ router.post("/sign/:token", async (req, res, next) => {
       try {
         await resumeRunFromNode(request.runId, request.nodeId);
       } catch (resumeError) {
-        console.error('Failed to resume workflow after signing:', resumeError);
+        logger.error({ resumeError, runId: request.runId, nodeId: request.nodeId }, 'Failed to resume workflow after signing');
         // Don't fail the signing if resume fails
       }
     } else {

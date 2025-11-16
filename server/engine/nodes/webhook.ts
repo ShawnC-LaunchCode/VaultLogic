@@ -7,6 +7,7 @@ import type { EvalContext } from '../expr';
 import { evaluateExpression } from '../expr';
 import { resolveConnection as resolveNewConnection } from '../../services/connections';
 import { redactObject } from '../../utils/encryption';
+import { logger } from '../../logger';
 
 /**
  * Webhook Node Configuration
@@ -183,11 +184,11 @@ export async function executeWebhookNode(input: WebhookNodeInput): Promise<Webho
           }
         }
       } catch (error) {
-        console.error('Failed to resolve connection for webhook:', {
+        logger.error({
           nodeId,
           connectionId: config.connectionId,
           error: (error as Error).message,
-        });
+        }, 'Failed to resolve connection for webhook');
         return {
           status: 'error',
           error: `Failed to resolve connection: ${(error as Error).message}`,
@@ -212,12 +213,12 @@ export async function executeWebhookNode(input: WebhookNodeInput): Promise<Webho
 
     // Redact sensitive headers in logs
     const safeHeaders = redactObject(headers);
-    console.log('Executing webhook:', {
+    logger.info({
       nodeId,
       url: redactObject({ url }).url,
       method: config.method,
       headers: safeHeaders,
-    });
+    }, 'Executing webhook');
 
     // Execute webhook
     const mode = config.mode || 'blocking';
@@ -234,10 +235,10 @@ export async function executeWebhookNode(input: WebhookNodeInput): Promise<Webho
         attempts,
         backoffMs,
       }).catch(error => {
-        console.error('Webhook fire-and-forget failed:', {
+        logger.error({
           nodeId,
           error: (error as Error).message,
-        });
+        }, 'Webhook fire-and-forget failed');
       });
 
       return {
@@ -263,10 +264,10 @@ export async function executeWebhookNode(input: WebhookNodeInput): Promise<Webho
       };
     }
   } catch (error) {
-    console.error('Webhook node execution error:', {
+    logger.error({
       nodeId,
       error: (error as Error).message,
-    });
+    }, 'Webhook node execution error');
 
     return {
       status: 'error',

@@ -13,6 +13,7 @@ import { httpCache } from '../../services/cache';
 import { select, selectMultiple } from '../../utils/jsonselect';
 import { redactObject } from '../../utils/encryption';
 import crypto from 'crypto';
+import { logger } from '../../logger';
 
 /**
  * HTTP Node Configuration
@@ -207,7 +208,7 @@ async function resolveRequestConfig(
 
       // Mark connection as used
       markConnectionUsed(config.connectionId).catch(err => {
-        console.error('Failed to mark connection as used:', err);
+        logger.error({ err, connectionId: config.connectionId }, 'Failed to mark connection as used');
       });
 
       // Build auth config based on connection type
@@ -253,10 +254,10 @@ async function resolveRequestConfig(
         connectionId: config.connectionId,
       };
     } catch (error) {
-      console.log('New connection not found, trying old externalConnection:', {
+      logger.info({
         connectionId: config.connectionId,
         error: (error as Error).message,
-      });
+      }, 'New connection not found, trying old externalConnection');
 
       // Fall back to old externalConnections service
       const connection = await resolveOldConnection(projectId, config.connectionId);
@@ -491,7 +492,7 @@ function mapResponse(data: any, mappings: Array<{ as: string; select: string }>)
       const value = select(data, mapping.select);
       variables[mapping.as] = value;
     } catch (error) {
-      console.warn(`Failed to map ${mapping.select} to ${mapping.as}:`, error);
+      logger.warn({ error, select: mapping.select, as: mapping.as }, `Failed to map ${mapping.select} to ${mapping.as}`);
       variables[mapping.as] = undefined;
     }
   }

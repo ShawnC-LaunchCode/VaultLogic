@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { nanoid } from 'nanoid';
 import { createError } from '../utils/errors';
+import { logger } from '../logger';
 import type { PlaceholderInfo } from '../api/validators/templates';
 import {
   extractPlaceholdersFromDocx,
@@ -25,7 +26,7 @@ export async function initializeFileStorage(): Promise<void> {
   try {
     await fs.mkdir(FILES_DIR, { recursive: true });
   } catch (error) {
-    console.error('Failed to create files directory:', error);
+    logger.error({ error }, 'Failed to create files directory');
     throw createError.internal('Failed to initialize file storage');
   }
 }
@@ -56,7 +57,7 @@ export async function saveTemplateFile(
     await fs.writeFile(filePath, fileBuffer);
     return fileName; // Return just the filename as fileRef
   } catch (error) {
-    console.error('Failed to save template file:', error);
+    logger.error({ error }, 'Failed to save template file');
     throw createError.internal('Failed to save template file');
   }
 }
@@ -72,7 +73,7 @@ export async function deleteTemplateFile(fileRef: string): Promise<void> {
   } catch (error) {
     // Ignore error if file doesn't exist
     if ((error as any).code !== 'ENOENT') {
-      console.error('Failed to delete template file:', error);
+      logger.error({ error }, 'Failed to delete template file');
     }
   }
 }
@@ -219,7 +220,7 @@ export async function renderTemplate(
       format: 'docx',
     };
   } catch (error) {
-    console.error('Failed to render template:', error);
+    logger.error({ error }, 'Failed to render template');
     throw createError.internal('Failed to render template');
   }
 }

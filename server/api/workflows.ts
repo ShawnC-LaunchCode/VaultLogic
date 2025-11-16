@@ -23,6 +23,7 @@ import {
   projectIdParamsSchema,
   versionIdParamsSchema,
 } from './validators/workflows';
+import { logger } from '../logger';
 
 const router = Router();
 
@@ -135,7 +136,7 @@ router.post(
         const conditionsValidation = validateNodeConditions(data.graphJson as unknown as GraphJson);
         if (!conditionsValidation.valid) {
           // For draft creation, we log warnings but don't block
-          console.warn('Workflow has expression validation issues:', conditionsValidation.errors);
+          logger.warn({ errors: conditionsValidation.errors }, 'Workflow has expression validation issues');
         }
       }
 
@@ -281,7 +282,7 @@ router.patch(
         const conditionsValidation = validateNodeConditions(data.graphJson as unknown as GraphJson);
         if (!conditionsValidation.valid) {
           // For draft updates, we log warnings but don't block
-          console.warn('Workflow has expression validation issues:', conditionsValidation.errors);
+          logger.warn({ errors: conditionsValidation.errors }, 'Workflow has expression validation issues');
         }
       }
 

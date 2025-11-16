@@ -15,6 +15,7 @@ import { runOutputs } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
 import { convertDocxToPdf2 } from './docxRenderer2';
 import { getOutputFilePath } from './templates';
+import { logger } from '../logger';
 import fs from 'fs/promises';
 import path from 'path';
 import type { DbTransaction } from '../repositories/BaseRepository';
@@ -53,23 +54,23 @@ export class PdfQueueService {
    */
   start(): void {
     if (this.isRunning) {
-      console.warn('PDF queue processor is already running');
+      logger.warn('PDF queue processor is already running');
       return;
     }
 
     this.isRunning = true;
-    console.log('PDF queue processor started');
+    logger.info('PDF queue processor started');
 
     // Start polling for pending jobs
     this.pollingInterval = setInterval(() => {
       this.processQueue().catch((error) => {
-        console.error('Error processing PDF queue:', error);
+        logger.error({ error }, 'Error processing PDF queue');
       });
     }, this.POLL_INTERVAL_MS);
 
     // Process immediately on start
     this.processQueue().catch((error) => {
-      console.error('Error processing PDF queue on start:', error);
+      logger.error({ error }, 'Error processing PDF queue on start');
     });
   }
 
@@ -88,7 +89,7 @@ export class PdfQueueService {
       this.pollingInterval = null;
     }
 
-    console.log('PDF queue processor stopped');
+    logger.info('PDF queue processor stopped');
   }
 
   /**
@@ -122,7 +123,7 @@ export class PdfQueueService {
       })
       .returning();
 
-    console.log(`Enqueued PDF conversion job: ${output.id} (docx: ${docxPath})`);
+    logger.info({ outputId: output.id, docxPath }, 'Enqueued PDF conversion job');
 
     return output.id;
   }
@@ -150,14 +151,14 @@ export class PdfQueueService {
         return;
       }
 
-      console.log(`Processing ${pendingOutputs.length} pending PDF conversion jobs`);
+      logger.info({ count: pendingOutputs.length }, 'Processing pending PDF conversion jobs');
 
       // Process each job
       for (const output of pendingOutputs) {
         await this.processJob(output);
       }
     } catch (error) {
-      console.error('Error in processQueue:', error);
+      logger.error({ error }, 'Error in processQueue');
     }
   }
 
@@ -168,7 +169,7 @@ export class PdfQueueService {
     const attempt = (output.error ? JSON.parse(output.error || '{}').attempt || 0 : 0) + 1;
     const jobId = output.id;
 
-    console.log(`Processing PDF job ${jobId} (attempt ${attempt}/${this.MAX_RETRIES})`);
+    logger.info({ jobId, attempt, maxRetries: this.MAX_RETRIES }, 'Processing PDF job');
 
     try {
       // Find corresponding DOCX output
@@ -214,18 +215,18 @@ export class PdfQueueService {
         })
         .where(eq(runOutputs.id, output.id));
 
-      console.log(`✓ PDF job ${jobId} completed successfully: ${pdfFilename}`);
+      logger.info({ jobId, pdfFilename }, 'PDF job completed successfully');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-      console.error(`✗ PDF job ${jobId} failed (attempt ${attempt}):`, errorMessage);
+      logger.error({ jobId, attempt, error: errorMessage }, 'PDF job failed');
 
       // Determine if we should retry
       if (attempt < this.MAX_RETRIES) {
         // Calculate backoff delay
         const backoffMs = this.BACKOFF_BASE_MS * Math.pow(2, attempt - 1);
 
-        console.log(`Will retry PDF job ${jobId} in ${backoffMs}ms`);
+        logger.info({ jobId, backoffMs }, 'Will retry PDF job');
 
         // Update error with attempt count and backoff info
         await db
@@ -243,7 +244,7 @@ export class PdfQueueService {
         // Schedule retry (simple setTimeout for now, could use proper job queue)
         setTimeout(() => {
           this.processJob(output).catch((err) => {
-            console.error(`Error retrying PDF job ${jobId}:`, err);
+            logger.error({ jobId, error: err }, 'Error retrying PDF job');
           });
         }, backoffMs);
       } else {
@@ -261,7 +262,7 @@ export class PdfQueueService {
           })
           .where(eq(runOutputs.id, output.id));
 
-        console.error(`✗ PDF job ${jobId} FAILED after ${attempt} attempts`);
+        logger.error({ jobId, attempt }, 'PDF job FAILED after max retries');
       }
     }
   }
@@ -371,12 +372,12 @@ if (process.env.NODE_ENV !== 'test') {
 
   // Graceful shutdown
   process.on('SIGTERM', () => {
-    console.log('SIGTERM received, stopping PDF queue processor');
+    logger.info('SIGTERM received, stopping PDF queue processor');
     pdfQueueService.stop();
   });
 
   process.on('SIGINT', () => {
-    console.log('SIGINT received, stopping PDF queue processor');
+    logger.info('SIGINT received, stopping PDF queue processor');
     pdfQueueService.stop();
   });
 }

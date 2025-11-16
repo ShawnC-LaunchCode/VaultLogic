@@ -9,6 +9,7 @@ import { secrets, type Secret, type InsertSecret } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
 import { encrypt, decrypt, redact, maskSecret } from '../utils/encryption';
 import type { z } from 'zod';
+import { logger } from '../logger';
 
 /**
  * Secret metadata returned to clients (no plaintext values)
@@ -110,7 +111,7 @@ export async function getSecretValue(projectId: string, key: string): Promise<st
   try {
     return decrypt(result.valueEnc);
   } catch (error) {
-    console.error(`Failed to decrypt secret ${key}:`, error);
+    logger.error({ error, key }, `Failed to decrypt secret ${key}`);
     throw new Error(`Failed to decrypt secret: ${(error as Error).message}`);
   }
 }
@@ -130,7 +131,7 @@ export async function getSecretValueById(projectId: string, secretId: string): P
   try {
     return decrypt(result.valueEnc);
   } catch (error) {
-    console.error(`Failed to decrypt secret ${secretId}:`, error);
+    logger.error({ error, secretId }, `Failed to decrypt secret ${secretId}`);
     throw new Error(`Failed to decrypt secret: ${(error as Error).message}`);
   }
 }

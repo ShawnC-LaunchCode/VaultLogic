@@ -17,6 +17,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import { createError } from '../utils/errors';
 import { docxHelpers } from './docxHelpers';
+import { logger } from '../logger';
 
 const execAsync = promisify(exec);
 
@@ -66,7 +67,7 @@ function createExpressionParser() {
           try {
             return helper(value, ...args);
           } catch (error) {
-            console.error(`Helper ${helperName} failed:`, error);
+            logger.error({ error, helperName }, `Helper ${helperName} failed`);
             return '';
           }
         }
@@ -198,7 +199,7 @@ export async function renderDocx2(options: RenderOptions2): Promise<RenderResult
         const pdfPath = await convertDocxToPdf2(outputPath);
         result.pdfPath = pdfPath;
       } catch (error) {
-        console.warn('PDF conversion failed:', error);
+        logger.warn({ error }, 'PDF conversion failed');
         // PDF conversion is optional, don't fail the entire operation
       }
     }
@@ -240,7 +241,7 @@ export async function convertDocxToPdf2(docxPath: string): Promise<string> {
     await fs.writeFile(pdfPath, pdfBuffer);
     return pdfPath;
   } catch (error) {
-    console.warn('libreoffice-convert not available, trying system LibreOffice');
+    logger.warn({ error }, 'libreoffice-convert not available, trying system LibreOffice');
   }
 
   // Method 2: Try system LibreOffice
@@ -260,7 +261,7 @@ export async function convertDocxToPdf2(docxPath: string): Promise<string> {
       throw new Error('PDF file not created by LibreOffice');
     }
   } catch (error) {
-    console.warn('System LibreOffice conversion failed:', error);
+    logger.warn({ error }, 'System LibreOffice conversion failed');
   }
 
   // If all methods fail, throw an error

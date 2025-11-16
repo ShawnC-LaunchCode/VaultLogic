@@ -6,6 +6,7 @@
 import crypto from 'crypto';
 import { oauth2Cache } from './cache';
 import { redactObject, encrypt, decrypt } from '../utils/encryption';
+import { logger } from '../logger';
 
 /**
  * OAuth2 token response
@@ -114,12 +115,12 @@ async function fetchOAuth2Token(config: OAuth2ClientCredentialsConfig): Promise<
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unknown error');
-      console.error('OAuth2 token request failed:', {
+      logger.error({
         status: response.status,
         statusText: response.statusText,
         error: errorText,
         tokenUrl: redactObject({ tokenUrl }).tokenUrl,
-      });
+      }, 'OAuth2 token request failed');
       throw new Error(`OAuth2 token request failed: ${response.status} ${response.statusText}`);
     }
 
@@ -127,7 +128,7 @@ async function fetchOAuth2Token(config: OAuth2ClientCredentialsConfig): Promise<
 
     // Validate response
     if (!data.access_token || !data.token_type) {
-      console.error('Invalid OAuth2 token response:', redactObject(data));
+      logger.error({ data: redactObject(data) }, 'Invalid OAuth2 token response');
       throw new Error('Invalid OAuth2 token response: missing access_token or token_type');
     }
 
@@ -138,10 +139,10 @@ async function fetchOAuth2Token(config: OAuth2ClientCredentialsConfig): Promise<
       scope: data.scope,
     };
   } catch (error) {
-    console.error('OAuth2 token fetch error:', {
+    logger.error({
       error: (error as Error).message,
       tokenUrl: redactObject({ tokenUrl }).tokenUrl,
-    });
+    }, 'OAuth2 token fetch error');
     throw new Error(`Failed to obtain OAuth2 token: ${(error as Error).message}`);
   }
 }
@@ -331,12 +332,12 @@ export async function exchangeOAuth2Code(
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unknown error');
-      console.error('OAuth2 code exchange failed:', {
+      logger.error({
         status: response.status,
         statusText: response.statusText,
         error: errorText,
         tokenUrl: redactObject({ tokenUrl: config.tokenUrl }).tokenUrl,
-      });
+      }, 'OAuth2 code exchange failed');
       throw new Error(`OAuth2 code exchange failed: ${response.status} ${response.statusText}`);
     }
 
@@ -344,7 +345,7 @@ export async function exchangeOAuth2Code(
 
     // Validate response
     if (!data.access_token || !data.token_type) {
-      console.error('Invalid OAuth2 token response:', redactObject(data));
+      logger.error({ data: redactObject(data) }, 'Invalid OAuth2 token response');
       throw new Error('Invalid OAuth2 token response: missing access_token or token_type');
     }
 
@@ -356,10 +357,10 @@ export async function exchangeOAuth2Code(
       refresh_token: data.refresh_token,
     };
   } catch (error) {
-    console.error('OAuth2 code exchange error:', {
+    logger.error({
       error: (error as Error).message,
       tokenUrl: redactObject({ tokenUrl: config.tokenUrl }).tokenUrl,
-    });
+    }, 'OAuth2 code exchange error');
     throw new Error(`Failed to exchange OAuth2 code: ${(error as Error).message}`);
   }
 }
@@ -399,12 +400,12 @@ export async function refreshOAuth2Token(
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unknown error');
-      console.error('OAuth2 token refresh failed:', {
+      logger.error({
         status: response.status,
         statusText: response.statusText,
         error: errorText,
         tokenUrl: redactObject({ tokenUrl: config.tokenUrl }).tokenUrl,
-      });
+      }, 'OAuth2 token refresh failed');
       throw new Error(`OAuth2 token refresh failed: ${response.status} ${response.statusText}`);
     }
 
@@ -412,7 +413,7 @@ export async function refreshOAuth2Token(
 
     // Validate response
     if (!data.access_token || !data.token_type) {
-      console.error('Invalid OAuth2 token response:', redactObject(data));
+      logger.error({ data: redactObject(data) }, 'Invalid OAuth2 token response');
       throw new Error('Invalid OAuth2 token response: missing access_token or token_type');
     }
 
@@ -424,10 +425,10 @@ export async function refreshOAuth2Token(
       refresh_token: data.refresh_token || refreshToken, // Use old refresh token if not rotated
     };
   } catch (error) {
-    console.error('OAuth2 token refresh error:', {
+    logger.error({
       error: (error as Error).message,
       tokenUrl: redactObject({ tokenUrl: config.tokenUrl }).tokenUrl,
-    });
+    }, 'OAuth2 token refresh error');
     throw new Error(`Failed to refresh OAuth2 token: ${(error as Error).message}`);
   }
 }

@@ -4,6 +4,7 @@ import { reviewTaskService } from "../services";
 import { resumeRunFromNode } from "../services/runs";
 import { createError } from "../utils/errors";
 import { z } from "zod";
+import { logger } from "../logger";
 
 const router = express.Router();
 
@@ -103,7 +104,7 @@ router.post("/tasks/:id/decision", requireAuth, async (req, res, next) => {
       try {
         await resumeRunFromNode(task.runId, task.nodeId);
       } catch (resumeError) {
-        console.error('Failed to resume workflow after approval:', resumeError);
+        logger.error({ resumeError, runId: task.runId, nodeId: task.nodeId }, 'Failed to resume workflow after approval');
         // Don't fail the approval if resume fails
         // The task is still marked as approved
       }

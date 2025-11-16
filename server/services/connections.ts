@@ -23,6 +23,7 @@ import {
   OAuth2ThreeLegTokenResponse
 } from './oauth2';
 import { encrypt, decrypt } from '../utils/encryption';
+import { logger } from '../logger';
 
 /**
  * List all connections for a project
@@ -296,7 +297,7 @@ export async function resolveConnection(
         }
       }
     } catch (error) {
-      console.error('Failed to decrypt OAuth2 access token:', error);
+      logger.error({ error, connectionId }, 'Failed to decrypt OAuth2 access token');
       throw new Error('Failed to decrypt OAuth2 access token');
     }
   }

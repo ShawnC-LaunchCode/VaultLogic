@@ -1,6 +1,7 @@
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
+import { logger } from "./logger";
 
 export function serveStatic(app: Express) {
   // Use process.cwd() instead of import.meta.dirname for bundled code compatibility
@@ -11,7 +12,8 @@ export function serveStatic(app: Express) {
     // In test mode, static files are not needed (tests only use API routes)
     // Just log a warning and skip static file serving
     if (process.env.NODE_ENV === "test") {
-      console.warn(
+      logger.warn(
+        { distPath },
         `[Static] Build directory not found: ${distPath} - skipping static file serving (test mode)`,
       );
       return;

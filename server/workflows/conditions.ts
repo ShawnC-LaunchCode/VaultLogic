@@ -14,6 +14,8 @@
  * - Integration with workflow data and collection records
  */
 
+import { logger } from '../logger';
+
 // ========================================================================
 // TYPE DEFINITIONS
 // ========================================================================
@@ -326,7 +328,7 @@ function evaluateComparison(
       return false;
 
     default:
-      console.warn(`Unknown operator: ${operator}`);
+      logger.warn(`Unknown operator: ${operator}`);
       return false;
   }
 }
@@ -369,7 +371,7 @@ export function evaluateCondition(
   }
 
   // Unknown expression type
-  console.warn('Unknown condition expression type:', expression);
+  logger.warn('Unknown condition expression type');
   return false;
 }
 
