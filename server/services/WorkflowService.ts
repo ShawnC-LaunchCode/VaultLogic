@@ -136,7 +136,7 @@ export class WorkflowService {
   async changeStatus(
     workflowId: string,
     userId: string,
-    status: 'draft' | 'open' | 'closed'
+    status: 'draft' | 'active' | 'archived'
   ): Promise<Workflow> {
     await this.verifyOwnership(workflowId, userId);
     return await this.workflowRepo.update(workflowId, { status });

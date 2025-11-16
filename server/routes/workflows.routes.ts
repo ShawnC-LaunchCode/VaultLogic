@@ -161,7 +161,7 @@ export function registerWorkflowRoutes(app: Express): void {
       const { workflowId } = req.params;
       const { status } = req.body;
 
-      if (!['draft', 'open', 'closed'].includes(status)) {
+      if (!['draft', 'active', 'archived'].includes(status)) {
         return res.status(400).json({ message: "Invalid status" });
       }
 
