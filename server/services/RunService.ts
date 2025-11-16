@@ -779,6 +779,91 @@ export class RunService {
   }
 
   /**
+   * Create an anonymous workflow run from a public link slug
+   * Does not require authentication or ownership verification
+   * @param publicLinkSlug - The workflow's public link slug
+   */
+  async createAnonymousRun(publicLinkSlug: string): Promise<WorkflowRun> {
+    // Look up workflow by public link slug
+    const workflow = await this.workflowRepo.findByPublicLink(publicLinkSlug);
+    if (!workflow) {
+      throw new Error('Workflow not found or not public');
+    }
+
+    // Verify workflow is active and public
+    if (workflow.status !== 'active') {
+      throw new Error('Workflow is not active');
+    }
+    if (!workflow.isPublic) {
+      throw new Error('Workflow is not public');
+    }
+
+    // Generate a unique token for this run
+    const runToken = randomUUID();
+    const startTime = Date.now();
+
+    // Create the run with anonymous creator
+    const run = await this.runRepo.create({
+      workflowId: workflow.id,
+      runToken,
+      createdBy: 'anon', // Anonymous user
+      completed: false,
+    } as any);
+
+    // Capture run_started metric (Stage 11)
+    const context = await this.getWorkflowContext(workflow.id);
+    if (context) {
+      await captureRunLifecycle.started({
+        tenantId: context.tenantId,
+        projectId: context.projectId,
+        workflowId: workflow.id,
+        runId: run.id,
+        createdBy: 'anon',
+      });
+    }
+
+    // Execute onRunStart blocks (transform + generic)
+    try {
+      // Get existing step values for this run (should be empty for new run)
+      const values = await this.valueRepo.findByRunId(run.id);
+      const dataMap = values.reduce((acc, v) => {
+        acc[v.stepId] = v.value;
+        return acc;
+      }, {} as Record<string, any>);
+
+      const blockResult = await blockRunner.runPhase({
+        workflowId: workflow.id,
+        runId: run.id,
+        phase: 'onRunStart',
+        dataMap,
+        currentSectionId: undefined,
+      });
+
+      // Save outputs from onRunStart blocks (transform block outputs)
+      if (blockResult.outputs && Object.keys(blockResult.outputs).length > 0) {
+        for (const [stepId, value] of Object.entries(blockResult.outputs)) {
+          await this.valueRepo.upsert({
+            runId: run.id,
+            stepId,
+            value,
+          });
+        }
+      }
+
+      // If validation blocks failed, delete run and throw error
+      if (!blockResult.success && blockResult.errors) {
+        await this.runRepo.delete(run.id);
+        throw new Error(`Run start validation failed: ${blockResult.errors.join(', ')}`);
+      }
+    } catch (error) {
+      // Log but don't fail run creation on block execution errors
+      console.error('Error executing onRunStart blocks:', error);
+    }
+
+    return run;
+  }
+
+  /**
    * List runs for a workflow
    */
   async listRuns(workflowId: string, userId: string): Promise<WorkflowRun[]> {

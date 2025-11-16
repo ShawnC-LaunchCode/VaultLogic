@@ -20,8 +20,68 @@ interface WorkflowRunnerProps {
   isPreview?: boolean;
 }
 
+// Helper to check if a string is a valid UUID
+function isUUID(str: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+}
+
+// Helper to start a run from a public link slug
+async function startRunFromSlug(slug: string): Promise<{ runId: string; runToken: string; workflowId: string }> {
+  const response = await fetch(`/api/workflows/public/${slug}/start`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to start workflow');
+  }
+
+  const result = await response.json();
+  return result.data;
+}
+
 export function WorkflowRunner({ runId, isPreview = false }: WorkflowRunnerProps) {
-  const { data: run } = useRunWithValues(runId);
+  const [actualRunId, setActualRunId] = useState<string | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [initError, setInitError] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  // On mount, check if runId is a UUID or a slug
+  useEffect(() => {
+    async function initialize() {
+      try {
+        if (isUUID(runId)) {
+          // It's already a run ID - use it directly
+          setActualRunId(runId);
+        } else {
+          // It's a slug - need to start a new run
+          const runData = await startRunFromSlug(runId);
+          setActualRunId(runData.runId);
+
+          // Store the run token in localStorage for bearer auth
+          localStorage.setItem(`run_token_${runData.runId}`, runData.runToken);
+        }
+      } catch (error) {
+        setInitError(error instanceof Error ? error.message : 'Failed to load workflow');
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : 'Failed to load workflow',
+          variant: "destructive",
+        });
+      } finally {
+        setIsInitializing(false);
+      }
+    }
+
+    initialize();
+  }, [runId, toast]);
+
+  // Fetch run data - bearer token is automatically added by fetchAPI from localStorage
+  const { data: run } = useRunWithValues(actualRunId || '');
   const { data: sections } = useSections(run?.workflowId);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [formValues, setFormValues] = useState<Record<string, any>>({});
@@ -30,7 +90,6 @@ export function WorkflowRunner({ runId, isPreview = false }: WorkflowRunnerProps
   const submitMutation = useSubmitSection();
   const nextMutation = useNext();
   const completeMutation = useCompleteRun();
-  const { toast } = useToast();
 
   // Initialize form values from run.values
   useEffect(() => {
@@ -43,10 +102,32 @@ export function WorkflowRunner({ runId, isPreview = false }: WorkflowRunnerProps
     }
   }, [run]);
 
+  // Show initializing state
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Starting workflow...</p>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (initError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-destructive mb-2">Failed to load workflow</p>
+          <p className="text-sm text-muted-foreground">{initError}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading state while fetching run data
   if (!run || !sections) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
+        <p className="text-muted-foreground">Loading workflow...</p>
       </div>
     );
   }

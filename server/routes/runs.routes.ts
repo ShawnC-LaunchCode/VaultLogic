@@ -14,6 +14,36 @@ const logger = createLogger({ module: "runs-routes" });
  */
 export function registerRunRoutes(app: Express): void {
   /**
+   * POST /api/workflows/public/:publicLinkSlug/start
+   * Start an anonymous workflow run from a public link slug
+   * No authentication required - creates anonymous run
+   */
+  app.post('/api/workflows/public/:publicLinkSlug/start', async (req: Request, res: Response) => {
+    try {
+      const { publicLinkSlug } = req.params;
+
+      // Create anonymous run
+      const run = await runService.createAnonymousRun(publicLinkSlug);
+
+      return res.status(201).json({
+        success: true,
+        data: {
+          runId: run.id,
+          runToken: run.runToken,
+          workflowId: run.workflowId
+        }
+      });
+    } catch (error) {
+      logger.error({ error, slug: req.params.publicLinkSlug }, "Error starting anonymous run");
+      const message = error instanceof Error ? error.message : "Failed to start workflow";
+      const status = message.includes("not found") ? 404 :
+                     message.includes("not active") ? 403 :
+                     message.includes("not public") ? 403 : 500;
+      res.status(status).json({ success: false, error: message });
+    }
+  });
+
+  /**
    * POST /api/workflows/:workflowId/runs
    * Create a new workflow run
    * Supports both authenticated (creator) and anonymous (via publicLink) runs
