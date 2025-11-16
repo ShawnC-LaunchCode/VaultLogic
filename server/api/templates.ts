@@ -1,6 +1,6 @@
 import { Router, type Request, Response } from 'express';
 import { eq, and, desc, lt } from 'drizzle-orm';
-import multer from 'multer';
+import multer, { type FileFilterCallback } from 'multer';
 import { db } from '../db';
 import * as schema from '@shared/schema';
 import { requireAuth } from '../middleware/auth';
@@ -36,7 +36,11 @@ const upload = multerInstance({
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB max file size
   },
-  fileFilter: (_req, file, cb) => {
+  fileFilter: (
+    _req: Request,
+    file: Express.Multer.File,
+    cb: FileFilterCallback
+  ) => {
     // Only accept .docx files
     if (
       file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
