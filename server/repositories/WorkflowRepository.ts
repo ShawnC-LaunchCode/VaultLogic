@@ -26,7 +26,7 @@ export class WorkflowRepository extends BaseRepository<typeof workflows, Workflo
   /**
    * Find workflows by status
    */
-  async findByStatus(status: 'draft' | 'open' | 'closed', tx?: DbTransaction): Promise<Workflow[]> {
+  async findByStatus(status: 'draft' | 'active' | 'archived', tx?: DbTransaction): Promise<Workflow[]> {
     const database = this.getDb(tx);
     return await database
       .select()
@@ -40,7 +40,7 @@ export class WorkflowRepository extends BaseRepository<typeof workflows, Workflo
    */
   async findByCreatorAndStatus(
     creatorId: string,
-    status: 'draft' | 'open' | 'closed',
+    status: 'draft' | 'active' | 'archived',
     tx?: DbTransaction
   ): Promise<Workflow[]> {
     const database = this.getDb(tx);
