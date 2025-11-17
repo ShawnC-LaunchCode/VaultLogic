@@ -49,5 +49,10 @@ export { RecordRepository, recordRepository } from "./RecordRepository";
 export { DocumentTemplateRepository, documentTemplateRepository } from "./DocumentTemplateRepository";
 export { WorkflowTemplateRepository, workflowTemplateRepository } from "./WorkflowTemplateRepository";
 
+// DataVault Phase 1 repositories
+export { DatavaultTablesRepository, datavaultTablesRepository } from "./DatavaultTablesRepository";
+export { DatavaultColumnsRepository, datavaultColumnsRepository } from "./DatavaultColumnsRepository";
+export { DatavaultRowsRepository, datavaultRowsRepository } from "./DatavaultRowsRepository";
+
 // Export type for Insert operations
 export type { InsertAnalyticsEvent } from "./AnalyticsRepository";

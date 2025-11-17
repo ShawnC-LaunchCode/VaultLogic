@@ -1,0 +1,110 @@
+import { BaseRepository, type DbTransaction } from "./BaseRepository";
+import { datavaultTables, type DatavaultTable, type InsertDatavaultTable } from "@shared/schema";
+import { eq, and, desc, sql } from "drizzle-orm";
+import { db } from "../db";
+
+/**
+ * Repository for DataVault table data access
+ * Handles CRUD operations for tenant-scoped custom tables
+ */
+export class DatavaultTablesRepository extends BaseRepository<
+  typeof datavaultTables,
+  DatavaultTable,
+  InsertDatavaultTable
+> {
+  constructor(dbInstance?: typeof db) {
+    super(datavaultTables, dbInstance);
+  }
+
+  /**
+   * Find tables by tenant ID
+   */
+  async findByTenantId(tenantId: string, tx?: DbTransaction): Promise<DatavaultTable[]> {
+    const database = this.getDb(tx);
+    return await database
+      .select()
+      .from(datavaultTables)
+      .where(eq(datavaultTables.tenantId, tenantId))
+      .orderBy(desc(datavaultTables.createdAt));
+  }
+
+  /**
+   * Find table by tenant ID and slug
+   */
+  async findByTenantAndSlug(
+    tenantId: string,
+    slug: string,
+    tx?: DbTransaction
+  ): Promise<DatavaultTable | undefined> {
+    const database = this.getDb(tx);
+    const [table] = await database
+      .select()
+      .from(datavaultTables)
+      .where(and(eq(datavaultTables.tenantId, tenantId), eq(datavaultTables.slug, slug)));
+
+    return table;
+  }
+
+  /**
+   * Check if slug exists for tenant (excluding specific ID if provided)
+   */
+  async slugExists(
+    tenantId: string,
+    slug: string,
+    excludeId?: string,
+    tx?: DbTransaction
+  ): Promise<boolean> {
+    const database = this.getDb(tx);
+
+    let query = database
+      .select({ id: datavaultTables.id })
+      .from(datavaultTables)
+      .where(and(eq(datavaultTables.tenantId, tenantId), eq(datavaultTables.slug, slug)));
+
+    if (excludeId) {
+      query = query.where(sql`${datavaultTables.id} != ${excludeId}`) as any;
+    }
+
+    const [result] = await query.limit(1);
+    return !!result;
+  }
+
+  /**
+   * Find tables by owner user ID
+   */
+  async findByOwnerId(ownerUserId: string, tx?: DbTransaction): Promise<DatavaultTable[]> {
+    const database = this.getDb(tx);
+    return await database
+      .select()
+      .from(datavaultTables)
+      .where(eq(datavaultTables.ownerUserId, ownerUserId))
+      .orderBy(desc(datavaultTables.createdAt));
+  }
+
+  /**
+   * Count tables for a tenant
+   */
+  async countByTenantId(tenantId: string, tx?: DbTransaction): Promise<number> {
+    const database = this.getDb(tx);
+    const [result] = await database
+      .select({ count: sql<number>`count(*)::int` })
+      .from(datavaultTables)
+      .where(eq(datavaultTables.tenantId, tenantId));
+
+    return result?.count || 0;
+  }
+
+  /**
+   * Update table with automatic timestamp update
+   */
+  async update(
+    id: string,
+    updates: Partial<InsertDatavaultTable>,
+    tx?: DbTransaction
+  ): Promise<DatavaultTable> {
+    return super.update(id, { ...updates, updatedAt: new Date() }, tx);
+  }
+}
+
+// Singleton instance
+export const datavaultTablesRepository = new DatavaultTablesRepository();
