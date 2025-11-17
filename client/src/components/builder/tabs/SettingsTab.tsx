@@ -1,6 +1,9 @@
 /**
  * SettingsTab - Workflow-specific settings
  * PR7: Full UI implementation with stub saves
+ * PR2: Added Project Assignment section
+ * PR3: Connected to real data and API
+ * PR4: Loading states and enhanced UX
  */
 
 import { useState } from "react";
@@ -14,6 +17,8 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ProjectAssignmentSection } from "@/components/workflows/settings/ProjectAssignmentSection";
+import { useWorkflow, useProjects, useMoveWorkflow } from "@/lib/vault-hooks";
 
 interface SettingsTabProps {
   workflowId: string;
@@ -21,6 +26,11 @@ interface SettingsTabProps {
 
 export function SettingsTab({ workflowId }: SettingsTabProps) {
   const { toast } = useToast();
+
+  // PR3: Fetch real data
+  const { data: workflow, isLoading: workflowLoading } = useWorkflow(workflowId);
+  const { data: projectsData, isLoading: projectsLoading } = useProjects(true); // activeOnly = true
+  const moveWorkflowMutation = useMoveWorkflow();
 
   // General Settings
   const [name, setName] = useState("My Workflow");
@@ -43,6 +53,11 @@ export function SettingsTab({ workflowId }: SettingsTabProps) {
   const [requireLogin, setRequireLogin] = useState(false);
   const [shareableLink, setShareableLink] = useState(`https://vaultlogic.app/run/${workflowId}`);
   const [linkCopied, setLinkCopied] = useState(false);
+
+  // PR3: Real projects data
+  const projects = projectsData?.map(p => ({ id: p.id, name: p.name })) || [];
+  const currentProjectId = workflow?.projectId || null;
+  const currentProjectName = projectsData?.find(p => p.id === currentProjectId)?.name;
 
   // Stub: Save all settings
   const handleSaveSettings = () => {
@@ -69,6 +84,31 @@ export function SettingsTab({ workflowId }: SettingsTabProps) {
       title: "Link Copied",
       description: "Shareable link copied to clipboard",
     });
+  };
+
+  // PR3: Handle project assignment move with API
+  const handleMoveWorkflow = async (projectId: string | null) => {
+    try {
+      await moveWorkflowMutation.mutateAsync({
+        id: workflowId,
+        projectId,
+      });
+
+      const targetName = projectId === null
+        ? "Main Folder"
+        : projectsData?.find(p => p.id === projectId)?.name || "project";
+
+      toast({
+        title: "Workflow Moved",
+        description: `Workflow moved to ${targetName}.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to Move Workflow",
+        description: error instanceof Error ? error.message : "An error occurred while moving the workflow.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -138,6 +178,18 @@ export function SettingsTab({ workflowId }: SettingsTabProps) {
               </div>
             </CardContent>
           </Card>
+
+          {/* Project Assignment (PR4: Full integration with loading states) */}
+          <ProjectAssignmentSection
+            workflowId={workflowId}
+            workflowName={workflow?.title || workflow?.name || "Workflow"}
+            currentProjectId={currentProjectId}
+            currentProjectName={currentProjectName}
+            projects={projects}
+            onMove={handleMoveWorkflow}
+            isMoving={moveWorkflowMutation.isPending}
+            isLoading={workflowLoading || projectsLoading}
+          />
 
           {/* Branding Settings */}
           <Card>
