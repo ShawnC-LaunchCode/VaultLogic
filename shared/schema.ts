@@ -853,6 +853,19 @@ export const stepTypeEnum = pgEnum('step_type', [
 // Logic rule target type enum
 export const logicRuleTargetTypeEnum = pgEnum('logic_rule_target_type', ['section', 'step']);
 
+// DataVault: Column data type enum
+export const datavaultColumnTypeEnum = pgEnum('datavault_column_type', [
+  'text',
+  'number',
+  'boolean',
+  'date',
+  'datetime',
+  'email',
+  'phone',
+  'url',
+  'json'
+]);
+
 // =====================================================================
 // CORE TABLES
 // =====================================================================
@@ -2069,6 +2082,69 @@ export const sliWindows = pgTable("sli_windows", {
   index("sli_windows_tenant_idx").on(table.tenantId),
 ]);
 
+// =====================================================================
+// DATAVAULT TABLES (Phase 1)
+// =====================================================================
+
+// DataVault Tables - tenant-scoped table definitions
+export const datavaultTables = pgTable("datavault_tables", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  ownerUserId: varchar("owner_user_id").references(() => users.id, { onDelete: 'cascade' }),
+  name: text("name").notNull(),
+  slug: text("slug").notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("datavault_tables_tenant_idx").on(table.tenantId),
+  index("datavault_tables_owner_idx").on(table.ownerUserId),
+  uniqueIndex("datavault_tables_tenant_slug_unique").on(table.tenantId, table.slug),
+]);
+
+// DataVault Columns - column definitions for tables
+export const datavaultColumns = pgTable("datavault_columns", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tableId: uuid("table_id").references(() => datavaultTables.id, { onDelete: 'cascade' }).notNull(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull(),
+  type: datavaultColumnTypeEnum("type").notNull(),
+  required: boolean("required").default(false).notNull(),
+  orderIndex: integer("order_index").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("datavault_columns_table_idx").on(table.tableId),
+  uniqueIndex("datavault_columns_table_slug_unique").on(table.tableId, table.slug),
+]);
+
+// DataVault Rows - data rows in tables
+export const datavaultRows = pgTable("datavault_rows", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tableId: uuid("table_id").references(() => datavaultTables.id, { onDelete: 'cascade' }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: varchar("created_by").references(() => users.id, { onDelete: 'set null' }),
+  updatedBy: varchar("updated_by").references(() => users.id, { onDelete: 'set null' }),
+}, (table) => [
+  index("datavault_rows_table_idx").on(table.tableId),
+  index("datavault_rows_created_by_idx").on(table.createdBy),
+]);
+
+// DataVault Values - cell values in rows
+export const datavaultValues = pgTable("datavault_values", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  rowId: uuid("row_id").references(() => datavaultRows.id, { onDelete: 'cascade' }).notNull(),
+  columnId: uuid("column_id").references(() => datavaultColumns.id, { onDelete: 'cascade' }).notNull(),
+  value: jsonb("value"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("datavault_values_row_idx").on(table.rowId),
+  index("datavault_values_column_idx").on(table.columnId),
+  uniqueIndex("datavault_values_row_column_unique").on(table.rowId, table.columnId),
+]);
+
 // Analytics Relations
 export const metricsEventsRelations = relations(metricsEvents, ({ one }) => ({
   tenant: one(tenants, {
@@ -2134,6 +2210,55 @@ export const sliWindowsRelations = relations(sliWindows, ({ one }) => ({
   }),
 }));
 
+// DataVault Relations
+export const datavaultTablesRelations = relations(datavaultTables, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [datavaultTables.tenantId],
+    references: [tenants.id],
+  }),
+  owner: one(users, {
+    fields: [datavaultTables.ownerUserId],
+    references: [users.id],
+  }),
+  columns: many(datavaultColumns),
+  rows: many(datavaultRows),
+}));
+
+export const datavaultColumnsRelations = relations(datavaultColumns, ({ one, many }) => ({
+  table: one(datavaultTables, {
+    fields: [datavaultColumns.tableId],
+    references: [datavaultTables.id],
+  }),
+  values: many(datavaultValues),
+}));
+
+export const datavaultRowsRelations = relations(datavaultRows, ({ one, many }) => ({
+  table: one(datavaultTables, {
+    fields: [datavaultRows.tableId],
+    references: [datavaultTables.id],
+  }),
+  createdByUser: one(users, {
+    fields: [datavaultRows.createdBy],
+    references: [users.id],
+  }),
+  updatedByUser: one(users, {
+    fields: [datavaultRows.updatedBy],
+    references: [users.id],
+  }),
+  values: many(datavaultValues),
+}));
+
+export const datavaultValuesRelations = relations(datavaultValues, ({ one }) => ({
+  row: one(datavaultRows, {
+    fields: [datavaultValues.rowId],
+    references: [datavaultRows.id],
+  }),
+  column: one(datavaultColumns, {
+    fields: [datavaultValues.columnId],
+    references: [datavaultColumns.id],
+  }),
+}));
+
 // Analytics Insert Schemas
 export const insertMetricsEventSchema = createInsertSchema(metricsEvents).omit({ id: true, createdAt: true });
 export const insertMetricsRollupSchema = createInsertSchema(metricsRollups).omit({ id: true, createdAt: true, updatedAt: true });
@@ -2149,6 +2274,22 @@ export type SliConfig = typeof sliConfigs.$inferSelect;
 export type InsertSliConfig = typeof insertSliConfigSchema._type;
 export type SliWindow = typeof sliWindows.$inferSelect;
 export type InsertSliWindow = typeof insertSliWindowSchema._type;
+
+// DataVault Insert Schemas
+export const insertDatavaultTableSchema = createInsertSchema(datavaultTables).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertDatavaultColumnSchema = createInsertSchema(datavaultColumns).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertDatavaultRowSchema = createInsertSchema(datavaultRows).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertDatavaultValueSchema = createInsertSchema(datavaultValues).omit({ id: true, createdAt: true, updatedAt: true });
+
+// DataVault Types
+export type DatavaultTable = typeof datavaultTables.$inferSelect;
+export type InsertDatavaultTable = typeof insertDatavaultTableSchema._type;
+export type DatavaultColumn = typeof datavaultColumns.$inferSelect;
+export type InsertDatavaultColumn = typeof insertDatavaultColumnSchema._type;
+export type DatavaultRow = typeof datavaultRows.$inferSelect;
+export type InsertDatavaultRow = typeof insertDatavaultRowSchema._type;
+export type DatavaultValue = typeof datavaultValues.$inferSelect;
+export type InsertDatavaultValue = typeof insertDatavaultValueSchema._type;
 
 // ===================================================================
 // LEGACY TYPES

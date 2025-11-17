@@ -33,6 +33,7 @@ import { registerCollectionsRoutes } from "./collections.routes";
 import { registerTemplateAnalysisRoutes } from "./templateAnalysis.routes";
 import { registerWorkflowTemplateRoutes } from "./workflowTemplates.routes";
 import { registerRunOutputsRoutes } from "./runOutputs.routes";
+import { registerDatavaultRoutes } from "./datavault.routes";
 
 /**
  * Register all modular routes
@@ -164,4 +165,11 @@ export function registerAllRoutes(app: Express): void {
 
   // Collections/Datastore routes (tenant-scoped tables, fields, records)
   registerCollectionsRoutes(app);
+
+  // ========================================================================
+  // DataVault Phase 1: Built-in Data Tables
+  // ========================================================================
+
+  // DataVault routes (tenant-scoped custom tables, columns, rows)
+  registerDatavaultRoutes(app);
 }
