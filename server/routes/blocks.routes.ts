@@ -1,9 +1,11 @@
 import type { Express, Request, Response } from "express";
 import { isAuthenticated } from "../googleAuth";
 import { blockService } from "../services/BlockService";
+import { blockRepository } from "../repositories/BlockRepository";
 import { z } from "zod";
 import { createLogger } from "../logger";
 import type { BlockPhase } from "@shared/types/blocks";
+import { autoRevertToDraft } from "../middleware/autoRevertToDraft";
 
 const logger = createLogger({ module: 'blocks-routes' });
 
@@ -16,7 +18,7 @@ export function registerBlockRoutes(app: Express): void {
    * POST /api/workflows/:workflowId/blocks
    * Create a new block
    */
-  app.post('/api/workflows/:workflowId/blocks', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/workflows/:workflowId/blocks', isAuthenticated, autoRevertToDraft, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -104,8 +106,18 @@ export function registerBlockRoutes(app: Express): void {
       const { blockId } = req.params;
       const updates = req.body;
 
-      const block = await blockService.updateBlock(blockId, userId, updates);
-      res.json({ success: true, data: block });
+      // Look up workflowId for auto-revert middleware
+      const block = await blockRepository.findById(blockId);
+      if (!block) {
+        return res.status(404).json({ success: false, errors: ["Block not found"] });
+      }
+      req.params.workflowId = block.workflowId;
+
+      // Apply auto-revert
+      await autoRevertToDraft(req, res, () => {});
+
+      const updatedBlock = await blockService.updateBlock(blockId, userId, updates);
+      res.json({ success: true, data: updatedBlock });
     } catch (error) {
       logger.error({ error }, "Error updating block");
       const message = error instanceof Error ? error.message : "Failed to update block";
@@ -126,6 +138,17 @@ export function registerBlockRoutes(app: Express): void {
       }
 
       const { blockId } = req.params;
+
+      // Look up workflowId for auto-revert middleware
+      const block = await blockRepository.findById(blockId);
+      if (!block) {
+        return res.status(404).json({ success: false, errors: ["Block not found"] });
+      }
+      req.params.workflowId = block.workflowId;
+
+      // Apply auto-revert
+      await autoRevertToDraft(req, res, () => {});
+
       await blockService.deleteBlock(blockId, userId);
       res.json({ success: true, data: { message: "Block deleted successfully" } });
     } catch (error) {
@@ -140,7 +163,7 @@ export function registerBlockRoutes(app: Express): void {
    * PUT /api/workflows/:workflowId/blocks/reorder
    * Bulk reorder blocks
    */
-  app.put('/api/workflows/:workflowId/blocks/reorder', isAuthenticated, async (req: Request, res: Response) => {
+  app.put('/api/workflows/:workflowId/blocks/reorder', isAuthenticated, autoRevertToDraft, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {

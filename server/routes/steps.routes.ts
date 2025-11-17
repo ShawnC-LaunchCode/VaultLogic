@@ -2,9 +2,12 @@ import type { Express, Request, Response } from "express";
 import { isAuthenticated } from "../googleAuth";
 import { insertStepSchema } from "@shared/schema";
 import { stepService } from "../services/StepService";
+import { sectionRepository } from "../repositories/SectionRepository";
+import { stepRepository } from "../repositories/StepRepository";
 import { z } from "zod";
 import { createLogger } from "../logger";
 import { creatorOrRunTokenAuth, type RunAuthRequest } from "../middleware/runTokenAuth";
+import { autoRevertToDraft } from "../middleware/autoRevertToDraft";
 
 const logger = createLogger({ module: "steps-routes" });
 
@@ -17,7 +20,7 @@ export function registerStepRoutes(app: Express): void {
    * POST /api/workflows/:workflowId/sections/:sectionId/steps
    * Create a new step
    */
-  app.post('/api/workflows/:workflowId/sections/:sectionId/steps', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/workflows/:workflowId/sections/:sectionId/steps', isAuthenticated, autoRevertToDraft, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -63,7 +66,7 @@ export function registerStepRoutes(app: Express): void {
    * PUT /api/workflows/:workflowId/sections/:sectionId/steps/reorder
    * Reorder steps within a section
    */
-  app.put('/api/workflows/:workflowId/sections/:sectionId/steps/reorder', isAuthenticated, async (req: Request, res: Response) => {
+  app.put('/api/workflows/:workflowId/sections/:sectionId/steps/reorder', isAuthenticated, autoRevertToDraft, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -169,6 +172,16 @@ export function registerStepRoutes(app: Express): void {
         return res.status(400).json({ message: "Invalid steps array" });
       }
 
+      // Look up workflowId for auto-revert middleware
+      const section = await sectionRepository.findById(sectionId);
+      if (!section) {
+        return res.status(404).json({ message: "Section not found" });
+      }
+      req.params.workflowId = section.workflowId;
+
+      // Apply auto-revert
+      await autoRevertToDraft(req, res, () => {});
+
       await stepService.reorderStepsBySectionId(sectionId, userId, steps);
       res.status(200).json({ message: "Steps reordered successfully" });
     } catch (error) {
@@ -215,8 +228,22 @@ export function registerStepRoutes(app: Express): void {
       const { stepId } = req.params;
       const updateData = req.body;
 
-      const step = await stepService.updateStepById(stepId, userId, updateData);
-      res.json(step);
+      // Look up workflowId for auto-revert middleware
+      const step = await stepRepository.findById(stepId);
+      if (!step) {
+        return res.status(404).json({ message: "Step not found" });
+      }
+      const section = await sectionRepo.findById(step.sectionId);
+      if (!section) {
+        return res.status(404).json({ message: "Section not found" });
+      }
+      req.params.workflowId = section.workflowId;
+
+      // Apply auto-revert
+      await autoRevertToDraft(req, res, () => {});
+
+      const updatedStep = await stepService.updateStepById(stepId, userId, updateData);
+      res.json(updatedStep);
     } catch (error) {
       logger.error({ error }, "Error updating step");
       const message = error instanceof Error ? error.message : "Failed to update step";
@@ -237,6 +264,21 @@ export function registerStepRoutes(app: Express): void {
       }
 
       const { stepId } = req.params;
+
+      // Look up workflowId for auto-revert middleware
+      const step = await stepRepository.findById(stepId);
+      if (!step) {
+        return res.status(404).json({ message: "Step not found" });
+      }
+      const section = await sectionRepo.findById(step.sectionId);
+      if (!section) {
+        return res.status(404).json({ message: "Section not found" });
+      }
+      req.params.workflowId = section.workflowId;
+
+      // Apply auto-revert
+      await autoRevertToDraft(req, res, () => {});
+
       await stepService.deleteStepById(stepId, userId);
       res.status(204).send();
     } catch (error) {

@@ -6,7 +6,8 @@
 import { useParams, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { Settings, Play, Eye, EyeOff, ChevronDown, ArrowLeft } from "lucide-react";
-import { useWorkflow, useSections, useCreateRun, useWorkflowMode, useSetWorkflowMode } from "@/lib/vault-hooks";
+import { useQueryClient } from "@tanstack/react-query";
+import { useWorkflow, useSections, useCreateRun, useWorkflowMode, useSetWorkflowMode, queryKeys } from "@/lib/vault-hooks";
 import { useWorkflowBuilder } from "@/store/workflow-builder";
 import { usePreviewStore } from "@/store/preview";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,7 @@ import { CollectionsDrawer } from "@/components/builder/data-sources/Collections
 export default function WorkflowBuilder() {
   const { id: workflowId } = useParams<{ id: string }>();
   const [location, navigate] = useLocation();
+  const queryClient = useQueryClient();
   const { data: workflow, isLoading } = useWorkflow(workflowId);
   const { data: sections } = useSections(workflowId);
   const { data: workflowMode, isLoading: modeLoading } = useWorkflowMode(workflowId);
@@ -58,10 +60,10 @@ export default function WorkflowBuilder() {
   const mode = workflowMode?.mode || 'easy';
 
   // Handle workflow status changes
-  const handleStatusChange = (newStatus: "draft" | "open" | "closed") => {
-    // Optimistically update the UI by refetching workflow data
-    // The useWorkflow hook will automatically refetch with invalidation
-    console.log("Workflow status changed to:", newStatus);
+  const handleStatusChange = (newStatus: "draft" | "active" | "archived") => {
+    // Invalidate and refetch workflow data to update UI
+    queryClient.invalidateQueries({ queryKey: queryKeys.workflow(workflowId!) });
+    queryClient.invalidateQueries({ queryKey: queryKeys.workflows });
   };
 
   // Update URL when tab changes
@@ -79,6 +81,20 @@ export default function WorkflowBuilder() {
       setActiveTab(tabFromUrl);
     }
   }, [location]);
+
+  // Listen for workflow auto-revert events and show friendly notification
+  useEffect(() => {
+    const handleAutoRevert = () => {
+      toast({
+        title: "Workflow moved to Draft",
+        description: "Your workflow was automatically moved to Draft mode to allow editing. Don't forget to activate it when you're done!",
+        duration: 6000,
+      });
+    };
+
+    window.addEventListener('workflow-auto-reverted', handleAutoRevert);
+    return () => window.removeEventListener('workflow-auto-reverted', handleAutoRevert);
+  }, [toast]);
 
   const handleStartPreview = async () => {
     if (!workflowId) return;

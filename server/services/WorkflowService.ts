@@ -143,6 +143,32 @@ export class WorkflowService {
   }
 
   /**
+   * Ensure workflow is in draft status before editing
+   * Auto-reverts active/archived workflows to draft
+   * Returns true if workflow was auto-reverted, false otherwise
+   */
+  async ensureDraftForEditing(
+    workflowId: string,
+    userId: string
+  ): Promise<boolean> {
+    await this.verifyOwnership(workflowId, userId);
+    const workflow = await this.workflowRepo.findById(workflowId);
+
+    if (!workflow) {
+      throw new Error('Workflow not found');
+    }
+
+    // If already draft, no action needed
+    if (workflow.status === 'draft') {
+      return false;
+    }
+
+    // Auto-revert to draft
+    await this.workflowRepo.update(workflowId, { status: 'draft' });
+    return true;
+  }
+
+  /**
    * Move workflow to a project (or unfiled if projectId is null)
    */
   async moveToProject(

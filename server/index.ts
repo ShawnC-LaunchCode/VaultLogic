@@ -129,8 +129,11 @@ app.use((req, res, next) => {
     if (app.get("env") === "development" || app.get("env") === "test") {
         // Dynamic import vite only in development/test to avoid bundling it
         try {
+            logger.info("Loading Vite for development...");
             const { setupVite } = await import("./vite.js");
+            logger.info("Vite module loaded, calling setupVite...");
             await setupVite(app, server);
+            logger.info("Vite setup complete");
         } catch (error) {
             logger.error({ error }, "Failed to load vite (this is expected in production)");
             // Fallback to static serving if vite module is not available

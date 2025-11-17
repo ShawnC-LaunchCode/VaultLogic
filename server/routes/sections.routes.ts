@@ -2,9 +2,11 @@ import type { Express, Request, Response } from "express";
 import { isAuthenticated } from "../googleAuth";
 import { insertSectionSchema } from "@shared/schema";
 import { sectionService } from "../services/SectionService";
+import { sectionRepository } from "../repositories/SectionRepository";
 import { z } from "zod";
 import { createLogger } from "../logger";
 import { creatorOrRunTokenAuth, type RunAuthRequest } from "../middleware/runTokenAuth";
+import { autoRevertToDraft } from "../middleware/autoRevertToDraft";
 
 const logger = createLogger({ module: "sections-routes" });
 
@@ -17,7 +19,7 @@ export function registerSectionRoutes(app: Express): void {
    * POST /api/workflows/:workflowId/sections
    * Create a new section
    */
-  app.post('/api/workflows/:workflowId/sections', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/workflows/:workflowId/sections', isAuthenticated, autoRevertToDraft, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -102,7 +104,7 @@ export function registerSectionRoutes(app: Express): void {
    * Reorder sections
    * NOTE: This route MUST come before /:sectionId routes to avoid "reorder" being treated as an ID
    */
-  app.put('/api/workflows/:workflowId/sections/reorder', isAuthenticated, async (req: Request, res: Response) => {
+  app.put('/api/workflows/:workflowId/sections/reorder', isAuthenticated, autoRevertToDraft, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -145,7 +147,7 @@ export function registerSectionRoutes(app: Express): void {
    * PUT /api/workflows/:workflowId/sections/:sectionId
    * Update a section
    */
-  app.put('/api/workflows/:workflowId/sections/:sectionId', isAuthenticated, async (req: Request, res: Response) => {
+  app.put('/api/workflows/:workflowId/sections/:sectionId', isAuthenticated, autoRevertToDraft, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -169,7 +171,7 @@ export function registerSectionRoutes(app: Express): void {
    * DELETE /api/workflows/:workflowId/sections/:sectionId
    * Delete a section
    */
-  app.delete('/api/workflows/:workflowId/sections/:sectionId', isAuthenticated, async (req: Request, res: Response) => {
+  app.delete('/api/workflows/:workflowId/sections/:sectionId', isAuthenticated, autoRevertToDraft, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -206,8 +208,18 @@ export function registerSectionRoutes(app: Express): void {
       const { sectionId } = req.params;
       const updateData = req.body;
 
-      const section = await sectionService.updateSectionById(sectionId, userId, updateData);
-      res.json(section);
+      // Look up workflowId for auto-revert middleware
+      const section = await sectionRepository.findById(sectionId);
+      if (!section) {
+        return res.status(404).json({ message: "Section not found" });
+      }
+      req.params.workflowId = section.workflowId;
+
+      // Apply auto-revert
+      await autoRevertToDraft(req, res, () => {});
+
+      const updatedSection = await sectionService.updateSectionById(sectionId, userId, updateData);
+      res.json(updatedSection);
     } catch (error) {
       logger.error({ error }, "Error updating section");
       const message = error instanceof Error ? error.message : "Failed to update section";
@@ -228,6 +240,17 @@ export function registerSectionRoutes(app: Express): void {
       }
 
       const { sectionId } = req.params;
+
+      // Look up workflowId for auto-revert middleware
+      const section = await sectionRepository.findById(sectionId);
+      if (!section) {
+        return res.status(404).json({ message: "Section not found" });
+      }
+      req.params.workflowId = section.workflowId;
+
+      // Apply auto-revert
+      await autoRevertToDraft(req, res, () => {});
+
       await sectionService.deleteSectionById(sectionId, userId);
       res.status(204).send();
     } catch (error) {

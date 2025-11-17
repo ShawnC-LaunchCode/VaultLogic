@@ -20,6 +20,11 @@ async function fetchAPI<T>(
     runToken = localStorage.getItem(`run_token_${runId}`);
   }
 
+  // Also check for a global active run token (used for workflow sections, steps, etc.)
+  if (!runToken) {
+    runToken = localStorage.getItem('active_run_token');
+  }
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(options.headers as Record<string, string>),
@@ -39,6 +44,12 @@ async function fetchAPI<T>(
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: response.statusText }));
     throw new Error(error.message || `HTTP ${response.status}`);
+  }
+
+  // Check for auto-revert header and dispatch event
+  if (response.headers.get('X-Workflow-Auto-Reverted') === 'true') {
+    // Dispatch custom event that can be caught by components
+    window.dispatchEvent(new CustomEvent('workflow-auto-reverted'));
   }
 
   return response.json();
@@ -461,10 +472,10 @@ export const runAPI = {
   },
 
   get: (id: string) =>
-    fetchAPI<ApiRun>(`/api/runs/${id}`),
+    fetchAPI<{ success: boolean; data: ApiRun }>(`/api/runs/${id}`).then(res => res.data),
 
   getWithValues: (id: string) =>
-    fetchAPI<ApiRun & { values: ApiStepValue[] }>(`/api/runs/${id}/values`),
+    fetchAPI<{ success: boolean; data: ApiRun & { values: ApiStepValue[] } }>(`/api/runs/${id}/values`).then(res => res.data),
 
   upsertValue: (runId: string, stepId: string, value: any) =>
     fetchAPI<{ message: string }>(`/api/runs/${runId}/values`, {
@@ -485,9 +496,9 @@ export const runAPI = {
     }).then(res => res.data),
 
   complete: (runId: string) =>
-    fetchAPI<ApiRun>(`/api/runs/${runId}/complete`, {
+    fetchAPI<{ success: boolean; data: ApiRun }>(`/api/runs/${runId}/complete`, {
       method: "PUT",
-    }),
+    }).then(res => res.data),
 
   list: (workflowId: string) =>
     fetchAPI<ApiRun[]>(`/api/workflows/${workflowId}/runs`),

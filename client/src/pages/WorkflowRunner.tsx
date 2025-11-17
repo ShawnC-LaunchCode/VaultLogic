@@ -64,6 +64,8 @@ export function WorkflowRunner({ runId, isPreview = false }: WorkflowRunnerProps
 
           // Store the run token in localStorage for bearer auth
           localStorage.setItem(`run_token_${runData.runId}`, runData.runToken);
+          // Also store as active token for other API calls (sections, steps, etc.)
+          localStorage.setItem('active_run_token', runData.runToken);
         }
       } catch (error) {
         setInitError(error instanceof Error ? error.message : 'Failed to load workflow');

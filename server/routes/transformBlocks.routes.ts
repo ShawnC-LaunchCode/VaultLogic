@@ -2,8 +2,10 @@ import type { Express, Request, Response } from "express";
 import { isAuthenticated } from "../googleAuth";
 import { insertTransformBlockSchema } from "@shared/schema";
 import { transformBlockService } from "../services/TransformBlockService";
+import { transformBlockRepository } from "../repositories/TransformBlockRepository";
 import { z } from "zod";
 import { createLogger } from "../logger";
+import { autoRevertToDraft } from "../middleware/autoRevertToDraft";
 
 const logger = createLogger({ module: "transform-blocks-routes" });
 
@@ -45,7 +47,7 @@ export function registerTransformBlockRoutes(app: Express): void {
    * POST /api/workflows/:workflowId/transform-blocks
    * Create a new transform block
    */
-  app.post('/api/workflows/:workflowId/transform-blocks', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/workflows/:workflowId/transform-blocks', isAuthenticated, autoRevertToDraft, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -133,8 +135,18 @@ export function registerTransformBlockRoutes(app: Express): void {
       const { blockId } = req.params;
       const updateData = req.body;
 
-      const block = await transformBlockService.updateBlock(blockId, userId, updateData);
-      res.json({ success: true, data: block });
+      // Look up workflowId for auto-revert middleware
+      const block = await transformBlockRepository.findById(blockId);
+      if (!block) {
+        return res.status(404).json({ success: false, error: "Transform block not found" });
+      }
+      req.params.workflowId = block.workflowId;
+
+      // Apply auto-revert
+      await autoRevertToDraft(req, res, () => {});
+
+      const updatedBlock = await transformBlockService.updateBlock(blockId, userId, updateData);
+      res.json({ success: true, data: updatedBlock });
     } catch (error) {
       logger.error({ error }, "Error updating transform block");
       const message = error instanceof Error ? error.message : "Failed to update transform block";
@@ -155,6 +167,17 @@ export function registerTransformBlockRoutes(app: Express): void {
       }
 
       const { blockId } = req.params;
+
+      // Look up workflowId for auto-revert middleware
+      const block = await transformBlockRepository.findById(blockId);
+      if (!block) {
+        return res.status(404).json({ success: false, error: "Transform block not found" });
+      }
+      req.params.workflowId = block.workflowId;
+
+      // Apply auto-revert
+      await autoRevertToDraft(req, res, () => {});
+
       await transformBlockService.deleteBlock(blockId, userId);
       res.status(200).json({ success: true, message: "Transform block deleted" });
     } catch (error) {
