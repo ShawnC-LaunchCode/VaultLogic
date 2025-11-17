@@ -1,7 +1,7 @@
 /**
  * DataVault Tables List Page
  * Lists all tables with stats, search, and create/delete actions
- * Full implementation for PR 5
+ * Updated for PR 8 with Table Templates "Coming Soon" section
  */
 
 import { useState } from "react";
@@ -15,9 +15,11 @@ import {
 } from "@/lib/datavault-hooks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Search, Plus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Search, Plus, Sparkles } from "lucide-react";
 import { CreateTableModal } from "@/components/datavault/CreateTableModal";
 import { TableCard } from "@/components/datavault/TableCard";
+import { TemplateCard } from "@/components/datavault/TemplateCard";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +32,34 @@ import {
 } from "@/components/ui/alert-dialog";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
+
+// Template definitions for "Coming Soon" cards
+const TABLE_TEMPLATES = [
+  {
+    name: "People",
+    description: "Manage contacts, team members, or any person-related data",
+    icon: "fas fa-users",
+    previewColumns: ["First Name", "Last Name", "Email", "Phone", "Company", "Title", "Notes"],
+  },
+  {
+    name: "Businesses",
+    description: "Track companies, vendors, partners, or business entities",
+    icon: "fas fa-building",
+    previewColumns: ["Company Name", "Industry", "Website", "Phone", "Email", "Address", "Tax ID"],
+  },
+  {
+    name: "Contacts",
+    description: "Simple contact list with essential communication details",
+    icon: "fas fa-address-book",
+    previewColumns: ["Name", "Email", "Phone", "Address", "Tags", "Last Contact"],
+  },
+  {
+    name: "Case Records",
+    description: "Organize cases, tickets, or incident tracking workflows",
+    icon: "fas fa-folder-open",
+    previewColumns: ["Case ID", "Title", "Status", "Priority", "Assigned To", "Created Date", "Description"],
+  },
+];
 
 export default function DataVaultTablesPage() {
   const [, setLocation] = useLocation();
@@ -156,6 +186,40 @@ export default function DataVaultTablesPage() {
                 </div>
               )}
             </div>
+
+            {/* Table Templates Section - Coming Soon */}
+            {!isLoading && (
+              <div className="mb-12">
+                <div className="flex items-center gap-2 mb-4">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                  <h2 className="text-xl font-semibold">Browse Templates</h2>
+                  <Badge variant="secondary" className="ml-2">
+                    Coming Soon
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Quick-start your data collection with pre-built table templates
+                </p>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  {TABLE_TEMPLATES.map((template) => (
+                    <TemplateCard
+                      key={template.name}
+                      name={template.name}
+                      description={template.description}
+                      icon={template.icon}
+                      previewColumns={template.previewColumns}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Your Tables Section */}
+            {!isLoading && tables && tables.length > 0 && (
+              <div className="mb-6">
+                <h2 className="text-xl font-semibold mb-4">Your Tables</h2>
+              </div>
+            )}
 
             {/* Loading State */}
             {isLoading && (
