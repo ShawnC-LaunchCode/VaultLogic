@@ -2,6 +2,7 @@
  * SettingsTab - Workflow-specific settings
  * PR7: Full UI implementation with stub saves
  * PR2: Added Project Assignment section
+ * PR3: Connected to real data and API
  */
 
 import { useState } from "react";
@@ -16,6 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProjectAssignmentSection } from "@/components/workflows/settings/ProjectAssignmentSection";
+import { useWorkflow, useProjects, useMoveWorkflow } from "@/lib/vault-hooks";
 
 interface SettingsTabProps {
   workflowId: string;
@@ -23,6 +25,11 @@ interface SettingsTabProps {
 
 export function SettingsTab({ workflowId }: SettingsTabProps) {
   const { toast } = useToast();
+
+  // PR3: Fetch real data
+  const { data: workflow } = useWorkflow(workflowId);
+  const { data: projectsData } = useProjects(true); // activeOnly = true
+  const moveWorkflowMutation = useMoveWorkflow();
 
   // General Settings
   const [name, setName] = useState("My Workflow");
@@ -46,16 +53,10 @@ export function SettingsTab({ workflowId }: SettingsTabProps) {
   const [shareableLink, setShareableLink] = useState(`https://vaultlogic.app/run/${workflowId}`);
   const [linkCopied, setLinkCopied] = useState(false);
 
-  // Project Assignment (PR2: Static mock data)
-  const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
-  const [currentProjectName, setCurrentProjectName] = useState<string | undefined>(undefined);
-
-  // Mock projects data
-  const mockProjects = [
-    { id: "proj-1", name: "Customer Onboarding" },
-    { id: "proj-2", name: "Employee Management" },
-    { id: "proj-3", name: "Sales Pipeline" },
-  ];
+  // PR3: Real projects data
+  const projects = projectsData?.map(p => ({ id: p.id, name: p.name })) || [];
+  const currentProjectId = workflow?.projectId || null;
+  const currentProjectName = projectsData?.find(p => p.id === currentProjectId)?.name;
 
   // Stub: Save all settings
   const handleSaveSettings = () => {
@@ -84,17 +85,28 @@ export function SettingsTab({ workflowId }: SettingsTabProps) {
     });
   };
 
-  // Handle project assignment change (PR2: Static handler)
-  const handleProjectChange = (projectId: string | null) => {
-    console.log("Project change requested:", projectId);
+  // PR3: Handle project assignment move with API
+  const handleMoveWorkflow = async (projectId: string | null) => {
+    try {
+      await moveWorkflowMutation.mutateAsync({
+        id: workflowId,
+        projectId,
+      });
 
-    // Update local state (will be replaced with modal in PR3)
-    setCurrentProjectId(projectId);
-    if (projectId === null) {
-      setCurrentProjectName(undefined);
-    } else {
-      const project = mockProjects.find(p => p.id === projectId);
-      setCurrentProjectName(project?.name);
+      const targetName = projectId === null
+        ? "Main Folder"
+        : projectsData?.find(p => p.id === projectId)?.name || "project";
+
+      toast({
+        title: "Workflow Moved",
+        description: `Workflow moved to ${targetName}.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to Move Workflow",
+        description: error instanceof Error ? error.message : "An error occurred while moving the workflow.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -166,13 +178,15 @@ export function SettingsTab({ workflowId }: SettingsTabProps) {
             </CardContent>
           </Card>
 
-          {/* Project Assignment (PR2) */}
+          {/* Project Assignment (PR3: Real data and API integration) */}
           <ProjectAssignmentSection
             workflowId={workflowId}
+            workflowName={workflow?.title || workflow?.name || "Workflow"}
             currentProjectId={currentProjectId}
             currentProjectName={currentProjectName}
-            projects={mockProjects}
-            onChange={handleProjectChange}
+            projects={projects}
+            onMove={handleMoveWorkflow}
+            isMoving={moveWorkflowMutation.isPending}
           />
 
           {/* Branding Settings */}
