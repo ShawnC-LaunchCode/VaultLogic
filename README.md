@@ -144,21 +144,22 @@ CREATE DATABASE vault_logic;
 
 ## 🏛️ System Architecture
 
-VaultLogic maintains **two parallel systems**:
+**VaultLogic is a dedicated workflow automation platform** (as of November 2025):
 
-### 1. **Legacy: Surveys (Poll-Vault)**
-- Traditional survey platform (original codebase)
-- Database tables: `surveys`, `survey_pages`, `questions`, `responses`, `answers`
-- API paths: `/api/surveys/*`
-- **Status:** Complete, stable, in production use
-
-### 2. **Modern: Workflows (VaultLogic Core)** ⭐ Primary Focus
-- Next-generation workflow automation engine
+### **Workflows (VaultLogic Core)** ⭐ Primary System
+- Modern workflow automation engine
 - Database tables: `workflows`, `sections`, `steps`, `workflowRuns`, `stepValues`
 - API paths: `/api/workflows/*`, `/api/runs/*`
-- **Status:** Active development, primary focus for new features
+- **Status:** Production ready, active development
 
-**For new projects, use the Workflow system.** The legacy Survey system is maintained for backward compatibility.
+### **Legacy Survey System** (Removed Nov 2025)
+- Frontend completely removed (67 files, ~11,763 LOC)
+- Backend routes disabled (returns 404)
+- Database tables preserved for historical data access only
+- Not accessible via UI or API
+- See `SURVEY_REMOVAL_SUMMARY.md` for complete details
+
+**All new development uses the Workflow system.** VaultLogic is now 100% workflow-focused.
 
 ---
 
@@ -407,6 +408,8 @@ npm run test-gemini      # Test Gemini API connection
 | ✅ Stage 16 | Integrations Hub (OAuth2 3-leg) | Complete (Nov 2025) |
 | ✅ Stage 17 | Branding System | Complete (Nov 2025) |
 | ✅ Stage 20-21 | Document Engine 2.0 + Repeaters | Complete (Nov 2025) |
+| ✅ Nov 2025 | Survey System Removal | Complete (Nov 16, 2025) |
+| ✅ Nov 2025 | Builder Navigation Overhaul | Complete (Nov 17, 2025) |
 | 🔄 | Advanced Analytics & Dashboards | In Progress |
 | 🔄 | Team Collaboration (Full RBAC) | In Progress |
 | 🔜 | Workflow Versioning | Planned Q1 2026 |
@@ -531,5 +534,5 @@ For more detailed troubleshooting, see [CLAUDE.md](./CLAUDE.md) troubleshooting 
 
 ---
 
-**Last Updated:** 2025-11-14
-**Version:** 1.4.0 (Stage 21 Complete)
+**Last Updated:** 2025-11-17
+**Version:** 1.5.0 (Post-Stage 21: Survey Removal + Navigation Overhaul)

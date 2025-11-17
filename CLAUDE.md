@@ -1,8 +1,8 @@
 # VaultLogic - Architecture & Current State
 
-**Last Updated:** November 14, 2025
-**Version:** 1.4.0 - Stage 21 Complete (Backend + Document Engine)
-**Status:** Production Ready (Backend), Frontend Pending
+**Last Updated:** November 17, 2025
+**Version:** 1.5.0 - Post-Stage 21 (Survey Removal + Navigation Overhaul)
+**Status:** Production Ready (Backend), Frontend Active Development
 
 ---
 
@@ -102,17 +102,21 @@ VaultLogic/
 
 ## Core Concepts & Data Model
 
-### Dual System: Surveys (Legacy) + Workflows (Current)
+### System Architecture: Workflow-First Platform
 
-VaultLogic maintains **two parallel systems**:
+**As of November 2025**, VaultLogic is a **dedicated workflow automation platform**:
 
-1. **Surveys (Poll-Vault Legacy)** - Traditional survey system
-   - Tables: `surveys`, `surveyPages`, `questions`, `responses`, `answers`
-   - Status: Complete, stable, in production use
+**Workflows (VaultLogic Core)** - Primary and only active system
+- Tables: `workflows`, `sections`, `steps`, `workflowRuns`, `stepValues`
+- Status: Production ready, active development
+- Full feature set for workflow automation, data collection, and integrations
 
-2. **Workflows (VaultLogic Core)** - Modern workflow automation
-   - Tables: `workflows`, `sections`, `steps`, `workflowRuns`, `stepValues`
-   - Status: Active development, primary focus
+**Legacy Survey System** (Removed Nov 16, 2025)
+- Frontend completely removed (67 files, ~11,763 LOC)
+- Backend routes disabled
+- Database tables retained for historical data
+- Not accessible via UI or API
+- See `SURVEY_REMOVAL_SUMMARY.md` for details
 
 ### Workflow System Architecture
 
@@ -197,9 +201,9 @@ Projects
 **`projectAccess`** / **`workflowAccess`** - Access control
 - Link teams/users to projects/workflows with specific roles
 
-#### Legacy Survey Tables
+#### Legacy Survey Tables (Deprecated)
 
-**`surveys`**, **`surveyPages`**, **`questions`**, **`responses`**, **`answers`** - Original survey system (stable, in production)
+**`surveys`**, **`surveyPages`**, **`questions`**, **`responses`**, **`answers`** - Original survey system (deprecated, UI removed Nov 2025, data retained for historical purposes only)
 
 ---
 
@@ -208,13 +212,17 @@ Projects
 ### ✅ Complete Features
 
 #### 1. Workflow Builder
+- **5-Tab Navigation System** (Nov 2025) - Sections, Settings, Templates, Data Sources, Snapshots
 - **Visual canvas editor** with drag-and-drop sections and steps
 - **Sidebar tree view** with collapsible sections
 - **Inspector panel** with step settings, logic, and blocks
 - **Easy/Advanced mode toggle** for creator experience levels
+- **Template Test Runner** - Test document generation with sample data
+- **Mobile-responsive layout** with adaptive navigation
 - **Real-time preview** with hot-reload
 - **Step reordering** within and across sections
 - **Workflow duplication** with optional data
+- **Status management** (draft/active/archived) with auto-revert on modifications
 
 #### 2. Transform Blocks (JavaScript/Python Execution) 🆕
 **Status:** ✅ Complete (Nov 2025)
@@ -458,6 +466,75 @@ GET    /api/workflows/:id/export/pdf                 # Export responses (PDF)
 ---
 
 ## Recent Major Changes (Nov 2025)
+
+### Legacy Survey System Removal (Nov 16, 2025) 🎯
+**Major Milestone:** Complete removal of legacy survey system, making VaultLogic a dedicated workflow automation platform
+
+**Frontend Cleanup:**
+- Removed 67 files (~11,763 lines of code)
+- Deleted 11 survey pages (SurveyBuilder, SurveyPlayer, SurveyAnalytics, etc.)
+- Removed 48 feature components (survey-builder, survey-player, survey-analytics)
+- Deleted 3 custom hooks (useSurveyBuilder, useSurveyPlayer, useSurveyAnalytics)
+- Removed 14 survey routes from App.tsx
+- Cleaned up survey query keys and API clients
+
+**Backend Changes:**
+- Disabled 7 survey route registrations (~40 endpoints)
+- Survey services and repositories retained for data access only
+- Backend routes return 404 (intentional)
+- Database tables preserved for historical data
+
+**Impact:**
+- 88% reduction in survey-specific code
+- Zero risk to workflow functionality (completely isolated systems)
+- Dashboard rebranded for workflow automation
+- System now 100% workflow-focused
+
+**Documentation:**
+- Created `SURVEY_REMOVAL_SUMMARY.md` (detailed analysis)
+- Created `docs/SHARED_INFRASTRUCTURE_ANALYSIS.md` (technical deep-dive)
+- Created `docs/SHARED_QUICK_REFERENCE.md` (visual guide)
+- Created `docs/FILE_PATH_REFERENCE.md` (developer reference)
+
+**Next Steps:**
+- Implement workflow-specific dashboard statistics
+- Update admin routes to use workflow data
+- Optional: Database cleanup after data export
+
+---
+
+### Workflow Builder Navigation Overhaul (Nov 14-17, 2025) 🎨
+**Major Feature:** Complete redesign of workflow builder interface with tabbed navigation
+
+**5-Tab Navigation System:**
+- **Sections Tab** - Visual canvas with drag-and-drop workflow building
+- **Settings Tab** - Workflow configuration, branding, welcome/thank you screens
+- **Templates Tab** - Document template management and testing
+- **Data Sources Tab** - Collections and external data integration (placeholder)
+- **Snapshots Tab** - Version history and workflow backups (placeholder)
+
+**Template Test Runner:**
+- Test document generation with sample data
+- Real-time preview of generated documents
+- Sample data editor for testing variable bindings
+- Status indicators for test results
+
+**UI Improvements:**
+- Mobile-responsive navigation with adaptive layout
+- Enhanced workflow status management (draft/active/archived)
+- Auto-revert to draft on workflow modifications
+- Copy workflow link buttons throughout UI
+- Improved Easy Mode (hides advanced features)
+
+**Bug Fixes:**
+- Fixed workflow status enum (draft/open/closed → draft/active/archived)
+- Fixed workflow runner infinite loading issue
+- Fixed public link routing with proper UUID resolution
+- Fixed mobile navigation responsiveness
+
+**Migration:** `migrations/0027_fix_workflow_status_enum.sql`
+
+---
 
 ### Stage 16: Integrations Hub (Nov 13, 2025) 🆕
 **Major Feature:** Unified connection management, OAuth2 3-legged flow, and webhook node
@@ -936,6 +1013,6 @@ Set environment variables in Railway dashboard:
 
 **Document Maintainer:** Development Team
 **Review Cycle:** Monthly
-**Next Review:** December 14, 2025
+**Next Review:** December 17, 2025
 
 **For questions or issues:** See troubleshooting section or create a GitHub issue
