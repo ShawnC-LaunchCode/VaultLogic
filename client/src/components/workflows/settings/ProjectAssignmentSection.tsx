@@ -2,12 +2,14 @@
  * ProjectAssignmentSection - Display and change workflow project assignment
  * PR2: Static UI implementation
  * PR3: Modal integration and real data support
+ * PR4: Loading states and edge case handling
  */
 
 import { useState } from "react";
 import { FolderOpen } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -32,6 +34,7 @@ interface ProjectAssignmentSectionProps {
   onMove: (projectId: string | null) => Promise<void>;
   disabled?: boolean;
   isMoving?: boolean;
+  isLoading?: boolean;
 }
 
 export function ProjectAssignmentSection({
@@ -43,6 +46,7 @@ export function ProjectAssignmentSection({
   onMove,
   disabled = false,
   isMoving = false,
+  isLoading = false,
 }: ProjectAssignmentSectionProps) {
   const [showModal, setShowModal] = useState(false);
   const [pendingProjectId, setPendingProjectId] = useState<string | null>(null);
@@ -86,6 +90,34 @@ export function ProjectAssignmentSection({
   const targetName = pendingProjectId === null
     ? "Main Folder"
     : projects.find(p => p.id === pendingProjectId)?.name || "Unknown Project";
+
+  // PR4: Loading state UI
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <FolderOpen className="w-5 h-5" />
+            <CardTitle>Project Assignment</CardTitle>
+          </div>
+          <CardDescription>
+            Organize this workflow by assigning it to a project
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Current Location</Label>
+            <Skeleton className="h-5 w-48" />
+          </div>
+          <div className="space-y-2">
+            <Label>Move to Project</Label>
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-4 w-full max-w-md" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <>
@@ -141,7 +173,9 @@ export function ProjectAssignmentSection({
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              Select a project to organize your workflow, or choose Main Folder to keep it unfiled
+              {projects.length === 0
+                ? "No projects available. Create a project to organize your workflows."
+                : "Select a project to organize your workflow, or choose Main Folder to keep it unfiled"}
             </p>
           </div>
         </CardContent>

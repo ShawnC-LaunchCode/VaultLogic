@@ -3,6 +3,7 @@
  * PR7: Full UI implementation with stub saves
  * PR2: Added Project Assignment section
  * PR3: Connected to real data and API
+ * PR4: Loading states and enhanced UX
  */
 
 import { useState } from "react";
@@ -27,8 +28,8 @@ export function SettingsTab({ workflowId }: SettingsTabProps) {
   const { toast } = useToast();
 
   // PR3: Fetch real data
-  const { data: workflow } = useWorkflow(workflowId);
-  const { data: projectsData } = useProjects(true); // activeOnly = true
+  const { data: workflow, isLoading: workflowLoading } = useWorkflow(workflowId);
+  const { data: projectsData, isLoading: projectsLoading } = useProjects(true); // activeOnly = true
   const moveWorkflowMutation = useMoveWorkflow();
 
   // General Settings
@@ -178,7 +179,7 @@ export function SettingsTab({ workflowId }: SettingsTabProps) {
             </CardContent>
           </Card>
 
-          {/* Project Assignment (PR3: Real data and API integration) */}
+          {/* Project Assignment (PR4: Full integration with loading states) */}
           <ProjectAssignmentSection
             workflowId={workflowId}
             workflowName={workflow?.title || workflow?.name || "Workflow"}
@@ -187,6 +188,7 @@ export function SettingsTab({ workflowId }: SettingsTabProps) {
             projects={projects}
             onMove={handleMoveWorkflow}
             isMoving={moveWorkflowMutation.isPending}
+            isLoading={workflowLoading || projectsLoading}
           />
 
           {/* Branding Settings */}
