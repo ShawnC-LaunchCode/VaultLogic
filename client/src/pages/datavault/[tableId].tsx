@@ -167,7 +167,7 @@ export default function TableViewPage() {
     <div className="flex h-screen bg-background overflow-hidden">
       <Sidebar />
       <div className="flex flex-col flex-1 overflow-hidden">
-        <Header />
+        <Header title={table?.name || "Table Details"} description={table?.description} />
         <main className="flex-1 overflow-y-auto">
           <div className="container mx-auto px-4 py-8">
             {isLoading && (
@@ -218,7 +218,7 @@ export default function TableViewPage() {
                       <CardHeader className="pb-3">
                         <CardDescription>Last Updated</CardDescription>
                         <CardTitle className="text-2xl">
-                          {new Date(table.updatedAt).toLocaleDateString()}
+                          {table.updatedAt ? new Date(table.updatedAt).toLocaleDateString() : 'N/A'}
                         </CardTitle>
                       </CardHeader>
                     </Card>
