@@ -25,7 +25,14 @@ export function registerDatavaultRoutes(app: Express): void {
   const getTenantId = (req: Request): string => {
     const tenantId = (req.user as any)?.tenantId;
     if (!tenantId) {
-      throw new Error('Tenant ID not found in session');
+      logger.error(
+        {
+          userId: (req.user as any)?.id,
+          email: (req.user as any)?.email
+        },
+        'User session missing tenantId - user may need to log out and log back in'
+      );
+      throw new Error('Your account is not properly configured. Please log out and log back in to fix this issue.');
     }
     return tenantId;
   };
