@@ -1,9 +1,8 @@
 import type { Express, Request, Response } from "express";
 import { isAdmin } from "../middleware/adminAuth";
 import { userRepository } from "../repositories/UserRepository";
-import { surveyRepository } from "../repositories/SurveyRepository";
-import { responseRepository } from "../repositories/ResponseRepository";
-import { systemStatsRepository } from "../repositories/SystemStatsRepository";
+import { WorkflowRepository } from "../repositories/WorkflowRepository";
+import { WorkflowRunRepository } from "../repositories/WorkflowRunRepository";
 import { ActivityLogService } from "../services/ActivityLogService";
 import { createLogger } from "../logger";
 
@@ -13,8 +12,12 @@ const activityLogService = new ActivityLogService();
 /**
  * Register admin-only routes
  * These routes require admin role for access
+ *
+ * NOTE: Refactored from survey-based to workflow-based (Nov 2025)
  */
 export function registerAdminRoutes(app: Express): void {
+  const workflowRepository = new WorkflowRepository();
+  const workflowRunRepository = new WorkflowRunRepository();
 
   // ============================================================================
   // User Management
@@ -32,13 +35,13 @@ export function registerAdminRoutes(app: Express): void {
 
       const users = await userRepository.findAllUsers();
 
-      // Return users with survey count
+      // Return users with workflow count
       const usersWithStats = await Promise.all(
         users.map(async (user) => {
-          const surveys = await surveyRepository.findByCreator(user.id);
+          const workflows = await workflowRepository.findByCreator(user.id);
           return {
             ...user,
-            surveyCount: surveys.length,
+            workflowCount: workflows.length,
           };
         })
       );
@@ -126,10 +129,10 @@ export function registerAdminRoutes(app: Express): void {
   });
 
   /**
-   * GET /api/admin/users/:userId/surveys
-   * Get all surveys for a specific user
+   * GET /api/admin/users/:userId/workflows
+   * Get all workflows for a specific user
    */
-  app.get('/api/admin/users/:userId/surveys', isAdmin, async (req: Request, res: Response) => {
+  app.get('/api/admin/users/:userId/workflows', isAdmin, async (req: Request, res: Response) => {
     try {
       if (!req.adminUser) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -143,11 +146,11 @@ export function registerAdminRoutes(app: Express): void {
         return res.status(404).json({ message: "User not found" });
       }
 
-      const surveys = await surveyRepository.findByCreator(userId);
+      const workflows = await workflowRepository.findByCreator(userId);
 
       logger.info(
-        { adminId: req.adminUser!.id, targetUserId: userId, surveyCount: surveys.length },
-        'Admin fetched user surveys'
+        { adminId: req.adminUser!.id, targetUserId: userId, workflowCount: workflows.length },
+        'Admin fetched user workflows'
       );
 
       res.json({
@@ -157,26 +160,26 @@ export function registerAdminRoutes(app: Express): void {
           firstName: user.firstName,
           lastName: user.lastName,
         },
-        surveys
+        workflows
       });
     } catch (error) {
       logger.error(
         { err: error, adminId: req.adminUser!.id, userId: req.params.userId },
-        'Error fetching user surveys'
+        'Error fetching user workflows'
       );
-      res.status(500).json({ message: "Failed to fetch user surveys" });
+      res.status(500).json({ message: "Failed to fetch user workflows" });
     }
   });
 
   // ============================================================================
-  // Survey Management (Admin can view/edit any survey)
+  // Workflow Management (Admin can view/edit any workflow)
   // ============================================================================
 
   /**
-   * GET /api/admin/surveys
-   * Get all surveys in the system
+   * GET /api/admin/workflows
+   * Get all workflows in the system
    */
-  app.get('/api/admin/surveys', isAdmin, async (req: Request, res: Response) => {
+  app.get('/api/admin/workflows', isAdmin, async (req: Request, res: Response) => {
     try {
       if (!req.adminUser) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -185,12 +188,12 @@ export function registerAdminRoutes(app: Express): void {
       // Get all users first
       const users = await userRepository.findAllUsers();
 
-      // Get surveys for each user
-      const allSurveys = await Promise.all(
+      // Get workflows for each user
+      const allWorkflows = await Promise.all(
         users.map(async (user) => {
-          const surveys = await surveyRepository.findByCreator(user.id);
-          return surveys.map(survey => ({
-            ...survey,
+          const workflows = await workflowRepository.findByCreator(user.id);
+          return workflows.map(workflow => ({
+            ...workflow,
             creator: {
               id: user.id,
               email: user.email,
@@ -201,160 +204,124 @@ export function registerAdminRoutes(app: Express): void {
         })
       );
 
-      const flattenedSurveys = allSurveys.flat();
+      const flattenedWorkflows = allWorkflows.flat();
 
       logger.info(
-        { adminId: req.adminUser!.id, surveyCount: flattenedSurveys.length },
-        'Admin fetched all surveys'
+        { adminId: req.adminUser!.id, workflowCount: flattenedWorkflows.length },
+        'Admin fetched all workflows'
       );
 
-      res.json(flattenedSurveys);
+      res.json(flattenedWorkflows);
     } catch (error) {
-      logger.error({ err: error, adminId: req.adminUser!.id }, 'Error fetching all surveys');
-      res.status(500).json({ message: "Failed to fetch surveys" });
+      logger.error({ err: error, adminId: req.adminUser!.id }, 'Error fetching all workflows');
+      res.status(500).json({ message: "Failed to fetch workflows" });
     }
   });
 
   /**
-   * GET /api/admin/surveys/:surveyId
-   * Get any survey (including full details)
+   * GET /api/admin/workflows/:workflowId
+   * Get any workflow (including full details)
    */
-  app.get('/api/admin/surveys/:surveyId', isAdmin, async (req: Request, res: Response) => {
+  app.get('/api/admin/workflows/:workflowId', isAdmin, async (req: Request, res: Response) => {
     try {
       if (!req.adminUser) {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      const survey = await surveyRepository.findById(req.params.surveyId);
+      const workflow = await workflowRepository.findById(req.params.workflowId);
 
-      if (!survey) {
-        return res.status(404).json({ message: "Survey not found" });
+      if (!workflow) {
+        return res.status(404).json({ message: "Workflow not found" });
       }
 
       logger.info(
-        { adminId: req.adminUser!.id, surveyId: req.params.surveyId },
-        'Admin fetched survey details'
+        { adminId: req.adminUser!.id, workflowId: req.params.workflowId },
+        'Admin fetched workflow details'
       );
 
-      res.json(survey);
-    } catch (error) {
-      logger.error(
-        { err: error, adminId: req.adminUser!.id, surveyId: req.params.surveyId },
-        'Error fetching survey'
-      );
-      res.status(500).json({ message: "Failed to fetch survey" });
-    }
-  });
-
-  /**
-   * GET /api/admin/surveys/:surveyId/responses
-   * Get all responses for any survey
-   */
-  app.get('/api/admin/surveys/:surveyId/responses', isAdmin, async (req: Request, res: Response) => {
-    try {
-      if (!req.adminUser) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-
-      const survey = await surveyRepository.findById(req.params.surveyId);
-
-      if (!survey) {
-        return res.status(404).json({ message: "Survey not found" });
-      }
-
-      const responses = await responseRepository.findBySurvey(req.params.surveyId);
-
-      logger.info(
-        { adminId: req.adminUser!.id, surveyId: req.params.surveyId, responseCount: responses.length },
-        'Admin fetched survey responses'
-      );
-
-      res.json(responses);
+      res.json(workflow);
     } catch (error) {
       logger.error(
-        { err: error, adminId: req.adminUser!.id, surveyId: req.params.surveyId },
-        'Error fetching survey responses'
+        { err: error, adminId: req.adminUser!.id, workflowId: req.params.workflowId },
+        'Error fetching workflow'
       );
-      res.status(500).json({ message: "Failed to fetch responses" });
+      res.status(500).json({ message: "Failed to fetch workflow" });
     }
   });
 
   /**
-   * PUT /api/admin/surveys/:surveyId
-   * Update any survey
+   * GET /api/admin/workflows/:workflowId/runs
+   * Get all runs for any workflow
    */
-  app.put('/api/admin/surveys/:surveyId', isAdmin, async (req: Request, res: Response) => {
+  app.get('/api/admin/workflows/:workflowId/runs', isAdmin, async (req: Request, res: Response) => {
     try {
       if (!req.adminUser) {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      const survey = await surveyRepository.findById(req.params.surveyId);
+      const workflow = await workflowRepository.findById(req.params.workflowId);
 
-      if (!survey) {
-        return res.status(404).json({ message: "Survey not found" });
+      if (!workflow) {
+        return res.status(404).json({ message: "Workflow not found" });
       }
 
-      const updatedSurvey = await surveyRepository.update(req.params.surveyId, req.body);
+      const runs = await workflowRunRepository.findByWorkflowIds([req.params.workflowId]);
 
       logger.info(
-        { adminId: req.adminUser!.id, surveyId: req.params.surveyId },
-        'Admin updated survey'
+        { adminId: req.adminUser!.id, workflowId: req.params.workflowId, runCount: runs.length },
+        'Admin fetched workflow runs'
       );
 
-      res.json(updatedSurvey);
+      res.json(runs);
     } catch (error) {
       logger.error(
-        { err: error, adminId: req.adminUser!.id, surveyId: req.params.surveyId },
-        'Error updating survey'
+        { err: error, adminId: req.adminUser!.id, workflowId: req.params.workflowId },
+        'Error fetching workflow runs'
       );
-      res.status(500).json({ message: "Failed to update survey" });
+      res.status(500).json({ message: "Failed to fetch runs" });
     }
   });
 
   /**
-   * DELETE /api/admin/surveys/:surveyId
-   * Delete any survey
+   * DELETE /api/admin/workflows/:workflowId
+   * Delete any workflow
    */
-  app.delete('/api/admin/surveys/:surveyId', isAdmin, async (req: Request, res: Response) => {
+  app.delete('/api/admin/workflows/:workflowId', isAdmin, async (req: Request, res: Response) => {
     try {
       if (!req.adminUser) {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      const survey = await surveyRepository.findById(req.params.surveyId);
+      const workflow = await workflowRepository.findById(req.params.workflowId);
 
-      if (!survey) {
-        return res.status(404).json({ message: "Survey not found" });
+      if (!workflow) {
+        return res.status(404).json({ message: "Workflow not found" });
       }
 
-      // Count responses before deletion (they'll be cascade deleted)
-      const responses = await responseRepository.findBySurvey(req.params.surveyId);
-      const responseCount = responses.length;
+      // Count runs before deletion (they'll be cascade deleted)
+      const runs = await workflowRunRepository.findByWorkflowIds([req.params.workflowId]);
+      const runCount = runs.length;
 
-      // Delete the survey (cascade deletes responses)
-      await surveyRepository.delete(req.params.surveyId);
-
-      // Update system stats
-      await systemStatsRepository.incrementSurveysDeleted(1, responseCount);
+      // Delete the workflow (cascade deletes sections, steps, runs, etc.)
+      await workflowRepository.delete(req.params.workflowId);
 
       logger.warn(
         {
           adminId: req.adminUser!.id,
-          surveyId: req.params.surveyId,
-          surveyTitle: survey.title,
-          deletedResponses: responseCount
+          workflowId: req.params.workflowId,
+          workflowTitle: workflow.title,
+          deletedRuns: runCount
         },
-        'Admin deleted survey'
+        'Admin deleted workflow'
       );
 
-      res.json({ message: "Survey deleted successfully" });
+      res.json({ message: "Workflow deleted successfully" });
     } catch (error) {
       logger.error(
-        { err: error, adminId: req.adminUser!.id, surveyId: req.params.surveyId },
-        'Error deleting survey'
+        { err: error, adminId: req.adminUser!.id, workflowId: req.params.workflowId },
+        'Error deleting workflow'
       );
-      res.status(500).json({ message: "Failed to delete survey" });
+      res.status(500).json({ message: "Failed to delete workflow" });
     }
   });
 
@@ -375,36 +342,30 @@ export function registerAdminRoutes(app: Express): void {
       const users = await userRepository.findAllUsers();
       const adminCount = users.filter(u => u.role === 'admin').length;
 
-      // Get all surveys across all users
-      const allSurveys = await Promise.all(
-        users.map(user => surveyRepository.findByCreator(user.id))
+      // Get all workflows across all users
+      const allWorkflows = await Promise.all(
+        users.map(user => workflowRepository.findByCreator(user.id))
       );
-      const flattenedSurveys = allSurveys.flat();
+      const flattenedWorkflows = allWorkflows.flat();
 
-      // Get all responses across all surveys
-      const allResponses = await Promise.all(
-        flattenedSurveys.map(survey => responseRepository.findBySurvey(survey.id))
-      );
-      const flattenedResponses = allResponses.flat();
-
-      // Get historical stats
-      const systemStats = await systemStatsRepository.getStats();
+      // Get all runs across all workflows
+      const workflowIds = flattenedWorkflows.map(w => w.id);
+      let allRuns: any[] = [];
+      if (workflowIds.length > 0) {
+        allRuns = await workflowRunRepository.findByWorkflowIds(workflowIds);
+      }
 
       const stats = {
         totalUsers: users.length,
         adminUsers: adminCount,
         creatorUsers: users.length - adminCount,
-        totalSurveys: flattenedSurveys.length,
-        activeSurveys: flattenedSurveys.filter(s => s.status === 'open').length,
-        draftSurveys: flattenedSurveys.filter(s => s.status === 'draft').length,
-        closedSurveys: flattenedSurveys.filter(s => s.status === 'closed').length,
-        totalResponses: flattenedResponses.length,
-        completedResponses: flattenedResponses.filter(r => r.completed).length,
-        // Historical totals (including deleted items)
-        totalSurveysEverCreated: systemStats.totalSurveysCreated,
-        totalSurveysDeleted: systemStats.totalSurveysDeleted,
-        totalResponsesEverCollected: systemStats.totalResponsesCollected,
-        totalResponsesDeleted: systemStats.totalResponsesDeleted,
+        totalWorkflows: flattenedWorkflows.length,
+        activeWorkflows: flattenedWorkflows.filter(w => w.status === 'active').length,
+        draftWorkflows: flattenedWorkflows.filter(w => w.status === 'draft').length,
+        archivedWorkflows: flattenedWorkflows.filter(w => w.status === 'archived').length,
+        totalRuns: allRuns.length,
+        completedRuns: allRuns.filter(r => r.completed).length,
+        inProgressRuns: allRuns.filter(r => !r.completed).length,
       };
 
       logger.info({ adminId: req.adminUser!.id }, 'Admin fetched system stats');
