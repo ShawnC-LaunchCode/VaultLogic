@@ -38,7 +38,7 @@ export function registerAdminRoutes(app: Express): void {
       // Return users with workflow count
       const usersWithStats = await Promise.all(
         users.map(async (user) => {
-          const workflows = await workflowRepository.findByCreator(user.id);
+          const workflows = await workflowRepository.findByCreatorId(user.id);
           return {
             ...user,
             workflowCount: workflows.length,
@@ -146,7 +146,7 @@ export function registerAdminRoutes(app: Express): void {
         return res.status(404).json({ message: "User not found" });
       }
 
-      const workflows = await workflowRepository.findByCreator(userId);
+      const workflows = await workflowRepository.findByCreatorId(userId);
 
       logger.info(
         { adminId: req.adminUser!.id, targetUserId: userId, workflowCount: workflows.length },
@@ -191,8 +191,8 @@ export function registerAdminRoutes(app: Express): void {
       // Get workflows for each user
       const allWorkflows = await Promise.all(
         users.map(async (user) => {
-          const workflows = await workflowRepository.findByCreator(user.id);
-          return workflows.map(workflow => ({
+          const workflows = await workflowRepository.findByCreatorId(user.id);
+          return workflows.map((workflow: any) => ({
             ...workflow,
             creator: {
               id: user.id,
@@ -265,7 +265,7 @@ export function registerAdminRoutes(app: Express): void {
         return res.status(404).json({ message: "Workflow not found" });
       }
 
-      const runs = await workflowRunRepository.findByWorkflowIds([req.params.workflowId]);
+      const runs = await workflowRunRepository.findByWorkflowId(req.params.workflowId);
 
       logger.info(
         { adminId: req.adminUser!.id, workflowId: req.params.workflowId, runCount: runs.length },
@@ -299,7 +299,7 @@ export function registerAdminRoutes(app: Express): void {
       }
 
       // Count runs before deletion (they'll be cascade deleted)
-      const runs = await workflowRunRepository.findByWorkflowIds([req.params.workflowId]);
+      const runs = await workflowRunRepository.findByWorkflowId(req.params.workflowId);
       const runCount = runs.length;
 
       // Delete the workflow (cascade deletes sections, steps, runs, etc.)
@@ -344,12 +344,12 @@ export function registerAdminRoutes(app: Express): void {
 
       // Get all workflows across all users
       const allWorkflows = await Promise.all(
-        users.map(user => workflowRepository.findByCreator(user.id))
+        users.map(user => workflowRepository.findByCreatorId(user.id))
       );
       const flattenedWorkflows = allWorkflows.flat();
 
       // Get all runs across all workflows
-      const workflowIds = flattenedWorkflows.map(w => w.id);
+      const workflowIds = flattenedWorkflows.map((w: any) => w.id);
       let allRuns: any[] = [];
       if (workflowIds.length > 0) {
         allRuns = await workflowRunRepository.findByWorkflowIds(workflowIds);
@@ -360,12 +360,12 @@ export function registerAdminRoutes(app: Express): void {
         adminUsers: adminCount,
         creatorUsers: users.length - adminCount,
         totalWorkflows: flattenedWorkflows.length,
-        activeWorkflows: flattenedWorkflows.filter(w => w.status === 'active').length,
-        draftWorkflows: flattenedWorkflows.filter(w => w.status === 'draft').length,
-        archivedWorkflows: flattenedWorkflows.filter(w => w.status === 'archived').length,
+        activeWorkflows: flattenedWorkflows.filter((w: any) => w.status === 'active').length,
+        draftWorkflows: flattenedWorkflows.filter((w: any) => w.status === 'draft').length,
+        archivedWorkflows: flattenedWorkflows.filter((w: any) => w.status === 'archived').length,
         totalRuns: allRuns.length,
-        completedRuns: allRuns.filter(r => r.completed).length,
-        inProgressRuns: allRuns.filter(r => !r.completed).length,
+        completedRuns: allRuns.filter((r: any) => r.completed).length,
+        inProgressRuns: allRuns.filter((r: any) => !r.completed).length,
       };
 
       logger.info({ adminId: req.adminUser!.id }, 'Admin fetched system stats');

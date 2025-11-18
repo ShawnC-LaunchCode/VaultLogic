@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import path from "path";
 import fs from "fs";
-import { surveyRepository, responseRepository, fileRepository, questionRepository } from "../repositories";
+import { fileRepository } from "../repositories";
 import { createLogger } from "../logger";
 
 const logger = createLogger({ module: "files-routes" });

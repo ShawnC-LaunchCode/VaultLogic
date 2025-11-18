@@ -168,7 +168,7 @@ export default function DataVaultTablesPage() {
     <div className="flex h-screen bg-background overflow-hidden">
       <Sidebar />
       <div className="flex flex-col flex-1 overflow-hidden">
-        <Header />
+        <Header title="Tables" description="Manage your custom data tables" />
         <main className="flex-1 overflow-y-auto">
           <div className="container mx-auto px-4 py-8">
             {/* Page Header */}

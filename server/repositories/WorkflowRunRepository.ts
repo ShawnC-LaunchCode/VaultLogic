@@ -1,6 +1,6 @@
 import { BaseRepository, type DbTransaction } from "./BaseRepository";
 import { workflowRuns, type WorkflowRun, type InsertWorkflowRun } from "@shared/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, inArray } from "drizzle-orm";
 import { db } from "../db";
 
 /**
@@ -24,6 +24,21 @@ export class WorkflowRunRepository extends BaseRepository<
       .select()
       .from(workflowRuns)
       .where(eq(workflowRuns.workflowId, workflowId))
+      .orderBy(desc(workflowRuns.createdAt));
+  }
+
+  /**
+   * Find runs by multiple workflow IDs
+   */
+  async findByWorkflowIds(workflowIds: string[], tx?: DbTransaction): Promise<WorkflowRun[]> {
+    const database = this.getDb(tx);
+    if (workflowIds.length === 0) {
+      return [];
+    }
+    return await database
+      .select()
+      .from(workflowRuns)
+      .where(inArray(workflowRuns.workflowId, workflowIds))
       .orderBy(desc(workflowRuns.createdAt));
   }
 

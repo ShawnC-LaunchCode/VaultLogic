@@ -52,10 +52,6 @@ import { randomUUID } from "crypto";
 // Import repositories
 import {
   userRepository,
-  surveyRepository,
-  pageRepository,
-  questionRepository,
-  responseRepository,
   analyticsRepository,
   fileRepository,
 } from "./repositories";
