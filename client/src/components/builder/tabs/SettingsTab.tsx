@@ -55,9 +55,9 @@ export function SettingsTab({ workflowId }: SettingsTabProps) {
   const [linkCopied, setLinkCopied] = useState(false);
 
   // PR3: Real projects data
-  const projects = projectsData?.map(p => ({ id: p.id, name: p.name })) || [];
+  const projects = projectsData?.map(p => ({ id: p.id, name: p.title })) || [];
   const currentProjectId = workflow?.projectId || null;
-  const currentProjectName = projectsData?.find(p => p.id === currentProjectId)?.name;
+  const currentProjectName = projectsData?.find(p => p.id === currentProjectId)?.title;
 
   // Stub: Save all settings
   const handleSaveSettings = () => {
@@ -96,7 +96,7 @@ export function SettingsTab({ workflowId }: SettingsTabProps) {
 
       const targetName = projectId === null
         ? "Main Folder"
-        : projectsData?.find(p => p.id === projectId)?.name || "project";
+        : projectsData?.find(p => p.id === projectId)?.title || "project";
 
       toast({
         title: "Workflow Moved",
@@ -182,7 +182,7 @@ export function SettingsTab({ workflowId }: SettingsTabProps) {
           {/* Project Assignment (PR4: Full integration with loading states) */}
           <ProjectAssignmentSection
             workflowId={workflowId}
-            workflowName={workflow?.title || workflow?.name || "Workflow"}
+            workflowName={workflow?.title || "Workflow"}
             currentProjectId={currentProjectId}
             currentProjectName={currentProjectName}
             projects={projects}
