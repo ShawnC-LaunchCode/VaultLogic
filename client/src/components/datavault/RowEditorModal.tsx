@@ -88,7 +88,6 @@ export function RowEditorModal({
           />
         );
 
-      case "long_text":
       case "json":
         return (
           <Textarea

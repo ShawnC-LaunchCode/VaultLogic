@@ -19,11 +19,13 @@ export interface ApiDatavaultRowWithValues {
 export const datavaultAPI = {
   // Tables
   listTables: async (withStats = false): Promise<ApiDatavaultTableWithStats[]> => {
-    return apiRequest('GET', `/api/datavault/tables?stats=${withStats}`);
+    const res = await apiRequest('GET', `/api/datavault/tables?stats=${withStats}`);
+    return res.json();
   },
 
   getTable: async (tableId: string, withColumns = false): Promise<DatavaultTable> => {
-    return apiRequest('GET', `/api/datavault/tables/${tableId}?columns=${withColumns}`);
+    const res = await apiRequest('GET', `/api/datavault/tables/${tableId}?columns=${withColumns}`);
+    return res.json();
   },
 
   createTable: async (data: {
@@ -31,23 +33,29 @@ export const datavaultAPI = {
     slug?: string;
     description?: string;
   }): Promise<DatavaultTable> => {
-    return apiRequest('POST', '/api/datavault/tables', data);
+    const res = await apiRequest('POST', '/api/datavault/tables', data);
+    return res.json();
   },
 
   updateTable: async (
     tableId: string,
     data: Partial<{ name: string; slug: string; description: string }>
   ): Promise<DatavaultTable> => {
-    return apiRequest('PATCH', `/api/datavault/tables/${tableId}`, data);
+    const res = await apiRequest('PATCH', `/api/datavault/tables/${tableId}`, data);
+    return res.json();
   },
 
   deleteTable: async (tableId: string): Promise<void> => {
-    return apiRequest('DELETE', `/api/datavault/tables/${tableId}`);
+    const res = await apiRequest('DELETE', `/api/datavault/tables/${tableId}`);
+    if (res.status !== 204) {
+      await res.json();
+    }
   },
 
   // Columns
   listColumns: async (tableId: string): Promise<DatavaultColumn[]> => {
-    return apiRequest('GET', `/api/datavault/tables/${tableId}/columns`);
+    const res = await apiRequest('GET', `/api/datavault/tables/${tableId}/columns`);
+    return res.json();
   },
 
   createColumn: async (
@@ -60,22 +68,30 @@ export const datavaultAPI = {
       orderIndex?: number;
     }
   ): Promise<DatavaultColumn> => {
-    return apiRequest('POST', `/api/datavault/tables/${tableId}/columns`, data);
+    const res = await apiRequest('POST', `/api/datavault/tables/${tableId}/columns`, data);
+    return res.json();
   },
 
   updateColumn: async (
     columnId: string,
     data: Partial<{ name: string; slug: string; required: boolean; orderIndex: number }>
   ): Promise<DatavaultColumn> => {
-    return apiRequest('PATCH', `/api/datavault/columns/${columnId}`, data);
+    const res = await apiRequest('PATCH', `/api/datavault/columns/${columnId}`, data);
+    return res.json();
   },
 
   deleteColumn: async (columnId: string): Promise<void> => {
-    return apiRequest('DELETE', `/api/datavault/columns/${columnId}`);
+    const res = await apiRequest('DELETE', `/api/datavault/columns/${columnId}`);
+    if (res.status !== 204) {
+      await res.json();
+    }
   },
 
   reorderColumns: async (tableId: string, columnIds: string[]): Promise<void> => {
-    return apiRequest('POST', `/api/datavault/tables/${tableId}/columns/reorder`, { columnIds });
+    const res = await apiRequest('POST', `/api/datavault/tables/${tableId}/columns/reorder`, { columnIds });
+    if (res.status !== 204) {
+      await res.json();
+    }
   },
 
   // Rows
@@ -89,25 +105,34 @@ export const datavaultAPI = {
     const params = new URLSearchParams();
     if (options?.limit) params.append('limit', options.limit.toString());
     if (options?.offset) params.append('offset', options.offset.toString());
-    return apiRequest('GET', `/api/datavault/tables/${tableId}/rows?${params.toString()}`);
+    const res = await apiRequest('GET', `/api/datavault/tables/${tableId}/rows?${params.toString()}`);
+    return res.json();
   },
 
   getRow: async (rowId: string): Promise<ApiDatavaultRowWithValues> => {
-    return apiRequest('GET', `/api/datavault/rows/${rowId}`);
+    const res = await apiRequest('GET', `/api/datavault/rows/${rowId}`);
+    return res.json();
   },
 
   createRow: async (
     tableId: string,
     values: Record<string, any>
   ): Promise<ApiDatavaultRowWithValues> => {
-    return apiRequest('POST', `/api/datavault/tables/${tableId}/rows`, { values });
+    const res = await apiRequest('POST', `/api/datavault/tables/${tableId}/rows`, { values });
+    return res.json();
   },
 
   updateRow: async (rowId: string, values: Record<string, any>): Promise<void> => {
-    return apiRequest('PATCH', `/api/datavault/rows/${rowId}`, { values });
+    const res = await apiRequest('PATCH', `/api/datavault/rows/${rowId}`, { values });
+    if (res.status !== 204) {
+      await res.json();
+    }
   },
 
   deleteRow: async (rowId: string): Promise<void> => {
-    return apiRequest('DELETE', `/api/datavault/rows/${rowId}`);
+    const res = await apiRequest('DELETE', `/api/datavault/rows/${rowId}`);
+    if (res.status !== 204) {
+      await res.json();
+    }
   },
 };
