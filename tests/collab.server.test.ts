@@ -6,6 +6,15 @@ import type { User } from '../shared/schema';
 
 const WS_URL = 'ws://localhost:5174/collab'; // Test server port
 
+// Check if collab server is available for testing
+const isCollabServerAvailable = () => {
+  // Skip these tests unless explicitly enabled with COLLAB_SERVER_URL
+  return !!process.env.COLLAB_SERVER_URL;
+};
+
+// Helper to conditionally run collab server tests
+const describeWithCollabServer = isCollabServerAvailable() ? describe : describe.skip;
+
 // Mock users
 const ownerUser: Partial<User> = {
   id: 'user-owner',
@@ -35,7 +44,7 @@ const crossTenantUser: Partial<User> = {
   tenantRole: 'owner',
 };
 
-describe('Collaboration Server', () => {
+describeWithCollabServer('Collaboration Server [requires collab server]', () => {
   let ownerToken: string;
   let builderToken: string;
   let viewerToken: string;
