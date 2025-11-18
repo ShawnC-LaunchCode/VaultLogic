@@ -246,6 +246,66 @@ node scripts/ci/build-slack-payload.js \
 3. **Coverage**: Breakdown by metric + top/bottom files
 4. **Artifacts**: Build artifacts and deployment info (placeholder)
 
+### `post-slack-main.js`
+
+Posts the main Slack notification message and saves message info for threading.
+
+**Usage:**
+```bash
+node scripts/ci/post-slack-main.js \
+  --payload slack-payload.json \
+  --output slack-message.json
+```
+
+**Required environment variables:**
+- `SLACK_BOT_TOKEN` - Slack bot token (required)
+- `SLACK_CHANNEL_ID` - Slack channel ID (required)
+- `SLACK_MENTION_GROUP` - Subteam ID to mention on failure (optional)
+
+**Features:**
+- Posts main message using Slack Web API
+- Automatic retry with exponential backoff (3 attempts: 2s, 4s, 8s)
+- Adds reaction emoji based on status (✅/❌/⚠️)
+- Mentions team on failure (if configured)
+- Saves message timestamp for threading
+- Graceful error handling (never fails workflow)
+
+**Output format:**
+```json
+{
+  "ts": "1234567890.123456",
+  "channel": "C1234567890",
+  "permalink": "https://..."
+}
+```
+
+### `post-slack-threads.js`
+
+Posts threaded replies to the main message with detailed information.
+
+**Usage:**
+```bash
+node scripts/ci/post-slack-threads.js \
+  --payload slack-payload.json \
+  --message-info slack-message.json
+```
+
+**Required environment variables:**
+- `SLACK_BOT_TOKEN` - Slack bot token (required)
+
+**Features:**
+- Posts up to 4 threaded replies: links, failures, coverage, artifacts
+- Automatic retry with exponential backoff per thread
+- Rate limiting protection (500ms delay between threads)
+- Skips threads that are not applicable (e.g., no failures, no artifacts)
+- Graceful error handling (partial success is OK)
+
+**Thread posting order:**
+1. Links (always)
+2. Failures (if tests failed)
+3. Coverage (if available)
+4. Artifacts (if configured)
+
 ## Integration with GitHub Actions
 
 These scripts are designed to be called from GitHub Actions workflows:
@@ -276,6 +336,23 @@ These scripts are designed to be called from GitHub Actions workflows:
       --coverage coverage-parsed.json \
       --file-changes file-changes.json \
       --output slack-payload.json
+
+- name: Post Slack main message
+  run: |
+    node scripts/ci/post-slack-main.js \
+      --payload slack-payload.json \
+      --output slack-message.json
+  env:
+    SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+    SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+
+- name: Post Slack threads
+  run: |
+    node scripts/ci/post-slack-threads.js \
+      --payload slack-payload.json \
+      --message-info slack-message.json
+  env:
+    SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 ```
 
 The output JSON files can then be used by subsequent steps (e.g., Slack notifications).
