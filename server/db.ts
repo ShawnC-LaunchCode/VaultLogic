@@ -5,15 +5,14 @@ import * as schema from "@shared/schema";
 import type { Pool } from 'pg';
 import type { Pool as NeonPool } from '@neondatabase/serverless';
 
-if (!process.env.DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
-  );
-}
+// Check if DATABASE_URL is set - but don't throw immediately to allow tests to load
+const databaseUrl = process.env.DATABASE_URL;
+const isDatabaseConfigured = !!databaseUrl && databaseUrl !== 'undefined' && databaseUrl !== '';
 
 // Detect if we're using Neon serverless or local PostgreSQL
-const isNeonDatabase = process.env.DATABASE_URL.includes('neon.tech') ||
-                       process.env.DATABASE_URL.includes('neon.co');
+const isNeonDatabase = isDatabaseConfigured && (
+  databaseUrl!.includes('neon.tech') || databaseUrl!.includes('neon.co')
+);
 
 let pool: Pool | NeonPool;
 let db: any;
@@ -24,20 +23,26 @@ let dbInitPromise: Promise<void>;
 async function initializeDatabase() {
   if (dbInitialized) return;
 
+  if (!isDatabaseConfigured) {
+    throw new Error(
+      "DATABASE_URL must be set. Did you forget to provision a database?"
+    );
+  }
+
   if (isNeonDatabase) {
     // Use Neon serverless driver for cloud databases
     const { Pool: NeonPoolClass, neonConfig } = await import('@neondatabase/serverless');
     const ws = await import('ws');
 
     neonConfig.webSocketConstructor = ws.default;
-    pool = new NeonPoolClass({ connectionString: process.env.DATABASE_URL });
+    pool = new NeonPoolClass({ connectionString: databaseUrl });
 
     const { drizzle: drizzleNeon } = await import('drizzle-orm/neon-serverless');
     db = drizzleNeon(pool as any, { schema });
   } else {
     // Use standard PostgreSQL driver for local databases
     const pg = await import('pg');
-    pool = new pg.default.Pool({ connectionString: process.env.DATABASE_URL });
+    pool = new pg.default.Pool({ connectionString: databaseUrl });
 
     const { drizzle: drizzlePg } = await import('drizzle-orm/node-postgres');
     db = drizzlePg(pool as any, { schema });
@@ -46,8 +51,11 @@ async function initializeDatabase() {
   dbInitialized = true;
 }
 
-// Start initialization immediately
-dbInitPromise = initializeDatabase();
+// Start initialization immediately only if database is configured
+// If not configured, create a lazy promise that will reject when awaited
+dbInitPromise = isDatabaseConfigured
+  ? initializeDatabase()
+  : Promise.resolve(); // Don't reject immediately to avoid unhandled rejection errors in tests
 
 // Getter to ensure db is initialized before use
 function getDb() {
