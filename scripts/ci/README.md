@@ -306,11 +306,58 @@ node scripts/ci/post-slack-threads.js \
 3. Coverage (if available)
 4. Artifacts (if configured)
 
+### `compute-coverage-delta.js`
+
+Compares current coverage with previous run and computes the delta.
+
+**Usage:**
+```bash
+node scripts/ci/compute-coverage-delta.js \
+  --current coverage-parsed.json \
+  --previous coverage-previous.json \
+  --output coverage-delta.json
+```
+
+**Features:**
+- Compares current vs previous coverage percentages
+- Computes delta (positive or negative)
+- Determines if coverage improved or regressed
+- Saves current coverage for next run
+- Handles missing previous data gracefully
+
+**Output format:**
+```json
+{
+  "current": 87.05,
+  "previous": 85.23,
+  "delta": 1.82,
+  "improved": true,
+  "emoji": "📈",
+  "message": "Coverage improved by 1.82%"
+}
+```
+
+**Emoji indicators:**
+- 📈 Coverage improved (delta > 0)
+- 📉 Coverage decreased (delta < 0)
+- ➡️ Coverage unchanged (delta = 0)
+
+**Note**: Requires downloading previous coverage artifact from prior run. See GitHub Actions integration below.
+
 ## Integration with GitHub Actions
 
 These scripts are designed to be called from GitHub Actions workflows:
 
 ```yaml
+# 1. Download previous coverage artifact (if available)
+- name: Download previous coverage
+  uses: actions/download-artifact@v4
+  continue-on-error: true
+  with:
+    name: coverage-for-next-run
+    path: ./
+
+# 2. Parse test results
 - name: Parse test results
   run: |
     node scripts/ci/parse-test-results.js \
@@ -318,25 +365,47 @@ These scripts are designed to be called from GitHub Actions workflows:
       --playwright-json playwright-summary.json \
       --output test-results-parsed.json
 
+# 3. Parse coverage
 - name: Parse coverage
   run: |
     node scripts/ci/parse-coverage.js \
       --coverage-json coverage/coverage-summary.json \
       --output coverage-parsed.json
 
+# 4. Compute coverage delta
+- name: Compute coverage delta
+  run: |
+    node scripts/ci/compute-coverage-delta.js \
+      --current coverage-parsed.json \
+      --previous coverage-for-next-run.json \
+      --output coverage-delta.json
+
+# 5. Upload coverage for next run
+- name: Upload coverage artifact
+  uses: actions/upload-artifact@v4
+  if: always()
+  with:
+    name: coverage-for-next-run
+    path: coverage-for-next-run.json
+    retention-days: 30
+
+# 6. Get file changes
 - name: Get file changes
   run: |
     node scripts/ci/get-file-changes.js \
       --output file-changes.json
 
+# 7. Build Slack payload
 - name: Build Slack payload
   run: |
     node scripts/ci/build-slack-payload.js \
       --test-results test-results-parsed.json \
       --coverage coverage-parsed.json \
       --file-changes file-changes.json \
+      --coverage-delta coverage-delta.json \
       --output slack-payload.json
 
+# 8. Post Slack main message
 - name: Post Slack main message
   run: |
     node scripts/ci/post-slack-main.js \
@@ -346,6 +415,7 @@ These scripts are designed to be called from GitHub Actions workflows:
     SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
     SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
 
+# 9. Post Slack threads
 - name: Post Slack threads
   run: |
     node scripts/ci/post-slack-threads.js \
