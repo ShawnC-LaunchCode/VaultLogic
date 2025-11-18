@@ -1,21 +1,16 @@
 import { Link } from "wouter";
-import { useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
-import type { DatavaultTable } from "@shared/schema";
+import { useDatavaultTables } from "@/lib/datavault-hooks";
 
 /**
  * DataVault Dashboard
  * Main landing page for DataVault with overview and quick actions
  */
 export default function DataVaultDashboard() {
-  const { data: tables, isLoading } = useQuery<DatavaultTable[]>({
-    queryKey: ['/api/datavault/tables'],
-    queryFn: () => apiRequest('GET', '/api/datavault/tables'),
-  });
+  const { data: tables, isLoading } = useDatavaultTables(true);
 
   const tableCount = tables?.length || 0;
 
@@ -23,7 +18,7 @@ export default function DataVaultDashboard() {
     <div className="flex h-screen bg-background overflow-hidden">
       <Sidebar />
       <div className="flex flex-col flex-1 overflow-hidden">
-        <Header />
+        <Header title="DataVault" description="Manage your custom data tables" />
         <main className="flex-1 overflow-y-auto">
           <div className="container mx-auto px-4 py-8">
             {/* Page Header */}

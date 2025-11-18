@@ -115,7 +115,7 @@ export class DatavaultRowsRepository extends BaseRepository<
       .where(inArray(datavaultValues.rowId, rowIds));
 
     // Group values by row
-    const valuesByRow = allValues.reduce((acc, value) => {
+    const valuesByRow = allValues.reduce((acc: Record<string, Record<string, any>>, value: any) => {
       if (!acc[value.rowId]) {
         acc[value.rowId] = {};
       }
@@ -256,7 +256,7 @@ export class DatavaultRowsRepository extends BaseRepository<
     updates: Partial<InsertDatavaultRow>,
     tx?: DbTransaction
   ): Promise<DatavaultRow> {
-    return super.update(id, { ...updates, updatedAt: new Date() }, tx);
+    return super.update(id, { ...updates, updatedAt: new Date() } as Partial<InsertDatavaultRow>, tx);
   }
 }
 

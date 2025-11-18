@@ -1,17 +1,22 @@
-import { db } from "../db";
-import { PageRepository } from "../repositories/PageRepository";
-import { QuestionRepository } from "../repositories/QuestionRepository";
-import { TemplateRepository } from "../repositories/TemplateRepository";
-import { SurveyRepository } from "../repositories/SurveyRepository";
-import { surveyPages, questions } from "@shared/schema";
-import { eq, max } from "drizzle-orm";
-import type { SurveyTemplate } from "@shared/schema";
+// DEPRECATED: Legacy survey template insertion service
+// Disabled as part of survey system removal (Nov 2025)
+// This functionality is no longer used with the workflow-based system
+
+// import { db } from "../db";
+// import { PageRepository } from "../repositories/PageRepository";
+// import { QuestionRepository } from "../repositories/QuestionRepository";
+// import { TemplateRepository } from "../repositories/TemplateRepository";
+// import { SurveyRepository } from "../repositories/SurveyRepository";
+// import { surveyPages, questions } from "@shared/schema";
+// import { eq, max } from "drizzle-orm";
+// import type { SurveyTemplate } from "@shared/schema";
 
 export class TemplateInsertionService {
-  pageRepo = new PageRepository();
-  questionRepo = new QuestionRepository();
-  templateRepo = new TemplateRepository();
-  surveyRepo = new SurveyRepository();
+  // Service disabled - legacy survey functionality
+  // pageRepo = new PageRepository();
+  // questionRepo = new QuestionRepository();
+  // templateRepo = new TemplateRepository();
+  // surveyRepo = new SurveyRepository();
 
   /**
    * Insert a template into an existing survey

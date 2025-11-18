@@ -1,20 +1,27 @@
 import type { Express, Request, Response } from "express";
 import { isAuthenticated } from "../googleAuth";
-import { exportService } from "../services/exportService";
-import type { ExportOptions } from "../services/exportService";
+// DEPRECATED: Legacy survey export service - disabled as part of survey system removal (Nov 2025)
+// import { exportService } from "../services/exportService";
+// import type { ExportOptions } from "../services/exportService";
 import { createLogger } from "../logger";
 
 const logger = createLogger({ module: 'export-routes' });
 
 /**
- * Register export-related routes
+ * DEPRECATED: Register export-related routes
  * Handles CSV and PDF export of survey data with analytics
+ * NOTE: This file is no longer used after survey system removal (Nov 2025)
+ * Workflow exports are handled by workflowExports.routes.ts instead
  */
 export function registerExportRoutes(app: Express): void {
+  // Routes disabled - legacy survey export functionality
+  return;
 
   // ============================================================================
   // Data Export
   // ============================================================================
+
+  /* DISABLED - Legacy survey export routes
 
   /**
    * GET /api/surveys/:surveyId/export
@@ -24,7 +31,7 @@ export function registerExportRoutes(app: Express): void {
    *  - includeIncomplete: boolean (default: false)
    *  - dateFrom: ISO date string (optional)
    *  - dateTo: ISO date string (optional)
-   */
+   *
   app.get('/api/surveys/:surveyId/export', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const { surveyId } = req.params;
@@ -127,7 +134,7 @@ export function registerExportRoutes(app: Express): void {
    * POST /api/exports/cleanup
    * Admin endpoint to manually trigger cleanup of old export files
    * Removes exports older than 24 hours
-   */
+   *
   app.post('/api/exports/cleanup', isAuthenticated, async (req, res) => {
     try {
       const maxAgeHours = req.body.maxAgeHours || 24;
@@ -146,4 +153,5 @@ export function registerExportRoutes(app: Express): void {
       });
     }
   });
+  */
 }

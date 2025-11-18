@@ -233,7 +233,7 @@ export function registerStepRoutes(app: Express): void {
       if (!step) {
         return res.status(404).json({ message: "Step not found" });
       }
-      const section = await sectionRepo.findById(step.sectionId);
+      const section = await sectionRepository.findById(step.sectionId);
       if (!section) {
         return res.status(404).json({ message: "Section not found" });
       }
@@ -270,7 +270,7 @@ export function registerStepRoutes(app: Express): void {
       if (!step) {
         return res.status(404).json({ message: "Step not found" });
       }
-      const section = await sectionRepo.findById(step.sectionId);
+      const section = await sectionRepository.findById(step.sectionId);
       if (!section) {
         return res.status(404).json({ message: "Section not found" });
       }

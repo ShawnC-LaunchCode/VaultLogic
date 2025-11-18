@@ -22,14 +22,15 @@ interface TableCardProps {
     slug: string;
     columnCount?: number;
     rowCount?: number;
-    updatedAt: string | Date;
+    updatedAt: string | Date | null;
   };
   onClick: () => void;
   onDelete: () => void;
 }
 
 export function TableCard({ table, onClick, onDelete }: TableCardProps) {
-  const formatDate = (date: string | Date) => {
+  const formatDate = (date: string | Date | null) => {
+    if (!date) return 'N/A';
     return new Date(date).toLocaleDateString();
   };
 

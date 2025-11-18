@@ -102,7 +102,7 @@ export class DatavaultTablesRepository extends BaseRepository<
     updates: Partial<InsertDatavaultTable>,
     tx?: DbTransaction
   ): Promise<DatavaultTable> {
-    return super.update(id, { ...updates, updatedAt: new Date() }, tx);
+    return super.update(id, { ...updates, updatedAt: new Date() } as Partial<InsertDatavaultTable>, tx);
   }
 }
 

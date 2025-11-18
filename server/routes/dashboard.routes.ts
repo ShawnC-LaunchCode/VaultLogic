@@ -29,13 +29,13 @@ export function registerDashboardRoutes(app: Express): void {
       }
 
       // Get user's workflows
-      const workflows = await workflowRepository.findByCreator(userId);
-      const workflowIds = workflows.map(w => w.id);
+      const workflows = await workflowRepository.findByCreatorId(userId);
+      const workflowIds = workflows.map((w: any) => w.id);
 
       // Count workflows by status
-      const draftCount = workflows.filter(w => w.status === 'draft').length;
-      const activeCount = workflows.filter(w => w.status === 'active').length;
-      const archivedCount = workflows.filter(w => w.status === 'archived').length;
+      const draftCount = workflows.filter((w: any) => w.status === 'draft').length;
+      const activeCount = workflows.filter((w: any) => w.status === 'active').length;
+      const archivedCount = workflows.filter((w: any) => w.status === 'archived').length;
 
       // Get run counts (basic implementation)
       let totalRuns = 0;
@@ -45,7 +45,7 @@ export function registerDashboardRoutes(app: Express): void {
         // Get all runs for user's workflows
         const runs = await workflowRunRepository.findByWorkflowIds(workflowIds);
         totalRuns = runs.length;
-        completedRuns = runs.filter(r => r.completed).length;
+        completedRuns = runs.filter((r: any) => r.completed).length;
       }
 
       const stats = {
@@ -78,16 +78,16 @@ export function registerDashboardRoutes(app: Express): void {
       const limit = parseInt(req.query.limit as string) || 10;
       const status = req.query.status as string | undefined;
 
-      const workflows = await workflowRepository.findByCreator(userId);
+      const workflows = await workflowRepository.findByCreatorId(userId);
 
       // Filter by status if provided
       let filteredWorkflows = workflows;
       if (status && ['draft', 'active', 'archived'].includes(status)) {
-        filteredWorkflows = workflows.filter(w => w.status === status);
+        filteredWorkflows = workflows.filter((w: any) => w.status === status);
       }
 
       // Sort by most recently updated
-      const sortedWorkflows = filteredWorkflows.sort((a, b) => {
+      const sortedWorkflows = filteredWorkflows.sort((a: any, b: any) => {
         const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
         const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
         return bTime - aTime;
@@ -116,8 +116,8 @@ export function registerDashboardRoutes(app: Express): void {
       const limit = parseInt(req.query.limit as string) || 10;
 
       // Get user's workflows
-      const workflows = await workflowRepository.findByCreator(userId);
-      const workflowIds = workflows.map(w => w.id);
+      const workflows = await workflowRepository.findByCreatorId(userId);
+      const workflowIds = workflows.map((w: any) => w.id);
 
       if (workflowIds.length === 0) {
         return res.json([]);
@@ -127,7 +127,7 @@ export function registerDashboardRoutes(app: Express): void {
       const runs = await workflowRunRepository.findByWorkflowIds(workflowIds);
 
       // Sort by most recent first
-      const sortedRuns = runs.sort((a, b) => {
+      const sortedRuns = runs.sort((a: any, b: any) => {
         const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
         const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
         return bTime - aTime;
@@ -137,8 +137,8 @@ export function registerDashboardRoutes(app: Express): void {
       const limitedRuns = sortedRuns.slice(0, limit);
 
       // Enrich runs with workflow titles
-      const workflowMap = new Map(workflows.map(w => [w.id, w]));
-      const enrichedRuns = limitedRuns.map(run => ({
+      const workflowMap = new Map(workflows.map((w: any) => [w.id, w]));
+      const enrichedRuns = limitedRuns.map((run: any) => ({
         ...run,
         workflowTitle: workflowMap.get(run.workflowId)?.title || 'Unknown Workflow'
       }));

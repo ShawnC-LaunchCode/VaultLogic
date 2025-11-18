@@ -835,17 +835,16 @@ export class RunService {
         workflowId: workflow.id,
         runId: run.id,
         phase: 'onRunStart',
-        dataMap,
-        currentSectionId: undefined,
+        data: dataMap,
       });
 
       // Save outputs from onRunStart blocks (transform block outputs)
-      if (blockResult.outputs && Object.keys(blockResult.outputs).length > 0) {
-        for (const [stepId, value] of Object.entries(blockResult.outputs)) {
+      if (blockResult.data && Object.keys(blockResult.data).length > 0) {
+        for (const [stepId, value] of Object.entries(blockResult.data)) {
           await this.valueRepo.upsert({
             runId: run.id,
             stepId,
-            value,
+            value: value as any,
           });
         }
       }
