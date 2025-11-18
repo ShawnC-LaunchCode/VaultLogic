@@ -58,8 +58,8 @@ export function registerAllRoutes(app: Express): void {
   // User preferences routes
   registerUserPreferencesRoutes(app);
 
-  // Dashboard routes (DISABLED - survey-specific, needs workflow conversion)
-  // registerDashboardRoutes(app);
+  // Dashboard routes (using legacy survey data for now)
+  registerDashboardRoutes(app);
 
   // Template management routes
   registerTemplateRoutes(app);

@@ -31,8 +31,9 @@ export const sessions = pgTable(
 // User roles enum
 export const userRoleEnum = pgEnum('user_role', ['admin', 'creator']);
 
-// Survey status enum
-export const surveyStatusEnum = pgEnum('survey_status', ['draft', 'open', 'closed']);
+// Survey status enum (legacy - deprecated but kept for historical data)
+// Note: Added 'active' and 'archived' to match workflow_status for consistency
+export const surveyStatusEnum = pgEnum('survey_status', ['draft', 'open', 'closed', 'active', 'archived']);
 
 // Question type enum
 export const questionTypeEnum = pgEnum('question_type', [
