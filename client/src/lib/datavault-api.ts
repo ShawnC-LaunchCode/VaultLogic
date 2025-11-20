@@ -4,7 +4,7 @@
  */
 
 import { apiRequest } from "./queryClient";
-import type { DatavaultTable, DatavaultColumn, DatavaultRow } from "@shared/schema";
+import type { DatavaultTable, DatavaultColumn, DatavaultRow, DatavaultRowNote } from "@shared/schema";
 
 export interface ApiDatavaultTableWithStats extends DatavaultTable {
   columnCount: number;
@@ -256,6 +256,38 @@ export const datavaultAPI = {
 
   bulkUnarchiveRows: async (rowIds: string[]): Promise<void> => {
     const res = await apiRequest('PATCH', '/api/datavault/rows/bulk/unarchive', { rowIds });
+    if (res.status !== 200) {
+      await res.json();
+    }
+  },
+
+  // ============================================================================
+  // Row Notes (v4 Micro-Phase 3)
+  // ============================================================================
+
+  /**
+   * Get all notes for a row
+   * Returns notes ordered by creation time (newest first)
+   */
+  getRowNotes: async (rowId: string): Promise<DatavaultRowNote[]> => {
+    const res = await apiRequest('GET', `/api/datavault/rows/${rowId}/notes`);
+    return res.json();
+  },
+
+  /**
+   * Create a new note for a row
+   */
+  createRowNote: async (rowId: string, text: string): Promise<DatavaultRowNote> => {
+    const res = await apiRequest('POST', `/api/datavault/rows/${rowId}/notes`, { text });
+    return res.json();
+  },
+
+  /**
+   * Delete a note
+   * Only the note owner or table owner can delete
+   */
+  deleteRowNote: async (noteId: string): Promise<void> => {
+    const res = await apiRequest('DELETE', `/api/datavault/notes/${noteId}`);
     if (res.status !== 200) {
       await res.json();
     }

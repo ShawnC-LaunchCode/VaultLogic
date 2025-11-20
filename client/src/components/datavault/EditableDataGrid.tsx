@@ -6,16 +6,18 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Edit2, Trash2, MoreVertical, GripVertical } from "lucide-react";
+import { Edit2, Trash2, MoreVertical, GripVertical, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { EditableCell } from "./EditableCell";
 import { ColumnTypeIcon, getColumnTypeColor } from "./ColumnTypeIcon";
+import { RowDetailDrawer } from "./RowDetailDrawer";
 import type { DatavaultColumn } from "@shared/schema";
 import {
   DndContext,
@@ -119,6 +121,7 @@ export function EditableDataGrid({
   const [localColumns, setLocalColumns] = useState(columns);
   const [emptyRowValues, setEmptyRowValues] = useState<Record<string, any>>({});
   const [emptyRowTouched, setEmptyRowTouched] = useState(false);
+  const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Drag and drop sensors
@@ -371,6 +374,11 @@ export function EditableDataGrid({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setSelectedRowId(row.row.id)}>
+                        <FileText className="w-4 h-4 mr-2" />
+                        View Details
+                      </DropdownMenuItem>
+                      {(onEditRow || onDeleteRow) && <DropdownMenuSeparator />}
                       {onEditRow && (
                         <DropdownMenuItem onClick={() => onEditRow(row.row.id, row.values)}>
                           <Edit2 className="w-4 h-4 mr-2" />
@@ -424,6 +432,13 @@ export function EditableDataGrid({
         </table>
         </DndContext>
       </div>
+
+      {/* Row Detail Drawer */}
+      <RowDetailDrawer
+        rowId={selectedRowId}
+        tableOwnerId={null} // TODO: Pass table owner ID from props
+        onClose={() => setSelectedRowId(null)}
+      />
     </div>
   );
 }
