@@ -8,7 +8,11 @@
 import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import type { DatavaultColumn } from "@/lib/types/datavault";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import type { DatavaultColumn, SelectOption } from "@/lib/types/datavault";
 import type { ApiDatavaultRowWithValues } from "@/lib/datavault-api";
 import { ReferenceCell } from "./ReferenceCell";
 
@@ -97,6 +101,33 @@ export function CellRenderer({ row, column, editing, onCommit, onCancel, batchRe
       );
     }
 
+    // Special handling for select types
+    if (column.type === "select" && value) {
+      const option = column.options?.find(opt => opt.value === value);
+      if (option) {
+        return (
+          <Badge variant="outline" className={`bg-${option.color || 'blue'}-100 text-${option.color || 'blue'}-700 border-${option.color || 'blue'}-300`}>
+            {option.label}
+          </Badge>
+        );
+      }
+      return <span className="text-muted-foreground">{value}</span>;
+    }
+
+    // Special handling for multiselect types
+    if (column.type === "multiselect" && Array.isArray(value) && value.length > 0) {
+      const options = value.map(val => column.options?.find(opt => opt.value === val)).filter(Boolean);
+      return (
+        <div className="flex flex-wrap gap-1">
+          {options.map((option, idx) => (
+            <Badge key={idx} variant="outline" className={`bg-${option?.color || 'blue'}-100 text-${option?.color || 'blue'}-700 border-${option?.color || 'blue'}-300`}>
+              {option?.label}
+            </Badge>
+          ))}
+        </div>
+      );
+    }
+
     return (
       <span className="truncate block" title={renderValue(value, column.type)}>
         {renderValue(value, column.type)}
@@ -166,6 +197,24 @@ export function CellRenderer({ row, column, editing, onCommit, onCancel, batchRe
     case "reference":
       // Reference columns are read-only for now
       return <ReferenceCell value={editValue} column={column} />;
+
+    case "select":
+      return (
+        <SelectCell
+          value={editValue}
+          options={column.options || []}
+          onCommit={onCommit}
+        />
+      );
+
+    case "multiselect":
+      return (
+        <MultiselectCell
+          value={editValue}
+          options={column.options || []}
+          onCommit={onCommit}
+        />
+      );
 
     default:
       return <span className="text-muted-foreground">Unsupported type: {column.type}</span>;
@@ -309,5 +358,101 @@ function DateTimeCell({
       onKeyDown={onKeyDown}
       className="h-8 text-sm"
     />
+  );
+}
+
+// Select Cell
+function SelectCell({
+  value,
+  options,
+  onCommit
+}: {
+  value: any;
+  options: SelectOption[];
+  onCommit: (v: any) => void;
+}) {
+  return (
+    <Select value={value || ""} onValueChange={onCommit}>
+      <SelectTrigger className="h-8 text-sm">
+        <SelectValue placeholder="Select..." />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map((option) => (
+          <SelectItem key={option.value} value={option.value}>
+            <div className="flex items-center gap-2">
+              <div
+                className="w-3 h-3 rounded-full flex-shrink-0"
+                style={{ backgroundColor: `var(--${option.color || 'blue'}-500, #3b82f6)` }}
+              />
+              {option.label}
+            </div>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+// Multiselect Cell
+function MultiselectCell({
+  value,
+  options,
+  onCommit
+}: {
+  value: any;
+  options: SelectOption[];
+  onCommit: (v: any) => void;
+}) {
+  const [selectedValues, setSelectedValues] = useState<string[]>(Array.isArray(value) ? value : []);
+
+  const toggleValue = (optionValue: string) => {
+    const newValues = selectedValues.includes(optionValue)
+      ? selectedValues.filter(v => v !== optionValue)
+      : [...selectedValues, optionValue];
+    setSelectedValues(newValues);
+    onCommit(newValues);
+  };
+
+  const selectedOptions = selectedValues.map(val => options.find(opt => opt.value === val)).filter(Boolean) as SelectOption[];
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" className="h-8 text-sm justify-start w-full">
+          {selectedOptions.length > 0 ? (
+            <div className="flex flex-wrap gap-1">
+              {selectedOptions.map((option, idx) => (
+                <Badge key={idx} variant="outline" className="text-xs">
+                  {option.label}
+                </Badge>
+              ))}
+            </div>
+          ) : (
+            <span className="text-muted-foreground">Select...</span>
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-64 p-2">
+        <div className="space-y-1">
+          {options.map((option) => (
+            <div
+              key={option.value}
+              className="flex items-center gap-2 p-2 rounded hover:bg-accent cursor-pointer"
+              onClick={() => toggleValue(option.value)}
+            >
+              <Checkbox
+                checked={selectedValues.includes(option.value)}
+                onCheckedChange={() => toggleValue(option.value)}
+              />
+              <div
+                className="w-3 h-3 rounded-full flex-shrink-0"
+                style={{ backgroundColor: `var(--${option.color || 'blue'}-500, #3b82f6)` }}
+              />
+              <span className="text-sm">{option.label}</span>
+            </div>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

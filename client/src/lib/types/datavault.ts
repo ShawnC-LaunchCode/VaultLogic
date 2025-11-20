@@ -11,7 +11,9 @@ export type DataType =
   | 'url'
   | 'json'
   | 'auto_number'
-  | 'reference';
+  | 'reference'
+  | 'select'
+  | 'multiselect';
 
 export interface DatavaultDatabase {
   id: string;
@@ -37,6 +39,12 @@ export interface DatavaultTable {
   updatedAt: string;
 }
 
+export interface SelectOption {
+  label: string;
+  value: string;
+  color?: string;
+}
+
 export interface DatavaultColumn {
   id: string;
   tableId: string;
@@ -54,6 +62,7 @@ export interface DatavaultColumn {
     tableId: string | null;
     displayColumnSlug: string | null;
   } | null;
+  options?: SelectOption[] | null;
   createdAt: string;
   updatedAt: string;
 }

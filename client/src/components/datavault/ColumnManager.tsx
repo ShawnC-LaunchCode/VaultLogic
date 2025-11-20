@@ -30,11 +30,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Loader2, Plus, Edit2, Trash2, GripVertical } from "lucide-react";
 import type { DatavaultColumn } from "@shared/schema";
+import { OptionsEditor } from "./OptionsEditor";
+import type { SelectOption } from "@/lib/types/datavault";
 
 interface ColumnManagerProps {
   columns: DatavaultColumn[];
-  onAddColumn: (data: { name: string; type: string; required: boolean }) => Promise<void>;
-  onUpdateColumn: (columnId: string, data: { name: string; required: boolean }) => Promise<void>;
+  onAddColumn: (data: { name: string; type: string; required: boolean; options?: SelectOption[] }) => Promise<void>;
+  onUpdateColumn: (columnId: string, data: { name: string; required: boolean; options?: SelectOption[] }) => Promise<void>;
   onDeleteColumn: (columnId: string) => Promise<void>;
   isLoading?: boolean;
 }
@@ -47,41 +49,56 @@ export function ColumnManager({
   isLoading = false,
 }: ColumnManagerProps) {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [editDialog, setEditDialog] = useState<{ id: string; name: string; required: boolean } | null>(null);
+  const [editDialog, setEditDialog] = useState<{ id: string; name: string; required: boolean; type: string; options?: SelectOption[] | null } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
 
   // Add column state
   const [newColumnName, setNewColumnName] = useState("");
   const [newColumnType, setNewColumnType] = useState<string>("text");
   const [newColumnRequired, setNewColumnRequired] = useState(false);
+  const [newColumnOptions, setNewColumnOptions] = useState<SelectOption[]>([]);
 
   // Edit column state
   const [editColumnName, setEditColumnName] = useState("");
   const [editColumnRequired, setEditColumnRequired] = useState(false);
+  const [editColumnOptions, setEditColumnOptions] = useState<SelectOption[]>([]);
 
   const handleAddColumn = async () => {
     if (!newColumnName.trim()) return;
+
+    // Validate select/multiselect have options
+    if ((newColumnType === 'select' || newColumnType === 'multiselect') && newColumnOptions.length === 0) {
+      return;
+    }
 
     await onAddColumn({
       name: newColumnName.trim(),
       type: newColumnType,
       required: newColumnRequired,
+      options: (newColumnType === 'select' || newColumnType === 'multiselect') ? newColumnOptions : undefined,
     });
 
     // Reset form
     setNewColumnName("");
     setNewColumnType("text");
     setNewColumnRequired(false);
+    setNewColumnOptions([]);
     setAddDialogOpen(false);
   };
 
   const handleEditColumn = async () => {
     if (!editDialog || !editColumnName.trim()) return;
 
+    // Validate select/multiselect have options
+    if ((editDialog.type === 'select' || editDialog.type === 'multiselect') && editColumnOptions.length === 0) {
+      return;
+    }
+
     try {
       await onUpdateColumn(editDialog.id, {
         name: editColumnName.trim(),
         required: editColumnRequired,
+        options: (editDialog.type === 'select' || editDialog.type === 'multiselect') ? editColumnOptions : undefined,
       });
 
       setEditDialog(null);
@@ -100,9 +117,16 @@ export function ColumnManager({
   };
 
   const openEditDialog = (column: DatavaultColumn) => {
-    setEditDialog({ id: column.id, name: column.name, required: column.required });
+    setEditDialog({
+      id: column.id,
+      name: column.name,
+      required: column.required,
+      type: column.type,
+      options: column.options
+    });
     setEditColumnName(column.name);
     setEditColumnRequired(column.required);
+    setEditColumnOptions(column.options || []);
   };
 
   return (
@@ -232,6 +256,8 @@ export function ColumnManager({
                   <SelectItem value="phone">Phone</SelectItem>
                   <SelectItem value="url">URL</SelectItem>
                   <SelectItem value="json">JSON</SelectItem>
+                  <SelectItem value="select">Select (Single Choice)</SelectItem>
+                  <SelectItem value="multiselect">Multiselect (Multiple Choice)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -245,6 +271,12 @@ export function ColumnManager({
                 Required field
               </Label>
             </div>
+            {(newColumnType === 'select' || newColumnType === 'multiselect') && (
+              <OptionsEditor
+                options={newColumnOptions}
+                onChange={setNewColumnOptions}
+              />
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddDialogOpen(false)}>
@@ -289,6 +321,12 @@ export function ColumnManager({
                 Required field
               </Label>
             </div>
+            {editDialog && (editDialog.type === 'select' || editDialog.type === 'multiselect') && (
+              <OptionsEditor
+                options={editColumnOptions}
+                onChange={setEditColumnOptions}
+              />
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialog(null)}>
