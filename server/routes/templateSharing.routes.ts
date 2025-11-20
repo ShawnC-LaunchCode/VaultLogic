@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { isAuthenticated } from "../googleAuth";
+import { hybridAuth } from '../middleware/auth';
 import { TemplateSharingService } from "../services/TemplateSharingService";
 import { createLogger } from "../logger";
 import { userRepository } from "../repositories";
@@ -17,7 +17,7 @@ export function registerTemplateSharingRoutes(app: Express): void {
    * GET /api/templates/:id/shares
    * List all shares for a template (owner/admin only)
    */
-  app.get("/api/templates/:id/shares", isAuthenticated, async (req: Request, res: Response) => {
+  app.get("/api/templates/:id/shares", hybridAuth, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const userId = req.user?.claims?.sub;
@@ -48,7 +48,7 @@ export function registerTemplateSharingRoutes(app: Express): void {
    * Share a template with a user (by userId or email)
    * Body: { userId?: string, email?: string, access: "use" | "edit" }
    */
-  app.post("/api/templates/:id/share", isAuthenticated, async (req: Request, res: Response) => {
+  app.post("/api/templates/:id/share", hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -98,7 +98,7 @@ export function registerTemplateSharingRoutes(app: Express): void {
    * Update access level for a share
    * Body: { access: "use" | "edit" }
    */
-  app.put("/api/template-shares/:shareId", isAuthenticated, async (req: Request, res: Response) => {
+  app.put("/api/template-shares/:shareId", hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -137,7 +137,7 @@ export function registerTemplateSharingRoutes(app: Express): void {
    * DELETE /api/template-shares/:shareId
    * Revoke a share
    */
-  app.delete("/api/template-shares/:shareId", isAuthenticated, async (req: Request, res: Response) => {
+  app.delete("/api/template-shares/:shareId", hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -170,7 +170,7 @@ export function registerTemplateSharingRoutes(app: Express): void {
    * GET /api/templates-shared-with-me
    * List all templates shared with the current user
    */
-  app.get("/api/templates-shared-with-me", isAuthenticated, async (req: Request, res: Response) => {
+  app.get("/api/templates-shared-with-me", hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {

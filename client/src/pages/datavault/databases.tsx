@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Loader2, Search, Plus, Database as DatabaseIcon } from "lucide-react";
 import { DatabaseCard } from "@/components/datavault/DatabaseCard";
 import { CreateDatabaseModal } from "@/components/datavault/CreateDatabaseModal";
+import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -120,6 +121,16 @@ export default function DataVaultDatabasesPage() {
         <Header title="Databases" description="Organize your tables into databases" />
         <main className="flex-1 overflow-y-auto">
           <div className="container mx-auto px-4 py-8">
+            {/* Breadcrumbs */}
+            <div className="mb-4">
+              <Breadcrumbs
+                items={[
+                  { label: "DataVault", href: "/datavault", icon: <DatabaseIcon className="w-3 h-3" /> },
+                  { label: "Databases" },
+                ]}
+              />
+            </div>
+
             {/* Page Header */}
             <div className="flex flex-col gap-4 mb-8">
               <div className="flex items-center justify-between">

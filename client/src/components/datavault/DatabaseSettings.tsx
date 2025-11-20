@@ -20,15 +20,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Save, Info } from "lucide-react";
+import { Loader2, Save, Info, X } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 
 interface DatabaseSettingsProps {
   database: DatavaultDatabase;
+  onClose?: () => void;
 }
 
-export function DatabaseSettings({ database }: DatabaseSettingsProps) {
+export function DatabaseSettings({ database, onClose }: DatabaseSettingsProps) {
   const { toast } = useToast();
   const updateMutation = useUpdateDatavaultDatabase();
 
@@ -80,7 +81,21 @@ export function DatabaseSettings({ database }: DatabaseSettingsProps) {
   };
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-2xl relative">
+      {/* Close Button */}
+      {onClose && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onClose}
+          className="absolute -top-2 -right-2 h-8 w-8 rounded-full p-0 hover:bg-destructive/10"
+          aria-label="Close settings"
+        >
+          <div className="rounded-full bg-background border-2 border-muted-foreground/20 hover:border-destructive/50 h-8 w-8 flex items-center justify-center transition-colors">
+            <X className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+          </div>
+        </Button>
+      )}
       {/* General Settings */}
       <Card>
         <CardHeader>

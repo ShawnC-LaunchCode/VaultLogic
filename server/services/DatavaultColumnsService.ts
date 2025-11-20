@@ -5,6 +5,7 @@ import {
   type DbTransaction,
 } from "../repositories";
 import type { DatavaultColumn, InsertDatavaultColumn } from "@shared/schema";
+import { ConflictError } from "../errors/AppError";
 
 /**
  * Service layer for DataVault column business logic
@@ -138,6 +139,90 @@ export class DatavaultColumnsService {
   }
 
   /**
+   * Validate reference column configuration
+   */
+  private async validateReferenceColumn(
+    type: string,
+    referenceTableId: string | null | undefined,
+    referenceDisplayColumnSlug: string | null | undefined,
+    tenantId: string,
+    tx?: DbTransaction
+  ): Promise<void> {
+    if (type === 'reference') {
+      // Reference columns require referenceTableId
+      if (!referenceTableId) {
+        throw new Error('Reference columns require referenceTableId');
+      }
+
+      // Verify the referenced table exists and belongs to the same tenant
+      const refTable = await this.tablesRepo.findById(referenceTableId, tx);
+      if (!refTable) {
+        throw new Error('Referenced table not found');
+      }
+      if (refTable.tenantId !== tenantId) {
+        throw new Error('Referenced table must belong to the same tenant');
+      }
+
+      // If displayColumnSlug is provided, verify it exists in the referenced table
+      if (referenceDisplayColumnSlug) {
+        const refColumn = await this.columnsRepo.findByTableAndSlug(
+          referenceTableId,
+          referenceDisplayColumnSlug,
+          tx
+        );
+        if (!refColumn) {
+          throw new Error(
+            `Display column '${referenceDisplayColumnSlug}' not found in referenced table`
+          );
+        }
+      }
+    }
+  }
+
+  /**
+   * Detect circular reference dependencies
+   * Uses depth-first search to find cycles in the reference graph
+   */
+  private async detectCircularReference(
+    tableId: string,
+    referenceTableId: string,
+    tx?: DbTransaction
+  ): Promise<boolean> {
+    const visited = new Set<string>();
+    const recursionStack = new Set<string>();
+
+    const hasCycle = async (currentTableId: string): Promise<boolean> => {
+      if (recursionStack.has(currentTableId)) {
+        return true; // Cycle detected
+      }
+
+      if (visited.has(currentTableId)) {
+        return false; // Already checked this path
+      }
+
+      visited.add(currentTableId);
+      recursionStack.add(currentTableId);
+
+      // Get all reference columns for current table
+      const columns = await this.columnsRepo.findByTableId(currentTableId, tx);
+      const referenceColumns = columns.filter(col => col.type === 'reference' && col.referenceTableId);
+
+      // Check each reference for cycles
+      for (const col of referenceColumns) {
+        if (await hasCycle(col.referenceTableId!)) {
+          return true;
+        }
+      }
+
+      recursionStack.delete(currentTableId);
+      return false;
+    };
+
+    // Simulate adding the new reference and check for cycles
+    return await hasCycle(referenceTableId);
+  }
+
+  /**
    * Create a new column
    */
   async createColumn(
@@ -147,6 +232,38 @@ export class DatavaultColumnsService {
   ): Promise<DatavaultColumn> {
     // Verify table ownership
     await this.verifyTableOwnership(data.tableId, tenantId, tx);
+
+    // Validate reference column configuration
+    await this.validateReferenceColumn(
+      data.type,
+      data.referenceTableId,
+      data.referenceDisplayColumnSlug,
+      tenantId,
+      tx
+    );
+
+    // Check for circular reference dependencies
+    if (data.type === 'reference' && data.referenceTableId) {
+      const hasCircularRef = await this.detectCircularReference(
+        data.tableId,
+        data.referenceTableId,
+        tx
+      );
+
+      if (hasCircularRef) {
+        throw new ConflictError(
+          `Cannot create reference column: would create circular dependency with table ${data.referenceTableId}`
+        );
+      }
+    }
+
+    // Clear reference fields if type is not 'reference'
+    let referenceTableId = data.referenceTableId;
+    let referenceDisplayColumnSlug = data.referenceDisplayColumnSlug;
+    if (data.type !== 'reference') {
+      referenceTableId = null;
+      referenceDisplayColumnSlug = null;
+    }
 
     // Validate primary key constraints
     if (data.isPrimaryKey) {
@@ -175,6 +292,8 @@ export class DatavaultColumnsService {
         orderIndex,
         required,
         isUnique,
+        referenceTableId,
+        referenceDisplayColumnSlug,
       },
       tx
     );
@@ -217,6 +336,42 @@ export class DatavaultColumnsService {
     // Prevent type changes
     if (data.type && data.type !== column.type) {
       throw new Error("Cannot change column type after creation");
+    }
+
+    // If reference-related fields are being updated, validate them
+    const typeToValidate = data.type || column.type;
+    const refTableId = data.referenceTableId !== undefined ? data.referenceTableId : column.referenceTableId;
+    const refDisplaySlug = data.referenceDisplayColumnSlug !== undefined
+      ? data.referenceDisplayColumnSlug
+      : column.referenceDisplayColumnSlug;
+
+    await this.validateReferenceColumn(
+      typeToValidate,
+      refTableId,
+      refDisplaySlug,
+      tenantId,
+      tx
+    );
+
+    // Check for circular reference dependencies if referenceTableId is being changed
+    if (typeToValidate === 'reference' && refTableId && refTableId !== column.referenceTableId) {
+      const hasCircularRef = await this.detectCircularReference(
+        column.tableId,
+        refTableId,
+        tx
+      );
+
+      if (hasCircularRef) {
+        throw new ConflictError(
+          `Cannot update reference column: would create circular dependency with table ${refTableId}`
+        );
+      }
+    }
+
+    // Clear reference fields if type is not 'reference'
+    if (typeToValidate !== 'reference') {
+      data.referenceTableId = null;
+      data.referenceDisplayColumnSlug = null;
     }
 
     // Validate primary key changes
@@ -284,6 +439,11 @@ export class DatavaultColumnsService {
 
     // Delete all values for this column first (though CASCADE should handle it)
     await this.rowsRepo.deleteValuesByColumnId(columnId, tx);
+
+    // If this is an auto-number column, cleanup its PostgreSQL sequence
+    if (column.type === 'auto_number') {
+      await this.rowsRepo.cleanupAutoNumberSequence(columnId, tx);
+    }
 
     // Delete the column
     await this.columnsRepo.delete(columnId, tx);

@@ -865,7 +865,8 @@ export const datavaultColumnTypeEnum = pgEnum('datavault_column_type', [
   'phone',
   'url',
   'json',
-  'auto_number'  // Auto-incrementing number column
+  'auto_number',  // Auto-incrementing number column
+  'reference'     // Reference to another table
 ]);
 
 // DataVault: Database scope type enum
@@ -2141,10 +2142,13 @@ export const datavaultColumns = pgTable("datavault_columns", {
   isUnique: boolean("is_unique").default(false).notNull(),  // Unique constraint on column values
   orderIndex: integer("order_index").notNull().default(0),
   autoNumberStart: integer("auto_number_start").default(1),  // Starting value for auto_number columns
+  referenceTableId: uuid("reference_table_id"),  // Reference to another datavault table (for 'reference' type columns)
+  referenceDisplayColumnSlug: text("reference_display_column_slug"),  // Slug of column to display from referenced table
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
   index("datavault_columns_table_idx").on(table.tableId),
+  index("datavault_columns_reference_table_idx").on(table.referenceTableId),
   uniqueIndex("datavault_columns_table_slug_unique").on(table.tableId, table.slug),
 ]);
 

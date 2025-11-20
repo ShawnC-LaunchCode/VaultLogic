@@ -4,9 +4,10 @@
  * Supports different column types and validation
  */
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Edit2, Trash2, MoreVertical } from "lucide-react";
+import { Edit2, Trash2, MoreVertical, GripVertical } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +17,23 @@ import {
 import { EditableCell } from "./EditableCell";
 import { ColumnTypeIcon, getColumnTypeColor } from "./ColumnTypeIcon";
 import type { DatavaultColumn } from "@shared/schema";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  horizontalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface EditableDataGridProps {
   columns: DatavaultColumn[];
@@ -23,6 +41,69 @@ interface EditableDataGridProps {
   onCellUpdate: (rowId: string, columnId: string, value: any) => Promise<void>;
   onEditRow?: (rowId: string, values: Record<string, any>) => void;
   onDeleteRow?: (rowId: string) => void;
+  onReorderColumns?: (columnIds: string[]) => Promise<void>;
+  onCreateRow?: (values: Record<string, any>) => Promise<void>;
+}
+
+interface SortableColumnHeaderProps {
+  column: DatavaultColumn;
+  isDragDisabled?: boolean;
+}
+
+function SortableColumnHeader({ column, isDragDisabled = false }: SortableColumnHeaderProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: column.id,
+    disabled: isDragDisabled,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    position: 'relative' as const,
+  };
+
+  return (
+    <th
+      ref={setNodeRef}
+      style={style}
+      className="px-3 py-3 text-left text-sm font-semibold text-foreground min-w-[150px] bg-muted/50"
+      role="columnheader"
+      scope="col"
+      aria-label={`${column.name}${column.isPrimaryKey ? " (Primary Key)" : ""}${column.required ? " (Required)" : ""}`}
+    >
+      <div className="flex items-center gap-2">
+        <div
+          {...attributes}
+          {...listeners}
+          className={isDragDisabled
+            ? "p-1 opacity-30 cursor-not-allowed"
+            : "cursor-grab active:cursor-grabbing touch-none p-1 hover:bg-accent rounded transition-colors"
+          }
+          title={isDragDisabled ? "Primary key position is locked" : "Drag to reorder column"}
+        >
+          <GripVertical className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+        </div>
+        <ColumnTypeIcon type={column.type} className={getColumnTypeColor(column.type)} />
+        <span>{column.name}</span>
+        {column.isPrimaryKey && (
+          <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 px-1.5 py-0.5 rounded" aria-label="Primary Key">
+            PK
+          </span>
+        )}
+        {column.required && (
+          <span className="text-xs text-destructive" aria-label="Required">*</span>
+        )}
+      </div>
+    </th>
+  );
 }
 
 export function EditableDataGrid({
@@ -31,11 +112,105 @@ export function EditableDataGrid({
   onCellUpdate,
   onEditRow,
   onDeleteRow,
+  onReorderColumns,
+  onCreateRow,
 }: EditableDataGridProps) {
   const [savingCells, setSavingCells] = useState<Set<string>>(new Set());
+  const [localColumns, setLocalColumns] = useState(columns);
+  const [emptyRowValues, setEmptyRowValues] = useState<Record<string, any>>({});
+  const [emptyRowTouched, setEmptyRowTouched] = useState(false);
+  const { toast } = useToast();
 
-  // Sort columns by orderIndex
-  const sortedColumns = [...columns].sort((a, b) => a.orderIndex - b.orderIndex);
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Update local columns when props change
+  useEffect(() => {
+    setLocalColumns(columns);
+  }, [columns]);
+
+  // Sort columns by orderIndex (memoized to prevent unnecessary recalculations)
+  const sortedColumns = useMemo(
+    () => [...localColumns].sort((a, b) => a.orderIndex - b.orderIndex),
+    [localColumns]
+  );
+
+  // Initialize empty row with autonumber pre-filled
+  useEffect(() => {
+    const autoNumberColumn = sortedColumns.find(
+      (col) => col.type === 'auto_number' && col.isPrimaryKey
+    );
+
+    if (autoNumberColumn) {
+      // Calculate next autonumber
+      const maxValue = rows.reduce((max, row) => {
+        const value = row.values[autoNumberColumn.id];
+        const num = typeof value === 'number' ? value : parseInt(value, 10);
+        return !isNaN(num) && num > max ? num : max;
+      }, 0);
+
+      setEmptyRowValues((prev) => ({
+        ...prev,
+        [autoNumberColumn.id]: maxValue + 1,
+      }));
+    }
+  }, [rows, sortedColumns]);
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = sortedColumns.findIndex((col) => col.id === active.id);
+      const newIndex = sortedColumns.findIndex((col) => col.id === over.id);
+
+      const draggedColumn = sortedColumns[oldIndex];
+      const targetColumn = sortedColumns[newIndex];
+
+      // Count primary key columns
+      const primaryKeyCount = sortedColumns.filter((col) => col.isPrimaryKey).length;
+      const primaryKeyColumns = sortedColumns.filter((col) => col.isPrimaryKey);
+      const lastPrimaryKeyIndex = sortedColumns.findIndex(
+        (col) => col.id === primaryKeyColumns[primaryKeyColumns.length - 1]?.id
+      );
+
+      // Rule 1: If only one primary key, it cannot be moved
+      if (primaryKeyCount === 1 && draggedColumn.isPrimaryKey) {
+        return; // Block the move
+      }
+
+      // Rule 2: Primary keys must stay on the left
+      if (draggedColumn.isPrimaryKey && newIndex > lastPrimaryKeyIndex) {
+        return; // Block moving a primary key past the last primary key
+      }
+
+      // Rule 3: Non-primary keys cannot be moved before primary keys
+      if (!draggedColumn.isPrimaryKey && targetColumn.isPrimaryKey) {
+        return; // Block moving a non-primary key to a primary key position
+      }
+
+      const newColumns = arrayMove(sortedColumns, oldIndex, newIndex);
+      setLocalColumns(newColumns);
+
+      // Call reorder API if provided
+      if (onReorderColumns) {
+        try {
+          await onReorderColumns(newColumns.map((col) => col.id));
+        } catch (error) {
+          // Revert on error
+          setLocalColumns(columns);
+        }
+      }
+    }
+  };
 
   const handleCellSave = async (rowId: string, columnId: string, value: any) => {
     const cellKey = `${rowId}-${columnId}`;
@@ -50,6 +225,65 @@ export function EditableDataGrid({
         return next;
       });
     }
+  };
+
+  const handleEmptyRowCellUpdate = async (columnId: string, value: any) => {
+    // Update the empty row values
+    const updatedValues = {
+      ...emptyRowValues,
+      [columnId]: value,
+    };
+    setEmptyRowValues(updatedValues);
+    setEmptyRowTouched(true);
+
+    // Check if all required fields are filled
+    const requiredColumns = sortedColumns.filter((col) => col.required);
+    const allRequiredFilled = requiredColumns.every((col) => {
+      const val = updatedValues[col.id];
+      return val !== undefined && val !== null && val !== '';
+    });
+
+    if (allRequiredFilled && onCreateRow) {
+      // Create the actual row
+      try {
+        // Filter out undefined/null values
+        const valuesToSave: Record<string, any> = {};
+        for (const [colId, val] of Object.entries(updatedValues)) {
+          if (val !== undefined && val !== null && val !== '') {
+            valuesToSave[colId] = val;
+          }
+        }
+
+        await onCreateRow(valuesToSave);
+
+        // Show success notification
+        toast({
+          title: "New Row Added",
+          description: "The row has been successfully created.",
+        });
+
+        // Reset empty row state
+        setEmptyRowValues({});
+        setEmptyRowTouched(false);
+      } catch (error) {
+        toast({
+          title: "Failed to add row",
+          description: error instanceof Error ? error.message : "An error occurred",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  // Check if a column should be highlighted as missing required value in empty row
+  const isEmptyRowColumnMissingRequired = (columnId: string) => {
+    if (!emptyRowTouched) return false;
+
+    const column = sortedColumns.find((col) => col.id === columnId);
+    if (!column || !column.required) return false;
+
+    const value = emptyRowValues[columnId];
+    return value === undefined || value === null || value === '';
   };
 
   if (rows.length === 0) {
@@ -85,36 +319,37 @@ export function EditableDataGrid({
   return (
     <div className="border rounded-lg overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full" role="table" aria-label="Data table with inline editing">
-          <thead className="bg-muted/50 border-b" role="rowgroup">
-            <tr role="row">
-              {sortedColumns.map((column) => (
-                <th
-                  key={column.id}
-                  className="px-3 py-3 text-left text-sm font-semibold text-foreground min-w-[150px]"
-                  role="columnheader"
-                  scope="col"
-                  aria-label={`${column.name}${column.isPrimaryKey ? " (Primary Key)" : ""}${column.required ? " (Required)" : ""}`}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <table className="w-full" role="table" aria-label="Data table with inline editing">
+            <thead className="border-b" role="rowgroup">
+              <tr role="row">
+                <SortableContext
+                  items={sortedColumns.map((col) => col.id)}
+                  strategy={horizontalListSortingStrategy}
                 >
-                  <div className="flex items-center gap-2">
-                    <ColumnTypeIcon type={column.type} className={getColumnTypeColor(column.type)} />
-                    <span>{column.name}</span>
-                    {column.isPrimaryKey && (
-                      <span className="text-xs bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 px-1.5 py-0.5 rounded" aria-label="Primary Key">
-                        PK
-                      </span>
-                    )}
-                    {column.required && (
-                      <span className="text-xs text-destructive" aria-label="Required">*</span>
-                    )}
-                  </div>
+                  {sortedColumns.map((column) => {
+                    // Disable dragging if this is the only primary key
+                    const primaryKeyCount = sortedColumns.filter((col) => col.isPrimaryKey).length;
+                    const isDragDisabled = column.isPrimaryKey && primaryKeyCount === 1;
+
+                    return (
+                      <SortableColumnHeader
+                        key={column.id}
+                        column={column}
+                        isDragDisabled={isDragDisabled}
+                      />
+                    );
+                  })}
+                </SortableContext>
+                <th className="px-3 py-3 text-left text-sm font-semibold text-foreground w-[80px] bg-muted/50" role="columnheader" scope="col">
+                  Actions
                 </th>
-              ))}
-              <th className="px-3 py-3 text-left text-sm font-semibold text-foreground w-[80px]" role="columnheader" scope="col">
-                Actions
-              </th>
-            </tr>
-          </thead>
+              </tr>
+            </thead>
           <tbody className="divide-y divide-border" role="rowgroup">
             {rows.map((row) => (
               <tr key={row.row.id} className="hover:bg-accent/30 transition-colors" role="row">
@@ -156,8 +391,38 @@ export function EditableDataGrid({
                 </td>
               </tr>
             ))}
+
+            {/* Empty Row for Quick Add */}
+            <tr className="bg-muted/20 hover:bg-muted/30 transition-colors" role="row">
+              {sortedColumns.map((column) => (
+                <td
+                  key={column.id}
+                  className={`border-r last:border-r-0 ${
+                    isEmptyRowColumnMissingRequired(column.id) ? 'bg-red-50 dark:bg-red-950/20' : ''
+                  }`}
+                >
+                  <EditableCell
+                    column={column}
+                    value={emptyRowValues[column.id]}
+                    onSave={(value) => handleEmptyRowCellUpdate(column.id, value)}
+                    readOnly={column.isPrimaryKey && column.type === 'auto_number'}
+                    placeholder={
+                      column.isPrimaryKey && column.type === 'auto_number'
+                        ? String(emptyRowValues[column.id] || '')
+                        : column.required
+                        ? 'Required'
+                        : 'Optional'
+                    }
+                  />
+                </td>
+              ))}
+              <td className="px-3 py-2" role="gridcell">
+                {/* Empty cell for actions column */}
+              </td>
+            </tr>
           </tbody>
         </table>
+        </DndContext>
       </div>
     </div>
   );

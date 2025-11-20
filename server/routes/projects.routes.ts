@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { isAuthenticated } from "../googleAuth";
+import { hybridAuth } from '../middleware/auth';
 import { insertProjectSchema } from "@shared/schema";
 import { projectService } from "../services/ProjectService";
 import { z } from "zod";
@@ -14,7 +14,7 @@ export function registerProjectRoutes(app: Express): void {
    * POST /api/projects
    * Create a new project
    */
-  app.post('/api/projects', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/projects', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -55,7 +55,7 @@ export function registerProjectRoutes(app: Express): void {
    * GET /api/projects
    * Get all projects for the authenticated user
    */
-  app.get('/api/projects', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/projects', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -78,7 +78,7 @@ export function registerProjectRoutes(app: Express): void {
    * GET /api/projects/:projectId
    * Get a single project with contained workflows
    */
-  app.get('/api/projects/:projectId', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/projects/:projectId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -100,7 +100,7 @@ export function registerProjectRoutes(app: Express): void {
    * GET /api/projects/:projectId/workflows
    * Get all workflows in a project
    */
-  app.get('/api/projects/:projectId/workflows', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/projects/:projectId/workflows', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -122,7 +122,7 @@ export function registerProjectRoutes(app: Express): void {
    * PUT /api/projects/:projectId
    * Update a project
    */
-  app.put('/api/projects/:projectId', isAuthenticated, async (req: Request, res: Response) => {
+  app.put('/api/projects/:projectId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -150,7 +150,7 @@ export function registerProjectRoutes(app: Express): void {
    * PUT /api/projects/:projectId/archive
    * Archive a project (soft delete)
    */
-  app.put('/api/projects/:projectId/archive', isAuthenticated, async (req: Request, res: Response) => {
+  app.put('/api/projects/:projectId/archive', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -172,7 +172,7 @@ export function registerProjectRoutes(app: Express): void {
    * PUT /api/projects/:projectId/unarchive
    * Unarchive a project
    */
-  app.put('/api/projects/:projectId/unarchive', isAuthenticated, async (req: Request, res: Response) => {
+  app.put('/api/projects/:projectId/unarchive', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -195,7 +195,7 @@ export function registerProjectRoutes(app: Express): void {
    * Delete a project (hard delete)
    * Note: Workflows in the project will have their projectId set to null
    */
-  app.delete('/api/projects/:projectId', isAuthenticated, async (req: Request, res: Response) => {
+  app.delete('/api/projects/:projectId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -221,7 +221,7 @@ export function registerProjectRoutes(app: Express): void {
    * GET /api/projects/:projectId/access
    * Get all ACL entries for a project
    */
-  app.get('/api/projects/:projectId/access', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/projects/:projectId/access', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -244,7 +244,7 @@ export function registerProjectRoutes(app: Express): void {
    * Grant or update access to a project
    * Body: { entries: [{ principalType: 'user' | 'team', principalId: string, role: 'view' | 'edit' | 'owner' }] }
    */
-  app.put('/api/projects/:projectId/access', isAuthenticated, async (req: Request, res: Response) => {
+  app.put('/api/projects/:projectId/access', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -286,7 +286,7 @@ export function registerProjectRoutes(app: Express): void {
    * Revoke access from a project
    * Body: { entries: [{ principalType: 'user' | 'team', principalId: string }] }
    */
-  app.delete('/api/projects/:projectId/access', isAuthenticated, async (req: Request, res: Response) => {
+  app.delete('/api/projects/:projectId/access', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -327,7 +327,7 @@ export function registerProjectRoutes(app: Express): void {
    * Transfer project ownership
    * Body: { userId: string }
    */
-  app.put('/api/projects/:projectId/owner', isAuthenticated, async (req: Request, res: Response) => {
+  app.put('/api/projects/:projectId/owner', hybridAuth, async (req: Request, res: Response) => {
     try {
       const currentOwnerId = req.user?.claims?.sub;
       if (!currentOwnerId) {

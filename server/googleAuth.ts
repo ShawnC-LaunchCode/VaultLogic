@@ -348,8 +348,8 @@ export async function setupAuth(app: Express) {
         }
 
         // Set up the session with new session ID
-        (req as any).user = user;
-        (req.session as any).user = user;
+        req.user = user;
+        req.session.user = user;
 
         logger.info({ email: payload.email }, 'OAuth2 login successful');
         res.json({
@@ -417,7 +417,7 @@ export async function setupAuth(app: Express) {
 
   // Logout route
   app.post("/api/auth/logout", (req, res) => {
-    const user = (req.session as any)?.user;
+    const user = req.session?.user;
     req.session.destroy((err) => {
       if (err) {
         logger.error({ err }, 'Session destruction failed');
@@ -431,7 +431,7 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
-  const user = (req.session as any)?.user || req.user;
+  const user = req.session?.user || req.user;
 
   if (!user) {
     return res.status(401).json({ message: "Unauthorized" });
@@ -459,7 +459,7 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
         user.tenantRole = dbUser.tenantRole;
         // Update session to persist the fix
         if (req.session) {
-          (req.session as any).user = user;
+          req.session.user = user;
         }
       } else {
         logger.error(
@@ -476,11 +476,11 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
   }
 
   // Set user on request for backward compatibility
-  (req as any).user = user;
+  req.user = user;
   next();
 };
 
 // Helper function to get authenticated user from request
-export function getAuthenticatedUser(req: any) {
-  return (req.session as any)?.user || req.user;
+export function getAuthenticatedUser(req: Request) {
+  return req.session?.user || req.user;
 }

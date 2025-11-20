@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from 'express';
-import { isAuthenticated } from '../googleAuth';
+import { hybridAuth } from '../middleware/auth';
 import { insertCollectionSchema, insertCollectionFieldSchema, insertRecordSchema } from '@shared/schema';
 import { collectionService } from '../services/CollectionService';
 import { collectionFieldService } from '../services/CollectionFieldService';
@@ -22,7 +22,7 @@ export function registerCollectionsRoutes(app: Express): void {
    * GET /api/tenants/:tenantId/collections
    * List all collections for a tenant
    */
-  app.get('/api/tenants/:tenantId/collections', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/tenants/:tenantId/collections', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { tenantId } = req.params;
       const withStats = req.query.stats === 'true';
@@ -42,7 +42,7 @@ export function registerCollectionsRoutes(app: Express): void {
    * POST /api/tenants/:tenantId/collections
    * Create a new collection
    */
-  app.post('/api/tenants/:tenantId/collections', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/tenants/:tenantId/collections', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { tenantId } = req.params;
 
@@ -72,7 +72,7 @@ export function registerCollectionsRoutes(app: Express): void {
    * GET /api/tenants/:tenantId/collections/:collectionId
    * Get a single collection with optional fields
    */
-  app.get('/api/tenants/:tenantId/collections/:collectionId', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/tenants/:tenantId/collections/:collectionId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { tenantId, collectionId } = req.params;
       const includeFields = req.query.fields === 'true';
@@ -94,7 +94,7 @@ export function registerCollectionsRoutes(app: Express): void {
    * GET /api/tenants/:tenantId/collections/slug/:slug
    * Get collection by slug
    */
-  app.get('/api/tenants/:tenantId/collections/slug/:slug', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/tenants/:tenantId/collections/slug/:slug', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { tenantId, slug } = req.params;
 
@@ -115,7 +115,7 @@ export function registerCollectionsRoutes(app: Express): void {
    * PATCH /api/tenants/:tenantId/collections/:collectionId
    * Update a collection
    */
-  app.patch('/api/tenants/:tenantId/collections/:collectionId', isAuthenticated, async (req: Request, res: Response) => {
+  app.patch('/api/tenants/:tenantId/collections/:collectionId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { tenantId, collectionId } = req.params;
 
@@ -149,7 +149,7 @@ export function registerCollectionsRoutes(app: Express): void {
    * DELETE /api/tenants/:tenantId/collections/:collectionId
    * Delete a collection (cascades to fields and records)
    */
-  app.delete('/api/tenants/:tenantId/collections/:collectionId', isAuthenticated, async (req: Request, res: Response) => {
+  app.delete('/api/tenants/:tenantId/collections/:collectionId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { tenantId, collectionId } = req.params;
 
@@ -171,7 +171,7 @@ export function registerCollectionsRoutes(app: Express): void {
    * GET /api/tenants/:tenantId/collections/:collectionId/fields
    * List all fields in a collection
    */
-  app.get('/api/tenants/:tenantId/collections/:collectionId/fields', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/tenants/:tenantId/collections/:collectionId/fields', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { tenantId, collectionId } = req.params;
 
@@ -192,7 +192,7 @@ export function registerCollectionsRoutes(app: Express): void {
    * POST /api/tenants/:tenantId/collections/:collectionId/fields
    * Create a new field in a collection
    */
-  app.post('/api/tenants/:tenantId/collections/:collectionId/fields', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/tenants/:tenantId/collections/:collectionId/fields', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { tenantId, collectionId } = req.params;
 
@@ -226,7 +226,7 @@ export function registerCollectionsRoutes(app: Express): void {
    * POST /api/tenants/:tenantId/collections/:collectionId/fields/bulk
    * Bulk create fields in a collection
    */
-  app.post('/api/tenants/:tenantId/collections/:collectionId/fields/bulk', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/tenants/:tenantId/collections/:collectionId/fields/bulk', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { tenantId, collectionId } = req.params;
 
@@ -260,7 +260,7 @@ export function registerCollectionsRoutes(app: Express): void {
    * GET /api/tenants/:tenantId/collections/:collectionId/fields/:fieldId
    * Get a single field
    */
-  app.get('/api/tenants/:tenantId/collections/:collectionId/fields/:fieldId', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/tenants/:tenantId/collections/:collectionId/fields/:fieldId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { tenantId, collectionId, fieldId } = req.params;
 
@@ -290,7 +290,7 @@ export function registerCollectionsRoutes(app: Express): void {
    * PATCH /api/tenants/:tenantId/collections/:collectionId/fields/:fieldId
    * Update a field
    */
-  app.patch('/api/tenants/:tenantId/collections/:collectionId/fields/:fieldId', isAuthenticated, async (req: Request, res: Response) => {
+  app.patch('/api/tenants/:tenantId/collections/:collectionId/fields/:fieldId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { tenantId, collectionId, fieldId } = req.params;
 
@@ -329,7 +329,7 @@ export function registerCollectionsRoutes(app: Express): void {
    * DELETE /api/tenants/:tenantId/collections/:collectionId/fields/:fieldId
    * Delete a field
    */
-  app.delete('/api/tenants/:tenantId/collections/:collectionId/fields/:fieldId', isAuthenticated, async (req: Request, res: Response) => {
+  app.delete('/api/tenants/:tenantId/collections/:collectionId/fields/:fieldId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { tenantId, collectionId, fieldId } = req.params;
 
@@ -354,7 +354,7 @@ export function registerCollectionsRoutes(app: Express): void {
    * GET /api/tenants/:tenantId/collections/:collectionId/records
    * List records in a collection with pagination
    */
-  app.get('/api/tenants/:tenantId/collections/:collectionId/records', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/tenants/:tenantId/collections/:collectionId/records', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { tenantId, collectionId } = req.params;
 
@@ -390,7 +390,7 @@ export function registerCollectionsRoutes(app: Express): void {
    * POST /api/tenants/:tenantId/collections/:collectionId/records
    * Create a new record
    */
-  app.post('/api/tenants/:tenantId/collections/:collectionId/records', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/tenants/:tenantId/collections/:collectionId/records', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { tenantId, collectionId } = req.params;
       const userId = req.user?.claims?.sub;
@@ -423,7 +423,7 @@ export function registerCollectionsRoutes(app: Express): void {
    * POST /api/tenants/:tenantId/collections/:collectionId/records/bulk
    * Bulk create records
    */
-  app.post('/api/tenants/:tenantId/collections/:collectionId/records/bulk', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/tenants/:tenantId/collections/:collectionId/records/bulk', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { tenantId, collectionId } = req.params;
       const userId = req.user?.claims?.sub;
@@ -455,7 +455,7 @@ export function registerCollectionsRoutes(app: Express): void {
    * POST /api/tenants/:tenantId/collections/:collectionId/records/query
    * Query records by JSONB filters
    */
-  app.post('/api/tenants/:tenantId/collections/:collectionId/records/query', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/tenants/:tenantId/collections/:collectionId/records/query', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { tenantId, collectionId } = req.params;
 
@@ -486,7 +486,7 @@ export function registerCollectionsRoutes(app: Express): void {
    * GET /api/tenants/:tenantId/collections/:collectionId/records/:recordId
    * Get a single record
    */
-  app.get('/api/tenants/:tenantId/collections/:collectionId/records/:recordId', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/tenants/:tenantId/collections/:collectionId/records/:recordId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { tenantId, recordId } = req.params;
 
@@ -504,7 +504,7 @@ export function registerCollectionsRoutes(app: Express): void {
    * PATCH /api/tenants/:tenantId/collections/:collectionId/records/:recordId
    * Update a record
    */
-  app.patch('/api/tenants/:tenantId/collections/:collectionId/records/:recordId', isAuthenticated, async (req: Request, res: Response) => {
+  app.patch('/api/tenants/:tenantId/collections/:collectionId/records/:recordId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { tenantId, recordId } = req.params;
       const userId = req.user?.claims?.sub;
@@ -527,7 +527,7 @@ export function registerCollectionsRoutes(app: Express): void {
    * DELETE /api/tenants/:tenantId/collections/:collectionId/records/:recordId
    * Delete a record
    */
-  app.delete('/api/tenants/:tenantId/collections/:collectionId/records/:recordId', isAuthenticated, async (req: Request, res: Response) => {
+  app.delete('/api/tenants/:tenantId/collections/:collectionId/records/:recordId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { tenantId, recordId } = req.params;
 
@@ -545,7 +545,7 @@ export function registerCollectionsRoutes(app: Express): void {
    * GET /api/tenants/:tenantId/collections/:collectionId/records/count
    * Count records in a collection
    */
-  app.get('/api/tenants/:tenantId/collections/:collectionId/records/count', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/tenants/:tenantId/collections/:collectionId/records/count', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { tenantId, collectionId } = req.params;
 

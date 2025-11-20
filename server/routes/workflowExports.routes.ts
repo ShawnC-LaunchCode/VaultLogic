@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { isAuthenticated } from "../googleAuth";
+import { hybridAuth } from '../middleware/auth';
 import { workflowExportService } from "../services/WorkflowExportService";
 import { createLogger } from "../logger";
 
@@ -14,7 +14,7 @@ export function registerWorkflowExportRoutes(app: Express): void {
    * GET /api/workflows/:workflowId/export?format=json|csv
    * Export workflow runs as JSON or CSV
    */
-  app.get('/api/workflows/:workflowId/export', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:workflowId/export', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {

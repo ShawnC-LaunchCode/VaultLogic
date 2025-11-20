@@ -104,6 +104,7 @@ export const datavaultAPI = {
     name: string;
     slug?: string;
     description?: string;
+    databaseId?: string;
   }): Promise<DatavaultTable> => {
     const res = await apiRequest('POST', '/api/datavault/tables', data);
     return res.json();
@@ -186,7 +187,7 @@ export const datavaultAPI = {
   }> => {
     const params = new URLSearchParams();
     if (options?.limit) params.append('limit', options.limit.toString());
-    if (options?.offset) params.append('offset', options.offset.toString());
+    if (options?.offset !== undefined) params.append('offset', options.offset.toString());
     const res = await apiRequest('GET', `/api/datavault/tables/${tableId}/rows?${params.toString()}`);
     return res.json();
   },

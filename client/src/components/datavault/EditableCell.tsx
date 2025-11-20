@@ -17,9 +17,10 @@ interface EditableCellProps {
   value: any;
   onSave: (value: any) => Promise<void>;
   readOnly?: boolean;
+  placeholder?: string;
 }
 
-export function EditableCell({ column, value, onSave, readOnly = false }: EditableCellProps) {
+export function EditableCell({ column, value, onSave, readOnly = false, placeholder }: EditableCellProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value);
   const [isSaving, setIsSaving] = useState(false);
@@ -144,6 +145,9 @@ export function EditableCell({ column, value, onSave, readOnly = false }: Editab
 
   // Display mode
   if (!isEditing) {
+    const displayValue = formatDisplayValue(value);
+    const showPlaceholder = !displayValue && placeholder;
+
     return (
       <div
         className={cn(
@@ -154,7 +158,7 @@ export function EditableCell({ column, value, onSave, readOnly = false }: Editab
         onDoubleClick={handleDoubleClick}
         title={error || (readOnly ? "" : "Double-click to edit")}
         role="gridcell"
-        aria-label={`${column.name}: ${formatDisplayValue(value)}${readOnly ? " (read-only)" : ""}`}
+        aria-label={`${column.name}: ${displayValue}${readOnly ? " (read-only)" : ""}`}
         tabIndex={readOnly ? -1 : 0}
         onKeyDown={(e) => {
           if (!readOnly && (e.key === "Enter" || e.key === " ")) {
@@ -164,8 +168,8 @@ export function EditableCell({ column, value, onSave, readOnly = false }: Editab
         }}
       >
         {isSaving && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground flex-shrink-0" />}
-        <span className={cn("truncate flex-1", isSaving && "opacity-50")}>
-          {formatDisplayValue(value)}
+        <span className={cn("truncate flex-1", isSaving && "opacity-50", showPlaceholder && "text-muted-foreground italic")}>
+          {showPlaceholder ? placeholder : displayValue}
         </span>
         {error && <span className="text-xs text-destructive flex-shrink-0">Error</span>}
       </div>
@@ -197,7 +201,7 @@ export function EditableCell({ column, value, onSave, readOnly = false }: Editab
         disabled={isSaving}
         className="h-9"
         aria-label={`Edit ${column.name}`}
-        placeholder={`Enter ${column.name.toLowerCase()}`}
+        placeholder={placeholder || `Enter ${column.name.toLowerCase()}`}
       />
     </div>
   );

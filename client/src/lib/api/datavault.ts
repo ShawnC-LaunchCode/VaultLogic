@@ -347,6 +347,18 @@ export async function getTableRows(
   return response.json();
 }
 
+export async function getRowById(tableId: string, rowId: string): Promise<DatavaultRow> {
+  const response = await fetch(`${API_BASE}/rows/${rowId}`, {
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch row: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
 export async function createRow(
   tableId: string,
   data: Record<string, any>
@@ -398,4 +410,32 @@ export async function deleteRow(rowId: string): Promise<void> {
   if (!response.ok) {
     throw new Error(`Failed to delete row: ${response.statusText}`);
   }
+}
+
+// ============================================================================
+// Batch Reference Resolution (Fixes N+1 Query Problem)
+// ============================================================================
+
+export async function batchResolveReferences(
+  requests: Array<{
+    tableId: string;
+    rowIds: string[];
+    displayColumnSlug?: string;
+  }>
+): Promise<Record<string, { displayValue: string; row: any }>> {
+  const response = await fetch(`${API_BASE}/references/batch`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ requests }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(error.message || 'Failed to batch resolve references');
+  }
+
+  return response.json();
 }

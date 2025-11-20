@@ -233,6 +233,32 @@ export class DatavaultTablesService {
   ): Promise<boolean> {
     return !(await this.tablesRepo.slugExists(tenantId, slug, excludeId, tx));
   }
+
+  /**
+   * Move table to a different database (or to main folder if databaseId is null)
+   */
+  async moveTable(
+    tableId: string,
+    tenantId: string,
+    databaseId: string | null,
+    tx?: DbTransaction
+  ): Promise<DatavaultTable> {
+    // Verify table ownership
+    await this.verifyTenantOwnership(tableId, tenantId, tx);
+
+    // If moving to a database, verify it exists and belongs to the same tenant
+    if (databaseId) {
+      const { datavaultDatabasesRepository } = await import('../repositories/DatavaultDatabasesRepository');
+      const databaseExists = await datavaultDatabasesRepository.existsForTenant(databaseId, tenantId);
+
+      if (!databaseExists) {
+        throw new Error('Database not found or access denied');
+      }
+    }
+
+    // Update the table's databaseId
+    return await this.tablesRepo.update(tableId, { databaseId }, tx);
+  }
 }
 
 // Singleton instance

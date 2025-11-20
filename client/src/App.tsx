@@ -38,6 +38,7 @@ import DataVaultTablesPage from "@/pages/datavault/tables"; // DataVault Phase 1
 import TableViewPage from "@/pages/datavault/[tableId]"; // DataVault Phase 1
 import DataVaultDatabasesPage from "@/pages/datavault/databases"; // DataVault Phase 2
 import DatabaseDetailPage from "@/pages/datavault/[databaseId]"; // DataVault Phase 2
+import DatabaseSettingsPage from "@/pages/datavault/DatabaseSettingsPage"; // DataVault Phase 2: PR 13
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -98,6 +99,7 @@ function Router() {
             <Route path="/datavault/tables/:tableId" component={TableViewPage} />
             {/* DataVault Phase 2: Databases */}
             <Route path="/datavault/databases" component={DataVaultDatabasesPage} />
+            <Route path="/datavault/databases/:databaseId/settings" component={DatabaseSettingsPage} />
             <Route path="/datavault/databases/:databaseId" component={DatabaseDetailPage} />
             <Route path="/projects/:id/settings/branding/domains" component={DomainSettingsPage} />
             <Route path="/projects/:id/settings/email-templates" component={EmailTemplatesPage} />

@@ -141,8 +141,22 @@ export function useCreateDatavaultTable() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: datavaultAPI.createTable,
-    onSuccess: () => {
+    onSuccess: (createdTable) => {
+      // Invalidate general tables list
       queryClient.invalidateQueries({ queryKey: datavaultQueryKeys.tables });
+
+      // Invalidate databases list (to update table counts)
+      queryClient.invalidateQueries({ queryKey: datavaultQueryKeys.databases });
+
+      // If table was created in a database, invalidate that database's tables and details
+      if (createdTable.databaseId) {
+        queryClient.invalidateQueries({
+          queryKey: datavaultQueryKeys.databaseTables(createdTable.databaseId)
+        });
+        queryClient.invalidateQueries({
+          queryKey: datavaultQueryKeys.database(createdTable.databaseId)
+        });
+      }
     },
   });
 }
@@ -152,9 +166,23 @@ export function useUpdateDatavaultTable() {
   return useMutation({
     mutationFn: ({ tableId, ...data }: { tableId: string } & Parameters<typeof datavaultAPI.updateTable>[1]) =>
       datavaultAPI.updateTable(tableId, data),
-    onSuccess: (_, variables) => {
+    onSuccess: (updatedTable, variables) => {
+      // Invalidate general tables list and specific table
       queryClient.invalidateQueries({ queryKey: datavaultQueryKeys.tables });
       queryClient.invalidateQueries({ queryKey: datavaultQueryKeys.table(variables.tableId) });
+
+      // Invalidate databases list (to update table counts if database changed)
+      queryClient.invalidateQueries({ queryKey: datavaultQueryKeys.databases });
+
+      // If table is in a database, invalidate that database's tables and details
+      if (updatedTable.databaseId) {
+        queryClient.invalidateQueries({
+          queryKey: datavaultQueryKeys.databaseTables(updatedTable.databaseId)
+        });
+        queryClient.invalidateQueries({
+          queryKey: datavaultQueryKeys.database(updatedTable.databaseId)
+        });
+      }
     },
   });
 }
@@ -164,7 +192,19 @@ export function useDeleteDatavaultTable() {
   return useMutation({
     mutationFn: datavaultAPI.deleteTable,
     onSuccess: () => {
+      // Invalidate general tables list
       queryClient.invalidateQueries({ queryKey: datavaultQueryKeys.tables });
+
+      // Invalidate databases list (to update table counts)
+      queryClient.invalidateQueries({ queryKey: datavaultQueryKeys.databases });
+
+      // Invalidate all database-specific queries (we don't know which database the table was in)
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          query.queryKey[0] === 'datavault' &&
+          query.queryKey[1] === 'databases' &&
+          query.queryKey.length > 2
+      });
     },
   });
 }

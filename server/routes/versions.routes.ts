@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { isAuthenticated } from "../googleAuth";
+import { hybridAuth } from '../middleware/auth';
 import { versionService } from "../services/VersionService";
 import { z } from "zod";
 import { createLogger } from "../logger";
@@ -30,7 +30,7 @@ export function registerVersionRoutes(app: Express): void {
    * GET /workflows/:id/versions
    * List all versions for a workflow
    */
-  app.get('/api/workflows/:id/versions', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:id/versions', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
 
@@ -51,7 +51,7 @@ export function registerVersionRoutes(app: Express): void {
    * GET /workflowVersions/:versionId/diff/:otherVersionId
    * Get diff between two versions
    */
-  app.get('/api/workflowVersions/:versionId/diff/:otherVersionId', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/workflowVersions/:versionId/diff/:otherVersionId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { versionId, otherVersionId } = req.params;
 
@@ -74,7 +74,7 @@ export function registerVersionRoutes(app: Express): void {
    * Publish a new version
    * Body: { graphJson, notes?, force? }
    */
-  app.post('/api/workflows/:id/publish', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/workflows/:id/publish', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const userId = req.user?.claims?.sub;
@@ -110,7 +110,7 @@ export function registerVersionRoutes(app: Express): void {
    * Rollback to a previous version
    * Body: { toVersionId, notes? }
    */
-  app.post('/api/workflows/:id/rollback', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/workflows/:id/rollback', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const userId = req.user?.claims?.sub;
@@ -140,7 +140,7 @@ export function registerVersionRoutes(app: Express): void {
    * Pin a specific version
    * Body: { versionId }
    */
-  app.post('/api/workflows/:id/pin', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/workflows/:id/pin', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const userId = req.user?.claims?.sub;
@@ -169,7 +169,7 @@ export function registerVersionRoutes(app: Express): void {
    * POST /workflows/:id/unpin
    * Unpin version
    */
-  app.post('/api/workflows/:id/unpin', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/workflows/:id/unpin', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const userId = req.user?.claims?.sub;
@@ -195,7 +195,7 @@ export function registerVersionRoutes(app: Express): void {
    * GET /workflows/:id/export
    * Export workflow versions as JSON
    */
-  app.get('/api/workflows/:id/export', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:id/export', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
 

@@ -34,9 +34,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, ArrowLeft, Plus, Database, FolderInput } from "lucide-react";
+import { Loader2, ArrowLeft, Plus, Database, FolderInput, Database as DatabaseIcon } from "lucide-react";
 import { ColumnManagerWithDnd } from "@/components/datavault/ColumnManagerWithDnd";
 import { RowEditorModal } from "@/components/datavault/RowEditorModal";
+import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { InfiniteDataGrid } from "@/components/datavault/InfiniteDataGrid";
 import { MoveTableModal } from "@/components/datavault/MoveTableModal";
 import Header from "@/components/layout/Header";
@@ -212,13 +213,15 @@ export default function TableViewPage() {
 
             {!isLoading && table && (
               <>
+                {/* Breadcrumbs */}
                 <div className="mb-4">
-                  <Link href="/datavault/tables">
-                    <Button variant="ghost" size="sm">
-                      <ArrowLeft className="w-4 h-4 mr-2" />
-                      Back to Tables
-                    </Button>
-                  </Link>
+                  <Breadcrumbs
+                    items={[
+                      { label: "DataVault", href: "/datavault", icon: <DatabaseIcon className="w-3 h-3" /> },
+                      { label: "Tables", href: "/datavault/tables" },
+                      { label: table.name },
+                    ]}
+                  />
                 </div>
 
                 <div className="mb-8">

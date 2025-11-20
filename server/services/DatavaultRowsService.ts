@@ -5,6 +5,7 @@ import {
   type DbTransaction,
 } from "../repositories";
 import type { DatavaultRow, InsertDatavaultRow, DatavaultColumn } from "@shared/schema";
+import { db } from "../db";
 
 /**
  * Service layer for DataVault row business logic
@@ -119,6 +120,15 @@ export class DatavaultRowsService {
           throw new Error(`Column '${column.name}' must be valid JSON`);
         }
 
+      case 'reference':
+        // Reference values must be valid UUIDs
+        const stringValue = String(value);
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(stringValue)) {
+          throw new Error(`Column '${column.name}' must be a valid UUID reference`);
+        }
+        return stringValue;
+
       default:
         return value;
     }
@@ -146,10 +156,10 @@ export class DatavaultRowsService {
     // Generate auto-number values for auto_number columns
     for (const column of columns) {
       if (column.type === 'auto_number' && !(column.id in values)) {
-        // Get the next auto-number value
-        const nextNumber = await this.rowsRepo.getNextAutoNumber(tableId, column.id, tx);
+        // Get the next auto-number value using sequence (atomic, no race condition)
         const startValue = column.autoNumberStart ?? 1;
-        values[column.id] = startValue + nextNumber;
+        const nextNumber = await this.rowsRepo.getNextAutoNumber(tableId, column.id, startValue, tx);
+        values[column.id] = nextNumber;
       }
     }
 
@@ -161,6 +171,24 @@ export class DatavaultRowsService {
       }
 
       const coercedValue = this.validateAndCoerceValue(value, column);
+
+      // Additional validation for reference columns
+      if (column.type === 'reference' && coercedValue !== null && column.referenceTableId) {
+        // Verify the referenced row exists in the referenced table
+        const referencedRow = await this.rowsRepo.findById(coercedValue, tx);
+        if (!referencedRow) {
+          throw new Error(
+            `Column '${column.name}' references a non-existent row: ${coercedValue}`
+          );
+        }
+        // Verify the referenced row belongs to the correct table
+        if (referencedRow.tableId !== column.referenceTableId) {
+          throw new Error(
+            `Column '${column.name}' references a row from the wrong table`
+          );
+        }
+      }
+
       validatedValues.push({ columnId, value: coercedValue });
     }
 
@@ -169,6 +197,7 @@ export class DatavaultRowsService {
 
   /**
    * Create a new row with values
+   * Wrapped in transaction to ensure atomicity
    */
   async createRow(
     tableId: string,
@@ -176,7 +205,28 @@ export class DatavaultRowsService {
     values: Record<string, any>,
     createdBy?: string,
     tx?: DbTransaction
-  ): Promise<{ row: DatavaultRow; values: any }> {
+  ): Promise<{ row: DatavaultRow; values: Record<string, any> }> {
+    // If transaction provided, use it; otherwise create a new one
+    if (tx) {
+      return this._createRowImpl(tableId, tenantId, values, createdBy, tx);
+    }
+
+    return await db.transaction(async (newTx) => {
+      return this._createRowImpl(tableId, tenantId, values, createdBy, newTx);
+    });
+  }
+
+  /**
+   * Internal implementation of createRow
+   * Must be called within a transaction
+   */
+  private async _createRowImpl(
+    tableId: string,
+    tenantId: string,
+    values: Record<string, any>,
+    createdBy: string | undefined,
+    tx: DbTransaction
+  ): Promise<{ row: DatavaultRow; values: Record<string, any> }> {
     await this.verifyTableOwnership(tableId, tenantId, tx);
 
     // Validate and coerce values
@@ -193,15 +243,37 @@ export class DatavaultRowsService {
       tx
     );
 
-    return result;
+    // Transform values array into Record<columnId, value>
+    const valuesRecord: Record<string, any> = {};
+    for (const valueObj of result.values) {
+      valuesRecord[valueObj.columnId] = valueObj.value;
+    }
+
+    return {
+      row: result.row,
+      values: valuesRecord,
+    };
   }
 
   /**
    * Get row by ID with tenant verification
    */
-  async getRow(rowId: string, tenantId: string, tx?: DbTransaction) {
+  async getRow(rowId: string, tenantId: string, tx?: DbTransaction): Promise<{ row: DatavaultRow; values: Record<string, any> } | null> {
     const row = await this.verifyRowOwnership(rowId, tenantId, tx);
-    return await this.rowsRepo.getRowWithValues(rowId, tx);
+    const result = await this.rowsRepo.getRowWithValues(rowId, tx);
+
+    if (!result) return null;
+
+    // Transform values array into Record<columnId, value>
+    const valuesRecord: Record<string, any> = {};
+    for (const valueObj of result.values) {
+      valuesRecord[valueObj.columnId] = valueObj.value;
+    }
+
+    return {
+      row: result.row,
+      values: valuesRecord,
+    };
   }
 
   /**
@@ -230,6 +302,7 @@ export class DatavaultRowsService {
 
   /**
    * Update row values
+   * Wrapped in transaction to ensure atomicity
    */
   async updateRow(
     rowId: string,
@@ -237,6 +310,27 @@ export class DatavaultRowsService {
     values: Record<string, any>,
     updatedBy?: string,
     tx?: DbTransaction
+  ): Promise<void> {
+    // If transaction provided, use it; otherwise create a new one
+    if (tx) {
+      return this._updateRowImpl(rowId, tenantId, values, updatedBy, tx);
+    }
+
+    return await db.transaction(async (newTx) => {
+      return this._updateRowImpl(rowId, tenantId, values, updatedBy, newTx);
+    });
+  }
+
+  /**
+   * Internal implementation of updateRow
+   * Must be called within a transaction
+   */
+  private async _updateRowImpl(
+    rowId: string,
+    tenantId: string,
+    values: Record<string, any>,
+    updatedBy: string | undefined,
+    tx: DbTransaction
   ): Promise<void> {
     const row = await this.verifyRowOwnership(rowId, tenantId, tx);
 
@@ -248,7 +342,21 @@ export class DatavaultRowsService {
   }
 
   /**
+   * Check if row is referenced by other rows
+   * Returns list of tables/columns that reference this row
+   */
+  async getRowReferences(
+    rowId: string,
+    tenantId: string,
+    tx?: DbTransaction
+  ): Promise<Array<{ referencingTableId: string; referencingColumnId: string; referenceCount: number }>> {
+    await this.verifyRowOwnership(rowId, tenantId, tx);
+    return await this.rowsRepo.getRowReferences(rowId, tx);
+  }
+
+  /**
    * Delete row
+   * Note: References to this row will be automatically set to NULL by database trigger
    */
   async deleteRow(rowId: string, tenantId: string, tx?: DbTransaction): Promise<void> {
     await this.verifyRowOwnership(rowId, tenantId, tx);
@@ -257,21 +365,105 @@ export class DatavaultRowsService {
 
   /**
    * Bulk delete rows
+   * Uses batch operations for efficiency (2 queries instead of 2N)
+   * Wrapped in transaction to ensure atomicity
    */
   async bulkDeleteRows(
     rowIds: string[],
     tenantId: string,
     tx?: DbTransaction
   ): Promise<void> {
-    // Verify all rows belong to the tenant
-    for (const rowId of rowIds) {
-      await this.verifyRowOwnership(rowId, tenantId, tx);
+    if (rowIds.length === 0) return;
+
+    // If transaction provided, use it; otherwise create a new one
+    if (tx) {
+      return this._bulkDeleteRowsImpl(rowIds, tenantId, tx);
     }
 
-    // Delete all rows
-    for (const rowId of rowIds) {
-      await this.rowsRepo.deleteRow(rowId, tx);
+    return await db.transaction(async (newTx) => {
+      return this._bulkDeleteRowsImpl(rowIds, tenantId, newTx);
+    });
+  }
+
+  /**
+   * Internal implementation of bulkDeleteRows
+   * Must be called within a transaction
+   */
+  private async _bulkDeleteRowsImpl(
+    rowIds: string[],
+    tenantId: string,
+    tx: DbTransaction
+  ): Promise<void> {
+    // Batch verify ownership (1 query instead of N)
+    await this.rowsRepo.batchVerifyOwnership(rowIds, tenantId, tx);
+
+    // Batch delete (1 query instead of N)
+    await this.rowsRepo.batchDeleteRows(rowIds, tx);
+  }
+
+  /**
+   * Batch resolve reference values
+   * Efficiently fetches multiple referenced rows in a single query
+   * Fixes N+1 query problem for reference columns
+   *
+   * @param requests Array of {tableId, rowIds[], displayColumnSlug} objects
+   * @param tenantId Tenant ID for authorization
+   * @returns Map of rowId -> {displayValue, row}
+   */
+  async batchResolveReferences(
+    requests: Array<{
+      tableId: string;
+      rowIds: string[];
+      displayColumnSlug?: string;
+    }>,
+    tenantId: string,
+    tx?: DbTransaction
+  ): Promise<Map<string, { displayValue: string; row: any }>> {
+    const resultMap = new Map<string, { displayValue: string; row: any }>();
+
+    if (requests.length === 0) return resultMap;
+
+    // Verify all tables belong to tenant
+    const uniqueTableIds = [...new Set(requests.map(r => r.tableId))];
+    for (const tableId of uniqueTableIds) {
+      await this.verifyTableOwnership(tableId, tenantId, tx);
     }
+
+    // Batch fetch all rows
+    const rowData = await this.rowsRepo.batchFindByIds(requests, tx);
+
+    // Extract display values
+    requests.forEach(({ tableId, rowIds, displayColumnSlug }) => {
+      rowIds.forEach(rowId => {
+        const data = rowData.get(rowId);
+        if (!data) {
+          // Row not found, create placeholder
+          resultMap.set(rowId, {
+            displayValue: 'Not found',
+            row: null
+          });
+          return;
+        }
+
+        let displayValue: string;
+        if (displayColumnSlug && data.values[displayColumnSlug] !== undefined) {
+          displayValue = String(data.values[displayColumnSlug]);
+        } else {
+          // Fallback to row ID if no display column specified
+          displayValue = rowId.substring(0, 8) + '...';
+        }
+
+        resultMap.set(rowId, {
+          displayValue,
+          row: {
+            ...data.row,
+            values: data.values
+          }
+        });
+      });
+    });
+
+    return resultMap;
   }
 }
 

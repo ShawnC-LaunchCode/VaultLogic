@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { isAuthenticated } from "../googleAuth";
+import { hybridAuth } from '../middleware/auth';
 import { insertSectionSchema } from "@shared/schema";
 import { sectionService } from "../services/SectionService";
 import { sectionRepository } from "../repositories/SectionRepository";
@@ -19,7 +19,7 @@ export function registerSectionRoutes(app: Express): void {
    * POST /api/workflows/:workflowId/sections
    * Create a new section
    */
-  app.post('/api/workflows/:workflowId/sections', isAuthenticated, autoRevertToDraft, async (req: Request, res: Response) => {
+  app.post('/api/workflows/:workflowId/sections', hybridAuth, autoRevertToDraft, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -81,7 +81,7 @@ export function registerSectionRoutes(app: Express): void {
    * GET /api/workflows/:workflowId/sections/:sectionId
    * Get a single section with steps
    */
-  app.get('/api/workflows/:workflowId/sections/:sectionId', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:workflowId/sections/:sectionId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -104,7 +104,7 @@ export function registerSectionRoutes(app: Express): void {
    * Reorder sections
    * NOTE: This route MUST come before /:sectionId routes to avoid "reorder" being treated as an ID
    */
-  app.put('/api/workflows/:workflowId/sections/reorder', isAuthenticated, autoRevertToDraft, async (req: Request, res: Response) => {
+  app.put('/api/workflows/:workflowId/sections/reorder', hybridAuth, autoRevertToDraft, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -147,7 +147,7 @@ export function registerSectionRoutes(app: Express): void {
    * PUT /api/workflows/:workflowId/sections/:sectionId
    * Update a section
    */
-  app.put('/api/workflows/:workflowId/sections/:sectionId', isAuthenticated, autoRevertToDraft, async (req: Request, res: Response) => {
+  app.put('/api/workflows/:workflowId/sections/:sectionId', hybridAuth, autoRevertToDraft, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -171,7 +171,7 @@ export function registerSectionRoutes(app: Express): void {
    * DELETE /api/workflows/:workflowId/sections/:sectionId
    * Delete a section
    */
-  app.delete('/api/workflows/:workflowId/sections/:sectionId', isAuthenticated, autoRevertToDraft, async (req: Request, res: Response) => {
+  app.delete('/api/workflows/:workflowId/sections/:sectionId', hybridAuth, autoRevertToDraft, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -198,7 +198,7 @@ export function registerSectionRoutes(app: Express): void {
    * PUT /api/sections/:sectionId
    * Update a section (workflow looked up automatically)
    */
-  app.put('/api/sections/:sectionId', isAuthenticated, async (req: Request, res: Response) => {
+  app.put('/api/sections/:sectionId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -232,7 +232,7 @@ export function registerSectionRoutes(app: Express): void {
    * DELETE /api/sections/:sectionId
    * Delete a section (workflow looked up automatically)
    */
-  app.delete('/api/sections/:sectionId', isAuthenticated, async (req: Request, res: Response) => {
+  app.delete('/api/sections/:sectionId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {

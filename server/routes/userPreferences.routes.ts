@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { isAuthenticated } from "../googleAuth";
+import { hybridAuth } from '../middleware/auth';
 import { userPreferencesService } from "../services/UserPreferencesService";
 import { createLogger } from "../logger";
 
@@ -13,7 +13,7 @@ export function registerUserPreferencesRoutes(app: Express): void {
    * GET /api/preferences
    * Get current user's preferences
    */
-  app.get('/api/preferences', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/preferences', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -32,7 +32,7 @@ export function registerUserPreferencesRoutes(app: Express): void {
    * PUT /api/preferences
    * Update current user's preferences
    */
-  app.put('/api/preferences', isAuthenticated, async (req: Request, res: Response) => {
+  app.put('/api/preferences', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -52,7 +52,7 @@ export function registerUserPreferencesRoutes(app: Express): void {
    * POST /api/preferences/reset
    * Reset user's preferences to defaults
    */
-  app.post('/api/preferences/reset', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/preferences/reset', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {

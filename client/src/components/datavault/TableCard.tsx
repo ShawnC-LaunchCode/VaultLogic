@@ -5,7 +5,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MoreVertical, Trash2 } from "lucide-react";
+import { MoreVertical, Trash2, FolderInput } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,9 +26,10 @@ interface TableCardProps {
   };
   onClick: () => void;
   onDelete: () => void;
+  onMove?: () => void;
 }
 
-export function TableCard({ table, onClick, onDelete }: TableCardProps) {
+export function TableCard({ table, onClick, onDelete, onMove }: TableCardProps) {
   const formatDate = (date: string | Date | null) => {
     if (!date) return 'N/A';
     return new Date(date).toLocaleDateString();
@@ -62,6 +63,17 @@ export function TableCard({ table, onClick, onDelete }: TableCardProps) {
                 <i className="fas fa-eye mr-2"></i>
                 View Table
               </DropdownMenuItem>
+              {onMove && (
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMove();
+                  }}
+                >
+                  <FolderInput className="w-4 h-4 mr-2" />
+                  Move Table
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={(e) => {

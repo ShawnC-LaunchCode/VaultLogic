@@ -9,15 +9,20 @@ import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-q
 import { datavaultAPI } from "@/lib/datavault-api";
 import { datavaultQueryKeys } from "@/lib/datavault-hooks";
 import { EditableDataGrid } from "./EditableDataGrid";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import type { DatavaultColumn } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { DATAVAULT_CONFIG } from "@shared/config";
 
 interface InfiniteEditableDataGridProps {
   tableId: string;
   columns: DatavaultColumn[];
   onEditRow: (rowId: string, values: Record<string, any>) => void;
   onDeleteRow: (rowId: string) => void;
+  onReorderColumns?: (columnIds: string[]) => Promise<void>;
+  onAddRow?: () => void;
+  onCreateRow?: (values: Record<string, any>) => Promise<void>;
 }
 
 export function InfiniteEditableDataGrid({
@@ -25,6 +30,9 @@ export function InfiniteEditableDataGrid({
   columns,
   onEditRow,
   onDeleteRow,
+  onReorderColumns,
+  onAddRow,
+  onCreateRow,
 }: InfiniteEditableDataGridProps) {
   const observerTarget = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -41,7 +49,7 @@ export function InfiniteEditableDataGrid({
   } = useInfiniteQuery({
     queryKey: [...datavaultQueryKeys.tableRows(tableId), "infinite"],
     queryFn: ({ pageParam = 0 }) =>
-      datavaultAPI.listRows(tableId, { limit: 25, offset: pageParam }),
+      datavaultAPI.listRows(tableId, { limit: DATAVAULT_CONFIG.INFINITE_SCROLL_PAGE_SIZE, offset: pageParam }),
     getNextPageParam: (lastPage, allPages) => {
       const totalFetched = allPages.reduce((sum, page) => sum + page.rows.length, 0);
       if (totalFetched < lastPage.pagination.total) {
@@ -195,6 +203,8 @@ export function InfiniteEditableDataGrid({
         onCellUpdate={handleCellUpdate}
         onEditRow={onEditRow}
         onDeleteRow={onDeleteRow}
+        onReorderColumns={onReorderColumns}
+        onCreateRow={onCreateRow}
       />
 
       {/* Intersection observer target */}
@@ -208,6 +218,21 @@ export function InfiniteEditableDataGrid({
           <p className="text-sm text-muted-foreground py-4">No more rows to load</p>
         )}
       </div>
+
+      {/* Add Row Button */}
+      {onAddRow && (
+        <div className="mt-4 flex justify-start">
+          <Button
+            onClick={onAddRow}
+            disabled={columns.length === 0}
+            variant="outline"
+            size="sm"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Row
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

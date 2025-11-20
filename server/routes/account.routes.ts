@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { isAuthenticated } from "../googleAuth";
+import { hybridAuth } from '../middleware/auth';
 import { accountService } from "../services/AccountService";
 import { z } from "zod";
 import { logger } from "../logger";
@@ -13,7 +13,7 @@ export function registerAccountRoutes(app: Express): void {
    * GET /api/account/preferences
    * Get account preferences including default mode
    */
-  app.get('/api/account/preferences', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/account/preferences', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -34,7 +34,7 @@ export function registerAccountRoutes(app: Express): void {
    * PUT /api/account/preferences
    * Update account preferences including default mode
    */
-  app.put('/api/account/preferences', isAuthenticated, async (req: Request, res: Response) => {
+  app.put('/api/account/preferences', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {

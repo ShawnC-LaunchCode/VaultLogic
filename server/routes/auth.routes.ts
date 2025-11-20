@@ -1,6 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { userRepository, userCredentialsRepository } from "../repositories";
-import { isAuthenticated } from "../googleAuth";
+import { hybridAuth } from '../middleware/auth';
 import { createLogger } from "../logger";
 import {
   createToken,
@@ -325,7 +325,7 @@ export function registerAuthRoutes(app: Express): void {
   }
 
   // Legacy route for backward compatibility (uses session-based auth)
-  app.get('/api/auth/user', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/auth/user', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {

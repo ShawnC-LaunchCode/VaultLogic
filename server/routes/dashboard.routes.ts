@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { WorkflowRepository } from "../repositories/WorkflowRepository";
 import { WorkflowRunRepository } from "../repositories/WorkflowRunRepository";
-import { isAuthenticated } from "../googleAuth";
+import { hybridAuth } from '../middleware/auth';
 import { createLogger } from "../logger";
 
 const logger = createLogger({ module: 'dashboard-routes' });
@@ -21,7 +21,7 @@ export function registerDashboardRoutes(app: Express): void {
    * Get dashboard statistics for the authenticated user
    * Returns workflow counts and run statistics
    */
-  app.get('/api/dashboard/stats', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/dashboard/stats', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -69,7 +69,7 @@ export function registerDashboardRoutes(app: Express): void {
    * GET /api/dashboard/workflows
    * Get recent workflows with basic info
    */
-  app.get('/api/dashboard/workflows', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/dashboard/workflows', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -107,7 +107,7 @@ export function registerDashboardRoutes(app: Express): void {
    * GET /api/dashboard/recent-runs
    * Get recent workflow runs across all user's workflows
    */
-  app.get('/api/dashboard/recent-runs', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/dashboard/recent-runs', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {

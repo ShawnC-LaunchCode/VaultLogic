@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { isAuthenticated } from "../googleAuth";
+import { hybridAuth } from '../middleware/auth';
 import { templateService } from "../services/TemplateService";
 import { templateInsertionService } from "../services/TemplateInsertionService";
 import { templateSharingService } from "../services/TemplateSharingService";
@@ -19,7 +19,7 @@ export function registerTemplateRoutes(app: Express): void {
    * GET /api/templates
    * List all templates accessible to the user (their own + system templates)
    */
-  app.get('/api/templates', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/templates', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -38,7 +38,7 @@ export function registerTemplateRoutes(app: Express): void {
    * POST /api/templates/from-survey/:id
    * Create a template from an existing survey
    */
-  app.post('/api/templates/from-survey/:id', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/templates/from-survey/:id', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -89,7 +89,7 @@ export function registerTemplateRoutes(app: Express): void {
    * GET /api/templates/:id
    * Get a single template by ID
    */
-  app.get('/api/templates/:id', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/templates/:id', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -124,7 +124,7 @@ export function registerTemplateRoutes(app: Express): void {
    * PUT /api/templates/:id
    * Update a template (name, description, or content)
    */
-  app.put('/api/templates/:id', isAuthenticated, async (req: Request, res: Response) => {
+  app.put('/api/templates/:id', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -181,7 +181,7 @@ export function registerTemplateRoutes(app: Express): void {
    * DELETE /api/templates/:id
    * Delete a template
    */
-  app.delete('/api/templates/:id', isAuthenticated, async (req: Request, res: Response) => {
+  app.delete('/api/templates/:id', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -205,7 +205,7 @@ export function registerTemplateRoutes(app: Express): void {
    * POST /api/templates/:templateId/insert/:surveyId
    * Insert a template into an existing survey
    */
-  app.post('/api/templates/:templateId/insert/:surveyId', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/templates/:templateId/insert/:surveyId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {

@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { isAuthenticated } from "../googleAuth";
+import { hybridAuth } from '../middleware/auth';
 import { insertWorkflowRunSchema, insertStepValueSchema } from "@shared/schema";
 import { runService } from "../services/RunService";
 import { creatorOrRunTokenAuth, type RunAuthRequest } from "../middleware/runTokenAuth";
@@ -367,7 +367,7 @@ export function registerRunRoutes(app: Express): void {
    * GET /api/workflows/:workflowId/runs
    * List all runs for a workflow
    */
-  app.get('/api/workflows/:workflowId/runs', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:workflowId/runs', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {

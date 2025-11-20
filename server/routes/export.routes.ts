@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { isAuthenticated } from "../googleAuth";
+import { hybridAuth } from '../middleware/auth';
 // DEPRECATED: Legacy survey export service - disabled as part of survey system removal (Nov 2025)
 // import { exportService } from "../services/exportService";
 // import type { ExportOptions } from "../services/exportService";
@@ -32,7 +32,7 @@ export function registerExportRoutes(app: Express): void {
    *  - dateFrom: ISO date string (optional)
    *  - dateTo: ISO date string (optional)
    *
-  app.get('/api/surveys/:surveyId/export', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/surveys/:surveyId/export', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { surveyId } = req.params;
       const userId = req.user?.claims?.sub;
@@ -135,7 +135,7 @@ export function registerExportRoutes(app: Express): void {
    * Admin endpoint to manually trigger cleanup of old export files
    * Removes exports older than 24 hours
    *
-  app.post('/api/exports/cleanup', isAuthenticated, async (req, res) => {
+  app.post('/api/exports/cleanup', hybridAuth, async (req, res) => {
     try {
       const maxAgeHours = req.body.maxAgeHours || 24;
       await exportService.cleanupOldExports(maxAgeHours);

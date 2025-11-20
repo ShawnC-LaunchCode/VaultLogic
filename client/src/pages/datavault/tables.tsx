@@ -14,12 +14,16 @@ import {
   useCreateDatavaultTable,
   useDeleteDatavaultTable,
   useCreateDatavaultColumn,
+  useDatavaultDatabases,
+  useMoveDatavaultTable,
 } from "@/lib/datavault-hooks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Search, Plus, Sparkles } from "lucide-react";
+import { Loader2, Search, Plus, Sparkles, Database as DatabaseIcon } from "lucide-react";
+import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { CreateTableModal } from "@/components/datavault/CreateTableModal";
+import { MoveTableModal } from "@/components/datavault/MoveTableModal";
 import { TableCard } from "@/components/datavault/TableCard";
 import { TemplateCard } from "@/components/datavault/TemplateCard";
 import { TablesListSkeleton } from "@/components/datavault/LoadingSkeleton";
@@ -69,13 +73,16 @@ export default function DataVaultTablesPage() {
   const { toast } = useToast();
 
   const { data: tables, isLoading } = useDatavaultTables(true);
+  const { data: databases } = useDatavaultDatabases();
   const createTableMutation = useCreateDatavaultTable();
   const deleteTableMutation = useDeleteDatavaultTable();
+  const moveTableMutation = useMoveDatavaultTable();
   const createColumnMutation = useCreateDatavaultColumn();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
+  const [moveTable, setMoveTable] = useState<{ id: string; name: string; currentDatabaseId: string | null } | null>(null);
 
   // Filter tables by search query
   const filteredTables = tables?.filter((table) => {
@@ -147,6 +154,27 @@ export default function DataVaultTablesPage() {
     }
   };
 
+  const handleMoveTable = async (targetDatabaseId: string | null) => {
+    if (!moveTable) return;
+
+    try {
+      await moveTableMutation.mutateAsync({ tableId: moveTable.id, databaseId: targetDatabaseId });
+
+      toast({
+        title: "Table moved",
+        description: `${moveTable.name} has been moved successfully.`,
+      });
+
+      setMoveTable(null);
+    } catch (error) {
+      toast({
+        title: "Failed to move table",
+        description: error instanceof Error ? error.message : "An error occurred",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleTableClick = (tableId: string) => {
     setLocation(`/datavault/tables/${tableId}`);
   };
@@ -171,6 +199,16 @@ export default function DataVaultTablesPage() {
         <Header title="Tables" description="Manage your custom data tables" />
         <main className="flex-1 overflow-y-auto">
           <div className="container mx-auto px-4 py-8">
+            {/* Breadcrumbs */}
+            <div className="mb-4">
+              <Breadcrumbs
+                items={[
+                  { label: "DataVault", href: "/datavault", icon: <DatabaseIcon className="w-3 h-3" /> },
+                  { label: "Tables" },
+                ]}
+              />
+            </div>
+
             {/* Page Header */}
             <div className="flex flex-col gap-4 mb-8">
               <div className="flex items-center justify-between">
@@ -252,6 +290,7 @@ export default function DataVaultTablesPage() {
                     table={table}
                     onClick={() => handleTableClick(table.id)}
                     onDelete={() => setDeleteConfirm({ id: table.id, name: table.name })}
+                    onMove={() => setMoveTable({ id: table.id, name: table.name, currentDatabaseId: (table as any).databaseId || null })}
                   />
                 ))}
               </div>
@@ -318,6 +357,19 @@ export default function DataVaultTablesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Move Table Modal */}
+      {moveTable && (
+        <MoveTableModal
+          open={!!moveTable}
+          onOpenChange={(open) => !open && setMoveTable(null)}
+          tableName={moveTable.name}
+          currentDatabaseId={moveTable.currentDatabaseId}
+          databases={databases || []}
+          onMove={handleMoveTable}
+          isLoading={moveTableMutation.isPending}
+        />
+      )}
     </div>
   );
 }

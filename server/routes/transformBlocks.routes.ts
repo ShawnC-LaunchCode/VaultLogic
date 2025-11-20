@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { isAuthenticated } from "../googleAuth";
+import { hybridAuth } from '../middleware/auth';
 import { insertTransformBlockSchema } from "@shared/schema";
 import { transformBlockService } from "../services/TransformBlockService";
 import { transformBlockRepository } from "../repositories/TransformBlockRepository";
@@ -47,7 +47,7 @@ export function registerTransformBlockRoutes(app: Express): void {
    * POST /api/workflows/:workflowId/transform-blocks
    * Create a new transform block
    */
-  app.post('/api/workflows/:workflowId/transform-blocks', isAuthenticated, autoRevertToDraft, async (req: Request, res: Response) => {
+  app.post('/api/workflows/:workflowId/transform-blocks', hybridAuth, autoRevertToDraft, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -81,7 +81,7 @@ export function registerTransformBlockRoutes(app: Express): void {
    * GET /api/workflows/:workflowId/transform-blocks
    * List all transform blocks for a workflow
    */
-  app.get('/api/workflows/:workflowId/transform-blocks', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:workflowId/transform-blocks', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -103,7 +103,7 @@ export function registerTransformBlockRoutes(app: Express): void {
    * GET /api/transform-blocks/:blockId
    * Get a single transform block
    */
-  app.get('/api/transform-blocks/:blockId', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/transform-blocks/:blockId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -125,7 +125,7 @@ export function registerTransformBlockRoutes(app: Express): void {
    * PUT /api/transform-blocks/:blockId
    * Update a transform block
    */
-  app.put('/api/transform-blocks/:blockId', isAuthenticated, async (req: Request, res: Response) => {
+  app.put('/api/transform-blocks/:blockId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -159,7 +159,7 @@ export function registerTransformBlockRoutes(app: Express): void {
    * DELETE /api/transform-blocks/:blockId
    * Delete a transform block
    */
-  app.delete('/api/transform-blocks/:blockId', isAuthenticated, async (req: Request, res: Response) => {
+  app.delete('/api/transform-blocks/:blockId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -192,7 +192,7 @@ export function registerTransformBlockRoutes(app: Express): void {
    * POST /api/transform-blocks/:blockId/test
    * Test a transform block with sample data
    */
-  app.post('/api/transform-blocks/:blockId/test', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/transform-blocks/:blockId/test', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {

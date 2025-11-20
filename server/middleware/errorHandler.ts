@@ -245,11 +245,11 @@ export function errorHandler(
 
   // Log error with request context
   const logContext = {
-    requestId: (req as any).id,
+    requestId: (req as any).id, // Express request ID (from express-request-id middleware if present)
     method: req.method,
     url: req.url,
     statusCode,
-    userId: (req as any).user?.claims?.sub,
+    userId: req.user?.claims?.sub,
     error: {
       name: err.name,
       message: err.message,

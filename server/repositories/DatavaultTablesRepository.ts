@@ -108,7 +108,7 @@ export class DatavaultTablesRepository extends BaseRepository<
     }
 
     // Get columns ordered by orderIndex
-    const columns = await database
+    const rawColumns = await database
       .select({
         id: datavaultColumns.id,
         name: datavaultColumns.name,
@@ -118,10 +118,30 @@ export class DatavaultTablesRepository extends BaseRepository<
         isPrimaryKey: datavaultColumns.isPrimaryKey,
         isUnique: datavaultColumns.isUnique,
         slug: datavaultColumns.slug,
+        referenceTableId: datavaultColumns.referenceTableId,
+        referenceDisplayColumnSlug: datavaultColumns.referenceDisplayColumnSlug,
       })
       .from(datavaultColumns)
       .where(eq(datavaultColumns.tableId, tableId))
       .orderBy(asc(datavaultColumns.orderIndex));
+
+    // Map columns to include reference object for reference type columns
+    const columns = rawColumns.map((col: typeof rawColumns[number]) => ({
+      id: col.id,
+      name: col.name,
+      slug: col.slug,
+      type: col.type,
+      required: col.required,
+      orderIndex: col.orderIndex,
+      isPrimaryKey: col.isPrimaryKey,
+      isUnique: col.isUnique,
+      reference: col.type === 'reference'
+        ? {
+            tableId: col.referenceTableId,
+            displayColumnSlug: col.referenceDisplayColumnSlug,
+          }
+        : null,
+    }));
 
     return {
       id: table.id,

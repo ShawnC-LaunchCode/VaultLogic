@@ -5,7 +5,7 @@
  * DataVault Phase 2: PR 6
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -21,6 +21,8 @@ import {
   useUpdateDatavaultRow,
   useDeleteDatavaultRow,
   useCreateDatavaultTable,
+  useDatavaultDatabases,
+  useMoveDatavaultTable,
 } from "@/lib/datavault-hooks";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,13 +42,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Database as DatabaseIcon, ArrowLeft, Settings, MoreVertical, Plus, Loader2 } from "lucide-react";
+import { Database as DatabaseIcon, ArrowLeft, Settings, MoreVertical, Plus, Loader2, FolderInput } from "lucide-react";
 import { DatabaseTableTabs } from "@/components/datavault/DatabaseTableTabs";
 import { InfiniteEditableDataGrid } from "@/components/datavault/InfiniteEditableDataGrid";
+import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { ColumnManagerWithDnd } from "@/components/datavault/ColumnManagerWithDnd";
 import { RowEditorModal } from "@/components/datavault/RowEditorModal";
 import { CreateTableModal } from "@/components/datavault/CreateTableModal";
-import { DatabaseSettings } from "@/components/datavault/DatabaseSettings";
+import { MoveTableModal } from "@/components/datavault/MoveTableModal";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
 
@@ -57,20 +60,21 @@ export default function DatabaseDetailPage() {
 
   const { data: database, isLoading: dbLoading } = useDatavaultDatabase(databaseId);
   const { data: tables, isLoading: tablesLoading } = useDatabaseTables(databaseId);
+  const { data: allDatabases } = useDatavaultDatabases();
 
   const [activeTableId, setActiveTableId] = useState<string | null>(null);
-  const [showSettings, setShowSettings] = useState(false);
   const [createTableOpen, setCreateTableOpen] = useState(false);
   const [rowEditorOpen, setRowEditorOpen] = useState(false);
   const [editingRow, setEditingRow] = useState<{ id: string; values: Record<string, any> } | null>(null);
   const [deleteRowConfirm, setDeleteRowConfirm] = useState<string | null>(null);
+  const [moveTableOpen, setMoveTableOpen] = useState(false);
 
   // Auto-select first table when tables load
-  useState(() => {
+  useEffect(() => {
     if (tables && tables.length > 0 && !activeTableId) {
       setActiveTableId(tables[0].id);
     }
-  });
+  }, [tables, activeTableId]);
 
   // Data for active table
   const { data: columns, isLoading: columnsLoading } = useDatavaultColumns(activeTableId || undefined);
@@ -81,6 +85,7 @@ export default function DatabaseDetailPage() {
 
   // Mutations
   const createTableMutation = useCreateDatavaultTable();
+  const moveTableMutation = useMoveDatavaultTable();
   const createColumnMutation = useCreateDatavaultColumn();
   const updateColumnMutation = useUpdateDatavaultColumn();
   const deleteColumnMutation = useDeleteDatavaultColumn();
@@ -107,6 +112,32 @@ export default function DatabaseDetailPage() {
     } catch (error) {
       toast({
         title: "Failed to create table",
+        description: error instanceof Error ? error.message : "An error occurred",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleMoveTable = async (targetDatabaseId: string | null) => {
+    if (!activeTableId || !activeTable) return;
+
+    try {
+      await moveTableMutation.mutateAsync({ tableId: activeTableId, databaseId: targetDatabaseId });
+      toast({
+        title: "Table moved",
+        description: `Table "${activeTable.name}" has been moved.`
+      });
+      setMoveTableOpen(false);
+
+      // Navigate to the target database (or main tables page if moved to main folder)
+      if (targetDatabaseId) {
+        setLocation(`/datavault/databases/${targetDatabaseId}`);
+      } else {
+        setLocation('/datavault');
+      }
+    } catch (error) {
+      toast({
+        title: "Failed to move table",
         description: error instanceof Error ? error.message : "An error occurred",
         variant: "destructive",
       });
@@ -178,6 +209,12 @@ export default function DatabaseDetailPage() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleCreateRow = async (values: Record<string, any>) => {
+    if (!activeTableId) return;
+
+    await createRowMutation.mutateAsync({ tableId: activeTableId, values });
   };
 
   const handleUpdateRow = async (values: Record<string, any>) => {
@@ -258,6 +295,17 @@ export default function DatabaseDetailPage() {
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Header with database info and actions */}
         <div className="border-b bg-background px-4 py-3">
+          {/* Breadcrumbs */}
+          <div className="mb-3">
+            <Breadcrumbs
+              items={[
+                { label: "DataVault", href: "/datavault", icon: <DatabaseIcon className="w-3 h-3" /> },
+                { label: "Databases", href: "/datavault/databases" },
+                { label: database.name },
+              ]}
+            />
+          </div>
+
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="sm" onClick={() => setLocation("/datavault/databases")}>
@@ -279,7 +327,7 @@ export default function DatabaseDetailPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setShowSettings(!showSettings)}>
+                <DropdownMenuItem onClick={() => setLocation(`/datavault/databases/${databaseId}/settings`)}>
                   <Settings className="w-4 h-4 mr-2" />
                   Settings
                 </DropdownMenuItem>
@@ -292,17 +340,13 @@ export default function DatabaseDetailPage() {
         <DatabaseTableTabs
           tables={tables || []}
           activeTableId={activeTableId}
-          onTabClick={setActiveTableId}
+          onTabClick={(tableId) => setActiveTableId(tableId)}
           onCreateTable={() => setCreateTableOpen(true)}
         />
 
         {/* Main Content Area */}
         <main className="flex-1 overflow-hidden">
-          {showSettings ? (
-            <div className="h-full overflow-y-auto p-6">
-              <DatabaseSettings database={database} />
-            </div>
-          ) : !activeTableId || !activeTable ? (
+          {!activeTableId || !activeTable ? (
             <div className="h-full flex items-center justify-center text-center p-8">
               <div className="max-w-md">
                 <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-6">
@@ -334,13 +378,29 @@ export default function DatabaseDetailPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
-                      onClick={() => setRowEditorOpen(true)}
-                      disabled={!columns || columns.length === 0}
+                      onClick={() => {
+                        const event = new CustomEvent('openAddColumnDialog');
+                        window.dispatchEvent(event);
+                      }}
                       size="sm"
+                      variant="outline"
                     >
                       <Plus className="w-4 h-4 mr-2" />
-                      Add Row
+                      Add Column
                     </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setMoveTableOpen(true)}>
+                          <FolderInput className="w-4 h-4 mr-2" />
+                          Move Table
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
 
@@ -351,10 +411,10 @@ export default function DatabaseDetailPage() {
                 </div>
               </div>
 
-              {/* Table Content - Split View */}
-              <div className="flex-1 overflow-hidden flex">
+              {/* Table Content */}
+              <div className="flex-1 overflow-hidden">
                 {/* Data Grid */}
-                <div className="flex-1 overflow-auto p-6">
+                <div className="h-full overflow-auto p-6">
                   {columns && columns.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16 text-center">
                       <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
@@ -375,7 +435,7 @@ export default function DatabaseDetailPage() {
                       </div>
                       <h3 className="text-lg font-semibold text-foreground mb-2">No columns defined yet</h3>
                       <p className="text-sm text-muted-foreground max-w-md mb-4">
-                        Define the structure of your table by adding columns in the Columns panel on the right.
+                        Click "Add Column" above to define the structure of your table.
                       </p>
                       <p className="text-xs text-muted-foreground">
                         💡 Tip: Start with a primary key column to uniquely identify each row.
@@ -387,24 +447,11 @@ export default function DatabaseDetailPage() {
                       columns={columns || []}
                       onEditRow={openEditRow}
                       onDeleteRow={setDeleteRowConfirm}
+                      onReorderColumns={handleReorderColumns}
+                      onAddRow={() => setRowEditorOpen(true)}
+                      onCreateRow={handleCreateRow}
                     />
                   )}
-                </div>
-
-                {/* Column Manager Sidebar */}
-                <div className="w-96 border-l overflow-y-auto bg-muted/20">
-                  <div className="p-4">
-                    <h3 className="font-semibold mb-4">Columns</h3>
-                    <ColumnManagerWithDnd
-                      columns={columns || []}
-                      tableId={activeTableId}
-                      onAddColumn={handleAddColumn}
-                      onUpdateColumn={handleUpdateColumn}
-                      onDeleteColumn={handleDeleteColumn}
-                      onReorderColumns={handleReorderColumns}
-                      isLoading={isColumnMutating}
-                    />
-                  </div>
                 </div>
               </div>
             </div>
@@ -461,6 +508,16 @@ export default function DatabaseDetailPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <MoveTableModal
+        open={moveTableOpen}
+        onOpenChange={setMoveTableOpen}
+        tableName={activeTable?.name || ""}
+        currentDatabaseId={databaseId}
+        databases={allDatabases || []}
+        onMove={handleMoveTable}
+        isLoading={moveTableMutation.isPending}
+      />
     </div>
   );
 }

@@ -131,7 +131,7 @@ export async function hybridAuth(req: Request, res: Response, next: NextFunction
     }
 
     // Fallback to session-based authentication (Google OAuth)
-    const sessionUser = (req.session as any)?.user || (req as any).user;
+    const sessionUser = req.session?.user || req.user;
     if (sessionUser?.claims?.sub) {
       const authReq = req as AuthRequest;
       authReq.userId = sessionUser.claims.sub;
@@ -181,7 +181,7 @@ export function getAuthUserId(req: Request): string | undefined {
   }
 
   // Fallback to session authentication
-  const sessionUser = (req.session as any)?.user || (req as any).user;
+  const sessionUser = req.session?.user || req.user;
   return sessionUser?.claims?.sub;
 }
 

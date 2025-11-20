@@ -1,6 +1,6 @@
 import type { Express, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
-import { isAuthenticated } from "../googleAuth";
+import { hybridAuth } from '../middleware/auth';
 import { geminiService } from "../services/geminiService";
 import { logger } from "../logger";
 import { createLogger } from "../logger";
@@ -53,7 +53,7 @@ export function registerAiRoutes(app: Express): void {
    * GET /api/ai/status
    * Check if AI services are available
    */
-  app.get('/api/ai/status', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/ai/status', hybridAuth, async (req: Request, res: Response) => {
     try {
       const hasApiKey = !!process.env.GEMINI_API_KEY;
 
@@ -80,7 +80,7 @@ export function registerAiRoutes(app: Express): void {
    *
    * Body: { text: string }
    */
-  app.post('/api/ai/sentiment', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/ai/sentiment', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { text } = req.body;
 

@@ -14,6 +14,7 @@ import {
   Link,
   FileJson,
   File,
+  Link2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -62,6 +63,9 @@ export function ColumnTypeIcon({ type, className }: ColumnTypeIconProps) {
     case "file_upload":
       return <File {...iconProps} />;
 
+    case "reference":
+      return <Link2 {...iconProps} />;
+
     default:
       return <Type {...iconProps} />;
   }
@@ -103,6 +107,9 @@ export function getColumnTypeColor(type: string): string {
     case "file_upload":
       return "text-gray-600 dark:text-gray-400";
 
+    case "reference":
+      return "text-violet-600 dark:text-violet-400";
+
     default:
       return "text-muted-foreground";
   }
@@ -139,6 +146,8 @@ export function getColumnTypeLabel(type: string): string {
       return "JSON";
     case "file_upload":
       return "File";
+    case "reference":
+      return "Reference";
     default:
       return type;
   }

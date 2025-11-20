@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { isAuthenticated } from "../googleAuth";
+import { hybridAuth } from '../middleware/auth';
 import { blockService } from "../services/BlockService";
 import { blockRepository } from "../repositories/BlockRepository";
 import { z } from "zod";
@@ -18,7 +18,7 @@ export function registerBlockRoutes(app: Express): void {
    * POST /api/workflows/:workflowId/blocks
    * Create a new block
    */
-  app.post('/api/workflows/:workflowId/blocks', isAuthenticated, autoRevertToDraft, async (req: Request, res: Response) => {
+  app.post('/api/workflows/:workflowId/blocks', hybridAuth, autoRevertToDraft, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -50,7 +50,7 @@ export function registerBlockRoutes(app: Express): void {
    * GET /api/workflows/:workflowId/blocks
    * List all blocks for a workflow
    */
-  app.get('/api/workflows/:workflowId/blocks', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:workflowId/blocks', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -74,7 +74,7 @@ export function registerBlockRoutes(app: Express): void {
    * GET /api/blocks/:blockId
    * Get a single block by ID
    */
-  app.get('/api/blocks/:blockId', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/blocks/:blockId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -96,7 +96,7 @@ export function registerBlockRoutes(app: Express): void {
    * PUT /api/blocks/:blockId
    * Update a block
    */
-  app.put('/api/blocks/:blockId', isAuthenticated, async (req: Request, res: Response) => {
+  app.put('/api/blocks/:blockId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -130,7 +130,7 @@ export function registerBlockRoutes(app: Express): void {
    * DELETE /api/blocks/:blockId
    * Delete a block
    */
-  app.delete('/api/blocks/:blockId', isAuthenticated, async (req: Request, res: Response) => {
+  app.delete('/api/blocks/:blockId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -163,7 +163,7 @@ export function registerBlockRoutes(app: Express): void {
    * PUT /api/workflows/:workflowId/blocks/reorder
    * Bulk reorder blocks
    */
-  app.put('/api/workflows/:workflowId/blocks/reorder', isAuthenticated, autoRevertToDraft, async (req: Request, res: Response) => {
+  app.put('/api/workflows/:workflowId/blocks/reorder', hybridAuth, autoRevertToDraft, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {

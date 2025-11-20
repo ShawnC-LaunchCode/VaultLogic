@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { isAuthenticated } from "../googleAuth";
+import { hybridAuth } from '../middleware/auth';
 import { insertWorkflowSchema } from "@shared/schema";
 import { workflowService } from "../services/WorkflowService";
 import { variableService } from "../services/VariableService";
@@ -16,7 +16,7 @@ export function registerWorkflowRoutes(app: Express): void {
    * POST /api/workflows
    * Create a new workflow
    */
-  app.post('/api/workflows', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/workflows', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -44,7 +44,7 @@ export function registerWorkflowRoutes(app: Express): void {
    * GET /api/workflows
    * Get all workflows for the authenticated user
    */
-  app.get('/api/workflows', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/workflows', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -64,7 +64,7 @@ export function registerWorkflowRoutes(app: Express): void {
    * Get all unfiled workflows (workflows not in any project) for the authenticated user
    * NOTE: This must come BEFORE /api/workflows/:workflowId to avoid "unfiled" being treated as a workflowId
    */
-  app.get('/api/workflows/unfiled', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/workflows/unfiled', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -83,7 +83,7 @@ export function registerWorkflowRoutes(app: Express): void {
    * GET /api/workflows/:workflowId
    * Get a single workflow with full details (sections, steps, rules)
    */
-  app.get('/api/workflows/:workflowId', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:workflowId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -105,7 +105,7 @@ export function registerWorkflowRoutes(app: Express): void {
    * PUT /api/workflows/:workflowId
    * Update a workflow
    */
-  app.put('/api/workflows/:workflowId', isAuthenticated, async (req: Request, res: Response) => {
+  app.put('/api/workflows/:workflowId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -129,7 +129,7 @@ export function registerWorkflowRoutes(app: Express): void {
    * DELETE /api/workflows/:workflowId
    * Delete a workflow
    */
-  app.delete('/api/workflows/:workflowId', isAuthenticated, async (req: Request, res: Response) => {
+  app.delete('/api/workflows/:workflowId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -151,7 +151,7 @@ export function registerWorkflowRoutes(app: Express): void {
    * PUT /api/workflows/:workflowId/status
    * Change workflow status
    */
-  app.put('/api/workflows/:workflowId/status', isAuthenticated, async (req: Request, res: Response) => {
+  app.put('/api/workflows/:workflowId/status', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -179,7 +179,7 @@ export function registerWorkflowRoutes(app: Express): void {
    * PUT /api/workflows/:workflowId/intake-config
    * Update workflow intake configuration (Stage 12.5)
    */
-  app.put('/api/workflows/:workflowId/intake-config', isAuthenticated, async (req: Request, res: Response) => {
+  app.put('/api/workflows/:workflowId/intake-config', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -213,7 +213,7 @@ export function registerWorkflowRoutes(app: Express): void {
    * PUT /api/workflows/:workflowId/move
    * Move workflow to a project (or unfiled if projectId is null)
    */
-  app.put('/api/workflows/:workflowId/move', isAuthenticated, async (req: Request, res: Response) => {
+  app.put('/api/workflows/:workflowId/move', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -239,7 +239,7 @@ export function registerWorkflowRoutes(app: Express): void {
    * GET /api/workflows/:workflowId/mode
    * Get resolved mode for a workflow (modeOverride ?? user.defaultMode)
    */
-  app.get('/api/workflows/:workflowId/mode', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:workflowId/mode', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -261,7 +261,7 @@ export function registerWorkflowRoutes(app: Express): void {
    * PUT /api/workflows/:workflowId/mode
    * Set or clear workflow mode override
    */
-  app.put('/api/workflows/:workflowId/mode', isAuthenticated, async (req: Request, res: Response) => {
+  app.put('/api/workflows/:workflowId/mode', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -299,7 +299,7 @@ export function registerWorkflowRoutes(app: Express): void {
    * Get all variables (steps with aliases) for a workflow
    * Returns array of WorkflowVariable objects ordered by section/step order
    */
-  app.get('/api/workflows/:workflowId/variables', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:workflowId/variables', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -322,7 +322,7 @@ export function registerWorkflowRoutes(app: Express): void {
    * Get or generate public link for a workflow
    * Returns the full public URL that can be shared
    */
-  app.get('/api/workflows/:workflowId/public-link', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:workflowId/public-link', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -348,7 +348,7 @@ export function registerWorkflowRoutes(app: Express): void {
    * GET /api/workflows/:workflowId/access
    * Get all ACL entries for a workflow
    */
-  app.get('/api/workflows/:workflowId/access', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:workflowId/access', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -371,7 +371,7 @@ export function registerWorkflowRoutes(app: Express): void {
    * Grant or update access to a workflow
    * Body: { entries: [{ principalType: 'user' | 'team', principalId: string, role: 'view' | 'edit' | 'owner' }] }
    */
-  app.put('/api/workflows/:workflowId/access', isAuthenticated, async (req: Request, res: Response) => {
+  app.put('/api/workflows/:workflowId/access', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -413,7 +413,7 @@ export function registerWorkflowRoutes(app: Express): void {
    * Revoke access from a workflow
    * Body: { entries: [{ principalType: 'user' | 'team', principalId: string }] }
    */
-  app.delete('/api/workflows/:workflowId/access', isAuthenticated, async (req: Request, res: Response) => {
+  app.delete('/api/workflows/:workflowId/access', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -454,7 +454,7 @@ export function registerWorkflowRoutes(app: Express): void {
    * Transfer workflow ownership
    * Body: { userId: string }
    */
-  app.put('/api/workflows/:workflowId/owner', isAuthenticated, async (req: Request, res: Response) => {
+  app.put('/api/workflows/:workflowId/owner', hybridAuth, async (req: Request, res: Response) => {
     try {
       const currentOwnerId = req.user?.claims?.sub;
       if (!currentOwnerId) {
@@ -493,7 +493,7 @@ export function registerWorkflowRoutes(app: Express): void {
    * PR4: Template Test Runner API
    * Body: { outputType: 'docx' | 'pdf' | 'both', sampleData: any }
    */
-  app.post('/api/workflows/:workflowId/templates/:templateId/test', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/workflows/:workflowId/templates/:templateId/test', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {

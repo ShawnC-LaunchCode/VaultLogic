@@ -5,7 +5,7 @@
  */
 
 import type { Express, Request, Response } from 'express';
-import { isAuthenticated } from '../googleAuth';
+import { hybridAuth } from '../middleware/auth';
 import { z } from 'zod';
 import { logger } from '../logger';
 import {
@@ -62,7 +62,7 @@ export function registerConnectionsV2Routes(app: Express) {
    * GET /api/projects/:projectId/connections
    * List all connections for a project
    */
-  app.get('/api/projects/:projectId/connections', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/projects/:projectId/connections', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { projectId } = req.params;
 
@@ -83,7 +83,7 @@ export function registerConnectionsV2Routes(app: Express) {
    * GET /api/projects/:projectId/connections/:connectionId
    * Get a specific connection
    */
-  app.get('/api/projects/:projectId/connections/:connectionId', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/projects/:projectId/connections/:connectionId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { projectId, connectionId } = req.params;
 
@@ -107,7 +107,7 @@ export function registerConnectionsV2Routes(app: Express) {
    * POST /api/projects/:projectId/connections
    * Create a new connection
    */
-  app.post('/api/projects/:projectId/connections', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/projects/:projectId/connections', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { projectId } = req.params;
 
@@ -150,7 +150,7 @@ export function registerConnectionsV2Routes(app: Express) {
    * PATCH /api/projects/:projectId/connections/:connectionId
    * Update a connection
    */
-  app.patch('/api/projects/:projectId/connections/:connectionId', isAuthenticated, async (req: Request, res: Response) => {
+  app.patch('/api/projects/:projectId/connections/:connectionId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { projectId, connectionId } = req.params;
 
@@ -189,7 +189,7 @@ export function registerConnectionsV2Routes(app: Express) {
    * DELETE /api/projects/:projectId/connections/:connectionId
    * Delete a connection
    */
-  app.delete('/api/projects/:projectId/connections/:connectionId', isAuthenticated, async (req: Request, res: Response) => {
+  app.delete('/api/projects/:projectId/connections/:connectionId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { projectId, connectionId } = req.params;
 
@@ -214,7 +214,7 @@ export function registerConnectionsV2Routes(app: Express) {
    * POST /api/projects/:projectId/connections/:connectionId/test
    * Test a connection
    */
-  app.post('/api/projects/:projectId/connections/:connectionId/test', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/projects/:projectId/connections/:connectionId/test', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { projectId, connectionId } = req.params;
 
@@ -241,7 +241,7 @@ export function registerConnectionsV2Routes(app: Express) {
    * GET /api/projects/:projectId/connections/:connectionId/status
    * Get connection status (for UI display)
    */
-  app.get('/api/projects/:projectId/connections/:connectionId/status', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/projects/:projectId/connections/:connectionId/status', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { projectId, connectionId } = req.params;
 
@@ -261,7 +261,7 @@ export function registerConnectionsV2Routes(app: Express) {
    * GET /api/connections/oauth/start
    * Initiate OAuth2 3-legged authorization flow
    */
-  app.get('/api/connections/oauth/start', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/connections/oauth/start', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { connectionId, projectId } = req.query;
 

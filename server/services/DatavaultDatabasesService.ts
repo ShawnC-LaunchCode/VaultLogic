@@ -1,5 +1,6 @@
 import { datavaultDatabasesRepository } from '../repositories/DatavaultDatabasesRepository';
 import type { DatavaultDatabase, DatavaultScopeType } from '../../shared/schema';
+import { NotFoundError, UnauthorizedError, BadRequestError } from '../middleware/errorHandler';
 
 interface CreateDatabaseInput {
   tenantId: string;
@@ -43,11 +44,11 @@ export class DatavaultDatabasesService {
     const database = await datavaultDatabasesRepository.findByIdWithStats(id);
 
     if (!database) {
-      throw new Error('Database not found');
+      throw new NotFoundError('Database not found');
     }
 
     if (database.tenantId !== tenantId) {
-      throw new Error('Unauthorized: Database belongs to different tenant');
+      throw new UnauthorizedError('Database belongs to different tenant');
     }
 
     return database;
@@ -80,7 +81,7 @@ export class DatavaultDatabasesService {
     // Check ownership
     const exists = await datavaultDatabasesRepository.existsForTenant(id, tenantId);
     if (!exists) {
-      throw new Error('Database not found or unauthorized');
+      throw new NotFoundError('Database not found or unauthorized');
     }
 
     // Validate scope if being changed
@@ -104,7 +105,7 @@ export class DatavaultDatabasesService {
     // Check ownership
     const exists = await datavaultDatabasesRepository.existsForTenant(id, tenantId);
     if (!exists) {
-      throw new Error('Database not found or unauthorized');
+      throw new NotFoundError('Database not found or unauthorized');
     }
 
     const deleted = await datavaultDatabasesRepository.delete(id);
@@ -121,7 +122,7 @@ export class DatavaultDatabasesService {
     // Verify ownership
     const exists = await datavaultDatabasesRepository.existsForTenant(databaseId, tenantId);
     if (!exists) {
-      throw new Error('Database not found or unauthorized');
+      throw new NotFoundError('Database not found or unauthorized');
     }
 
     return datavaultDatabasesRepository.getTablesInDatabase(databaseId);
@@ -132,11 +133,11 @@ export class DatavaultDatabasesService {
    */
   private validateScope(scopeType: DatavaultScopeType, scopeId?: string) {
     if (scopeType === 'account' && scopeId) {
-      throw new Error('Account scope should not have a scope ID');
+      throw new BadRequestError('Account scope should not have a scope ID');
     }
 
     if ((scopeType === 'project' || scopeType === 'workflow') && !scopeId) {
-      throw new Error(`${scopeType} scope requires a scope ID`);
+      throw new BadRequestError(`${scopeType} scope requires a scope ID`);
     }
   }
 }

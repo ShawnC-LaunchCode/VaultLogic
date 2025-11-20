@@ -3,7 +3,7 @@
  * Manage columns for a table: add, edit, delete, reorder with drag & drop
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -49,11 +49,18 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useToast } from "@/hooks/use-toast";
+import { useTables, useTableSchema } from "@/hooks/useDatavaultTables";
 
 interface ColumnManagerProps {
   columns: DatavaultColumn[];
   tableId: string;
-  onAddColumn: (data: { name: string; type: string; required: boolean }) => Promise<void>;
+  onAddColumn: (data: {
+    name: string;
+    type: string;
+    required: boolean;
+    referenceTableId?: string;
+    referenceDisplayColumnSlug?: string;
+  }) => Promise<void>;
   onUpdateColumn: (columnId: string, data: { name: string; required: boolean }) => Promise<void>;
   onDeleteColumn: (columnId: string) => Promise<void>;
   onReorderColumns?: (columnIds: string[]) => Promise<void>;
@@ -176,10 +183,17 @@ export function ColumnManagerWithDnd({
   const [newColumnName, setNewColumnName] = useState("");
   const [newColumnType, setNewColumnType] = useState<string>("text");
   const [newColumnRequired, setNewColumnRequired] = useState(false);
+  const [newReferenceTableId, setNewReferenceTableId] = useState<string>("");
+  const [newReferenceDisplayColumnSlug, setNewReferenceDisplayColumnSlug] = useState<string>("");
 
   // Edit column state
   const [editColumnName, setEditColumnName] = useState("");
   const [editColumnRequired, setEditColumnRequired] = useState(false);
+
+  // Fetch tables for reference column dropdown
+  const { data: tables } = useTables();
+  // Fetch schema of selected reference table to get columns
+  const { data: refTableSchema } = useTableSchema(newReferenceTableId || undefined);
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -193,6 +207,19 @@ export function ColumnManagerWithDnd({
   useState(() => {
     setLocalColumns(columns);
   });
+
+  // Listen for custom event from header button
+  useEffect(() => {
+    const handleOpenDialog = () => {
+      setAddDialogOpen(true);
+    };
+
+    window.addEventListener('openAddColumnDialog', handleOpenDialog);
+
+    return () => {
+      window.removeEventListener('openAddColumnDialog', handleOpenDialog);
+    };
+  }, []);
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -228,16 +255,30 @@ export function ColumnManagerWithDnd({
   const handleAddColumn = async () => {
     if (!newColumnName.trim()) return;
 
+    // Validate reference column
+    if (newColumnType === 'reference' && !newReferenceTableId) {
+      toast({
+        title: "Reference table required",
+        description: "Please select a table to reference",
+        variant: "destructive",
+      });
+      return;
+    }
+
     await onAddColumn({
       name: newColumnName.trim(),
       type: newColumnType,
       required: newColumnRequired,
+      referenceTableId: newColumnType === 'reference' ? newReferenceTableId : undefined,
+      referenceDisplayColumnSlug: newColumnType === 'reference' ? newReferenceDisplayColumnSlug : undefined,
     });
 
     // Reset form
     setNewColumnName("");
     setNewColumnType("text");
     setNewColumnRequired(false);
+    setNewReferenceTableId("");
+    setNewReferenceDisplayColumnSlug("");
     setAddDialogOpen(false);
   };
 
@@ -271,52 +312,37 @@ export function ColumnManagerWithDnd({
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Columns</CardTitle>
-              <CardDescription>Manage table columns and their properties. Drag to reorder.</CardDescription>
-            </div>
-            <Button onClick={() => setAddDialogOpen(true)} size="sm">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Column
-            </Button>
+      <div className="space-y-2">
+        {localColumns.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <p className="text-sm">No columns yet. Click "Add Column" above to get started.</p>
           </div>
-        </CardHeader>
-        <CardContent>
-          {localColumns.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <i className="fas fa-columns text-4xl mb-4"></i>
-              <p>No columns yet. Add your first column to get started.</p>
-            </div>
-          ) : (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
+        ) : (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={localColumns.map((col) => col.id)}
+              strategy={verticalListSortingStrategy}
             >
-              <SortableContext
-                items={localColumns.map((col) => col.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="space-y-2">
-                  {localColumns.map((column) => (
-                    <SortableColumn
-                      key={column.id}
-                      column={column}
-                      onEdit={() => openEditDialog(column)}
-                      onDelete={() => setDeleteConfirm({ id: column.id, name: column.name })}
-                      isLoading={isLoading}
-                      canDelete={!(column.isPrimaryKey && localColumns.filter(c => c.isPrimaryKey).length === 1)}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
-          )}
-        </CardContent>
-      </Card>
+              <div className="space-y-2">
+                {localColumns.map((column) => (
+                  <SortableColumn
+                    key={column.id}
+                    column={column}
+                    onEdit={() => openEditDialog(column)}
+                    onDelete={() => setDeleteConfirm({ id: column.id, name: column.name })}
+                    isLoading={isLoading}
+                    canDelete={!(column.isPrimaryKey && localColumns.filter(c => c.isPrimaryKey).length === 1)}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        )}
+      </div>
 
       {/* Add Column Dialog */}
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
@@ -340,7 +366,14 @@ export function ColumnManagerWithDnd({
             </div>
             <div className="grid gap-2">
               <Label htmlFor="column-type">Type</Label>
-              <Select value={newColumnType} onValueChange={setNewColumnType}>
+              <Select value={newColumnType} onValueChange={(value) => {
+                setNewColumnType(value);
+                // Reset reference fields when changing away from reference type
+                if (value !== 'reference') {
+                  setNewReferenceTableId("");
+                  setNewReferenceDisplayColumnSlug("");
+                }
+              }}>
                 <SelectTrigger id="column-type">
                   <SelectValue />
                 </SelectTrigger>
@@ -354,9 +387,57 @@ export function ColumnManagerWithDnd({
                   <SelectItem value="phone">Phone</SelectItem>
                   <SelectItem value="url">URL</SelectItem>
                   <SelectItem value="json">JSON</SelectItem>
+                  <SelectItem value="reference">🔗 Reference</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Reference-specific fields */}
+            {newColumnType === 'reference' && (
+              <>
+                <div className="grid gap-2">
+                  <Label htmlFor="ref-table">
+                    Reference Table <span className="text-destructive">*</span>
+                  </Label>
+                  <Select value={newReferenceTableId} onValueChange={setNewReferenceTableId}>
+                    <SelectTrigger id="ref-table">
+                      <SelectValue placeholder="Select a table..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tables
+                        ?.filter(t => t.id !== tableId) // Don't allow self-reference
+                        .map((table) => (
+                          <SelectItem key={table.id} value={table.id}>
+                            {table.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {newReferenceTableId && refTableSchema?.columns && (
+                  <div className="grid gap-2">
+                    <Label htmlFor="ref-display-column">Display Field (optional)</Label>
+                    <Select
+                      value={newReferenceDisplayColumnSlug}
+                      onValueChange={setNewReferenceDisplayColumnSlug}
+                    >
+                      <SelectTrigger id="ref-display-column">
+                        <SelectValue placeholder="Use row ID" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {refTableSchema.columns.map((col) => (
+                          <SelectItem key={col.id} value={col.slug}>
+                            {col.name} ({col.type})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </>
+            )}
+
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="column-required"

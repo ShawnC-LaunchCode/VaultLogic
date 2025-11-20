@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { isAuthenticated } from "../googleAuth";
+import { hybridAuth } from '../middleware/auth';
 import { insertStepSchema } from "@shared/schema";
 import { stepService } from "../services/StepService";
 import { sectionRepository } from "../repositories/SectionRepository";
@@ -20,7 +20,7 @@ export function registerStepRoutes(app: Express): void {
    * POST /api/workflows/:workflowId/sections/:sectionId/steps
    * Create a new step
    */
-  app.post('/api/workflows/:workflowId/sections/:sectionId/steps', isAuthenticated, autoRevertToDraft, async (req: Request, res: Response) => {
+  app.post('/api/workflows/:workflowId/sections/:sectionId/steps', hybridAuth, autoRevertToDraft, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -44,7 +44,7 @@ export function registerStepRoutes(app: Express): void {
    * GET /api/workflows/:workflowId/sections/:sectionId/steps
    * Get all steps for a section
    */
-  app.get('/api/workflows/:workflowId/sections/:sectionId/steps', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:workflowId/sections/:sectionId/steps', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -66,7 +66,7 @@ export function registerStepRoutes(app: Express): void {
    * PUT /api/workflows/:workflowId/sections/:sectionId/steps/reorder
    * Reorder steps within a section
    */
-  app.put('/api/workflows/:workflowId/sections/:sectionId/steps/reorder', isAuthenticated, autoRevertToDraft, async (req: Request, res: Response) => {
+  app.put('/api/workflows/:workflowId/sections/:sectionId/steps/reorder', hybridAuth, autoRevertToDraft, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -134,7 +134,7 @@ export function registerStepRoutes(app: Express): void {
    * POST /api/sections/:sectionId/steps
    * Create a new step (workflow looked up automatically)
    */
-  app.post('/api/sections/:sectionId/steps', isAuthenticated, async (req: Request, res: Response) => {
+  app.post('/api/sections/:sectionId/steps', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -158,7 +158,7 @@ export function registerStepRoutes(app: Express): void {
    * PUT /api/sections/:sectionId/steps/reorder
    * Reorder steps (workflow looked up automatically)
    */
-  app.put('/api/sections/:sectionId/steps/reorder', isAuthenticated, async (req: Request, res: Response) => {
+  app.put('/api/sections/:sectionId/steps/reorder', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -196,7 +196,7 @@ export function registerStepRoutes(app: Express): void {
    * GET /api/steps/:stepId
    * Get a single step (workflow looked up automatically)
    */
-  app.get('/api/steps/:stepId', isAuthenticated, async (req: Request, res: Response) => {
+  app.get('/api/steps/:stepId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -218,7 +218,7 @@ export function registerStepRoutes(app: Express): void {
    * PUT /api/steps/:stepId
    * Update a step (workflow looked up automatically)
    */
-  app.put('/api/steps/:stepId', isAuthenticated, async (req: Request, res: Response) => {
+  app.put('/api/steps/:stepId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {
@@ -256,7 +256,7 @@ export function registerStepRoutes(app: Express): void {
    * DELETE /api/steps/:stepId
    * Delete a step (workflow looked up automatically)
    */
-  app.delete('/api/steps/:stepId', isAuthenticated, async (req: Request, res: Response) => {
+  app.delete('/api/steps/:stepId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.user?.claims?.sub;
       if (!userId) {

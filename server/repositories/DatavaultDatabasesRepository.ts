@@ -1,6 +1,6 @@
 import { db } from '../db';
 import { datavaultDatabases, datavaultTables } from '../../shared/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, sql } from 'drizzle-orm';
 import type { DatavaultDatabase, InsertDatavaultDatabase, DatavaultScopeType } from '../../shared/schema';
 
 export class DatavaultDatabasesRepository {
@@ -63,7 +63,7 @@ export class DatavaultDatabasesRepository {
     if (!database) return null;
 
     const tableCount = await db
-      .select({ count: db.fn.count() })
+      .select({ count: sql<number>`count(*)::int` })
       .from(datavaultTables)
       .where(eq(datavaultTables.databaseId, id));
 
@@ -147,7 +147,7 @@ export class DatavaultDatabasesRepository {
    */
   async countTables(databaseId: string): Promise<number> {
     const result = await db
-      .select({ count: db.fn.count() })
+      .select({ count: sql<number>`count(*)::int` })
       .from(datavaultTables)
       .where(eq(datavaultTables.databaseId, databaseId));
 

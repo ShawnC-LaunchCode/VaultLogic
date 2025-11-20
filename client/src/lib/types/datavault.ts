@@ -10,7 +10,8 @@ export type DataType =
   | 'phone'
   | 'url'
   | 'json'
-  | 'auto_number';
+  | 'auto_number'
+  | 'reference';
 
 export interface DatavaultDatabase {
   id: string;
@@ -46,7 +47,13 @@ export interface DatavaultColumn {
   orderIndex: number;
   isPrimaryKey: boolean;
   isUnique: boolean;
-  autoNumberStart?: number;
+  autoNumberStart?: number | null;
+  referenceTableId?: string | null;
+  referenceDisplayColumnSlug?: string | null;
+  reference?: {
+    tableId: string | null;
+    displayColumnSlug: string | null;
+  } | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -83,7 +90,7 @@ export interface UpdateDatabaseInput {
   name?: string;
   description?: string;
   scopeType?: DatavaultScopeType;
-  scopeId?: string | null;
+  scopeId?: string;
 }
 
 export interface MoveTableInput {
