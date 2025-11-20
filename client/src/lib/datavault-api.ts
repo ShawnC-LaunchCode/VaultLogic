@@ -4,7 +4,7 @@
  */
 
 import { apiRequest } from "./queryClient";
-import type { DatavaultTable, DatavaultColumn, DatavaultRow, DatavaultRowNote } from "@shared/schema";
+import type { DatavaultTable, DatavaultColumn, DatavaultRow, DatavaultRowNote, DatavaultApiToken } from "@shared/schema";
 
 export interface ApiDatavaultTableWithStats extends DatavaultTable {
   columnCount: number;
@@ -26,6 +26,16 @@ export interface DatavaultDatabase {
   createdAt: string;
   updatedAt: string;
   tableCount?: number;
+}
+
+export interface ApiDatavaultApiToken extends Omit<DatavaultApiToken, 'tokenHash'> {
+  // API never returns tokenHash for security
+}
+
+export interface ApiCreateTokenResponse {
+  token: ApiDatavaultApiToken;
+  plainToken: string;
+  message: string;
 }
 
 export const datavaultAPI = {
@@ -288,6 +298,45 @@ export const datavaultAPI = {
    */
   deleteRowNote: async (noteId: string): Promise<void> => {
     const res = await apiRequest('DELETE', `/api/datavault/notes/${noteId}`);
+    if (res.status !== 200) {
+      await res.json();
+    }
+  },
+
+  // ============================================================================
+  // API Tokens (v4 Micro-Phase 5)
+  // ============================================================================
+
+  /**
+   * List all API tokens for a database
+   * Returns tokens without hash for security
+   */
+  listApiTokens: async (databaseId: string): Promise<{ tokens: ApiDatavaultApiToken[] }> => {
+    const res = await apiRequest('GET', `/api/datavault/databases/${databaseId}/tokens`);
+    return res.json();
+  },
+
+  /**
+   * Create a new API token
+   * Returns the plain token ONCE (never stored or returned again)
+   */
+  createApiToken: async (
+    databaseId: string,
+    data: {
+      label: string;
+      scopes: ('read' | 'write')[];
+      expiresAt?: string;
+    }
+  ): Promise<ApiCreateTokenResponse> => {
+    const res = await apiRequest('POST', `/api/datavault/databases/${databaseId}/tokens`, data);
+    return res.json();
+  },
+
+  /**
+   * Revoke (delete) an API token
+   */
+  deleteApiToken: async (tokenId: string, databaseId: string): Promise<void> => {
+    const res = await apiRequest('DELETE', `/api/datavault/tokens/${tokenId}`, { databaseId });
     if (res.status !== 200) {
       await res.json();
     }

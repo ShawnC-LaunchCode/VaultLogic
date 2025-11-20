@@ -21,6 +21,7 @@ export const datavaultQueryKeys = {
   tableColumns: (tableId: string) => ["datavault", "tables", tableId, "columns"] as const,
   tableRows: (tableId: string) => ["datavault", "tables", tableId, "rows"] as const,
   row: (id: string) => ["datavault", "rows", id] as const,
+  apiTokens: (databaseId: string) => ["datavault", "databases", databaseId, "tokens"] as const,
 };
 
 // ============================================================================
@@ -322,6 +323,60 @@ export function useDeleteDatavaultRow() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: datavaultQueryKeys.tableRows(variables.tableId) });
       queryClient.invalidateQueries({ queryKey: datavaultQueryKeys.tables });
+    },
+  });
+}
+
+// ============================================================================
+// API Tokens (v4 Micro-Phase 5)
+// ============================================================================
+
+/**
+ * Hook to fetch API tokens for a database
+ */
+export function useDatavaultApiTokens(databaseId: string | undefined) {
+  return useQuery({
+    queryKey: databaseId
+      ? datavaultQueryKeys.apiTokens(databaseId)
+      : ['datavault', 'databases', 'null', 'tokens'],
+    queryFn: () => {
+      if (!databaseId) throw new Error('Database ID is required');
+      return datavaultAPI.listApiTokens(databaseId);
+    },
+    enabled: !!databaseId,
+  });
+}
+
+/**
+ * Hook to create a new API token
+ * Returns the plain token ONCE in the response
+ */
+export function useCreateApiToken() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      databaseId,
+      data,
+    }: {
+      databaseId: string;
+      data: { label: string; scopes: ('read' | 'write')[]; expiresAt?: string };
+    }) => datavaultAPI.createApiToken(databaseId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: datavaultQueryKeys.apiTokens(variables.databaseId) });
+    },
+  });
+}
+
+/**
+ * Hook to revoke (delete) an API token
+ */
+export function useDeleteApiToken() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ tokenId, databaseId }: { tokenId: string; databaseId: string }) =>
+      datavaultAPI.deleteApiToken(tokenId, databaseId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: datavaultQueryKeys.apiTokens(variables.databaseId) });
     },
   });
 }

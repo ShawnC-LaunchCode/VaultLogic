@@ -23,6 +23,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Loader2, Save, Info, X } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { DatabaseApiTokens } from "./DatabaseApiTokens";
 
 interface DatabaseSettingsProps {
   database: DatavaultDatabase;
@@ -236,6 +237,9 @@ export function DatabaseSettings({ database, onClose }: DatabaseSettingsProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* API Access */}
+      <DatabaseApiTokens databaseId={database.id} />
 
       {/* Actions */}
       <div className="flex gap-3">
