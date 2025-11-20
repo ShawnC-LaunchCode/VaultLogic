@@ -16,6 +16,7 @@ import {
   datavaultTablesService,
   datavaultColumnsService,
   datavaultRowsService,
+  datavaultRowNotesService,
 } from '../services';
 import { datavaultDatabasesService } from '../services/DatavaultDatabasesService';
 import { z } from 'zod';
@@ -905,6 +906,95 @@ export function registerDatavaultRoutes(app: Express): void {
 
       const message = error instanceof Error ? error.message : 'Failed to unarchive rows';
       const status = message.includes('not found') || message.includes('unauthorized') ? 403 : 500;
+      res.status(status).json({ message });
+    }
+  });
+
+  // ===================================================================
+  // ROW NOTES ENDPOINTS (v4 Micro-Phase 3)
+  // ===================================================================
+
+  /**
+   * GET /api/datavault/rows/:rowId/notes
+   * Get all notes for a row
+   */
+  app.get('/api/datavault/rows/:rowId/notes', hybridAuth, async (req: Request, res: Response) => {
+    try {
+      const tenantId = getTenantId(req);
+      const { rowId } = req.params;
+
+      const notes = await datavaultRowNotesService.getNotesByRowId(rowId, tenantId);
+      res.json(notes);
+    } catch (error) {
+      logger.error({ error }, 'Error fetching row notes');
+      const message = error instanceof Error ? error.message : 'Failed to fetch notes';
+      const status = message.includes('not found') ? 404 : message.includes('Access denied') ? 403 : 500;
+      res.status(status).json({ message });
+    }
+  });
+
+  /**
+   * POST /api/datavault/rows/:rowId/notes
+   * Create a new note for a row
+   * Body: { text: string }
+   */
+  app.post('/api/datavault/rows/:rowId/notes', createLimiter, hybridAuth, async (req: Request, res: Response) => {
+    try {
+      const tenantId = getTenantId(req);
+      const userId = getAuthUserId(req);
+      const { rowId } = req.params;
+
+      if (!userId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      const schema = z.object({
+        text: z.string()
+          .min(1, { message: 'Note text cannot be empty' })
+          .max(10000, { message: 'Note text is too long (max 10000 characters)' }),
+      });
+
+      const { text } = schema.parse(req.body);
+
+      const note = await datavaultRowNotesService.createNote(rowId, tenantId, userId, text);
+      res.status(201).json(note);
+    } catch (error) {
+      logger.error({ error }, 'Error creating row note');
+
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          message: 'Invalid input',
+          errors: error.errors,
+        });
+      }
+
+      const message = error instanceof Error ? error.message : 'Failed to create note';
+      const status = message.includes('not found') ? 404 : message.includes('Access denied') ? 403 : 500;
+      res.status(status).json({ message });
+    }
+  });
+
+  /**
+   * DELETE /api/datavault/notes/:noteId
+   * Delete a note
+   * Only the note owner or table owner may delete
+   */
+  app.delete('/api/datavault/notes/:noteId', deleteLimiter, hybridAuth, async (req: Request, res: Response) => {
+    try {
+      const tenantId = getTenantId(req);
+      const userId = getAuthUserId(req);
+      const { noteId } = req.params;
+
+      if (!userId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      await datavaultRowNotesService.deleteNote(noteId, tenantId, userId);
+      res.json({ success: true, message: 'Note deleted successfully' });
+    } catch (error) {
+      logger.error({ error }, 'Error deleting row note');
+      const message = error instanceof Error ? error.message : 'Failed to delete note';
+      const status = message.includes('not found') ? 404 : message.includes('Access denied') ? 403 : 500;
       res.status(status).json({ message });
     }
   });

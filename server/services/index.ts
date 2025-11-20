@@ -22,6 +22,9 @@ export { DatavaultTablesService, datavaultTablesService } from "./DatavaultTable
 export { DatavaultColumnsService, datavaultColumnsService } from "./DatavaultColumnsService";
 export { DatavaultRowsService, datavaultRowsService } from "./DatavaultRowsService";
 
+// DataVault v4 Micro-Phase 3: Row Notes
+export { DatavaultRowNotesService, datavaultRowNotesService } from "./DatavaultRowNotesService";
+
 // Utility services
 // Note: Not re-exporting emailService and sendgrid to avoid conflicts
 export * from "./fileService";

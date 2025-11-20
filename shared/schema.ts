@@ -865,10 +865,17 @@ export const datavaultColumnTypeEnum = pgEnum('datavault_column_type', [
   'phone',
   'url',
   'json',
-  'auto_number',  // Auto-incrementing number column
+  'auto_number',  // Auto-incrementing number column (deprecated, use autonumber)
+  'autonumber',   // Auto-incrementing number column with optional prefix and yearly reset
   'reference',    // Reference to another table
   'select',       // Single-select dropdown with predefined options
   'multiselect'   // Multi-select with predefined options
+]);
+
+// DataVault: Autonumber reset policy enum
+export const autonumberResetPolicyEnum = pgEnum('autonumber_reset_policy', [
+  'never',        // Never reset the sequence
+  'yearly'        // Reset sequence on January 1st each year
 ]);
 
 // DataVault: Database scope type enum
@@ -2145,7 +2152,10 @@ export const datavaultColumns = pgTable("datavault_columns", {
   isPrimaryKey: boolean("is_primary_key").default(false).notNull(),  // Primary key column (one per table)
   isUnique: boolean("is_unique").default(false).notNull(),  // Unique constraint on column values
   orderIndex: integer("order_index").notNull().default(0),
-  autoNumberStart: integer("auto_number_start").default(1),  // Starting value for auto_number columns
+  autoNumberStart: integer("auto_number_start").default(1),  // Starting value for auto_number columns (legacy)
+  autonumberPrefix: text("autonumber_prefix"),  // Optional prefix for autonumber values (e.g., "CASE")
+  autonumberPadding: integer("autonumber_padding").default(4),  // Number of digits to pad (e.g., 4 -> "0001")
+  autonumberResetPolicy: autonumberResetPolicyEnum("autonumber_reset_policy").default('never'),  // When to reset the sequence
   referenceTableId: uuid("reference_table_id"),  // Reference to another datavault table (for 'reference' type columns)
   referenceDisplayColumnSlug: text("reference_display_column_slug"),  // Slug of column to display from referenced table
   options: jsonb("options"),  // For select/multiselect: array of {label, value, color} objects
@@ -2183,6 +2193,41 @@ export const datavaultValues = pgTable("datavault_values", {
   index("datavault_values_row_idx").on(table.rowId),
   index("datavault_values_column_idx").on(table.columnId),
   uniqueIndex("datavault_values_row_column_unique").on(table.rowId, table.columnId),
+]);
+
+
+// DataVault Number Sequences - Sequence state for autonumber columns
+export const datavaultNumberSequences = pgTable("datavault_number_sequences", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  tableId: uuid("table_id").references(() => datavaultTables.id, { onDelete: 'cascade' }).notNull(),
+  columnId: uuid("column_id").references(() => datavaultColumns.id, { onDelete: 'cascade' }).notNull(),
+  prefix: text("prefix"),
+  padding: integer("padding").notNull().default(4),
+  nextValue: integer("next_value").notNull().default(1),
+  resetPolicy: autonumberResetPolicyEnum("reset_policy").notNull().default('never'),
+  lastReset: timestamp("last_reset"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_datavault_sequences_tenant").on(table.tenantId),
+  index("idx_datavault_sequences_table").on(table.tableId),
+  uniqueIndex("idx_datavault_sequences_column_unique").on(table.tenantId, table.tableId, table.columnId),
+]);
+
+// DataVault Row Notes - Row-level comments/notes (v4 Micro-Phase 3)
+export const datavaultRowNotes = pgTable("datavault_row_notes", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  rowId: uuid("row_id").references(() => datavaultRows.id, { onDelete: 'cascade' }).notNull(),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  text: text("text").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_datavault_row_notes_row_id").on(table.rowId),
+  index("idx_datavault_row_notes_tenant_id").on(table.tenantId),
+  index("idx_datavault_row_notes_user_id").on(table.userId),
+  index("idx_datavault_row_notes_row_created").on(table.rowId, table.createdAt),
 ]);
 
 // Analytics Relations
@@ -2344,6 +2389,7 @@ export const insertDatavaultColumnSchema = createInsertSchema(datavaultColumns)
   });
 export const insertDatavaultRowSchema = createInsertSchema(datavaultRows).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertDatavaultValueSchema = createInsertSchema(datavaultValues).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertDatavaultRowNoteSchema = createInsertSchema(datavaultRowNotes).omit({ id: true, createdAt: true });
 
 // DataVault Types
 export type DatavaultDatabase = typeof datavaultDatabases.$inferSelect;
@@ -2357,6 +2403,8 @@ export type DatavaultRow = typeof datavaultRows.$inferSelect;
 export type InsertDatavaultRow = typeof insertDatavaultRowSchema._type;
 export type DatavaultValue = typeof datavaultValues.$inferSelect;
 export type InsertDatavaultValue = typeof insertDatavaultValueSchema._type;
+export type DatavaultRowNote = typeof datavaultRowNotes.$inferSelect;
+export type InsertDatavaultRowNote = typeof insertDatavaultRowNoteSchema._type;
 
 // ===================================================================
 // LEGACY TYPES

@@ -51,5 +51,8 @@ export { DatavaultTablesRepository, datavaultTablesRepository } from "./Datavaul
 export { DatavaultColumnsRepository, datavaultColumnsRepository } from "./DatavaultColumnsRepository";
 export { DatavaultRowsRepository, datavaultRowsRepository } from "./DatavaultRowsRepository";
 
+// DataVault v4 Micro-Phase 3: Row Notes
+export { DatavaultRowNotesRepository, datavaultRowNotesRepository } from "./DatavaultRowNotesRepository";
+
 // Export type for Insert operations
 export type { InsertAnalyticsEvent } from "./AnalyticsRepository";
