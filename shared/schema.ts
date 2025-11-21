@@ -885,6 +885,13 @@ export const datavaultScopeTypeEnum = pgEnum('datavault_scope_type', [
   'workflow'
 ]);
 
+// DataVault: Table permission role enum
+export const datavaultTableRoleEnum = pgEnum('datavault_table_role', [
+  'owner',
+  'write',
+  'read'
+]);
+
 // =====================================================================
 // CORE TABLES
 // =====================================================================
@@ -2248,6 +2255,20 @@ export const datavaultApiTokens = pgTable("datavault_api_tokens", {
   uniqueIndex("unique_token_hash").on(table.tokenHash),
 ]);
 
+// DataVault Table Permissions - per-table RBAC (v4 Micro-Phase 6)
+export const datavaultTablePermissions = pgTable("datavault_table_permissions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tableId: uuid("table_id").references(() => datavaultTables.id, { onDelete: 'cascade' }).notNull(),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  role: datavaultTableRoleEnum("role").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_table_permissions_table").on(table.tableId),
+  index("idx_table_permissions_user").on(table.userId),
+  index("idx_table_permissions_role").on(table.tableId, table.role),
+  uniqueIndex("unique_table_user_permission").on(table.tableId, table.userId),
+]);
+
 // Analytics Relations
 export const metricsEventsRelations = relations(metricsEvents, ({ one }) => ({
   tenant: one(tenants, {
@@ -2421,6 +2442,7 @@ export const insertDatavaultRowSchema = createInsertSchema(datavaultRows).omit({
 export const insertDatavaultValueSchema = createInsertSchema(datavaultValues).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertDatavaultRowNoteSchema = createInsertSchema(datavaultRowNotes).omit({ id: true, createdAt: true });
 export const insertDatavaultApiTokenSchema = createInsertSchema(datavaultApiTokens).omit({ id: true, createdAt: true });
+export const insertDatavaultTablePermissionSchema = createInsertSchema(datavaultTablePermissions).omit({ id: true, createdAt: true });
 
 // DataVault Types
 export type DatavaultDatabase = typeof datavaultDatabases.$inferSelect;
@@ -2438,6 +2460,9 @@ export type DatavaultRowNote = typeof datavaultRowNotes.$inferSelect;
 export type InsertDatavaultRowNote = typeof insertDatavaultRowNoteSchema._type;
 export type DatavaultApiToken = typeof datavaultApiTokens.$inferSelect;
 export type InsertDatavaultApiToken = typeof insertDatavaultApiTokenSchema._type;
+export type DatavaultTablePermission = typeof datavaultTablePermissions.$inferSelect;
+export type InsertDatavaultTablePermission = typeof insertDatavaultTablePermissionSchema._type;
+export type DatavaultTableRole = typeof datavaultTableRoleEnum.enumValues[number];
 
 // ===================================================================
 // LEGACY TYPES

@@ -57,5 +57,8 @@ export { DatavaultRowNotesRepository, datavaultRowNotesRepository } from "./Data
 // DataVault v4 Micro-Phase 5: API Tokens
 export { DatavaultApiTokensRepository, datavaultApiTokensRepository } from "./DatavaultApiTokensRepository";
 
+// DataVault v4 Micro-Phase 6: Table Permissions
+export { DatavaultTablePermissionsRepository, datavaultTablePermissionsRepository } from "./DatavaultTablePermissionsRepository";
+
 // Export type for Insert operations
 export type { InsertAnalyticsEvent } from "./AnalyticsRepository";

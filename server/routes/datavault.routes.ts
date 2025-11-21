@@ -17,6 +17,7 @@ import {
   datavaultColumnsService,
   datavaultRowsService,
   datavaultRowNotesService,
+  datavaultTablePermissionsService,
 } from '../services';
 import { datavaultDatabasesService } from '../services/DatavaultDatabasesService';
 import { z } from 'zod';
@@ -289,12 +290,21 @@ export function registerDatavaultRoutes(app: Express): void {
   /**
    * GET /api/datavault/tables/:tableId
    * Get a single table with optional columns
+   * Requires: read permission
    */
   app.get('/api/datavault/tables/:tableId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
+      const userId = getAuthUserId(req);
       const { tableId } = req.params;
       const includeColumns = req.query.columns === 'true';
+
+      if (!userId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      // Check read permission
+      await datavaultTablesService.requirePermission(userId, tableId, tenantId, 'read');
 
       const table = includeColumns
         ? await datavaultTablesService.getTableWithColumns(tableId, tenantId)
@@ -312,11 +322,20 @@ export function registerDatavaultRoutes(app: Express): void {
   /**
    * PATCH /api/datavault/tables/:tableId
    * Update a table
+   * Requires: owner permission
    */
   app.patch('/api/datavault/tables/:tableId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
+      const userId = getAuthUserId(req);
       const { tableId } = req.params;
+
+      if (!userId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      // Check owner permission
+      await datavaultTablesService.requirePermission(userId, tableId, tenantId, 'owner');
 
       const updateSchema = z.object({
         name: z.string().min(1).optional(),
@@ -380,11 +399,20 @@ export function registerDatavaultRoutes(app: Express): void {
   /**
    * DELETE /api/datavault/tables/:tableId
    * Delete a table (cascades to columns, rows, and values)
+   * Requires: owner permission
    */
   app.delete('/api/datavault/tables/:tableId', deleteLimiter, hybridAuth, async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
+      const userId = getAuthUserId(req);
       const { tableId } = req.params;
+
+      if (!userId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      // Check owner permission
+      await datavaultTablesService.requirePermission(userId, tableId, tenantId, 'owner');
 
       await datavaultTablesService.deleteTable(tableId, tenantId);
       res.status(204).send();
@@ -400,11 +428,20 @@ export function registerDatavaultRoutes(app: Express): void {
    * GET /api/datavault/tables/:tableId/schema
    * Get table schema (for workflow builder integration)
    * Returns: { id, name, slug, description, databaseId, columns: [...] }
+   * Requires: read permission
    */
   app.get('/api/datavault/tables/:tableId/schema', hybridAuth, async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
+      const userId = getAuthUserId(req);
       const { tableId } = req.params;
+
+      if (!userId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      // Check read permission
+      await datavaultTablesService.requirePermission(userId, tableId, tenantId, 'read');
 
       const schema = await datavaultTablesService.getTableSchema(tableId, tenantId);
       res.json(schema);
@@ -442,11 +479,20 @@ export function registerDatavaultRoutes(app: Express): void {
   /**
    * POST /api/datavault/tables/:tableId/columns
    * Create a new column
+   * Requires: owner permission
    */
   app.post('/api/datavault/tables/:tableId/columns', createLimiter, hybridAuth, async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
+      const userId = getAuthUserId(req);
       const { tableId } = req.params;
+
+      if (!userId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      // Check owner permission
+      await datavaultTablesService.requirePermission(userId, tableId, tenantId, 'owner');
 
       const columnData = insertDatavaultColumnSchema.parse({
         ...req.body,
@@ -617,11 +663,20 @@ export function registerDatavaultRoutes(app: Express): void {
    *  - showArchived (true/false, default false) - include archived rows
    *  - sortBy (column slug or createdAt/updatedAt)
    *  - sortOrder (asc/desc, default asc)
+   * Requires: read permission
    */
   app.get('/api/datavault/tables/:tableId/rows', hybridAuth, async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
+      const userId = getAuthUserId(req);
       const { tableId } = req.params;
+
+      if (!userId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      // Check read permission
+      await datavaultTablesService.requirePermission(userId, tableId, tenantId, 'read');
 
       const limit = req.query.limit
         ? Math.min(parseInt(req.query.limit as string, 10), DATAVAULT_CONFIG.MAX_PAGE_SIZE)
@@ -660,12 +715,20 @@ export function registerDatavaultRoutes(app: Express): void {
   /**
    * POST /api/datavault/tables/:tableId/rows
    * Create a new row with values
+   * Requires: write permission
    */
   app.post('/api/datavault/tables/:tableId/rows', strictLimiter, hybridAuth, async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const userId = getAuthUserId(req);
       const { tableId } = req.params;
+
+      if (!userId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      // Check write permission
+      await datavaultTablesService.requirePermission(userId, tableId, tenantId, 'write');
 
       const rowSchema = z.object({
         values: z.record(z.string(), z.any()), // columnId -> value
@@ -718,12 +781,26 @@ export function registerDatavaultRoutes(app: Express): void {
   /**
    * PATCH /api/datavault/rows/:rowId
    * Update a row's values
+   * Requires: write permission
    */
   app.patch('/api/datavault/rows/:rowId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const userId = getAuthUserId(req);
       const { rowId } = req.params;
+
+      if (!userId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      // Get row to determine tableId for permission check
+      const rowData = await datavaultRowsService.getRow(rowId, tenantId);
+      if (!rowData) {
+        return res.status(404).json({ message: 'Row not found' });
+      }
+
+      // Check write permission
+      await datavaultTablesService.requirePermission(userId, rowData.row.tableId, tenantId, 'write');
 
       const updateSchema = z.object({
         values: z.record(z.string(), z.any()), // columnId -> value
@@ -778,11 +855,26 @@ export function registerDatavaultRoutes(app: Express): void {
    * DELETE /api/datavault/rows/:rowId
    * Delete a row and all its values
    * Note: References to this row will be automatically set to NULL by database trigger
+   * Requires: write permission
    */
   app.delete('/api/datavault/rows/:rowId', deleteLimiter, hybridAuth, async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
+      const userId = getAuthUserId(req);
       const { rowId } = req.params;
+
+      if (!userId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      // Get row to determine tableId for permission check
+      const rowData = await datavaultRowsService.getRow(rowId, tenantId);
+      if (!rowData) {
+        return res.status(404).json({ message: 'Row not found' });
+      }
+
+      // Check write permission
+      await datavaultTablesService.requirePermission(userId, rowData.row.tableId, tenantId, 'write');
 
       await datavaultRowsService.deleteRow(rowId, tenantId);
       res.status(204).send();
@@ -995,6 +1087,130 @@ export function registerDatavaultRoutes(app: Express): void {
       logger.error({ error }, 'Error deleting row note');
       const message = error instanceof Error ? error.message : 'Failed to delete note';
       const status = message.includes('not found') ? 404 : message.includes('Access denied') ? 403 : 500;
+      res.status(status).json({ message });
+    }
+  });
+
+  // ===================================================================
+  // TABLE PERMISSIONS ENDPOINTS (v4 Micro-Phase 6)
+  // ===================================================================
+
+  /**
+   * GET /api/datavault/tables/:tableId/permissions
+   * Get all permissions for a table (owner only)
+   */
+  app.get('/api/datavault/tables/:tableId/permissions', hybridAuth, async (req: Request, res: Response) => {
+    try {
+      const tenantId = getTenantId(req);
+      const userId = getAuthUserId(req);
+      const { tableId } = req.params;
+
+      if (!userId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      const permissions = await datavaultTablePermissionsService.getTablePermissions(
+        userId,
+        tableId,
+        tenantId
+      );
+
+      res.json(permissions);
+    } catch (error) {
+      logger.error({ error }, 'Error fetching table permissions');
+      const message = error instanceof Error ? error.message : 'Failed to fetch permissions';
+      const status = message.includes('Access denied') ? 403 : 500;
+      res.status(status).json({ message });
+    }
+  });
+
+  /**
+   * POST /api/datavault/tables/:tableId/permissions
+   * Grant or update permission for a user (owner only)
+   * Body: { userId: string, role: 'owner' | 'write' | 'read' }
+   */
+  app.post('/api/datavault/tables/:tableId/permissions', createLimiter, hybridAuth, async (req: Request, res: Response) => {
+    try {
+      const tenantId = getTenantId(req);
+      const actorUserId = getAuthUserId(req);
+      const { tableId } = req.params;
+
+      if (!actorUserId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      // Validate request body
+      const permissionSchema = z.object({
+        userId: z.string().min(1, { message: 'User ID is required' }),
+        role: z.enum(['owner', 'write', 'read'], {
+          errorMap: () => ({ message: 'Role must be owner, write, or read' })
+        }),
+      });
+
+      const data = permissionSchema.parse(req.body);
+
+      const permission = await datavaultTablePermissionsService.grantPermission(
+        actorUserId,
+        tableId,
+        tenantId,
+        {
+          tableId,
+          userId: data.userId,
+          role: data.role,
+        }
+      );
+
+      res.status(201).json(permission);
+    } catch (error) {
+      logger.error({ error }, 'Error granting table permission');
+      const message = error instanceof Error ? error.message : 'Failed to grant permission';
+
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          message: 'Validation error',
+          errors: error.errors
+        });
+      }
+
+      const status = message.includes('Access denied') ? 403 :
+                     message.includes('not found') ? 404 : 500;
+      res.status(status).json({ message });
+    }
+  });
+
+  /**
+   * DELETE /api/datavault/permissions/:permissionId
+   * Revoke a permission (owner only)
+   * Query param: tableId (required for authorization)
+   */
+  app.delete('/api/datavault/permissions/:permissionId', deleteLimiter, hybridAuth, async (req: Request, res: Response) => {
+    try {
+      const tenantId = getTenantId(req);
+      const actorUserId = getAuthUserId(req);
+      const { permissionId } = req.params;
+      const { tableId } = req.query;
+
+      if (!actorUserId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      if (!tableId || typeof tableId !== 'string') {
+        return res.status(400).json({ message: 'Table ID query parameter is required' });
+      }
+
+      await datavaultTablePermissionsService.revokePermission(
+        actorUserId,
+        permissionId,
+        tableId,
+        tenantId
+      );
+
+      res.json({ success: true, message: 'Permission revoked successfully' });
+    } catch (error) {
+      logger.error({ error }, 'Error revoking table permission');
+      const message = error instanceof Error ? error.message : 'Failed to revoke permission';
+      const status = message.includes('Access denied') ? 403 :
+                     message.includes('not found') ? 404 : 500;
       res.status(status).json({ message });
     }
   });

@@ -2,9 +2,11 @@ import {
   datavaultTablesRepository,
   datavaultColumnsRepository,
   datavaultRowsRepository,
+  datavaultTablePermissionsRepository,
   type DbTransaction,
 } from "../repositories";
-import type { DatavaultTable, InsertDatavaultTable } from "@shared/schema";
+import type { DatavaultTable, InsertDatavaultTable, DatavaultTableRole } from "@shared/schema";
+import type { TablePermissionFlags } from "./DatavaultTablePermissionsService";
 
 /**
  * Service layer for DataVault table business logic
@@ -14,15 +16,93 @@ export class DatavaultTablesService {
   private tablesRepo: typeof datavaultTablesRepository;
   private columnsRepo: typeof datavaultColumnsRepository;
   private rowsRepo: typeof datavaultRowsRepository;
+  private permissionsRepo: typeof datavaultTablePermissionsRepository;
 
   constructor(
     tablesRepo?: typeof datavaultTablesRepository,
     columnsRepo?: typeof datavaultColumnsRepository,
-    rowsRepo?: typeof datavaultRowsRepository
+    rowsRepo?: typeof datavaultRowsRepository,
+    permissionsRepo?: typeof datavaultTablePermissionsRepository
   ) {
     this.tablesRepo = tablesRepo || datavaultTablesRepository;
     this.columnsRepo = columnsRepo || datavaultColumnsRepository;
     this.rowsRepo = rowsRepo || datavaultRowsRepository;
+    this.permissionsRepo = permissionsRepo || datavaultTablePermissionsRepository;
+  }
+
+  /**
+   * Check what permissions a user has for a table
+   * Returns flags for read, write, and owner permissions
+   *
+   * Permission hierarchy:
+   * - owner: full control (includes write + read)
+   * - write: can modify data (includes read)
+   * - read: read-only access
+   */
+  async checkTablePermission(
+    userId: string,
+    tableId: string,
+    tenantId: string,
+    tx?: DbTransaction
+  ): Promise<TablePermissionFlags> {
+    // Get the table to check if user is the owner
+    const table = await this.tablesRepo.findById(tableId, tx);
+
+    if (!table) {
+      return { read: false, write: false, owner: false };
+    }
+
+    // Verify table belongs to tenant
+    if (table.tenantId !== tenantId) {
+      return { read: false, write: false, owner: false };
+    }
+
+    // Check if user is the table creator/owner (ownerUserId)
+    if (table.ownerUserId === userId) {
+      return { read: true, write: true, owner: true };
+    }
+
+    // Check explicit permission in datavault_table_permissions
+    const permission = await this.permissionsRepo.findByTableAndUser(tableId, userId, tx);
+
+    if (!permission) {
+      // No permission row = deny access (fallback to table owner only)
+      return { read: false, write: false, owner: false };
+    }
+
+    // Map role to permission flags
+    return this.roleToPermissionFlags(permission.role);
+  }
+
+  /**
+   * Convert role to permission flags
+   */
+  private roleToPermissionFlags(role: DatavaultTableRole): TablePermissionFlags {
+    switch (role) {
+      case "owner":
+        return { read: true, write: true, owner: true };
+      case "write":
+        return { read: true, write: true, owner: false };
+      case "read":
+        return { read: true, write: false, owner: false };
+    }
+  }
+
+  /**
+   * Require specific permission level (throws if denied)
+   */
+  async requirePermission(
+    userId: string,
+    tableId: string,
+    tenantId: string,
+    level: "read" | "write" | "owner",
+    tx?: DbTransaction
+  ): Promise<void> {
+    const permissions = await this.checkTablePermission(userId, tableId, tenantId, tx);
+
+    if (!permissions[level]) {
+      throw new Error(`Access denied - ${level} permission required`);
+    }
   }
 
   /**

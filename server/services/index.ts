@@ -28,6 +28,9 @@ export { DatavaultRowNotesService, datavaultRowNotesService } from "./DatavaultR
 // DataVault v4 Micro-Phase 5: API Tokens
 export { DatavaultApiTokensService, datavaultApiTokensService } from "./DatavaultApiTokensService";
 
+// DataVault v4 Micro-Phase 6: Table Permissions
+export { DatavaultTablePermissionsService, datavaultTablePermissionsService } from "./DatavaultTablePermissionsService";
+
 // Utility services
 // Note: Not re-exporting emailService and sendgrid to avoid conflicts
 export * from "./fileService";
