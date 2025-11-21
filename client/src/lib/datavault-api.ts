@@ -4,7 +4,7 @@
  */
 
 import { apiRequest } from "./queryClient";
-import type { DatavaultTable, DatavaultColumn, DatavaultRow, DatavaultRowNote, DatavaultApiToken } from "@shared/schema";
+import type { DatavaultTable, DatavaultColumn, DatavaultRow, DatavaultRowNote, DatavaultApiToken, DatavaultTablePermission, DatavaultTableRole } from "@shared/schema";
 
 export interface ApiDatavaultTableWithStats extends DatavaultTable {
   columnCount: number;
@@ -337,6 +337,43 @@ export const datavaultAPI = {
    */
   deleteApiToken: async (tokenId: string, databaseId: string): Promise<void> => {
     const res = await apiRequest('DELETE', `/api/datavault/tokens/${tokenId}`, { databaseId });
+    if (res.status !== 200) {
+      await res.json();
+    }
+  },
+
+  // ============================================================================
+  // Table Permissions (v4 Micro-Phase 6)
+  // ============================================================================
+
+  /**
+   * Get all permissions for a table (owner only)
+   */
+  listTablePermissions: async (tableId: string): Promise<DatavaultTablePermission[]> => {
+    const res = await apiRequest('GET', `/api/datavault/tables/${tableId}/permissions`);
+    return res.json();
+  },
+
+  /**
+   * Grant or update permission for a user on a table (owner only)
+   * Upserts the permission (creates or updates)
+   */
+  grantTablePermission: async (
+    tableId: string,
+    data: {
+      userId: string;
+      role: DatavaultTableRole;
+    }
+  ): Promise<DatavaultTablePermission> => {
+    const res = await apiRequest('POST', `/api/datavault/tables/${tableId}/permissions`, data);
+    return res.json();
+  },
+
+  /**
+   * Revoke a permission (owner only)
+   */
+  revokeTablePermission: async (permissionId: string, tableId: string): Promise<void> => {
+    const res = await apiRequest('DELETE', `/api/datavault/permissions/${permissionId}?tableId=${tableId}`);
     if (res.status !== 200) {
       await res.json();
     }

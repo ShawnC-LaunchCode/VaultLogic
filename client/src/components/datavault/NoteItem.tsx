@@ -4,7 +4,7 @@
  */
 
 import { useState } from "react";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 import { Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,7 +19,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import type { DatavaultRowNote } from "@shared/schema";
-import { useUser } from "@/hooks/use-user";
+import { useAuth } from "@/hooks/useAuth";
 
 interface NoteItemProps {
   note: DatavaultRowNote;
@@ -29,7 +29,7 @@ interface NoteItemProps {
 
 export function NoteItem({ note, onDelete, canDelete }: NoteItemProps) {
   const [isDeleting, setIsDeleting] = useState(false);
-  const { user } = useUser();
+  const { user } = useAuth();
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -49,8 +49,11 @@ export function NoteItem({ note, onDelete, canDelete }: NoteItemProps) {
     return "U";
   };
 
+  const fullDateTime = format(new Date(note.createdAt), "PPpp");
+  const relativeTime = formatDistanceToNow(new Date(note.createdAt), { addSuffix: true });
+
   return (
-    <div className="flex gap-3 py-3 border-b last:border-b-0">
+    <div className="flex gap-3 py-3 px-3 rounded-lg hover:bg-accent/50 transition-colors">
       {/* Avatar */}
       <div className="flex-shrink-0">
         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary">
@@ -61,17 +64,20 @@ export function NoteItem({ note, onDelete, canDelete }: NoteItemProps) {
       {/* Content */}
       <div className="flex-1 min-w-0">
         {/* Header with timestamp */}
-        <div className="flex items-center gap-2 mb-1">
+        <div className="flex items-center gap-2 mb-1.5">
           <span className="text-sm font-medium">
             {isOwnNote ? "You" : "User"}
           </span>
-          <span className="text-xs text-muted-foreground">
-            {formatDistanceToNow(new Date(note.createdAt), { addSuffix: true })}
+          <span
+            className="text-xs text-muted-foreground cursor-help"
+            title={fullDateTime}
+          >
+            {relativeTime}
           </span>
         </div>
 
         {/* Note text */}
-        <div className="text-sm text-foreground whitespace-pre-wrap break-words">
+        <div className="text-sm text-foreground whitespace-pre-wrap break-words leading-relaxed">
           {note.text}
         </div>
       </div>

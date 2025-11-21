@@ -3,7 +3,7 @@
  * Displays notes for a row with ability to add/delete notes
  */
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { datavaultAPI } from "@/lib/datavault-api";
 import { NoteItem } from "./NoteItem";
 import { useToast } from "@/hooks/use-toast";
-import { useUser } from "@/hooks/use-user";
+import { useAuth } from "@/hooks/useAuth";
 
 interface NotesTabProps {
   rowId: string;
@@ -22,13 +22,22 @@ export function NotesTab({ rowId, tableOwnerId }: NotesTabProps) {
   const [noteText, setNoteText] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { user } = useUser();
+  const { user } = useAuth();
+  const notesEndRef = useRef<HTMLDivElement>(null);
+  const notesListRef = useRef<HTMLDivElement>(null);
 
   // Fetch notes
   const { data: notes = [], isLoading, isError } = useQuery({
     queryKey: ["datavault", "rows", rowId, "notes"],
     queryFn: () => datavaultAPI.getRowNotes(rowId),
   });
+
+  // Scroll to bottom when notes change
+  useEffect(() => {
+    if (notes.length > 0 && notesEndRef.current) {
+      notesEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  }, [notes.length]);
 
   // Create note mutation
   const createNoteMutation = useMutation({
@@ -40,6 +49,12 @@ export function NotesTab({ rowId, tableOwnerId }: NotesTabProps) {
         title: "Note added",
         description: "Your note has been added successfully.",
       });
+      // Scroll to bottom after adding note
+      setTimeout(() => {
+        if (notesEndRef.current) {
+          notesEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+        }
+      }, 100);
     },
     onError: (error: any) => {
       toast({
@@ -116,7 +131,7 @@ export function NotesTab({ rowId, tableOwnerId }: NotesTabProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Notes list */}
-      <div className="flex-1 overflow-y-auto px-4">
+      <div ref={notesListRef} className="flex-1 overflow-y-auto px-4 py-2">
         {notes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <MessageSquare className="w-12 h-12 text-muted-foreground mb-2" />
@@ -125,7 +140,7 @@ export function NotesTab({ rowId, tableOwnerId }: NotesTabProps) {
             </p>
           </div>
         ) : (
-          <div className="divide-y">
+          <div className="space-y-3">
             {notes.map((note) => (
               <NoteItem
                 key={note.id}
@@ -134,6 +149,7 @@ export function NotesTab({ rowId, tableOwnerId }: NotesTabProps) {
                 canDelete={canDeleteNote(note)}
               />
             ))}
+            <div ref={notesEndRef} />
           </div>
         )}
       </div>

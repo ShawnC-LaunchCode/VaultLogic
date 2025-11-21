@@ -47,6 +47,7 @@ export { DocumentTemplateRepository, documentTemplateRepository } from "./Docume
 export { WorkflowTemplateRepository, workflowTemplateRepository } from "./WorkflowTemplateRepository";
 
 // DataVault Phase 1 repositories
+export { DatavaultDatabasesRepository, datavaultDatabasesRepository } from "./DatavaultDatabasesRepository";
 export { DatavaultTablesRepository, datavaultTablesRepository } from "./DatavaultTablesRepository";
 export { DatavaultColumnsRepository, datavaultColumnsRepository } from "./DatavaultColumnsRepository";
 export { DatavaultRowsRepository, datavaultRowsRepository } from "./DatavaultRowsRepository";

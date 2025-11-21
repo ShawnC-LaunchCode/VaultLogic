@@ -22,6 +22,7 @@ export const datavaultQueryKeys = {
   tableRows: (tableId: string) => ["datavault", "tables", tableId, "rows"] as const,
   row: (id: string) => ["datavault", "rows", id] as const,
   apiTokens: (databaseId: string) => ["datavault", "databases", databaseId, "tokens"] as const,
+  tablePermissions: (tableId: string) => ["datavault", "tables", tableId, "permissions"] as const,
 };
 
 // ============================================================================
@@ -377,6 +378,59 @@ export function useDeleteApiToken() {
       datavaultAPI.deleteApiToken(tokenId, databaseId),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: datavaultQueryKeys.apiTokens(variables.databaseId) });
+    },
+  });
+}
+
+// ============================================================================
+// Table Permissions (v4 Micro-Phase 6)
+// ============================================================================
+
+/**
+ * Hook to fetch permissions for a table (owner only)
+ */
+export function useTablePermissions(tableId: string | undefined) {
+  return useQuery({
+    queryKey: tableId
+      ? datavaultQueryKeys.tablePermissions(tableId)
+      : ['datavault', 'tables', 'null', 'permissions'],
+    queryFn: () => {
+      if (!tableId) throw new Error('Table ID is required');
+      return datavaultAPI.listTablePermissions(tableId);
+    },
+    enabled: !!tableId,
+  });
+}
+
+/**
+ * Hook to grant or update a table permission (owner only)
+ */
+export function useGrantTablePermission() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      tableId,
+      data,
+    }: {
+      tableId: string;
+      data: { userId: string; role: 'owner' | 'write' | 'read' };
+    }) => datavaultAPI.grantTablePermission(tableId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: datavaultQueryKeys.tablePermissions(variables.tableId) });
+    },
+  });
+}
+
+/**
+ * Hook to revoke a table permission (owner only)
+ */
+export function useRevokeTablePermission() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ permissionId, tableId }: { permissionId: string; tableId: string }) =>
+      datavaultAPI.revokeTablePermission(permissionId, tableId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: datavaultQueryKeys.tablePermissions(variables.tableId) });
     },
   });
 }

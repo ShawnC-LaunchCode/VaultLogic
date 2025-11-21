@@ -48,6 +48,7 @@ import { MoveTableModal } from "@/components/datavault/MoveTableModal";
 import { BulkActionsToolbar } from "@/components/datavault/BulkActionsToolbar";
 import { FilterPanel } from "@/components/datavault/FilterPanel";
 import { useDatavaultFilterStore } from "@/stores/useDatavaultFilterStore";
+import { TablePermissions } from "@/components/datavault/TablePermissions";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
 
@@ -454,6 +455,10 @@ export default function TableViewPage() {
                       <i className="fas fa-columns mr-2"></i>
                       Columns
                     </TabsTrigger>
+                    <TabsTrigger value="settings">
+                      <i className="fas fa-cog mr-2"></i>
+                      Settings
+                    </TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="data" className="mt-6">
@@ -534,6 +539,10 @@ export default function TableViewPage() {
                       onReorderColumns={handleReorderColumns}
                       isLoading={isColumnMutating}
                     />
+                  </TabsContent>
+
+                  <TabsContent value="settings" className="mt-6">
+                    <TablePermissions tableId={tableId!} />
                   </TabsContent>
                 </Tabs>
               </>

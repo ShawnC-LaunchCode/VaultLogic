@@ -78,10 +78,23 @@ export function DatabaseApiTokens({ databaseId }: DatabaseApiTokensProps) {
     if (scopes.length === 0) {
       toast({
         title: "Scope required",
-        description: "Please select at least one scope",
+        description: "Please select at least one scope (Read or Write) for the API token",
         variant: "destructive",
       });
       return;
+    }
+
+    // Validate expiration date is in the future
+    if (expiresAt) {
+      const expirationDate = new Date(expiresAt);
+      if (expirationDate <= new Date()) {
+        toast({
+          title: "Invalid expiration date",
+          description: "Expiration date must be in the future",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     try {
@@ -179,9 +192,15 @@ export function DatabaseApiTokens({ databaseId }: DatabaseApiTokensProps) {
                     <div className="flex items-center gap-2 mb-1">
                       <p className="font-medium">{token.label}</p>
                       {token.expiresAt && new Date(token.expiresAt) < new Date() && (
-                        <Badge variant="destructive" className="text-xs">
+                        <Badge variant="destructive" className="text-xs animate-pulse">
                           <AlertTriangle className="w-3 h-3 mr-1" />
                           Expired
+                        </Badge>
+                      )}
+                      {token.expiresAt && new Date(token.expiresAt) > new Date() && new Date(token.expiresAt).getTime() - Date.now() < 7 * 24 * 60 * 60 * 1000 && (
+                        <Badge variant="outline" className="text-xs text-orange-600 border-orange-300">
+                          <AlertTriangle className="w-3 h-3 mr-1" />
+                          Expires soon
                         </Badge>
                       )}
                     </div>
@@ -308,10 +327,10 @@ export function DatabaseApiTokens({ databaseId }: DatabaseApiTokensProps) {
               Copy and save this token now. For security reasons, it will not be shown again.
             </DialogDescription>
           </DialogHeader>
-          <Alert>
+          <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription className="font-medium">
-              This is the only time you will see this token!
+              <strong>Important:</strong> This is the only time you will see this token! Copy it now and store it securely.
             </AlertDescription>
           </Alert>
           <div className="space-y-3">
