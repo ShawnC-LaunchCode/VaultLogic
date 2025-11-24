@@ -7,7 +7,7 @@
  */
 
 import { stepRepository, stepValueRepository } from "../repositories";
-import { evaluateCondition, type ConditionExpression, type EvaluationContext } from "../workflows/conditions";
+import { evaluateVisibility } from "../workflows/conditionAdapter";
 import type { Step } from "@shared/schema";
 import { createLogger } from "../logger";
 
@@ -77,10 +77,10 @@ export class IntakeQuestionVisibilityService {
       variables[key] = sv.value;
     }
 
-    const context: EvaluationContext = {
-      variables,
-      record: recordData,
-    };
+    // Include record data in variables if present
+    if (recordData) {
+      Object.assign(variables, recordData);
+    }
 
     // Evaluate visibility for each question
     const visibleQuestions: string[] = [];
@@ -94,8 +94,7 @@ export class IntakeQuestionVisibilityService {
       // Evaluate visibleIf condition
       if (question.visibleIf) {
         try {
-          const condition = question.visibleIf as unknown as ConditionExpression;
-          isVisible = evaluateCondition(condition, context);
+          isVisible = evaluateVisibility(question.visibleIf, variables);
 
           if (isVisible) {
             reason = "Visible by condition";

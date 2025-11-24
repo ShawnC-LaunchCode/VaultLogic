@@ -245,12 +245,17 @@ export interface ApiSection {
   title: string;
   description: string | null;
   order: number;
+  visibleIf?: any | null; // Condition expression for visibility
+  skipIf?: any | null; // Condition expression for skip logic
   createdAt: string;
 }
 
 export const sectionAPI = {
   list: (workflowId: string) =>
     fetchAPI<ApiSection[]>(`/api/workflows/${workflowId}/sections`),
+
+  get: (workflowId: string, sectionId: string) =>
+    fetchAPI<ApiSection>(`/api/workflows/${workflowId}/sections/${sectionId}`),
 
   create: (workflowId: string, data: { title: string; description?: string; order: number }) =>
     fetchAPI<ApiSection>(`/api/workflows/${workflowId}/sections`, {
@@ -291,6 +296,7 @@ export interface ApiStep {
   required: boolean;
   options: any; // JSON - for choice types
   alias: string | null; // Optional variable name for logic/blocks
+  visibleIf?: any | null; // Condition expression for visibility
   order: number;
   createdAt: string;
 }

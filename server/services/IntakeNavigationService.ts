@@ -7,7 +7,7 @@
  */
 
 import { sectionRepository, stepRepository, stepValueRepository } from "../repositories";
-import { evaluateCondition, type ConditionExpression, type EvaluationContext } from "../workflows/conditions";
+import { evaluateVisibility } from "../workflows/conditionAdapter";
 import type { Section } from "@shared/schema";
 import { createLogger } from "../logger";
 
@@ -76,10 +76,10 @@ export class IntakeNavigationService {
       variables[key] = sv.value;
     }
 
-    const context: EvaluationContext = {
-      variables,
-      record: recordData,
-    };
+    // Include record data in variables if present
+    if (recordData) {
+      Object.assign(variables, recordData);
+    }
 
     // Evaluate visibility for each page
     const visibilityResults = new Map<string, boolean>();
@@ -91,8 +91,7 @@ export class IntakeNavigationService {
       // Evaluate visibleIf condition
       if (page.visibleIf) {
         try {
-          const condition = page.visibleIf as unknown as ConditionExpression;
-          isVisible = evaluateCondition(condition, context);
+          isVisible = evaluateVisibility(page.visibleIf, variables);
 
           if (!isVisible) {
             logger.debug({ pageId: page.id, pageTitle: page.title }, "Page hidden by visibleIf condition");
@@ -116,8 +115,7 @@ export class IntakeNavigationService {
     const navigablePages = visiblePages.filter(page => {
       if (page.skipIf) {
         try {
-          const condition = page.skipIf as unknown as ConditionExpression;
-          const shouldSkip = evaluateCondition(condition, context);
+          const shouldSkip = evaluateVisibility(page.skipIf, variables);
 
           if (shouldSkip) {
             logger.debug({ pageId: page.id, pageTitle: page.title }, "Page skipped by skipIf condition");
