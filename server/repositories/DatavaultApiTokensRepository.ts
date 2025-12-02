@@ -4,7 +4,7 @@ import {
   type DatavaultApiToken,
   type InsertDatavaultApiToken,
 } from "@shared/schema";
-import { eq, and, or, isNull, lt } from "drizzle-orm";
+import { eq, and, or, isNull, gt } from "drizzle-orm";
 import { db } from "../db";
 
 /**
@@ -65,7 +65,7 @@ export class DatavaultApiTokensRepository extends BaseRepository<
           // Token is not expired (either no expiry or expiry in future)
           or(
             isNull(datavaultApiTokens.expiresAt),
-            lt(new Date(), datavaultApiTokens.expiresAt)
+            gt(datavaultApiTokens.expiresAt, new Date())
           )
         )
       );
@@ -73,9 +73,6 @@ export class DatavaultApiTokensRepository extends BaseRepository<
     return token || null;
   }
 
-  /**
-   * Create a new API token
-   */
   async createToken(
     data: InsertDatavaultApiToken,
     tx?: DbTransaction

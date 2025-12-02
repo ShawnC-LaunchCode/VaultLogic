@@ -35,7 +35,7 @@ export function useBatchReferences(
       return {
         tableId: column.reference.tableId,
         rowIds: uniqueRowIds,
-        displayColumnSlug: column.reference.displayColumnSlug,
+        displayColumnSlug: column.reference.displayColumnSlug || undefined,
       };
     })
     .filter((req): req is NonNullable<typeof req> => req !== null);

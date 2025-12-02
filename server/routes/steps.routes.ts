@@ -28,12 +28,14 @@ async function lookupWorkflowIdFromStepMiddleware(
 
     const step = await stepRepository.findById(stepId);
     if (!step) {
-      return res.status(404).json({ message: "Step not found" });
+      res.status(404).json({ message: "Step not found" });
+      return;
     }
 
     const section = await sectionRepository.findById(step.sectionId);
     if (!section) {
-      return res.status(404).json({ message: "Section not found" });
+      res.status(404).json({ message: "Section not found" });
+      return;
     }
 
     // Add workflowId to params so autoRevertToDraft can access it
@@ -62,7 +64,8 @@ async function lookupWorkflowIdFromSectionMiddleware(
 
     const section = await sectionRepository.findById(sectionId);
     if (!section) {
-      return res.status(404).json({ message: "Section not found" });
+      res.status(404).json({ message: "Section not found" });
+      return;
     }
 
     // Add workflowId to params so autoRevertToDraft can access it
@@ -174,7 +177,8 @@ export function registerStepRoutes(app: Express): void {
       // For run token auth, fetch steps without userId check
       if (runAuth) {
         const steps = await stepService.getStepsBySectionIdNoAuth(sectionId, runAuth.workflowId);
-        return res.json(steps);
+        res.json(steps);
+        return;
       }
 
       // For session auth, we need userId

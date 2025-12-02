@@ -19,9 +19,8 @@ import {
   useSnapshots,
   useRenameSnapshot,
   useDeleteSnapshot,
-  type ApiSnapshot,
 } from "@/lib/vault-hooks";
-import { runAPI } from "@/lib/vault-api";
+import { runAPI, type ApiSnapshot } from "@/lib/vault-api";
 
 interface SnapshotsTabProps {
   workflowId: string;

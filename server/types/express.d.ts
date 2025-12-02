@@ -11,7 +11,11 @@ declare global {
      * User object attached to request after authentication
      */
     interface User {
-      claims: {
+      id?: string;
+      email?: string;
+      tenantId?: string;
+      tenantRole?: string | null;
+      claims?: {
         sub: string;
         email: string;
         name?: string;
@@ -32,6 +36,7 @@ declare global {
     interface Request {
       user?: User;
       userId?: string;
+      session?: import("express-session").Session & Partial<import("express-session").SessionData>;
       adminUser?: {
         id: string;
         email: string;

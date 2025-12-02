@@ -213,7 +213,7 @@ export function DatabaseApiTokens({ databaseId }: DatabaseApiTokensProps) {
                         ))}
                       </div>
                       <span>•</span>
-                      <span>Created {new Date(token.createdAt).toLocaleDateString()}</span>
+                      <span>Created {token.createdAt ? new Date(token.createdAt).toLocaleDateString() : 'Unknown'}</span>
                       {token.expiresAt && (
                         <>
                           <span>•</span>

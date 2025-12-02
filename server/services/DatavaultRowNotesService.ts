@@ -140,7 +140,7 @@ export class DatavaultRowNotesService {
 
     // Check if user is the table owner
     const table = await this.tablesRepo.findById(tableId, tx);
-    const isTableOwner = table?.createdBy === userId;
+    const isTableOwner = table?.ownerUserId === userId;
 
     if (!isNoteOwner && !isTableOwner) {
       throw new Error("Access denied - only note owner or table owner can delete");

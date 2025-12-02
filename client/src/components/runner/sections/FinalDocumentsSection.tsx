@@ -61,9 +61,10 @@ export function FinalDocumentsSection({ runId, runToken, sectionConfig }: FinalD
       const response = await axios.get<{ documents: GeneratedDocument[] }>(`/api/runs/${runId}/documents`, { headers });
       return response.data.documents;
     },
-    refetchInterval: (data) => {
+    refetchInterval: (query) => {
       // If no documents yet, refetch every 2 seconds until they're ready
-      if (!data || data.length === 0) {
+      const docs = query.state.data as GeneratedDocument[] | undefined;
+      if (!docs || docs.length === 0) {
         return 2000;
       }
       // Once we have documents, stop refetching

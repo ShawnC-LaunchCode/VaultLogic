@@ -167,7 +167,7 @@ export const datavaultAPI = {
 
   updateColumn: async (
     columnId: string,
-    data: Partial<{ name: string; slug: string; required: boolean; orderIndex: number }>
+    data: Partial<{ name: string; slug: string; required: boolean; orderIndex: number; widthPx: number }>
   ): Promise<DatavaultColumn> => {
     const res = await apiRequest('PATCH', `/api/datavault/columns/${columnId}`, data);
     return res.json();

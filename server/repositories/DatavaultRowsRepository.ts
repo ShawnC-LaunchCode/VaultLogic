@@ -279,13 +279,13 @@ export class DatavaultRowsRepository extends BaseRepository<
   ): Promise<Array<{ referencingTableId: string; referencingColumnId: string; referenceCount: number }>> {
     const database = this.getDb(tx);
 
-    const results = await database.execute<{
+    const results = await database.execute(
+      sql`SELECT * FROM datavault_is_row_referenced(${rowId}::UUID)`
+    ) as unknown as {
       referencing_table_id: string;
       referencing_column_id: string;
       reference_count: string;
-    }>(
-      sql`SELECT * FROM datavault_is_row_referenced(${rowId}::UUID)`
-    );
+    }[];
 
     return results.map(r => ({
       referencingTableId: r.referencing_table_id,
@@ -328,7 +328,7 @@ export class DatavaultRowsRepository extends BaseRepository<
       );
 
     const rowMap = new Map<string, string>();
-    rows.forEach(row => rowMap.set(row.id, row.tableId));
+    rows.forEach((row: { id: string; tableId: string }) => rowMap.set(row.id, row.tableId));
 
     // Check all rows were found
     const missingIds = rowIds.filter(id => !rowMap.has(id));
@@ -386,9 +386,9 @@ export class DatavaultRowsRepository extends BaseRepository<
 
     // Use PostgreSQL function to get next value from sequence
     // This is atomic and prevents race conditions
-    const [result] = await database.execute<{ datavault_get_next_auto_number: number }>(
+    const [result] = await database.execute(
       sql`SELECT datavault_get_next_auto_number(${tableId}::UUID, ${columnId}::UUID, ${startValue}::INTEGER) as next_value`
-    );
+    ) as unknown as { next_value: number }[];
 
     return result?.next_value ?? startValue;
   }
@@ -423,7 +423,7 @@ export class DatavaultRowsRepository extends BaseRepository<
     const database = this.getDb(tx);
 
     // Call the database function with all parameters
-    const result = await database.execute<{ next_value: string }>(
+    const result = await database.execute(
       sql`SELECT datavault_get_next_autonumber(
         ${tenantId}::UUID,
         ${tableId}::UUID,
@@ -432,9 +432,9 @@ export class DatavaultRowsRepository extends BaseRepository<
         ${padding}::INTEGER,
         ${resetPolicy}::TEXT
       ) as next_value`
-    );
+    ) as unknown as { next_value: string }[];
 
-    const nextValue = result?.rows?.[0]?.next_value;
+    const nextValue = (result as any)?.[0]?.next_value;
     if (!nextValue) {
       throw new Error('Failed to generate autonumber value');
     }
@@ -530,7 +530,7 @@ export class DatavaultRowsRepository extends BaseRepository<
       .where(inArray(datavaultValues.rowId, allRowIds));
 
     // Group values by rowId
-    const valuesByRow = values.reduce((acc, value) => {
+    const valuesByRow = values.reduce((acc: Record<string, Record<string, any>>, value: any) => {
       if (!acc[value.rowId]) {
         acc[value.rowId] = {};
       }
@@ -539,7 +539,7 @@ export class DatavaultRowsRepository extends BaseRepository<
     }, {} as Record<string, Record<string, any>>);
 
     // Build result map
-    rows.forEach(row => {
+    rows.forEach((row: DatavaultRow) => {
       resultMap.set(row.id, {
         row,
         values: valuesByRow[row.id] || {}

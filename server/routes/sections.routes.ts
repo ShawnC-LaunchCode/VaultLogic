@@ -27,7 +27,8 @@ async function lookupWorkflowIdMiddleware(
 
     const section = await sectionRepository.findById(sectionId);
     if (!section) {
-      return res.status(404).json({ message: "Section not found" });
+      res.status(404).json({ message: "Section not found" });
+      return;
     }
 
     // Add workflowId to params so autoRevertToDraft can access it

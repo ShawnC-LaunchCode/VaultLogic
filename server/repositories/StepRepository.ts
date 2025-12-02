@@ -119,7 +119,7 @@ export class StepRepository extends BaseRepository<typeof steps, Step, InsertSte
       .orderBy(asc(steps.order));
 
     // Extract just the steps from the join result
-    return result.map(row => row.steps);
+    return result.map((row: { steps: Step }) => row.steps);
   }
 }
 

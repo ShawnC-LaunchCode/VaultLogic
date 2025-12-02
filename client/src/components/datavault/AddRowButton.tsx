@@ -113,7 +113,6 @@ export function AddRowButton({ tableId, columns, onAdd }: AddRowButtonProps) {
         );
 
       case 'boolean':
-      case 'yes_no':
         return (
           <div className="flex items-center space-x-2">
             <Checkbox

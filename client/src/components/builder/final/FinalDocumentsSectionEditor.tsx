@@ -205,7 +205,7 @@ export function FinalDocumentsSectionEditor({ section, workflowId }: FinalDocume
               </div>
             ) : (
               <div className="border rounded-md p-4 space-y-3">
-                {templates.map((template) => (
+                {templates.map((template: WorkflowTemplate) => (
                   <div key={template.id} className="flex items-start space-x-3">
                     <Checkbox
                       id={`template-${template.id}`}

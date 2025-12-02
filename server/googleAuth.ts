@@ -1,6 +1,6 @@
 import { OAuth2Client, type TokenPayload } from "google-auth-library";
 import session from "express-session";
-import type { Express, RequestHandler } from "express";
+import type { Express, RequestHandler, Request } from "express";
 import connectPg from "connect-pg-simple";
 import createMemoryStore from "memorystore";
 import rateLimit from "express-rate-limit";
@@ -58,10 +58,10 @@ export function getSession() {
   // Detect cross-origin deployment scenario
   // This occurs when ALLOWED_ORIGIN is set and differs from the current app domain
   const isCrossOrigin = process.env.NODE_ENV === 'production' &&
-                       process.env.ALLOWED_ORIGIN &&
-                       !process.env.ALLOWED_ORIGIN.includes('localhost') &&
-                       !process.env.ALLOWED_ORIGIN.includes('127.0.0.1') &&
-                       !process.env.ALLOWED_ORIGIN.includes('0.0.0.0');
+    process.env.ALLOWED_ORIGIN &&
+    !process.env.ALLOWED_ORIGIN.includes('localhost') &&
+    !process.env.ALLOWED_ORIGIN.includes('127.0.0.1') &&
+    !process.env.ALLOWED_ORIGIN.includes('0.0.0.0');
 
   return session({
     secret: process.env.SESSION_SECRET!,
@@ -206,7 +206,7 @@ const authRateLimit = rateLimit({
 function validateOrigin(req: any): boolean {
   const origin = req.get('Origin') || req.get('Referer');
   if (!origin) return false;
-  
+
   try {
     const originUrl = new URL(origin);
     const allowedHosts = [
@@ -214,7 +214,7 @@ function validateOrigin(req: any): boolean {
       '127.0.0.1',
       '0.0.0.0'
     ];
-    
+
     // Add ALLOWED_ORIGIN environment variable (expecting hostname-only format)
     if (process.env.ALLOWED_ORIGIN) {
       // Split by comma for multiple allowed origins and normalize to hostnames
@@ -234,11 +234,11 @@ function validateOrigin(req: any): boolean {
       });
       allowedHosts.push(...allowedOrigins);
     }
-    
+
     // Remove falsy values and check against origin hostname
     const validHosts = allowedHosts.filter(Boolean);
-    return validHosts.some(host => 
-      originUrl.hostname === host || originUrl.hostname.endsWith(`.${host}`)
+    return validHosts.some(host =>
+      originUrl.hostname === host || originUrl.hostname.endsWith(`.${host} `)
     );
   } catch {
     return false;
@@ -452,21 +452,20 @@ export async function setupAuth(app: Express) {
   });
 }
 
+export interface AppUser extends Express.User {
+  id: string;
+  email: string;
+  tenantId?: string;
+  tenantRole?: string | null;
+  expires_at?: number;
+}
+
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
-  const user = req.session?.user || req.user;
+  const user = (req.session?.user || req.user) as AppUser | undefined;
 
   if (!user) {
     return res.status(401).json({ message: "Unauthorized" });
   }
-
-  // Note: Google OAuth tokens expire after ~1 hour, but we allow sessions to persist
-  // for the full session TTL (365 days). The session itself is the authentication proof.
-  // If stricter security is needed, uncomment the expiration check below:
-  //
-  // const now = Math.floor(Date.now() / 1000);
-  // if (user.expires_at && now > user.expires_at) {
-  //   return res.status(401).json({ message: "Token expired" });
-  // }
 
   // Auto-populate missing tenantId from database (for legacy sessions)
   if (!user.tenantId && user.id) {
@@ -503,6 +502,6 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
 };
 
 // Helper function to get authenticated user from request
-export function getAuthenticatedUser(req: Request) {
-  return req.session?.user || req.user;
+export function getAuthenticatedUser(req: Request): AppUser | undefined {
+  return (req.session?.user || req.user) as AppUser | undefined;
 }

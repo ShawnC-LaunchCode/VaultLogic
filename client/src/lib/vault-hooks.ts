@@ -292,7 +292,7 @@ export function useSections(workflowId: string | undefined) {
 export function useCreateSection() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ workflowId, ...data }: { workflowId: string; title: string; description?: string; order: number }) =>
+    mutationFn: ({ workflowId, ...data }: { workflowId: string; title: string; description?: string; order: number; config?: any }) =>
       sectionAPI.create(workflowId, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.sections(variables.workflowId) });

@@ -9,21 +9,7 @@ import { startRollupWorker } from "./jobs/metricsRollup";
 
 const logger = createLogger({ module: 'routes' });
 
-// Extend Express Request type for authenticated requests
-declare global {
-  namespace Express {
-    interface User {
-      claims: {
-        sub: string;
-        email: string;
-        [key: string]: any;
-      };
-      access_token?: string;
-      refresh_token?: string;
-      expires_at?: number;
-    }
-  }
-}
+
 
 /**
  * Main route registration function

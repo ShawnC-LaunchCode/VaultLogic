@@ -288,7 +288,7 @@ export function registerAuthRoutes(app: Express): void {
             name: `${testUser.firstName} ${testUser.lastName}`,
             given_name: testUser.firstName,
             family_name: testUser.lastName,
-            picture: testUser.profileImageUrl,
+            picture: testUser.profileImageUrl || undefined,
             exp: Math.floor(Date.now() / 1000) + 3600, // Expires in 1 hour
           },
           expires_at: Math.floor(Date.now() / 1000) + 3600,
@@ -302,7 +302,6 @@ export function registerAuthRoutes(app: Express): void {
           }
 
           // Set up the session with new session ID
-          req.user = mockAuthUser;
           req.session.user = mockAuthUser;
 
           // Save session before redirecting to avoid race condition

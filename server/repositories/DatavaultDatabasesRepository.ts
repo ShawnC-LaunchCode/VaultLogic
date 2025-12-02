@@ -2,6 +2,7 @@ import { db } from '../db';
 import { datavaultDatabases, datavaultTables } from '../../shared/schema';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import type { DatavaultDatabase, InsertDatavaultDatabase, DatavaultScopeType } from '../../shared/schema';
+import type { DbTransaction } from './BaseRepository';
 
 export class DatavaultDatabasesRepository {
 
@@ -45,8 +46,9 @@ export class DatavaultDatabasesRepository {
   /**
    * Find database by ID
    */
-  async findById(id: string): Promise<DatavaultDatabase | null> {
-    const results = await db
+  async findById(id: string, tx?: DbTransaction): Promise<DatavaultDatabase | null> {
+    const database = tx || db;
+    const results = await database
       .select()
       .from(datavaultDatabases)
       .where(eq(datavaultDatabases.id, id))

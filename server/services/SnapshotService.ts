@@ -40,7 +40,8 @@ export class SnapshotService {
    * Get a single snapshot by ID
    */
   async getSnapshotById(snapshotId: string): Promise<WorkflowSnapshot | null> {
-    return await this.snapshotRepo.findById(snapshotId);
+    const snapshot = await this.snapshotRepo.findById(snapshotId);
+    return snapshot || null;
   }
 
   /**

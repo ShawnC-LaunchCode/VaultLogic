@@ -49,8 +49,8 @@ export function NoteItem({ note, onDelete, canDelete }: NoteItemProps) {
     return "U";
   };
 
-  const fullDateTime = format(new Date(note.createdAt), "PPpp");
-  const relativeTime = formatDistanceToNow(new Date(note.createdAt), { addSuffix: true });
+  const fullDateTime = note.createdAt ? format(new Date(note.createdAt), "PPpp") : "Unknown";
+  const relativeTime = note.createdAt ? formatDistanceToNow(new Date(note.createdAt), { addSuffix: true }) : "";
 
   return (
     <div className="flex gap-3 py-3 px-3 rounded-lg hover:bg-accent/50 transition-colors">

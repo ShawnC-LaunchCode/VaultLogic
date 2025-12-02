@@ -401,7 +401,7 @@ router.post(
         await tx
           .update(schema.workflows)
           .set({
-            status: 'open',
+            status: 'active',
             updatedAt: new Date(),
           })
           .where(eq(schema.workflows.id, params.id));

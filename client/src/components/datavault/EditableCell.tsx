@@ -93,7 +93,6 @@ export function EditableCell({ column, value, onSave, readOnly = false, placehol
 
     switch (column.type) {
       case "boolean":
-      case "yes_no":
         return val ? "Yes" : "No";
       case "date":
         if (val) {
@@ -115,7 +114,7 @@ export function EditableCell({ column, value, onSave, readOnly = false, placehol
   };
 
   // Render checkbox for boolean types
-  if ((column.type === "boolean" || column.type === "yes_no") && !isEditing) {
+  if (column.type === "boolean" && !isEditing) {
     return (
       <div
         className={cn(
@@ -185,14 +184,14 @@ export function EditableCell({ column, value, onSave, readOnly = false, placehol
           column.type === "number"
             ? "number"
             : column.type === "email"
-            ? "email"
-            : column.type === "url"
-            ? "url"
-            : column.type === "date"
-            ? "date"
-            : column.type === "datetime"
-            ? "datetime-local"
-            : "text"
+              ? "email"
+              : column.type === "url"
+                ? "url"
+                : column.type === "date"
+                  ? "date"
+                  : column.type === "datetime"
+                    ? "datetime-local"
+                    : "text"
         }
         value={editValue || ""}
         onChange={(e) => setEditValue(e.target.value)}

@@ -274,7 +274,7 @@ export class DatavaultRowsService {
       return this._createRowImpl(tableId, tenantId, values, createdBy, tx);
     }
 
-    return await db.transaction(async (newTx) => {
+    return await db.transaction(async (newTx: DbTransaction) => {
       return this._createRowImpl(tableId, tenantId, values, createdBy, newTx);
     });
   }
@@ -379,7 +379,7 @@ export class DatavaultRowsService {
       return this._updateRowImpl(rowId, tenantId, values, updatedBy, tx);
     }
 
-    return await db.transaction(async (newTx) => {
+    return await db.transaction(async (newTx: DbTransaction) => {
       return this._updateRowImpl(rowId, tenantId, values, updatedBy, newTx);
     });
   }
@@ -443,7 +443,7 @@ export class DatavaultRowsService {
       return this._bulkDeleteRowsImpl(rowIds, tenantId, tx);
     }
 
-    return await db.transaction(async (newTx) => {
+    return await db.transaction(async (newTx: DbTransaction) => {
       return this._bulkDeleteRowsImpl(rowIds, tenantId, newTx);
     });
   }

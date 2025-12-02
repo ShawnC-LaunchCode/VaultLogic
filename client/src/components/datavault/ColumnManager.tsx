@@ -122,11 +122,11 @@ export function ColumnManager({
       name: column.name,
       required: column.required,
       type: column.type,
-      options: column.options
+      options: (column.options as unknown as SelectOption[]) || null
     });
     setEditColumnName(column.name);
     setEditColumnRequired(column.required);
-    setEditColumnOptions(column.options || []);
+    setEditColumnOptions((column.options as unknown as SelectOption[]) || []);
   };
 
   return (

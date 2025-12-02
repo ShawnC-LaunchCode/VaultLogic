@@ -465,7 +465,6 @@ export default function DatabaseDetailPage() {
         onOpenChange={setCreateTableOpen}
         onSubmit={handleCreateTable}
         isLoading={createTableMutation.isPending}
-        defaultDatabaseId={databaseId}
       />
 
       <RowEditorModal

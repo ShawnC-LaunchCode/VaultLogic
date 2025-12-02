@@ -19,8 +19,8 @@ interface Step {
   id: string;
   type: string;
   title: string;
-  alias?: string;
-  description?: string;
+  alias?: string | null;
+  description?: string | null;
   config?: any;
   required?: boolean;
   visibleIf?: any;

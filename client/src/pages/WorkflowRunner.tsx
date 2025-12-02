@@ -327,8 +327,8 @@ export function WorkflowRunner({ runId, isPreview = false }: WorkflowRunnerProps
     // Get steps for current section (excluding virtual and system steps)
     const currentSectionSteps = allSteps.filter(
       step => step.sectionId === currentSection.id &&
-              !step.isVirtual && // Exclude virtual steps (transform outputs)
-              step.type !== 'final_documents' // Exclude system steps
+        !step.isVirtual && // Exclude virtual steps (transform outputs)
+        step.type !== 'final_documents' // Exclude system steps
     );
     const currentSectionStepIds = new Set(currentSectionSteps.map(s => s.id));
 
@@ -510,7 +510,22 @@ function SectionSteps({
   logicRules: LogicRule[];
   onChange: (stepId: string, value: any) => void;
 }) {
-  const { data: steps } = useSteps(sectionId);
+  const { data: rawSteps } = useSteps(sectionId);
+
+  const steps = useMemo(() => {
+    if (!rawSteps) return [];
+    return rawSteps.map(step => ({
+      ...step,
+      createdAt: step.createdAt ? new Date(step.createdAt) : null,
+      updatedAt: step.updatedAt ? new Date(step.updatedAt) : null,
+      alias: step.alias,
+      description: step.description,
+      visibleIf: step.visibleIf || null,
+      defaultValue: step.defaultValue ?? null,
+      isVirtual: step.isVirtual || false,
+      repeaterConfig: step.repeaterConfig || null,
+    }));
+  }, [rawSteps]);
 
   // Use visibility hook to evaluate which steps should be shown
   const { isStepVisible } = useWorkflowVisibility(logicRules, steps, values);

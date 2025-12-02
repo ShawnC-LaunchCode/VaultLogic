@@ -116,7 +116,22 @@ function PreviewContent({ runId, runToken }: PreviewContentProps) {
   const logicRules = workflowData?.logicRules;
 
   // Flatten all steps from all sections for alias resolution
-  const allWorkflowSteps = sections?.flatMap(section => section.steps) || [];
+  const rawWorkflowSteps = sections?.flatMap(section => section.steps) || [];
+
+  // Map API steps to internal Step type (convert dates, handle nulls)
+  const allWorkflowSteps = useMemo(() => {
+    return rawWorkflowSteps.map(step => ({
+      ...step,
+      createdAt: step.createdAt ? new Date(step.createdAt) : null,
+      updatedAt: step.updatedAt ? new Date(step.updatedAt) : null,
+      alias: step.alias,
+      description: step.description,
+      visibleIf: step.visibleIf || null,
+      defaultValue: step.defaultValue ?? null,
+      isVirtual: step.isVirtual || false,
+      repeaterConfig: step.repeaterConfig || null,
+    }));
+  }, [rawWorkflowSteps]);
 
   // Initialize form values from run values
   useEffect(() => {
@@ -443,7 +458,7 @@ function PreviewContent({ runId, runToken }: PreviewContentProps) {
           <FillPageWithRandomDataButton
             runId={runId}
             currentSectionSteps={allWorkflowSteps?.filter(
-              step => step.sectionId === currentSection.id &&
+              (step: any) => step.sectionId === currentSection.id &&
                 !step.isVirtual &&
                 step.type !== 'final_documents'
             ) || []}
@@ -549,7 +564,7 @@ function PreviewContent({ runId, runToken }: PreviewContentProps) {
         runId={runId}
         runToken={runToken}
         formValues={formValues}
-        allWorkflowSteps={allWorkflowSteps}
+        allWorkflowSteps={rawWorkflowSteps || []}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={setIsSidebarCollapsed}
       />
@@ -563,7 +578,7 @@ interface SectionStepsProps {
   sectionId: string;
   values: Record<string, any>;
   logicRules: LogicRule[];
-  allWorkflowSteps: ApiStep[];
+  allWorkflowSteps: any[];
   onChange: (stepId: string, value: any) => void;
 }
 
