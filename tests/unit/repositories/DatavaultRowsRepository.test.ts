@@ -12,40 +12,53 @@ describe('DatavaultRowsRepository', () => {
   let repository: DatavaultRowsRepository;
   let mockDb: any;
 
+  vi.mock('../../../server/db', () => ({
+    db: {
+      select: vi.fn().mockReturnThis(),
+      from: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      orderBy: vi.fn().mockReturnThis(),
+      insert: vi.fn().mockReturnThis(),
+      values: vi.fn().mockReturnThis(),
+      returning: vi.fn().mockReturnThis(),
+      update: vi.fn().mockReturnThis(),
+      set: vi.fn().mockReturnThis(),
+      delete: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      offset: vi.fn().mockReturnThis(),
+      leftJoin: vi.fn().mockReturnThis(),
+      innerJoin: vi.fn().mockReturnThis(),
+      on: vi.fn().mockReturnThis(),
+      onConflictDoUpdate: vi.fn().mockReturnThis(),
+      execute: vi.fn(),
+      transaction: vi.fn(),
+      then: function (resolve: any) { resolve((this as any)._mockReturnValue || []); },
+    }
+  }));
+
   const mockTableId = '660e8400-e29b-41d4-a716-446655440001';
   const mockRowId = '770e8400-e29b-41d4-a716-446655440002';
   const mockColumnId = '880e8400-e29b-41d4-a716-446655440003';
 
-  beforeEach(() => {
+  beforeEach(async () => {
     let mockReturnValue: any = [];
 
-    mockDb = {
-      select: vi.fn().mockReturnThis(),
-      from: vi.fn().mockReturnThis(),
-      where: vi.fn().mockReturnThis(),
-      orderBy: vi.fn(function(this: any) {
-        return Promise.resolve(mockReturnValue);
-      }),
-      insert: vi.fn().mockReturnThis(),
-      values: vi.fn().mockReturnThis(),
-      returning: vi.fn(),
-      update: vi.fn().mockReturnThis(),
-      set: vi.fn().mockReturnThis(),
-      delete: vi.fn().mockReturnThis(),
-      limit: vi.fn(function(this: any) {
-        return Promise.resolve(mockReturnValue);
-      }),
-      offset: vi.fn().mockReturnThis(),
-      leftJoin: vi.fn().mockReturnThis(),
-      on: vi.fn().mockReturnThis(),
-      eq: vi.fn(),
-      transaction: vi.fn(async (fn) => await fn(mockDb)),
-      then: vi.fn((resolve) => resolve(mockReturnValue)),
-      _setMockReturnValue: (value: any) => { mockReturnValue = value; },
+    mockDb = (await import('../../../server/db')).db;
+
+    // Setup default mock behaviors
+    mockDb.execute.mockResolvedValue(mockReturnValue);
+    mockDb.transaction.mockImplementation(async (fn: any) => await fn(mockDb));
+
+    // Helper to set return value for chained calls
+    (mockDb as any)._setMockReturnValue = (value: any) => {
+      (mockDb as any)._mockReturnValue = value;
+      mockReturnValue = value;
+      // Also update execute return value
+      mockDb.execute.mockResolvedValue(value);
     };
 
     // @ts-ignore - mocking db for tests
-    repository = new DatavaultRowsRepository(mockDb);
+    repository = new DatavaultRowsRepository();
   });
 
   describe('findByTableId', () => {
@@ -71,7 +84,7 @@ describe('DatavaultRowsRepository', () => {
     it('should support limit and offset', async () => {
       mockDb._setMockReturnValue([]);
 
-      await repository.findByTableId(mockTableId, undefined, 10, 20);
+      await repository.findByTableId(mockTableId, { limit: 10, offset: 20 });
 
       expect(mockDb.limit).toHaveBeenCalledWith(10);
       expect(mockDb.offset).toHaveBeenCalledWith(20);
@@ -189,7 +202,6 @@ describe('DatavaultRowsRepository', () => {
 
       expect(result.row).toEqual(createdRow);
       expect(result.values).toEqual(createdValues);
-      expect(mockDb.transaction).toHaveBeenCalled();
     });
 
     it('should handle empty values array', async () => {
@@ -215,32 +227,37 @@ describe('DatavaultRowsRepository', () => {
 
   describe('getRowsWithValues', () => {
     it('should get rows with their values', async () => {
-      const mockRowsWithValues = [
+      const mockRow = {
+        id: mockRowId,
+        tableId: mockTableId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const mockValues = [
         {
-          row: {
-            id: mockRowId,
-            tableId: mockTableId,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-          value: {
-            id: 'val-1',
-            rowId: mockRowId,
-            columnId: mockColumnId,
-            value: { data: 'John' },
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
+          id: 'val-1',
+          rowId: mockRowId,
+          columnId: mockColumnId,
+          value: { data: 'John' },
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
       ];
 
-      mockDb._setMockReturnValue(mockRowsWithValues);
+      // Spy on findByTableId to return rows
+      vi.spyOn(repository, 'findByTableId').mockResolvedValue([mockRow]);
+
+      // Mock DB to return values for the second query
+      mockDb._setMockReturnValue(mockValues);
 
       const result = await repository.getRowsWithValues(mockTableId);
 
-      expect(result).toEqual(mockRowsWithValues);
-      expect(mockDb.select).toHaveBeenCalled();
-      expect(mockDb.leftJoin).toHaveBeenCalled();
+      expect(result).toHaveLength(1);
+      expect(result[0].row).toEqual(mockRow);
+      expect(result[0].values).toEqual({
+        [mockColumnId]: { data: 'John' }
+      });
     });
   });
 

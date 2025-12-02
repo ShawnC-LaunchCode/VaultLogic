@@ -19,7 +19,7 @@ vi.mock('../../../server/repositories', () => ({
   },
   stepValueRepository: {
     findByRunId: vi.fn(),
-    findByRunIdAndStepId: vi.fn(),
+    findByRunAndStep: vi.fn(),
     delete: vi.fn(),
   },
 }));
@@ -400,7 +400,7 @@ describe('IntakeQuestionVisibilityService', () => {
 
       vi.mocked(repositories.stepRepository.findBySectionIds).mockResolvedValue(mockQuestions as any);
       vi.mocked(repositories.stepValueRepository.findByRunId).mockResolvedValue(mockValues as any);
-      vi.mocked(repositories.stepValueRepository.findByRunIdAndStepId).mockResolvedValue(mockExistingValue as any);
+      vi.mocked(repositories.stepValueRepository.findByRunAndStep).mockResolvedValue(mockExistingValue as any);
       vi.mocked(repositories.stepValueRepository.delete).mockResolvedValue(undefined);
 
       const cleared = await service.clearHiddenQuestionValues('section1', 'run1');

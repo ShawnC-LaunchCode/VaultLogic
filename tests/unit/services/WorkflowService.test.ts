@@ -17,6 +17,7 @@ describe("WorkflowService", () => {
     // Create mock repositories
     mockWorkflowRepo = {
       findById: vi.fn(),
+      findByIdOrSlug: vi.fn(),
       findByCreatorId: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
@@ -53,16 +54,16 @@ describe("WorkflowService", () => {
   describe("verifyOwnership", () => {
     it("should return workflow if user is the creator", async () => {
       const workflow = createTestWorkflow({ creatorId: "user-123" });
-      mockWorkflowRepo.findById.mockResolvedValue(workflow);
+      mockWorkflowRepo.findByIdOrSlug.mockResolvedValue(workflow);
 
       const result = await service.verifyOwnership(workflow.id, "user-123");
 
       expect(result).toEqual(workflow);
-      expect(mockWorkflowRepo.findById).toHaveBeenCalledWith(workflow.id);
+      expect(mockWorkflowRepo.findByIdOrSlug).toHaveBeenCalledWith(workflow.id);
     });
 
     it("should throw error if workflow not found", async () => {
-      mockWorkflowRepo.findById.mockResolvedValue(null);
+      mockWorkflowRepo.findByIdOrSlug.mockResolvedValue(null);
 
       await expect(service.verifyOwnership("workflow-123", "user-123")).rejects.toThrow(
         "Workflow not found"
@@ -71,7 +72,7 @@ describe("WorkflowService", () => {
 
     it("should throw error if user is not the creator", async () => {
       const workflow = createTestWorkflow({ creatorId: "user-123" });
-      mockWorkflowRepo.findById.mockResolvedValue(workflow);
+      mockWorkflowRepo.findByIdOrSlug.mockResolvedValue(workflow);
 
       await expect(service.verifyOwnership(workflow.id, "other-user")).rejects.toThrow(
         "Access denied - you do not own this workflow"
@@ -141,6 +142,7 @@ describe("WorkflowService", () => {
       ];
       const logicRules = [createTestLogicRule(workflow.id)];
 
+      mockWorkflowRepo.findByIdOrSlug.mockResolvedValue(workflow);
       mockWorkflowRepo.findById.mockResolvedValue(workflow);
       mockSectionRepo.findByWorkflowId.mockResolvedValue(sections);
       mockStepRepo.findBySectionIds.mockResolvedValue(steps);
@@ -157,7 +159,7 @@ describe("WorkflowService", () => {
 
     it("should throw error if user does not own workflow", async () => {
       const workflow = createTestWorkflow({ creatorId: "user-123" });
-      mockWorkflowRepo.findById.mockResolvedValue(workflow);
+      mockWorkflowRepo.findByIdOrSlug.mockResolvedValue(workflow);
 
       await expect(service.getWorkflowWithDetails(workflow.id, "other-user")).rejects.toThrow(
         "Access denied"
@@ -195,6 +197,7 @@ describe("WorkflowService", () => {
       const workflow = createTestWorkflow({ creatorId: "user-123" });
       const updatedWorkflow = { ...workflow, title: "Updated Title" };
 
+      mockWorkflowRepo.findByIdOrSlug.mockResolvedValue(workflow);
       mockWorkflowRepo.findById.mockResolvedValue(workflow);
       mockWorkflowRepo.update.mockResolvedValue(updatedWorkflow);
 
@@ -210,7 +213,7 @@ describe("WorkflowService", () => {
 
     it("should throw error if user does not own workflow", async () => {
       const workflow = createTestWorkflow({ creatorId: "user-123" });
-      mockWorkflowRepo.findById.mockResolvedValue(workflow);
+      mockWorkflowRepo.findByIdOrSlug.mockResolvedValue(workflow);
 
       await expect(
         service.updateWorkflow(workflow.id, "other-user", { title: "Updated" })
@@ -222,6 +225,7 @@ describe("WorkflowService", () => {
     it("should delete workflow if user is the owner", async () => {
       const workflow = createTestWorkflow({ creatorId: "user-123" });
 
+      mockWorkflowRepo.findByIdOrSlug.mockResolvedValue(workflow);
       mockWorkflowRepo.findById.mockResolvedValue(workflow);
       mockWorkflowRepo.delete.mockResolvedValue(undefined);
 
@@ -232,7 +236,7 @@ describe("WorkflowService", () => {
 
     it("should throw error if user does not own workflow", async () => {
       const workflow = createTestWorkflow({ creatorId: "user-123" });
-      mockWorkflowRepo.findById.mockResolvedValue(workflow);
+      mockWorkflowRepo.findByIdOrSlug.mockResolvedValue(workflow);
 
       await expect(service.deleteWorkflow(workflow.id, "other-user")).rejects.toThrow(
         "Access denied"
@@ -241,36 +245,38 @@ describe("WorkflowService", () => {
   });
 
   describe("changeStatus", () => {
-    it("should change workflow status to open", async () => {
+    it("should change workflow status to active", async () => {
       const workflow = createTestWorkflow({ creatorId: "user-123", status: "draft" });
-      const updatedWorkflow = { ...workflow, status: "open" as const };
+      const updatedWorkflow = { ...workflow, status: "active" as const };
 
+      mockWorkflowRepo.findByIdOrSlug.mockResolvedValue(workflow);
       mockWorkflowRepo.findById.mockResolvedValue(workflow);
       mockWorkflowRepo.update.mockResolvedValue(updatedWorkflow);
 
-      const result = await service.changeStatus(workflow.id, "user-123", "open");
+      const result = await service.changeStatus(workflow.id, "user-123", "active");
 
-      expect(result.status).toBe("open");
-      expect(mockWorkflowRepo.update).toHaveBeenCalledWith(workflow.id, { status: "open" });
+      expect(result.status).toBe("active");
+      expect(mockWorkflowRepo.update).toHaveBeenCalledWith(workflow.id, { status: "active" });
     });
 
-    it("should change workflow status to closed", async () => {
-      const workflow = createTestWorkflow({ creatorId: "user-123", status: "open" });
-      const updatedWorkflow = { ...workflow, status: "closed" as const };
+    it("should change workflow status to archived", async () => {
+      const workflow = createTestWorkflow({ creatorId: "user-123", status: "active" });
+      const updatedWorkflow = { ...workflow, status: "archived" as const };
 
+      mockWorkflowRepo.findByIdOrSlug.mockResolvedValue(workflow);
       mockWorkflowRepo.findById.mockResolvedValue(workflow);
       mockWorkflowRepo.update.mockResolvedValue(updatedWorkflow);
 
-      const result = await service.changeStatus(workflow.id, "user-123", "closed");
+      const result = await service.changeStatus(workflow.id, "user-123", "archived");
 
-      expect(result.status).toBe("closed");
+      expect(result.status).toBe("archived");
     });
 
     it("should throw error if user does not own workflow", async () => {
       const workflow = createTestWorkflow({ creatorId: "user-123" });
-      mockWorkflowRepo.findById.mockResolvedValue(workflow);
+      mockWorkflowRepo.findByIdOrSlug.mockResolvedValue(workflow);
 
-      await expect(service.changeStatus(workflow.id, "other-user", "open")).rejects.toThrow(
+      await expect(service.changeStatus(workflow.id, "other-user", "active")).rejects.toThrow(
         "Access denied"
       );
     });

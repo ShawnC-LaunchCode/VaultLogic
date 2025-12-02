@@ -19,6 +19,7 @@ describe('DataVault Reference Columns', () => {
         getMaxOrderIndex: vi.fn(),
         create: vi.fn(),
         update: vi.fn(),
+        slugExists: vi.fn(),
       };
       columnsService = new DatavaultColumnsService(
         mockColumnsRepo,

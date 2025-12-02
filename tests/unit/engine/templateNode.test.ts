@@ -16,6 +16,8 @@ import {
   workflowTemplates,
   runs,
   runOutputs,
+  users,
+  tenants,
 } from '../../../shared/schema';
 import { executeTemplateNode } from '../../../server/engine/nodes/template';
 import type { TemplateNodeConfig, TemplateNodeInput } from '../../../server/engine/nodes/template';
@@ -49,10 +51,10 @@ vi.mock('../../../server/services/templates', async (importOriginal) => {
 // Mock fs operations
 vi.mock('fs/promises', () => ({
   default: {
-    mkdir: vi.fn(async () => {}),
-    writeFile: vi.fn(async () => {}),
-    unlink: vi.fn(async () => {}),
-    access: vi.fn(async () => {}),
+    mkdir: vi.fn(async () => { }),
+    writeFile: vi.fn(async () => { }),
+    unlink: vi.fn(async () => { }),
+    access: vi.fn(async () => { }),
   },
 }));
 
@@ -66,15 +68,35 @@ describeWithDb('Template Node - Multi-Template Support', () => {
   let testRunId: string;
 
   beforeEach(async () => {
-    testTenantId = 'test-tenant-id';
+    testTenantId = '00000000-0000-0000-0000-000000000000';
+
+    // Create test tenant
+    await db.insert(tenants).values({
+      id: testTenantId,
+      name: 'Test Tenant',
+      plan: 'free',
+    });
+
+    // Create test user
+    const [user] = await db
+      .insert(users)
+      .values({
+        email: 'test@example.com',
+        tenantId: testTenantId,
+        role: 'creator',
+      })
+      .returning();
 
     // Create test project
     const [project] = await db
       .insert(projects)
       .values({
         name: 'Test Project',
+        title: 'Test Project',
         description: 'Test project',
         tenantId: testTenantId,
+        creatorId: user.id,
+        ownerId: user.id,
       })
       .returning();
     testProjectId = project.id;
@@ -87,6 +109,8 @@ describeWithDb('Template Node - Multi-Template Support', () => {
         title: 'Test Workflow',
         description: 'Test workflow',
         status: 'draft',
+        creatorId: user.id,
+        ownerId: user.id,
       })
       .returning();
     testWorkflowId = workflow.id;
@@ -99,6 +123,8 @@ describeWithDb('Template Node - Multi-Template Support', () => {
         version: '1.0.0',
         status: 'draft',
         changelog: 'Initial version',
+        createdBy: user.id,
+        graphJson: {},
       })
       .returning();
     testVersionId = version.id;
@@ -133,7 +159,8 @@ describeWithDb('Template Node - Multi-Template Support', () => {
       .insert(runs)
       .values({
         workflowVersionId: testVersionId,
-        status: 'in_progress',
+        status: 'pending',
+        createdBy: user.id,
       })
       .returning();
     testRunId = run.id;
@@ -148,6 +175,8 @@ describeWithDb('Template Node - Multi-Template Support', () => {
     await db.delete(workflows).where(eq(workflows.id, testWorkflowId));
     await db.delete(templates).where(eq(templates.projectId, testProjectId));
     await db.delete(projects).where(eq(projects.id, testProjectId));
+    await db.delete(users).where(eq(users.tenantId, testTenantId));
+    await db.delete(tenants).where(eq(tenants.id, testTenantId));
   });
 
   describe('Template Key Resolution (New Path)', () => {
@@ -172,7 +201,7 @@ describeWithDb('Template Node - Multi-Template Support', () => {
         nodeId: 'node-1',
         config,
         context: {
-          user: { name: 'John Doe', email: 'john@example.com' },
+          vars: { user: { name: 'John Doe', email: 'john@example.com' } },
         },
         tenantId: testTenantId,
         runId: testRunId,
@@ -198,7 +227,7 @@ describeWithDb('Template Node - Multi-Template Support', () => {
       const input: TemplateNodeInput = {
         nodeId: 'node-1',
         config,
-        context: {},
+        context: { vars: {} },
         tenantId: testTenantId,
         workflowVersionId: testVersionId,
       };
@@ -228,7 +257,7 @@ describeWithDb('Template Node - Multi-Template Support', () => {
       const input: TemplateNodeInput = {
         nodeId: 'node-1',
         config,
-        context: { user: { name: 'Jane' } },
+        context: { vars: { user: { name: 'Jane' } } },
         tenantId: testTenantId,
         runId: testRunId,
         workflowVersionId: testVersionId,
@@ -263,7 +292,7 @@ describeWithDb('Template Node - Multi-Template Support', () => {
       const input: TemplateNodeInput = {
         nodeId: 'node-1',
         config,
-        context: { user: { name: 'Alice' } },
+        context: { vars: { user: { name: 'Alice' } } },
         tenantId: testTenantId,
       };
 
@@ -275,14 +304,14 @@ describeWithDb('Template Node - Multi-Template Support', () => {
 
     it('should throw error if templateId not found', async () => {
       const config: TemplateNodeConfig = {
-        templateId: 'non-existent-id',
+        templateId: '22222222-2222-2222-2222-222222222222',
         bindings: {},
       };
 
       const input: TemplateNodeInput = {
         nodeId: 'node-1',
         config,
-        context: {},
+        context: { vars: {} },
         tenantId: testTenantId,
       };
 
@@ -310,7 +339,7 @@ describeWithDb('Template Node - Multi-Template Support', () => {
       const input: TemplateNodeInput = {
         nodeId: 'node-1',
         config,
-        context: {},
+        context: { vars: {} },
         tenantId: testTenantId,
         workflowVersionId: testVersionId,
       };
@@ -331,7 +360,7 @@ describeWithDb('Template Node - Multi-Template Support', () => {
       const input: TemplateNodeInput = {
         nodeId: 'node-1',
         config,
-        context: {},
+        context: { vars: {} },
         tenantId: testTenantId,
       };
 
@@ -359,7 +388,7 @@ describeWithDb('Template Node - Multi-Template Support', () => {
       const input: TemplateNodeInput = {
         nodeId: 'node-1',
         config,
-        context: {},
+        context: { vars: {} },
         tenantId: testTenantId,
         runId: testRunId,
         workflowVersionId: testVersionId,
@@ -397,7 +426,7 @@ describeWithDb('Template Node - Multi-Template Support', () => {
       const input: TemplateNodeInput = {
         nodeId: 'node-1',
         config,
-        context: {},
+        context: { vars: {} },
         tenantId: testTenantId,
         runId: testRunId,
         workflowVersionId: testVersionId,
@@ -428,7 +457,7 @@ describeWithDb('Template Node - Multi-Template Support', () => {
       const input: TemplateNodeInput = {
         nodeId: 'node-1',
         config,
-        context: { user: { active: true } },
+        context: { vars: { user: { active: true } } },
         tenantId: testTenantId,
       };
 
@@ -448,7 +477,7 @@ describeWithDb('Template Node - Multi-Template Support', () => {
       const input: TemplateNodeInput = {
         nodeId: 'node-1',
         config,
-        context: { user: { active: true } },
+        context: { vars: { user: { active: true } } },
         tenantId: testTenantId,
       };
 
@@ -471,7 +500,7 @@ describeWithDb('Template Node - Multi-Template Support', () => {
       const input: TemplateNodeInput = {
         nodeId: 'node-1',
         config,
-        context: { user: { name: 'Bob', age: 30 } },
+        context: { vars: { user: { name: 'Bob', age: 30 } } },
         tenantId: testTenantId,
       };
 
@@ -495,7 +524,7 @@ describeWithDb('Template Node - Multi-Template Support', () => {
       const input: TemplateNodeInput = {
         nodeId: 'node-1',
         config,
-        context: {},
+        context: { vars: {} },
         tenantId: testTenantId,
       };
 
@@ -517,7 +546,7 @@ describeWithDb('Template Node - Multi-Template Support', () => {
       const input: TemplateNodeInput = {
         nodeId: 'node-1',
         config,
-        context: {},
+        context: { vars: {} },
         tenantId: testTenantId,
         runId: testRunId,
         workflowVersionId: testVersionId,
@@ -541,14 +570,14 @@ describeWithDb('Template Node - Multi-Template Support', () => {
 
     it('should not throw errors (should return error in result)', async () => {
       const config: TemplateNodeConfig = {
-        templateId: 'invalid-id',
+        templateId: '22222222-2222-2222-2222-222222222222',
         bindings: {},
       };
 
       const input: TemplateNodeInput = {
         nodeId: 'node-1',
         config,
-        context: {},
+        context: { vars: {} },
         tenantId: testTenantId,
       };
 
@@ -567,8 +596,8 @@ describeWithDb('Template Node - Multi-Template Support', () => {
       const input: TemplateNodeInput = {
         nodeId: 'node-1',
         config,
-        context: {},
-        tenantId: 'different-tenant-id', // Different tenant
+        context: { vars: {} },
+        tenantId: '11111111-1111-1111-1111-111111111111', // Different tenant
       };
 
       const result = await executeTemplateNode(input);
@@ -588,7 +617,7 @@ describeWithDb('Template Node - Multi-Template Support', () => {
       const input: TemplateNodeInput = {
         nodeId: 'node-1',
         config,
-        context: {},
+        context: { vars: {} },
         tenantId: testTenantId,
       };
 

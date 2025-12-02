@@ -12,18 +12,11 @@ describe('DatavaultColumnsService', () => {
   let mockTablesRepo: any;
   let mockColumnsRepo: any;
 
-  const mockTenantId = '550e8400-e29b-41d4-a716-446655440000';
-  const mockTableId = '660e8400-e29b-41d4-a716-446655440001';
-  const mockColumnId = '770e8400-e29b-41d4-a716-446655440002';
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-
-    mockTablesRepo = {
+  vi.mock('../../../server/repositories', () => ({
+    datavaultTablesRepository: {
       findById: vi.fn(),
-    };
-
-    mockColumnsRepo = {
+    },
+    datavaultColumnsRepository: {
       findById: vi.fn(),
       findByTableId: vi.fn(),
       slugExists: vi.fn(),
@@ -32,9 +25,24 @@ describe('DatavaultColumnsService', () => {
       delete: vi.fn(),
       reorderColumns: vi.fn(),
       getMaxOrderIndex: vi.fn(),
-    };
+      findByTableAndSlug: vi.fn(),
+    },
+    datavaultRowsRepository: {
+      deleteValuesByColumnId: vi.fn(),
+      cleanupAutoNumberSequence: vi.fn(),
+    },
+  }));
 
-    service = new DatavaultColumnsService(mockTablesRepo, mockColumnsRepo);
+  const mockTenantId = '550e8400-e29b-41d4-a716-446655440000';
+  const mockTableId = '660e8400-e29b-41d4-a716-446655440001';
+  const mockColumnId = '770e8400-e29b-41d4-a716-446655440002';
+
+  beforeEach(async () => {
+    mockTablesRepo = (await import('../../../server/repositories')).datavaultTablesRepository;
+    mockColumnsRepo = (await import('../../../server/repositories')).datavaultColumnsRepository;
+    vi.clearAllMocks();
+
+    service = new DatavaultColumnsService(mockColumnsRepo, mockTablesRepo);
   });
 
   describe('getColumns', () => {
@@ -67,7 +75,7 @@ describe('DatavaultColumnsService', () => {
       mockTablesRepo.findById.mockResolvedValue(mockTable);
       mockColumnsRepo.findByTableId.mockResolvedValue(mockColumns);
 
-      const result = await service.getColumns(mockTableId, mockTenantId);
+      const result = await service.listColumns(mockTableId, mockTenantId);
 
       expect(result).toEqual(mockColumns);
     });
@@ -75,7 +83,7 @@ describe('DatavaultColumnsService', () => {
     it('should throw 404 if table not found', async () => {
       mockTablesRepo.findById.mockResolvedValue(undefined);
 
-      await expect(service.getColumns(mockTableId, mockTenantId))
+      await expect(service.listColumns(mockTableId, mockTenantId))
         .rejects
         .toThrow('Table not found');
     });
@@ -325,11 +333,12 @@ describe('DatavaultColumnsService', () => {
       const columnIds = ['col-1', 'col-2', 'col-3'];
 
       mockTablesRepo.findById.mockResolvedValue(mockTable);
+      mockColumnsRepo.findByTableId.mockResolvedValue(columnIds.map(id => ({ id })));
       mockColumnsRepo.reorderColumns.mockResolvedValue(undefined);
 
       await service.reorderColumns(mockTableId, mockTenantId, columnIds);
 
-      expect(mockColumnsRepo.reorderColumns).toHaveBeenCalledWith(columnIds, undefined);
+      expect(mockColumnsRepo.reorderColumns).toHaveBeenCalledWith(mockTableId, columnIds, undefined);
     });
   });
 
@@ -411,6 +420,18 @@ describe('DatavaultColumnsService', () => {
     });
 
     it('should reject select column without options', async () => {
+      const explicitTenantId = '550e8400-e29b-41d4-a716-446655440000';
+      const explicitTable = {
+        id: mockTableId,
+        tenantId: explicitTenantId,
+        ownerUserId: 'user-1',
+        name: 'Test Table',
+        slug: 'test-table',
+        description: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
       const insertData = {
         tableId: mockTableId,
         name: 'Status',
@@ -419,14 +440,26 @@ describe('DatavaultColumnsService', () => {
         options: [],
       };
 
-      mockTablesRepo.findById.mockResolvedValue(mockTable);
+      mockTablesRepo.findById.mockResolvedValue(explicitTable);
 
-      await expect(service.createColumn(insertData, mockTenantId))
+      await expect(service.createColumn(insertData, explicitTenantId))
         .rejects
         .toThrow('Select and multiselect columns require at least one option');
     });
 
     it('should reject options with duplicate values', async () => {
+      const explicitTenantId = '550e8400-e29b-41d4-a716-446655440000';
+      const explicitTable = {
+        id: mockTableId,
+        tenantId: explicitTenantId,
+        ownerUserId: 'user-1',
+        name: 'Test Table',
+        slug: 'test-table',
+        description: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
       const insertData = {
         tableId: mockTableId,
         name: 'Status',
@@ -438,14 +471,26 @@ describe('DatavaultColumnsService', () => {
         ],
       };
 
-      mockTablesRepo.findById.mockResolvedValue(mockTable);
+      mockTablesRepo.findById.mockResolvedValue(explicitTable);
 
-      await expect(service.createColumn(insertData, mockTenantId))
+      await expect(service.createColumn(insertData, explicitTenantId))
         .rejects
         .toThrow('Duplicate option value: active');
     });
 
     it('should reject options without label or value', async () => {
+      const explicitTenantId = '550e8400-e29b-41d4-a716-446655440000';
+      const explicitTable = {
+        id: mockTableId,
+        tenantId: explicitTenantId,
+        ownerUserId: 'user-1',
+        name: 'Test Table',
+        slug: 'test-table',
+        description: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
       const insertData = {
         tableId: mockTableId,
         name: 'Status',
@@ -457,9 +502,9 @@ describe('DatavaultColumnsService', () => {
         ],
       };
 
-      mockTablesRepo.findById.mockResolvedValue(mockTable);
+      mockTablesRepo.findById.mockResolvedValue(explicitTable);
 
-      await expect(service.createColumn(insertData, mockTenantId))
+      await expect(service.createColumn(insertData, explicitTenantId))
         .rejects
         .toThrow('Each option must have both label and value');
     });

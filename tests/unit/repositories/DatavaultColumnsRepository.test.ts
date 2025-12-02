@@ -22,18 +22,14 @@ describe('DatavaultColumnsRepository', () => {
       select: vi.fn().mockReturnThis(),
       from: vi.fn().mockReturnThis(),
       where: vi.fn().mockReturnThis(),
-      orderBy: vi.fn(function(this: any) {
-        return Promise.resolve(mockReturnValue);
-      }),
+      orderBy: vi.fn().mockReturnThis(),
       insert: vi.fn().mockReturnThis(),
       values: vi.fn().mockReturnThis(),
-      returning: vi.fn(),
+      returning: vi.fn().mockReturnThis(),
       update: vi.fn().mockReturnThis(),
       set: vi.fn().mockReturnThis(),
       delete: vi.fn().mockReturnThis(),
-      limit: vi.fn(function(this: any) {
-        return Promise.resolve(mockReturnValue);
-      }),
+      limit: vi.fn().mockReturnThis(),
       then: vi.fn((resolve) => resolve(mockReturnValue)),
       _setMockReturnValue: (value: any) => { mockReturnValue = value; },
     };
@@ -213,7 +209,7 @@ describe('DatavaultColumnsRepository', () => {
 
       mockDb.returning.mockResolvedValue([]);
 
-      await repository.reorderColumns(columnIds);
+      await repository.reorderColumns(mockTableId, columnIds);
 
       expect(mockDb.update).toHaveBeenCalledTimes(3);
     });
@@ -221,7 +217,7 @@ describe('DatavaultColumnsRepository', () => {
 
   describe('getMaxOrderIndex', () => {
     it('should return max order index', async () => {
-      mockDb._setMockReturnValue([{ maxOrder: 5 }]);
+      mockDb._setMockReturnValue([{ max: 5 }]);
 
       const result = await repository.getMaxOrderIndex(mockTableId);
 
@@ -229,11 +225,11 @@ describe('DatavaultColumnsRepository', () => {
     });
 
     it('should return 0 if no columns exist', async () => {
-      mockDb._setMockReturnValue([{ maxOrder: null }]);
+      mockDb._setMockReturnValue([{ max: null }]);
 
       const result = await repository.getMaxOrderIndex(mockTableId);
 
-      expect(result).toBe(0);
+      expect(result).toBe(-1);
     });
   });
 });

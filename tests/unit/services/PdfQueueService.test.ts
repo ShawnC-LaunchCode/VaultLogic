@@ -3,15 +3,13 @@
  *
  * Tests for queue-based PDF conversion with retry logic
  *
- * NOTE: These are integration tests that require database connectivity
- */
-
 import { describe, it, expect, beforeEach, afterEach, vi, beforeAll, afterAll } from 'vitest';
 import { describeWithDb } from '../../helpers/dbTestHelper';
 import { db } from '../../../server/db';
-import { projects, workflows, workflowVersions, runs, runOutputs } from '../../../shared/schema';
+import { projects, workflows, workflowVersions, runs, runOutputs, users, tenants } from '../../../shared/schema';
 import { PdfQueueService } from '../../../server/services/PdfQueueService';
 import { eq, and } from 'drizzle-orm';
+import { DbTransaction } from '../../../server/repositories';
 import fs from 'fs/promises';
 
 // Mock the docxRenderer2 module
@@ -33,10 +31,10 @@ vi.mock('../../../server/services/templates', async (importOriginal) => {
 // Mock fs operations
 vi.mock('fs/promises', () => ({
   default: {
-    access: vi.fn(async () => {}),
-    mkdir: vi.fn(async () => {}),
-    writeFile: vi.fn(async () => {}),
-    unlink: vi.fn(async () => {}),
+    access: vi.fn(async () => { }),
+    mkdir: vi.fn(async () => { }),
+    writeFile: vi.fn(async () => { }),
+    unlink: vi.fn(async () => { }),
   },
 }));
 
@@ -54,15 +52,28 @@ describeWithDb('PdfQueueService', () => {
   });
 
   beforeEach(async () => {
-    testTenantId = 'test-tenant-id';
+    testTenantId = '00000000-0000-0000-0000-000000000000';
+
+    // Create test user
+    const [user] = await db
+      .insert(users)
+      .values({
+        email: 'test@example.com',
+        role: 'creator',
+      })
+      .returning();
+    const testUserId = user.id;
 
     // Create test project
     const [project] = await db
       .insert(projects)
       .values({
         name: 'Test Project',
+        title: 'Test Project',
         description: 'Test project',
         tenantId: testTenantId,
+        creatorId: testUserId,
+        ownerId: testUserId,
       })
       .returning();
     testProjectId = project.id;
@@ -288,7 +299,7 @@ describeWithDb('PdfQueueService', () => {
 
     it('should not start if already running', () => {
       service.start();
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
 
       service.start(); // Try to start again
 
@@ -413,7 +424,7 @@ describeWithDb('PdfQueueService', () => {
 
   describe('Transaction Support', () => {
     it('should support enqueue within transaction', async () => {
-      await db.transaction(async (tx) => {
+      await db.transaction(async (tx: DbTransaction) => {
         const outputId = await service.enqueue(
           'test.docx',
           testRunId,
@@ -435,7 +446,7 @@ describeWithDb('PdfQueueService', () => {
     });
 
     it('should support convertImmediate within transaction', async () => {
-      await db.transaction(async (tx) => {
+      await db.transaction(async (tx: DbTransaction) => {
         const result = await service.convertImmediate(
           '/fake/outputs/test.docx',
           testRunId,

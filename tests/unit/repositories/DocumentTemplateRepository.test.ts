@@ -21,22 +21,15 @@ describe('DocumentTemplateRepository', () => {
       select: vi.fn().mockReturnThis(),
       from: vi.fn().mockReturnThis(),
       where: vi.fn().mockReturnThis(),
-      orderBy: vi.fn(function(this: any) {
-        // orderBy is often the last in SELECT chains, make it resolve to mockReturnValue
-        return Promise.resolve(mockReturnValue);
-      }),
+      orderBy: vi.fn().mockReturnThis(),
       insert: vi.fn().mockReturnThis(),
       values: vi.fn().mockReturnThis(),
-      returning: vi.fn(),
+      returning: vi.fn().mockReturnThis(),
       update: vi.fn().mockReturnThis(),
       set: vi.fn().mockReturnThis(),
       delete: vi.fn().mockReturnThis(),
-      limit: vi.fn(function(this: any) {
-        // limit is also sometimes the last method
-        return Promise.resolve(mockReturnValue);
-      }),
-      then: vi.fn((resolve) => resolve(mockReturnValue)), // Make the chain directly awaitable
-      // Helper to set mock return value
+      limit: vi.fn().mockReturnThis(),
+      then: vi.fn((resolve) => resolve(mockReturnValue)),
       _setMockReturnValue: (value: any) => { mockReturnValue = value; },
     };
 

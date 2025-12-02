@@ -68,6 +68,7 @@ export class DatavaultColumnsService {
     const table = await this.tablesRepo.findById(tableId, tx);
 
     if (!table) {
+      console.log(`[DEBUG] Table not found: ${tableId}`);
       throw new Error("Table not found");
     }
 

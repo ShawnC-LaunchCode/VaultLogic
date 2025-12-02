@@ -83,6 +83,7 @@ export async function renderDocx(options: RenderOptions): Promise<RenderResult> 
         const errorDetails = error.properties.errors
           .map((err: any) => `${err.name}: ${err.message}`)
           .join(', ');
+        console.error('DOCX Render Error Details:', JSON.stringify(error.properties.errors, null, 2));
         throw createError.internal(`DOCX rendering failed: ${errorDetails}`);
       }
       throw createError.internal(

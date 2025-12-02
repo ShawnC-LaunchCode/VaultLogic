@@ -32,6 +32,8 @@ describe('DatavaultTablesService', () => {
 
     mockColumnsRepo = {
       findByTableId: vi.fn(),
+      create: vi.fn(),
+      countByTableId: vi.fn(),
     };
 
     mockRowsRepo = {
@@ -41,7 +43,7 @@ describe('DatavaultTablesService', () => {
     service = new DatavaultTablesService(mockTablesRepo, mockColumnsRepo, mockRowsRepo);
   });
 
-  describe('getTables', () => {
+  describe('listTables', () => {
     it('should get all tables for a tenant', async () => {
       const mockTables = [
         {
@@ -58,13 +60,15 @@ describe('DatavaultTablesService', () => {
 
       mockTablesRepo.findByTenantId.mockResolvedValue(mockTables);
 
-      const result = await service.getTables(mockTenantId, false);
+      const result = await service.listTables(mockTenantId);
 
       expect(result).toEqual(mockTables);
       expect(mockTablesRepo.findByTenantId).toHaveBeenCalledWith(mockTenantId, undefined);
     });
+  });
 
-    it('should get tables with stats when requested', async () => {
+  describe('listTablesWithStats', () => {
+    it('should get tables with stats', async () => {
       const mockTables = [
         {
           id: mockTableId,
@@ -79,10 +83,10 @@ describe('DatavaultTablesService', () => {
       ];
 
       mockTablesRepo.findByTenantId.mockResolvedValue(mockTables);
-      mockColumnsRepo.findByTableId.mockResolvedValue([{ id: 'col-1' }, { id: 'col-2' }]);
+      mockColumnsRepo.countByTableId.mockResolvedValue(2);
       mockRowsRepo.countByTableId.mockResolvedValue(42);
 
-      const result = await service.getTables(mockTenantId, true);
+      const result = await service.listTablesWithStats(mockTenantId);
 
       expect(result).toHaveLength(1);
       expect(result[0]).toHaveProperty('columnCount', 2);
@@ -134,7 +138,7 @@ describe('DatavaultTablesService', () => {
 
       await expect(service.getTable(mockTableId, mockTenantId))
         .rejects
-        .toThrow('Forbidden');
+        .toThrow('Access denied - table belongs to different tenant');
     });
   });
 
