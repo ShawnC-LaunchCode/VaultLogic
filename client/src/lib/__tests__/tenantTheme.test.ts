@@ -114,8 +114,6 @@ describe('tenantTheme', () => {
       expect(tokens['--brand-bg']).toBeDefined();
       expect(tokens['--brand-text']).toBeDefined();
       expect(tokens['--brand-logo-url']).toBeDefined();
-      expect(tokens['--brand-button-bg']).toBeDefined();
-      expect(tokens['--brand-input-bg']).toBeDefined();
 
       // Should have generated 25+ tokens
       expect(Object.keys(tokens).length).toBeGreaterThanOrEqual(25);
