@@ -5,15 +5,6 @@ import * as schema from "@shared/schema";
 import type { Pool } from 'pg';
 import type { Pool as NeonPool } from '@neondatabase/serverless';
 
-// Check if DATABASE_URL is set - but don't throw immediately to allow tests to load
-const databaseUrl = process.env.DATABASE_URL;
-const isDatabaseConfigured = !!databaseUrl && databaseUrl !== 'undefined' && databaseUrl !== '';
-
-// Detect if we're using Neon serverless or local PostgreSQL
-const isNeonDatabase = isDatabaseConfigured && (
-  databaseUrl!.includes('neon.tech') || databaseUrl!.includes('neon.co')
-);
-
 let pool: Pool | NeonPool;
 let db: any;
 let dbInitialized = false;
@@ -23,11 +14,19 @@ let dbInitPromise: Promise<void>;
 async function initializeDatabase() {
   if (dbInitialized) return;
 
+  const databaseUrl = process.env.DATABASE_URL;
+  const isDatabaseConfigured = !!databaseUrl && databaseUrl !== 'undefined' && databaseUrl !== '';
+
   if (!isDatabaseConfigured) {
     throw new Error(
       "DATABASE_URL must be set. Did you forget to provision a database?"
     );
   }
+
+  // Detect if we're using Neon serverless or local PostgreSQL
+  const isNeonDatabase = isDatabaseConfigured && (
+    databaseUrl!.includes('neon.tech') || databaseUrl!.includes('neon.co')
+  );
 
   if (isNeonDatabase) {
     // Use Neon serverless driver for cloud databases
@@ -53,7 +52,11 @@ async function initializeDatabase() {
 
 // Start initialization immediately only if database is configured
 // If not configured, create a lazy promise that will reject when awaited
-dbInitPromise = isDatabaseConfigured
+// For tests, we might initialize later manually
+const initialDatabaseUrl = process.env.DATABASE_URL;
+const isInitialConfigured = !!initialDatabaseUrl && initialDatabaseUrl !== 'undefined' && initialDatabaseUrl !== '';
+
+dbInitPromise = isInitialConfigured
   ? initializeDatabase()
   : Promise.resolve(); // Don't reject immediately to avoid unhandled rejection errors in tests
 

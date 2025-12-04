@@ -2213,3 +2213,438 @@ AssertionError: expected 403 to be 400 // Object.is equality
 
 [1m[41m FAIL [49m[22m [31mTests failed. Watching for file changes...[39m
        [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
+c[3J[1m[44m RERUN [49m[22m [34m[2mserver/db.ts [22m[34mx5 [34m[39m
+       [2m Filename pattern: [22m[34mtests/integration/datavault-v4-regression.test.ts[39m
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (13) from .env -- tip: ≡ƒôí add observability to secrets: https://dotenvx.com/ops
+
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ» Failed Suites 1 ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts [ tests/integration/datavault-v4-regression.test.ts ]
+ReferenceError: dbInitPromise is not defined
+ Γ¥» server/db.ts:54:1
+     52| const isInitialConfigured = !!initialDatabaseUrl && initialDatabaseUrlΓÇª
+     53| 
+     54| dbInitPromise = isInitialConfigured
+       | ^
+     55|   ? initializeDatabase()
+     56|   : Promise.resolve(); // Don't reject immediately to avoid unhandled ΓÇª
+ Γ¥» tests/setup.ts:2:1
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/1]ΓÄ»
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ» Unhandled Errors ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»
+
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ» Unhandled Rejection ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»
+ReferenceError: dbInitialized is not defined
+ Γ¥» initializeDatabase server/db.ts:10:3
+      8| // Initialize database connection
+      9| async function initializeDatabase() {
+     10|   if (dbInitialized) return;
+       |   ^
+     11| 
+     12|   const databaseUrl = process.env.DATABASE_URL;
+ Γ¥» server/db.ts:55:5
+ Γ¥» processTicksAndRejections node:internal/process/task_queues:103:5
+ Γ¥» VitestModuleEvaluator.runInlinedModule node_modules/vitest/dist/module-evaluator.js:136:4
+ Γ¥» VitestModuleRunner.directRequest node_modules/vite/dist/node/module-runner.js:1113:59
+ Γ¥» VitestModuleRunner.cachedRequest node_modules/vite/dist/node/module-runner.js:1031:73
+ Γ¥» tests/setup.ts:2:1
+ Γ¥» VitestModuleEvaluator.runInlinedModule node_modules/vitest/dist/module-evaluator.js:136:4
+ Γ¥» VitestModuleRunner.directRequest node_modules/vite/dist/node/module-runner.js:1113:59
+ Γ¥» VitestModuleRunner.cachedRequest node_modules/vite/dist/node/module-runner.js:1031:73
+
+This error originated in "tests/integration/datavault-v4-regression.test.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [2mno tests[22m
+[2m     Errors [22m [1m[31m1 error[39m[22m
+[2m   Start at [22m 12:55:40
+[2m   Duration [22m 0ms
+
+[1m[41m FAIL [49m[22m [31mTests failed. Watching for file changes...[39m
+       [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
+c[3J[1m[44m RERUN [49m[22m [34m[2mserver/db.ts [22m[34mx6 [34m[39m
+       [2m Filename pattern: [22m[34mtests/integration/datavault-v4-regression.test.ts[39m
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (13) from .env -- tip: ΓÜÖ∩╕Å  load multiple .env files with { path: ['.env.local', '.env'] }
+
+{"level":40,"time":1764874580407,"env":"test","module":"auth-service","msg":"JWT_SECRET not set - falling back to SESSION_SECRET. This is acceptable for development but should be fixed for production."}
+{"level":30,"time":1764874585182,"env":"test","multerImportKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceType":"function","uploadKeys":["storage","limits","preservePath","fileFilter"],"uploadType":"object","uploadPrototype":{},"msg":"Debug Multer Import"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts
+[22m[39m≡ƒº¬ Setting up test environment...
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts
+[22m[39mΓ£à Database initialized for tests
+
+{"level":30,"time":1764874591677,"env":"test","module":"file-routes","outputsDir":"C:\\Users\\scoot\\poll\\VaultLogic\\server\\files\\outputs","msg":"Secure file routes registered"}
+{"level":30,"time":1764874591677,"env":"test","module":"ai-routes","msg":"AI workflow generation routes registered"}
+{"level":30,"time":1764874591695,"env":"test","module":"collab-server","msg":"Initializing WebSocket collaboration server"}
+{"level":40,"time":1764874591695,"env":"test","module":"collab-persistence","msg":"REDIS_URL not configured, multi-instance collab will not work"}
+{"level":30,"time":1764874591695,"env":"test","module":"collab-server","msg":"WebSocket collaboration server initialized"}
+{"level":30,"time":1764874591695,"env":"test","module":"routes","msg":"Real-time collaboration server initialized"}
+{"level":30,"time":1764874592253,"env":"test","module":"auth","hasToken":true,"origin":"http://localhost:5000","ip":"::ffff:127.0.0.1","msg":"OAuth2 login attempt"}
+{"level":30,"time":1764874592254,"env":"test","module":"auth","email":"testuser@example.com","msg":"Token verified successfully"}
+{"level":30,"time":1764874592344,"env":"test","module":"auth","userId":"google-user-id","msg":"User upserted successfully"}
+{"level":30,"time":1764874592443,"env":"test","module":"auth","email":"testuser@example.com","msg":"OAuth2 login successful"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests
+[22m[39mLogin Status: [33m200[39m
+Login Body: {
+  "message": "Authentication successful",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJnb29nbGUtdXNlci1pZCIsImVtYWlsIjoidGVzdHVzZXJAZXhhbXBsZS5jb20iLCJ0ZW5hbnRJZCI6IjY4MmU4MGYyLWE2NzktNDI1ZC1iMGUzLWEzNTY4MTgxOGFmMCIsInJvbGUiOiJvd25lciIsImlhdCI6MTc2NDg3NDU5MiwiZXhwIjoxNzY1NDc5MzkyfQ.8OgZd9QcwJ_nCHbneVGy3sDIM9SF-FpKc2di5z6czbU",
+  "user": {
+    "id": "google-user-id",
+    "email": "testuser@example.com",
+    "firstName": "Test",
+    "lastName": "User",
+    "profileImageUrl": "https://example.com/avatar.jpg",
+    "tenantId": "682e80f2-a679-425d-b0e3-a35681818af0",
+    "tenantRole": "owner"
+  }
+}
+
+{"level":30,"time":1764874592461,"env":"test","module":"auth","hasToken":true,"origin":"http://localhost:5000","ip":"::ffff:127.0.0.1","msg":"OAuth2 login attempt"}
+{"level":30,"time":1764874592462,"env":"test","module":"auth","email":"other@example.com","msg":"Token verified successfully"}
+{"level":30,"time":1764874592505,"env":"test","module":"auth","userId":"other-user-id","msg":"User upserted successfully"}
+{"level":30,"time":1764874592606,"env":"test","module":"auth","email":"other@example.com","msg":"OAuth2 login successful"}
+{"level":50,"time":1764874594866,"env":"test","error":{},"msg":"Error creating DataVault row"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mSelect/Multiselect Columns[2m > [22m[2mshould validate select value against options
+[22m[39mRow creation error message: Column 'Status' value must be one of: active, inactive
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mRow Notes[2m > [22m[2mshould create a note for a row
+[22m[39mCreated note: 1ec013c3-3b30-4ca3-af75-29124ee1c618 tenantId: 682e80f2-a679-425d-b0e3-a35681818af0 userId: google-user-id
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mRow Notes[2m > [22m[2mshould get all notes for a row
+[22m[39mCreated note: 3a4b6934-dd32-4bc7-b0dd-58b3530a5ce9 tenantId: 682e80f2-a679-425d-b0e3-a35681818af0 userId: google-user-id
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mRow Notes[2m > [22m[2mshould get all notes for a row
+[22m[39mCreated note: 428bca93-6215-480a-bd6d-a17c9b269662 tenantId: 682e80f2-a679-425d-b0e3-a35681818af0 userId: google-user-id
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mRow Notes[2m > [22m[2mshould delete a note
+[22m[39mCreated note: 0d73c1b5-259c-4727-a0f5-4c53e366e037 tenantId: 682e80f2-a679-425d-b0e3-a35681818af0 userId: google-user-id
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mRow Notes[2m > [22m[2mshould not allow deleting notes by other users
+[22m[39mCreated note: daf44354-39eb-4e18-ba17-845da0fd143d tenantId: 682e80f2-a679-425d-b0e3-a35681818af0 userId: google-user-id
+
+{"level":50,"time":1764874599803,"env":"test","error":{},"msg":"Error deleting row note"}
+{"level":40,"time":1764874601210,"env":"test","module":"auth-middleware","path":"/datavault/databases/f6ceefc0-2255-45de-bbd9-5fce000ef490/tables","msg":"No valid authentication found"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould grant table permission
+[22m[39mupsert result: {"id":"1245c434-fcbd-4c6b-a8ca-e45cd55bea80","tableId":"a2a7bb16-c191-49be-b5bb-f1f8473bd627","userId":"other-user-id","role":"read","createdAt":"2025-12-04T18:56:43.007Z"}
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould grant table permission
+[22m[39mGrant permission success, sending 201. Permission: {"id":"1245c434-fcbd-4c6b-a8ca-e45cd55bea80","tableId":"a2a7bb16-c191-49be-b5bb-f1f8473bd627","userId":"other-user-id","role":"read","createdAt":"2025-12-04T18:56:43.007Z"}
+
+{"level":50,"time":1764874602198,"env":"test","error":{"length":415,"name":"error","severity":"ERROR","code":"23503","detail":"Key (table_id)=(7d558998-987a-494f-bee3-e4d505c75465) is not present in table \"datavault_tables\".","schema":"public","table":"datavault_table_permissions","constraint":"datavault_table_permissions_table_id_datavault_tables_id_fk","file":"ri_triggers.c","line":"2599","routine":"ri_ReportViolation"},"msg":"Error granting table permission"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould update table permission role
+[22m[39mGrant permission catch block entered error: insert or update on table "datavault_table_permissions" violates foreign key constraint "datavault_table_permissions_table_id_datavault_tables_id_fk"
+    at [90mfile:///C:/Users/scoot/poll/VaultLogic/[39mnode_modules/[4m@neondatabase/serverless[24m/index.mjs:1345:74
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at NeonPreparedQuery.execute [90m(file:///C:/Users/scoot/poll/VaultLogic/[39mnode_modules/[4mdrizzle-orm[24m/neon-serverless/session.js:76:20[90m)[39m
+    at DatavaultTablePermissionsRepository.upsert (C:/Users/scoot/poll/VaultLogic/server/repositories/DatavaultTablePermissionsRepository.ts:76:26)
+    at DatavaultTablePermissionsService.grantPermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:151:20)
+    at C:/Users/scoot/poll/VaultLogic/server/routes/datavault.routes.ts:1155:26 {
+  length: [33m415[39m,
+  severity: [32m'ERROR'[39m,
+  code: [32m'23503'[39m,
+  detail: [32m'Key (table_id)=(7d558998-987a-494f-bee3-e4d505c75465) is not present in table "datavault_tables".'[39m,
+  hint: [90mundefined[39m,
+  position: [90mundefined[39m,
+  internalPosition: [90mundefined[39m,
+  internalQuery: [90mundefined[39m,
+  where: [90mundefined[39m,
+  schema: [32m'public'[39m,
+  table: [32m'datavault_table_permissions'[39m,
+  column: [90mundefined[39m,
+  dataType: [90mundefined[39m,
+  constraint: [32m'datavault_table_permissions_table_id_datavault_tables_id_fk'[39m,
+  file: [32m'ri_triggers.c'[39m,
+  line: [32m'2599'[39m,
+  routine: [32m'ri_ReportViolation'[39m
+}
+
+{"level":50,"time":1764874602419,"env":"test","userId":"google-user-id","path":"/api/datavault/tables/7d558998-987a-494f-bee3-e4d505c75465/permissions","msg":"User session missing tenantId - user may need to log out and log back in"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould update table permission role
+[22m[39mGrant permission catch block entered Error: Your account is not properly configured. Please log out and log back in to fix this issue.
+    at getTenantId (C:/Users/scoot/poll/VaultLogic/server/routes/datavault.routes.ts:50:13)
+    at C:/Users/scoot/poll/VaultLogic/server/routes/datavault.routes.ts:1137:24
+    at Layer.handle [as handle_request] [90m(C:\Users\scoot\poll\VaultLogic\[39mnode_modules\[4mexpress[24m\lib\router\layer.js:95:5[90m)[39m
+    at next [90m(C:\Users\scoot\poll\VaultLogic\[39mnode_modules\[4mexpress[24m\lib\router\route.js:149:13[90m)[39m
+    at hybridAuth (C:/Users/scoot/poll/VaultLogic/server/middleware/auth.ts:187:7)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+
+{"level":50,"time":1764874602421,"env":"test","error":{},"msg":"Error granting table permission"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould update table permission role
+[22m[39mUpdate permission failed: {
+  message: [32m'Your account is not properly configured. Please log out and log back in to fix this issue.'[39m
+}
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts
+[22m[39m≡ƒº╣ Cleaning up test environment...
+
+ [31mΓ¥»[39m tests/integration/datavault-v4-regression.test.ts [2m([22m[2m23 tests[22m[2m | [22m[31m7 failed[39m[2m)[22m[33m 12157[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should create a select column with options [33m 503[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should create a multiselect column with options [33m 429[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should validate select value against options [33m 1328[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should validate multiselect values as array [33m 886[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should create an autonumber column with sequence [33m 433[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should format autonumber with prefix [33m 965[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should create a note for a row [33m 431[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should get all notes for a row [33m 840[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should delete a note [33m 706[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should not allow deleting notes by other users [33m 676[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should create an API token [33m 358[2mms[22m[39m
+       [32mΓ£ô[39m should validate API token scopes[32m 188[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should revoke (delete) an API token [33m 684[2mms[22m[39m
+       [32mΓ£ô[39m should deny access with expired token[32m 175[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should grant table permission [33m 332[2mms[22m[39m
+       [32mΓ£ô[39m should list table permissions[32m 281[2mms[22m[39m
+[31m       [31m├ù[31m should update table permission role[39m[33m 603[2mms[22m[39m
+[31m       [31m├ù[31m should revoke table permission[39m[32m 85[2mms[22m[39m
+[31m       [31m├ù[31m should enforce RBAC - only owners can manage permissions[39m[32m 229[2mms[22m[39m
+[31m       [31m├ù[31m should paginate rows efficiently[39m[32m 237[2mms[22m[39m
+[31m       [31m├ù[31m should return user-friendly error for invalid column type[39m[32m 211[2mms[22m[39m
+[31m       [31m├ù[31m should return user-friendly error for missing required fields[39m[32m 226[2mms[22m[39m
+[31m       [31m├ù[31m should handle network errors gracefully[39m[32m 238[2mms[22m[39m
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ» Failed Tests 7 ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Table Permissions > should update table permission role
+AssertionError: expected 500 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 500
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:713:37
+    711|         console.log('Update permission failed:', updateResponse.body);
+    712|       }
+    713|       expect(updateResponse.status).toBe(201);
+       |                                     ^
+    714|       expect(updateResponse.body.role).toBe('write');
+    715|     });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/7]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Table Permissions > should revoke table permission
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Table Permissions > should enforce RBAC - only owners can manage permissions
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Grid Performance > should paginate rows efficiently
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Error Handling > should return user-friendly error for invalid column type
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Error Handling > should return user-friendly error for missing required fields
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Error Handling > should handle network errors gracefully
+error: insert or update on table "datavault_tables" violates foreign key constraint "datavault_tables_owner_user_id_users_id_fk"
+ Γ¥» node_modules/@neondatabase/serverless/index.mjs:1345:74
+ Γ¥» NeonPreparedQuery.execute node_modules/drizzle-orm/neon-serverless/session.js:76:20
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:271:21
+
+    269|     testDatabaseId = database.id;
+    270| 
+    271|     const [table] = await db.insert(datavaultTables).values({
+       |                     ^
+    272|       name: 'Test Table',
+    273|       slug: 'test-table-' + uniqueSuffix,
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[2/7]ΓÄ»
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m7 failed[39m[22m[2m | [22m[1m[32m16 passed[39m[22m[90m (23)[39m
+[2m   Start at [22m 12:56:13
+[2m   Duration [22m 28.42s
+
+[1m[41m FAIL [49m[22m [31mTests failed. Watching for file changes...[39m
+       [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
+c[3J[1m[44m RERUN [49m[22m [34m[2mtests/setup.ts [22m[34mx7 [34m[39m
+       [2m Filename pattern: [22m[34mtests/integration/datavault-v4-regression.test.ts[39m
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (13) from .env -- tip: ≡ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+
+{"level":40,"time":1764874686697,"env":"test","module":"auth-service","msg":"JWT_SECRET not set - falling back to SESSION_SECRET. This is acceptable for development but should be fixed for production."}
+{"level":30,"time":1764874692405,"env":"test","multerImportKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceType":"function","uploadKeys":["storage","limits","preservePath","fileFilter"],"uploadType":"object","uploadPrototype":{},"msg":"Debug Multer Import"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts
+[22m[39m≡ƒº¬ Setting up test environment...
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts
+[22m[39mΓ£à Database initialized for tests
+
+{"level":30,"time":1764874698120,"env":"test","module":"file-routes","outputsDir":"C:\\Users\\scoot\\poll\\VaultLogic\\server\\files\\outputs","msg":"Secure file routes registered"}
+{"level":30,"time":1764874698120,"env":"test","module":"ai-routes","msg":"AI workflow generation routes registered"}
+{"level":30,"time":1764874698132,"env":"test","module":"collab-server","msg":"Initializing WebSocket collaboration server"}
+{"level":40,"time":1764874698132,"env":"test","module":"collab-persistence","msg":"REDIS_URL not configured, multi-instance collab will not work"}
+{"level":30,"time":1764874698132,"env":"test","module":"collab-server","msg":"WebSocket collaboration server initialized"}
+{"level":30,"time":1764874698132,"env":"test","module":"routes","msg":"Real-time collaboration server initialized"}
+{"level":30,"time":1764874698593,"env":"test","module":"auth","hasToken":true,"origin":"http://localhost:5000","ip":"::ffff:127.0.0.1","msg":"OAuth2 login attempt"}
+{"level":30,"time":1764874698594,"env":"test","module":"auth","email":"testuser@example.com","msg":"Token verified successfully"}
+{"level":30,"time":1764874698640,"env":"test","module":"auth","userId":"google-user-id","msg":"User upserted successfully"}
+{"level":30,"time":1764874698736,"env":"test","module":"auth","email":"testuser@example.com","msg":"OAuth2 login successful"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests
+[22m[39mLogin Status: [33m200[39m
+Login Body: {
+  "message": "Authentication successful",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJnb29nbGUtdXNlci1pZCIsImVtYWlsIjoidGVzdHVzZXJAZXhhbXBsZS5jb20iLCJ0ZW5hbnRJZCI6ImYxZWFiNjJlLWYyYmQtNGQwNy1hOGVhLTI2NzU5NDMyMThhNCIsInJvbGUiOiJvd25lciIsImlhdCI6MTc2NDg3NDY5OCwiZXhwIjoxNzY1NDc5NDk4fQ.cC2ekRHezNpXSZc4pZIa8D-2yu5AqDFArFCup8cHHFA",
+  "user": {
+    "id": "google-user-id",
+    "email": "testuser@example.com",
+    "firstName": "Test",
+    "lastName": "User",
+    "profileImageUrl": "https://example.com/avatar.jpg",
+    "tenantId": "f1eab62e-f2bd-4d07-a8ea-2675943218a4",
+    "tenantRole": "owner"
+  }
+}
+
+{"level":30,"time":1764874698755,"env":"test","module":"auth","hasToken":true,"origin":"http://localhost:5000","ip":"::ffff:127.0.0.1","msg":"OAuth2 login attempt"}
+{"level":30,"time":1764874698756,"env":"test","module":"auth","email":"other@example.com","msg":"Token verified successfully"}
+{"level":30,"time":1764874698805,"env":"test","module":"auth","userId":"other-user-id","msg":"User upserted successfully"}
+{"level":30,"time":1764874698888,"env":"test","module":"auth","email":"other@example.com","msg":"OAuth2 login successful"}
+{"level":50,"time":1764874700867,"env":"test","error":{},"msg":"Error creating DataVault row"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mSelect/Multiselect Columns[2m > [22m[2mshould validate select value against options
+[22m[39mRow creation error message: Column 'Status' value must be one of: active, inactive
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mRow Notes[2m > [22m[2mshould create a note for a row
+[22m[39mCreated note: 0bcf73c2-3bf5-46a7-8029-f424f4fd5cf2 tenantId: f1eab62e-f2bd-4d07-a8ea-2675943218a4 userId: google-user-id
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mRow Notes[2m > [22m[2mshould get all notes for a row
+[22m[39mCreated note: 49fb2d48-af2e-49a5-a7a8-a8c84e815d35 tenantId: f1eab62e-f2bd-4d07-a8ea-2675943218a4 userId: google-user-id
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mRow Notes[2m > [22m[2mshould get all notes for a row
+[22m[39mCreated note: 62a9e21e-1b42-4ac8-a1e4-6ad674de744b tenantId: f1eab62e-f2bd-4d07-a8ea-2675943218a4 userId: google-user-id
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mRow Notes[2m > [22m[2mshould delete a note
+[22m[39mCreated note: f81bdaa2-046f-41ee-968c-c47aabdfdb79 tenantId: f1eab62e-f2bd-4d07-a8ea-2675943218a4 userId: google-user-id
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mRow Notes[2m > [22m[2mshould not allow deleting notes by other users
+[22m[39mCreated note: c72aaf2b-a7f7-4005-a96e-4a31ab6cb816 tenantId: f1eab62e-f2bd-4d07-a8ea-2675943218a4 userId: google-user-id
+
+{"level":50,"time":1764874705539,"env":"test","error":{},"msg":"Error deleting row note"}
+{"level":40,"time":1764874706719,"env":"test","module":"auth-middleware","path":"/datavault/databases/a94acbc7-01a6-4bc2-ac72-35b3e2bce849/tables","msg":"No valid authentication found"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould grant table permission
+[22m[39mupsert result: {"id":"88ed7690-a237-4cc7-9818-bbc444a8db80","tableId":"35296948-26a3-4746-8785-4589bf85d38a","userId":"other-user-id","role":"read","createdAt":"2025-12-04T18:58:28.499Z"}
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould grant table permission
+[22m[39mGrant permission success, sending 201. Permission: {"id":"88ed7690-a237-4cc7-9818-bbc444a8db80","tableId":"35296948-26a3-4746-8785-4589bf85d38a","userId":"other-user-id","role":"read","createdAt":"2025-12-04T18:58:28.499Z"}
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould update table permission role
+[22m[39mupsert result: {"id":"599abf24-b874-468e-a5df-b0327b83edc1","tableId":"6ec6b82e-8d3f-4131-a1d8-8683e701af67","userId":"other-user-id","role":"read","createdAt":"2025-12-04T18:58:29.064Z"}
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould update table permission role
+[22m[39mGrant permission success, sending 201. Permission: {"id":"599abf24-b874-468e-a5df-b0327b83edc1","tableId":"6ec6b82e-8d3f-4131-a1d8-8683e701af67","userId":"other-user-id","role":"read","createdAt":"2025-12-04T18:58:29.064Z"}
+
+{"level":50,"time":1764874707817,"env":"test","error":{"length":415,"name":"error","severity":"ERROR","code":"23503","detail":"Key (table_id)=(6ec6b82e-8d3f-4131-a1d8-8683e701af67) is not present in table \"datavault_tables\".","schema":"public","table":"datavault_table_permissions","constraint":"datavault_table_permissions_table_id_datavault_tables_id_fk","file":"ri_triggers.c","line":"2599","routine":"ri_ReportViolation"},"msg":"Error granting table permission"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould update table permission role
+[22m[39mGrant permission catch block entered error: insert or update on table "datavault_table_permissions" violates foreign key constraint "datavault_table_permissions_table_id_datavault_tables_id_fk"
+    at [90mfile:///C:/Users/scoot/poll/VaultLogic/[39mnode_modules/[4m@neondatabase/serverless[24m/index.mjs:1345:74
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at NeonPreparedQuery.execute [90m(file:///C:/Users/scoot/poll/VaultLogic/[39mnode_modules/[4mdrizzle-orm[24m/neon-serverless/session.js:76:20[90m)[39m
+    at DatavaultTablePermissionsRepository.upsert (C:/Users/scoot/poll/VaultLogic/server/repositories/DatavaultTablePermissionsRepository.ts:76:26)
+    at DatavaultTablePermissionsService.grantPermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:151:20)
+    at C:/Users/scoot/poll/VaultLogic/server/routes/datavault.routes.ts:1155:26 {
+  length: [33m415[39m,
+  severity: [32m'ERROR'[39m,
+  code: [32m'23503'[39m,
+  detail: [32m'Key (table_id)=(6ec6b82e-8d3f-4131-a1d8-8683e701af67) is not present in table "datavault_tables".'[39m,
+  hint: [90mundefined[39m,
+  position: [90mundefined[39m,
+  internalPosition: [90mundefined[39m,
+  internalQuery: [90mundefined[39m,
+  where: [90mundefined[39m,
+  schema: [32m'public'[39m,
+  table: [32m'datavault_table_permissions'[39m,
+  column: [90mundefined[39m,
+  dataType: [90mundefined[39m,
+  constraint: [32m'datavault_table_permissions_table_id_datavault_tables_id_fk'[39m,
+  file: [32m'ri_triggers.c'[39m,
+  line: [32m'2599'[39m,
+  routine: [32m'ri_ReportViolation'[39m
+}
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould update table permission role
+[22m[39mUpdate permission failed: {
+  message: [32m'insert or update on table "datavault_table_permissions" violates foreign key constraint "datavault_table_permissions_table_id_datavault_tables_id_fk"'[39m
+}
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts
+[22m[39m≡ƒº╣ Cleaning up test environment...
+
+ [31mΓ¥»[39m tests/integration/datavault-v4-regression.test.ts [2m([22m[2m23 tests[22m[2m | [22m[31m7 failed[39m[2m)[22m[33m 11211[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should create a select column with options [33m 419[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should create a multiselect column with options [33m 406[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should validate select value against options [33m 1154[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should validate multiselect values as array [33m 826[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should create an autonumber column with sequence [33m 397[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should format autonumber with prefix [33m 935[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should create a note for a row [33m 363[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should get all notes for a row [33m 822[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should delete a note [33m 716[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should not allow deleting notes by other users [33m 611[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should create an API token [33m 301[2mms[22m[39m
+       [32mΓ£ô[39m should validate API token scopes[32m 183[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should revoke (delete) an API token [33m 562[2mms[22m[39m
+       [32mΓ£ô[39m should deny access with expired token[32m 132[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should grant table permission [33m 301[2mms[22m[39m
+       [32mΓ£ô[39m should list table permissions[32m 257[2mms[22m[39m
+[31m       [31m├ù[31m should update table permission role[39m[33m 544[2mms[22m[39m
+[31m       [31m├ù[31m should revoke table permission[39m[32m 216[2mms[22m[39m
+[31m       [31m├ù[31m should enforce RBAC - only owners can manage permissions[39m[32m 228[2mms[22m[39m
+[31m       [31m├ù[31m should paginate rows efficiently[39m[32m 202[2mms[22m[39m
+[31m       [31m├ù[31m should return user-friendly error for invalid column type[39m[32m 222[2mms[22m[39m
+[31m       [31m├ù[31m should return user-friendly error for missing required fields[39m[32m 222[2mms[22m[39m
+[31m       [31m├ù[31m should handle network errors gracefully[39m[32m 239[2mms[22m[39m
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ» Failed Tests 7 ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Table Permissions > should update table permission role
+AssertionError: expected 500 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 500
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:713:37
+    711|         console.log('Update permission failed:', updateResponse.body);
+    712|       }
+    713|       expect(updateResponse.status).toBe(201);
+       |                                     ^
+    714|       expect(updateResponse.body.role).toBe('write');
+    715|     });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/7]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Table Permissions > should revoke table permission
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Table Permissions > should enforce RBAC - only owners can manage permissions
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Grid Performance > should paginate rows efficiently
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Error Handling > should return user-friendly error for invalid column type
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Error Handling > should return user-friendly error for missing required fields
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Error Handling > should handle network errors gracefully
+error: insert or update on table "datavault_tables" violates foreign key constraint "datavault_tables_owner_user_id_users_id_fk"
+ Γ¥» node_modules/@neondatabase/serverless/index.mjs:1345:74
+ Γ¥» NeonPreparedQuery.execute node_modules/drizzle-orm/neon-serverless/session.js:76:20
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:271:21
+    269|     testDatabaseId = database.id;
+    270| 
+    271|     const [table] = await db.insert(datavaultTables).values({
+       |                     ^
+    272|       name: 'Test Table',
+    273|       slug: 'test-table-' + uniqueSuffix,
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[2/7]ΓÄ»
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m7 failed[39m[22m[2m | [22m[1m[32m16 passed[39m[22m[90m (23)[39m
+[2m   Start at [22m 12:57:58
+[2m   Duration [22m 28.94s
+
+[1m[41m FAIL [49m[22m [31mTests failed. Watching for file changes...[39m
+       [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m

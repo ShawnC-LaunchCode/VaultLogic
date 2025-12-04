@@ -1,5 +1,5 @@
 ﻿import { beforeAll, afterAll, beforeEach, afterEach, vi } from "vitest";
-import { dbInitPromise } from "../server/db";
+import { dbInitPromise, initializeDatabase } from "../server/db";
 
 /**
  * Global test setup file
@@ -24,6 +24,7 @@ beforeAll(async () => {
 
   // Wait for database initialization
   try {
+    await initializeDatabase();
     await dbInitPromise;
     console.log("✅ Database initialized for tests");
   } catch (error) {
