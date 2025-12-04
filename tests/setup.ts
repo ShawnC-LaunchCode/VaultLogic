@@ -1,4 +1,5 @@
 ﻿import { beforeAll, afterAll, beforeEach, afterEach, vi } from "vitest";
+import { dbInitPromise } from "../server/db";
 
 /**
  * Global test setup file
@@ -20,6 +21,14 @@ process.env.VITE_GOOGLE_CLIENT_ID = process.env.VITE_GOOGLE_CLIENT_ID || "test-g
 beforeAll(async () => {
   // Setup test database
   console.log("🧪 Setting up test environment...");
+
+  // Wait for database initialization
+  try {
+    await dbInitPromise;
+    console.log("✅ Database initialized for tests");
+  } catch (error) {
+    console.warn("⚠️ Database initialization failed (this is expected if no DATABASE_URL is set):", error);
+  }
 
   // TODO: Run database migrations for test DB
   // await db.migrate.latest();
