@@ -1,0 +1,428 @@
+
+[1m[44m DEV [49m[22m [34mv4.0.5 [39m[90mC:/Users/scoot/poll/VaultLogic[39m
+
+[90mstdout[2m | tests/integration/auth-jwt.integration.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (11) from .env -- tip: ≡ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+
+{"level":40,"time":1764871468935,"env":"test","module":"auth-service","msg":"JWT_SECRET not set - falling back to SESSION_SECRET. This is acceptable for development but should be fixed for production."}
+{"level":40,"time":1764871468937,"env":"test","module":"auth-service","msg":"JWT_SECRET not set - falling back to SESSION_SECRET. This is acceptable for development but should be fixed for production."}
+{"level":30,"time":1764871469127,"env":"test","msg":"GEMINI_API_KEY not configured - AI features will be unavailable"}
+{"level":30,"time":1764871470512,"env":"test","multerImportKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceType":"function","uploadKeys":["storage","limits","preservePath","fileFilter"],"uploadType":"object","uploadPrototype":{},"msg":"Debug Multer Import"}
+{"level":30,"time":1764871470512,"env":"test","multerImportKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceType":"function","uploadKeys":["storage","limits","preservePath","fileFilter"],"uploadType":"object","uploadPrototype":{},"msg":"Debug Multer Import"}
+[90mstdout[2m | tests/integration/routes/US-A-001-login.test.ts
+[22m[39m≡ƒº¬ Setting up test environment...
+
+[90mstdout[2m | tests/integration/auth-jwt.integration.test.ts
+[22m[39m≡ƒº¬ Setting up test environment...
+
+{"level":30,"time":1764871471959,"env":"test","module":"file-routes","outputsDir":"C:\\Users\\scoot\\poll\\VaultLogic\\server\\files\\outputs","msg":"Secure file routes registered"}
+{"level":30,"time":1764871471961,"env":"test","module":"file-routes","outputsDir":"C:\\Users\\scoot\\poll\\VaultLogic\\server\\files\\outputs","msg":"Secure file routes registered"}
+{"level":30,"time":1764871471960,"env":"test","module":"ai-routes","msg":"AI workflow generation routes registered"}
+{"level":30,"time":1764871471968,"env":"test","module":"collab-server","msg":"Initializing WebSocket collaboration server"}
+{"level":40,"time":1764871471969,"env":"test","module":"collab-persistence","msg":"REDIS_URL not configured, multi-instance collab will not work"}
+{"level":30,"time":1764871471969,"env":"test","module":"collab-server","msg":"WebSocket collaboration server initialized"}
+{"level":30,"time":1764871471969,"env":"test","module":"routes","msg":"Real-time collaboration server initialized"}
+{"level":30,"time":1764871471962,"env":"test","module":"ai-routes","msg":"AI workflow generation routes registered"}
+{"level":30,"time":1764871471971,"env":"test","module":"collab-server","msg":"Initializing WebSocket collaboration server"}
+{"level":40,"time":1764871471971,"env":"test","module":"collab-persistence","msg":"REDIS_URL not configured, multi-instance collab will not work"}
+{"level":30,"time":1764871471971,"env":"test","module":"collab-server","msg":"WebSocket collaboration server initialized"}
+{"level":30,"time":1764871471971,"env":"test","module":"routes","msg":"Real-time collaboration server initialized"}
+{"level":30,"time":1764871472001,"env":"test","module":"auth","hasToken":true,"origin":"http://localhost:5000","ip":"::ffff:127.0.0.1","msg":"OAuth2 login attempt"}
+{"level":30,"time":1764871472002,"env":"test","module":"auth","email":"testuser@example.com","msg":"Token verified successfully"}
+{"level":30,"time":1764871472003,"env":"test","module":"auth","userId":"google-user-id","msg":"User upserted successfully"}
+{"level":40,"time":1764871472004,"env":"test","module":"auth","err":{"type":"Error","message":"[vitest] No \"db\" export is defined on the \"../../../server/db\" mock. Did you forget to return it from \"vi.mock\"?\nIf you need to partially mock a module, you can use \"importOriginal\" helper inside:\n","stack":"Error: [vitest] No \"db\" export is defined on the \"../../../server/db\" mock. Did you forget to return it from \"vi.mock\"?\nIf you need to partially mock a module, you can use \"importOriginal\" helper inside:\n\n    at VitestMocker.createError (file:///C:/Users/scoot/poll/VaultLogic/node_modules/vitest/dist/chunks/startModuleRunner.BqQUfEjB.js:230:48)\n    at Object.get (file:///C:/Users/scoot/poll/VaultLogic/node_modules/vitest/dist/chunks/startModuleRunner.BqQUfEjB.js:279:16)\n    at TemplateShareRepository.acceptPendingForUser (C:/Users/scoot/poll/VaultLogic/server/repositories/TemplateShareRepository.ts:91:27)\n    at TemplateSharingService.acceptPendingOnLogin (C:/Users/scoot/poll/VaultLogic/server/services/TemplateSharingService.ts:210:27)\n    at C:/Users/scoot/poll/VaultLogic/server/googleAuth.ts:337:38\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)","codeFrame":"vi.mock(import(\"../../../server/db\"), async (importOriginal) => {\n  const actual = await importOriginal()\n  return {\n    ...actual,\n    // your mocked methods\n  }\n})"},"email":"testuser@example.com","msg":"Failed to accept pending template shares"}
+{"level":30,"time":1764871472009,"env":"test","module":"auth","email":"testuser@example.com","msg":"OAuth2 login successful"}
+{"level":30,"time":1764871472021,"env":"test","module":"auth","hasToken":false,"origin":"http://localhost:5000","ip":"::ffff:127.0.0.1","msg":"OAuth2 login attempt"}
+{"level":40,"time":1764871472021,"env":"test","module":"auth","msg":"OAuth2 login failed: No token provided"}
+{"level":30,"time":1764871472027,"env":"test","module":"auth","hasToken":true,"origin":"http://localhost:5000","ip":"::ffff:127.0.0.1","msg":"OAuth2 login attempt"}
+{"level":30,"time":1764871472027,"env":"test","module":"auth","email":"testuser@example.com","msg":"Token verified successfully"}
+{"level":30,"time":1764871472027,"env":"test","module":"auth","userId":"google-user-id","msg":"User upserted successfully"}
+{"level":40,"time":1764871472028,"env":"test","module":"auth","err":{"type":"Error","message":"[vitest] No \"db\" export is defined on the \"../../../server/db\" mock. Did you forget to return it from \"vi.mock\"?\nIf you need to partially mock a module, you can use \"importOriginal\" helper inside:\n","stack":"Error: [vitest] No \"db\" export is defined on the \"../../../server/db\" mock. Did you forget to return it from \"vi.mock\"?\nIf you need to partially mock a module, you can use \"importOriginal\" helper inside:\n\n    at VitestMocker.createError (file:///C:/Users/scoot/poll/VaultLogic/node_modules/vitest/dist/chunks/startModuleRunner.BqQUfEjB.js:230:48)\n    at Object.get (file:///C:/Users/scoot/poll/VaultLogic/node_modules/vitest/dist/chunks/startModuleRunner.BqQUfEjB.js:279:16)\n    at TemplateShareRepository.acceptPendingForUser (C:/Users/scoot/poll/VaultLogic/server/repositories/TemplateShareRepository.ts:91:27)\n    at TemplateSharingService.acceptPendingOnLogin (C:/Users/scoot/poll/VaultLogic/server/services/TemplateSharingService.ts:210:27)\n    at C:/Users/scoot/poll/VaultLogic/server/googleAuth.ts:337:38\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)","codeFrame":"vi.mock(import(\"../../../server/db\"), async (importOriginal) => {\n  const actual = await importOriginal()\n  return {\n    ...actual,\n    // your mocked methods\n  }\n})"},"email":"testuser@example.com","msg":"Failed to accept pending template shares"}
+{"level":30,"time":1764871472029,"env":"test","module":"auth","email":"testuser@example.com","msg":"OAuth2 login successful"}
+{"level":40,"time":1764871472040,"env":"test","module":"auth-middleware","path":"/api/auth/user","msg":"No valid authentication found"}
+{"level":30,"time":1764871472045,"env":"test","module":"auth","hasToken":true,"origin":"http://localhost:5000","ip":"::ffff:127.0.0.1","msg":"OAuth2 login attempt"}
+{"level":30,"time":1764871472045,"env":"test","module":"auth","email":"testuser@example.com","msg":"Token verified successfully"}
+{"level":30,"time":1764871472045,"env":"test","module":"auth","userId":"google-user-id","msg":"User upserted successfully"}
+{"level":40,"time":1764871472045,"env":"test","module":"auth","err":{"type":"Error","message":"[vitest] No \"db\" export is defined on the \"../../../server/db\" mock. Did you forget to return it from \"vi.mock\"?\nIf you need to partially mock a module, you can use \"importOriginal\" helper inside:\n","stack":"Error: [vitest] No \"db\" export is defined on the \"../../../server/db\" mock. Did you forget to return it from \"vi.mock\"?\nIf you need to partially mock a module, you can use \"importOriginal\" helper inside:\n\n    at VitestMocker.createError (file:///C:/Users/scoot/poll/VaultLogic/node_modules/vitest/dist/chunks/startModuleRunner.BqQUfEjB.js:230:48)\n    at Object.get (file:///C:/Users/scoot/poll/VaultLogic/node_modules/vitest/dist/chunks/startModuleRunner.BqQUfEjB.js:279:16)\n    at TemplateShareRepository.acceptPendingForUser (C:/Users/scoot/poll/VaultLogic/server/repositories/TemplateShareRepository.ts:91:27)\n    at TemplateSharingService.acceptPendingOnLogin (C:/Users/scoot/poll/VaultLogic/server/services/TemplateSharingService.ts:210:27)\n    at C:/Users/scoot/poll/VaultLogic/server/googleAuth.ts:337:38\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)","codeFrame":"vi.mock(import(\"../../../server/db\"), async (importOriginal) => {\n  const actual = await importOriginal()\n  return {\n    ...actual,\n    // your mocked methods\n  }\n})"},"email":"testuser@example.com","msg":"Failed to accept pending template shares"}
+{"level":30,"time":1764871472046,"env":"test","module":"auth","email":"testuser@example.com","msg":"OAuth2 login successful"}
+{"level":30,"time":1764871472050,"env":"test","module":"auth","email":"testuser@example.com","msg":"User logged out"}
+{"level":40,"time":1764871472054,"env":"test","module":"auth-middleware","path":"/api/auth/user","msg":"No valid authentication found"}
+{"level":30,"time":1764871472059,"env":"test","module":"auth","msg":"User logged out"}
+{"level":30,"time":1764871472061,"env":"test","module":"auth-routes","userId":"-1ojbzpz_fRai0-lAuLd0","email":"test-bkExTIG9Bld_AOkiMcH3z@example.com","msg":"User registered successfully"}
+[90mstdout[2m | tests/integration/routes/US-A-001-login.test.ts
+[22m[39m≡ƒº╣ Cleaning up test environment...
+
+ [32mΓ£ô[39m tests/integration/routes/US-A-001-login.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 108[2mms[22m[39m
+{"level":30,"time":1764871472136,"env":"test","module":"auth-routes","userId":"eRIcggS7J2tVEqW56Ay8D","email":"test-rDX2etlYA20Ag2vrnqeOj@example.com","msg":"User registered successfully"}
+{"level":30,"time":1764871472200,"env":"test","module":"auth-routes","userId":"y-PDJO0MGn0bik4SnhzJX","email":"test-login-XfbebD3h2XRuXmhLPYQfA@example.com","msg":"User registered successfully"}
+{"level":30,"time":1764871472257,"env":"test","module":"auth-routes","userId":"y-PDJO0MGn0bik4SnhzJX","email":"test-login-XfbebD3h2XRuXmhLPYQfA@example.com","msg":"User logged in successfully"}
+{"level":30,"time":1764871472380,"env":"test","module":"auth-routes","userId":"o9vwiLcFI8QB48X0zX2EH","email":"test-me-oVw0PuBhMBc-wTled3X9P@example.com","msg":"User registered successfully"}
+{"level":40,"time":1764871472390,"env":"test","module":"auth-middleware","path":"/api/auth/me","msg":"No valid authentication found"}
+{"level":40,"time":1764871472393,"env":"test","module":"auth-middleware","path":"/api/auth/me","msg":"No valid authentication found"}
+{"level":30,"time":1764871472396,"env":"test","module":"auth","msg":"User logged out"}
+{"level":30,"time":1764871472452,"env":"test","module":"auth-routes","userId":"Yj_RBzdgaxBKI6jydqJOb","email":"owner-cFnptciSy1UkC8UHceerA@example.com","msg":"User registered successfully"}
+{"level":30,"time":1764871472686,"env":"test","module":"tenant-routes","tenantId":"3a22bcfe-a56f-4a31-808b-c59cdfb3ad71","userId":"Yj_RBzdgaxBKI6jydqJOb","msg":"Tenant created"}
+{"level":30,"time":1764871472740,"env":"test","module":"auth-routes","userId":"OZvFUPhgi8-T5oxtR_ouE","email":"builder-XAubkHJakiFwstTnEY0PB@example.com","msg":"User registered successfully"}
+{"level":30,"time":1764871472794,"env":"test","module":"auth-routes","userId":"Erii8ofQfJmG3jxHnrlvS","email":"viewer-1e5JNETkdBJFlvwaB3bfA@example.com","msg":"User registered successfully"}
+{"level":40,"time":1764871472798,"env":"test","module":"tenant-middleware","userId":"Yj_RBzdgaxBKI6jydqJOb","path":"/api/tenants/current","msg":"User does not have an associated tenant"}
+{"level":40,"time":1764871472892,"env":"test","module":"rbac-middleware","userId":"OZvFUPhgi8-T5oxtR_ouE","userRole":"builder","requiredRoles":["owner"],"path":"/api/tenants/3a22bcfe-a56f-4a31-808b-c59cdfb3ad71","msg":"Role check failed"}
+{"level":40,"time":1764871472895,"env":"test","module":"rbac-middleware","userId":"Erii8ofQfJmG3jxHnrlvS","userRole":"viewer","requiredRoles":["owner"],"path":"/api/tenants/3a22bcfe-a56f-4a31-808b-c59cdfb3ad71","msg":"Role check failed"}
+{"level":40,"time":1764871472897,"env":"test","module":"tenant-middleware","userId":"Yj_RBzdgaxBKI6jydqJOb","paramTenantId":"3a22bcfe-a56f-4a31-808b-c59cdfb3ad71","path":"/api/tenants/3a22bcfe-a56f-4a31-808b-c59cdfb3ad71","msg":"User has no tenant, cannot access tenant-specific route"}
+[90mstdout[2m | tests/integration/auth-jwt.integration.test.ts
+[22m[39m≡ƒº╣ Cleaning up test environment...
+
+ [31mΓ¥»[39m tests/integration/auth-jwt.integration.test.ts [2m([22m[2m17 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 944[2mms[22m[39m
+       [32mΓ£ô[39m should register a new user with email and password[32m 93[2mms[22m[39m
+       [32mΓ£ô[39m should reject registration with weak password[32m 6[2mms[22m[39m
+       [32mΓ£ô[39m should reject registration with invalid email[32m 4[2mms[22m[39m
+       [32mΓ£ô[39m should reject registration with missing fields[32m 3[2mms[22m[39m
+       [32mΓ£ô[39m should reject duplicate email registration[32m 61[2mms[22m[39m
+       [32mΓ£ô[39m should login with valid credentials[32m 58[2mms[22m[39m
+       [32mΓ£ô[39m should reject login with wrong password[32m 59[2mms[22m[39m
+       [32mΓ£ô[39m should reject login with non-existent email[32m 5[2mms[22m[39m
+       [32mΓ£ô[39m should reject login with missing fields[32m 3[2mms[22m[39m
+       [32mΓ£ô[39m should return current user with valid token[32m 7[2mms[22m[39m
+       [32mΓ£ô[39m should reject request without token[32m 3[2mms[22m[39m
+       [32mΓ£ô[39m should reject request with invalid token[32m 3[2mms[22m[39m
+       [32mΓ£ô[39m should logout successfully[32m 3[2mms[22m[39m
+[31m       [31m├ù[31m should allow owner to access tenant information[39m[32m 4[2mms[22m[39m
+       [32mΓ£ô[39m should allow builder to access tenant information[32m 46[2mms[22m[39m
+       [32mΓ£ô[39m should allow viewer to access tenant information[32m 45[2mms[22m[39m
+[31m       [31m├ù[31m should only allow owner to update tenant[39m[32m 9[2mms[22m[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m1 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m21 passed[39m[22m[90m (23)[39m
+[2m   Start at [22m 12:04:26
+[2m   Duration [22m 6.54s[2m (transform 3.99s, setup 1.38s, collect 8.62s, tests 1.05s, environment 0ms, prepare 27ms)[22m
+
+[1m[41m FAIL [49m[22m [31mTests failed. Watching for file changes...[39m
+       [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
+c[3J[1m[44m RERUN [49m[22m [34m[2mserver/repositories/UserRepository.ts [22m[39m
+       [2m Filename pattern: [22m[34mtests/integration/auth-jwt.integration.test.ts, tests/integration/routes/US-A-001-login.test.ts[39m
+
+[90mstdout[2m | tests/integration/auth-jwt.integration.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (11) from .env -- tip: ≡ƒöä add secrets lifecycle management: https://dotenvx.com/ops
+
+{"level":40,"time":1764871632948,"env":"test","module":"auth-service","msg":"JWT_SECRET not set - falling back to SESSION_SECRET. This is acceptable for development but should be fixed for production."}
+{"level":40,"time":1764871633294,"env":"test","module":"auth-service","msg":"JWT_SECRET not set - falling back to SESSION_SECRET. This is acceptable for development but should be fixed for production."}
+{"level":30,"time":1764871633566,"env":"test","msg":"GEMINI_API_KEY not configured - AI features will be unavailable"}
+{"level":30,"time":1764871635967,"env":"test","multerImportKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceType":"function","uploadKeys":["storage","limits","preservePath","fileFilter"],"uploadType":"object","uploadPrototype":{},"msg":"Debug Multer Import"}
+{"level":30,"time":1764871636317,"env":"test","multerImportKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceType":"function","uploadKeys":["storage","limits","preservePath","fileFilter"],"uploadType":"object","uploadPrototype":{},"msg":"Debug Multer Import"}
+[90mstdout[2m | tests/integration/auth-jwt.integration.test.ts
+[22m[39m≡ƒº¬ Setting up test environment...
+
+{"level":30,"time":1764871640440,"env":"test","module":"file-routes","outputsDir":"C:\\Users\\scoot\\poll\\VaultLogic\\server\\files\\outputs","msg":"Secure file routes registered"}
+{"level":30,"time":1764871640440,"env":"test","module":"ai-routes","msg":"AI workflow generation routes registered"}
+{"level":30,"time":1764871640451,"env":"test","module":"collab-server","msg":"Initializing WebSocket collaboration server"}
+{"level":40,"time":1764871640451,"env":"test","module":"collab-persistence","msg":"REDIS_URL not configured, multi-instance collab will not work"}
+{"level":30,"time":1764871640452,"env":"test","module":"collab-server","msg":"WebSocket collaboration server initialized"}
+{"level":30,"time":1764871640452,"env":"test","module":"routes","msg":"Real-time collaboration server initialized"}
+{"level":30,"time":1764871640790,"env":"test","module":"auth-routes","userId":"fqKc0q_upnBZ-EworfKi2","email":"test-tzVg0z5rZsvmVrDoaRLmO@example.com","msg":"User registered successfully"}
+{"level":30,"time":1764871641078,"env":"test","module":"auth-routes","userId":"pEFPrzyS1zAkmofagMJCm","email":"test-bKh1UhYWtkSYemFiONRuV@example.com","msg":"User registered successfully"}
+[90mstdout[2m | tests/integration/routes/US-A-001-login.test.ts
+[22m[39m≡ƒº¬ Setting up test environment...
+
+{"level":30,"time":1764871641164,"env":"test","module":"file-routes","outputsDir":"C:\\Users\\scoot\\poll\\VaultLogic\\server\\files\\outputs","msg":"Secure file routes registered"}
+{"level":30,"time":1764871641164,"env":"test","module":"ai-routes","msg":"AI workflow generation routes registered"}
+{"level":30,"time":1764871641175,"env":"test","module":"collab-server","msg":"Initializing WebSocket collaboration server"}
+{"level":40,"time":1764871641176,"env":"test","module":"collab-persistence","msg":"REDIS_URL not configured, multi-instance collab will not work"}
+{"level":30,"time":1764871641176,"env":"test","module":"collab-server","msg":"WebSocket collaboration server initialized"}
+{"level":30,"time":1764871641176,"env":"test","module":"routes","msg":"Real-time collaboration server initialized"}
+{"level":30,"time":1764871641246,"env":"test","module":"auth","hasToken":true,"origin":"http://localhost:5000","ip":"::ffff:127.0.0.1","msg":"OAuth2 login attempt"}
+{"level":30,"time":1764871641246,"env":"test","module":"auth","email":"testuser@example.com","msg":"Token verified successfully"}
+{"level":30,"time":1764871641294,"env":"test","module":"auth-routes","userId":"l1OWsI7PsB-zwOHUNI236","email":"test-login-q6ROZHIF8YHXQBuD1vESC@example.com","msg":"User registered successfully"}
+{"level":30,"time":1764871641314,"env":"test","module":"auth","userId":"google-user-id","msg":"User upserted successfully"}
+{"level":40,"time":1764871641315,"env":"test","module":"auth","err":{"type":"Error","message":"[vitest] No \"db\" export is defined on the \"../../../server/db\" mock. Did you forget to return it from \"vi.mock\"?\nIf you need to partially mock a module, you can use \"importOriginal\" helper inside:\n","stack":"Error: [vitest] No \"db\" export is defined on the \"../../../server/db\" mock. Did you forget to return it from \"vi.mock\"?\nIf you need to partially mock a module, you can use \"importOriginal\" helper inside:\n\n    at VitestMocker.createError (file:///C:/Users/scoot/poll/VaultLogic/node_modules/vitest/dist/chunks/startModuleRunner.BqQUfEjB.js:230:48)\n    at Object.get (file:///C:/Users/scoot/poll/VaultLogic/node_modules/vitest/dist/chunks/startModuleRunner.BqQUfEjB.js:279:16)\n    at TemplateShareRepository.acceptPendingForUser (C:/Users/scoot/poll/VaultLogic/server/repositories/TemplateShareRepository.ts:91:27)\n    at TemplateSharingService.acceptPendingOnLogin (C:/Users/scoot/poll/VaultLogic/server/services/TemplateSharingService.ts:210:27)\n    at C:/Users/scoot/poll/VaultLogic/server/googleAuth.ts:337:38\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)","codeFrame":"vi.mock(import(\"../../../server/db\"), async (importOriginal) => {\n  const actual = await importOriginal()\n  return {\n    ...actual,\n    // your mocked methods\n  }\n})"},"email":"testuser@example.com","msg":"Failed to accept pending template shares"}
+{"level":30,"time":1764871641344,"env":"test","module":"auth","email":"testuser@example.com","msg":"OAuth2 login successful"}
+{"level":30,"time":1764871641376,"env":"test","module":"auth","hasToken":false,"origin":"http://localhost:5000","ip":"::ffff:127.0.0.1","msg":"OAuth2 login attempt"}
+{"level":40,"time":1764871641376,"env":"test","module":"auth","msg":"OAuth2 login failed: No token provided"}
+{"level":30,"time":1764871641387,"env":"test","module":"auth-routes","userId":"l1OWsI7PsB-zwOHUNI236","email":"test-login-q6ROZHIF8YHXQBuD1vESC@example.com","msg":"User logged in successfully"}
+{"level":30,"time":1764871641387,"env":"test","module":"auth","hasToken":true,"origin":"http://localhost:5000","ip":"::ffff:127.0.0.1","msg":"OAuth2 login attempt"}
+{"level":30,"time":1764871641387,"env":"test","module":"auth","email":"testuser@example.com","msg":"Token verified successfully"}
+{"level":30,"time":1764871641400,"env":"test","module":"auth","userId":"google-user-id","msg":"User upserted successfully"}
+{"level":40,"time":1764871641401,"env":"test","module":"auth","err":{"type":"Error","message":"[vitest] No \"db\" export is defined on the \"../../../server/db\" mock. Did you forget to return it from \"vi.mock\"?\nIf you need to partially mock a module, you can use \"importOriginal\" helper inside:\n","stack":"Error: [vitest] No \"db\" export is defined on the \"../../../server/db\" mock. Did you forget to return it from \"vi.mock\"?\nIf you need to partially mock a module, you can use \"importOriginal\" helper inside:\n\n    at VitestMocker.createError (file:///C:/Users/scoot/poll/VaultLogic/node_modules/vitest/dist/chunks/startModuleRunner.BqQUfEjB.js:230:48)\n    at Object.get (file:///C:/Users/scoot/poll/VaultLogic/node_modules/vitest/dist/chunks/startModuleRunner.BqQUfEjB.js:279:16)\n    at TemplateShareRepository.acceptPendingForUser (C:/Users/scoot/poll/VaultLogic/server/repositories/TemplateShareRepository.ts:91:27)\n    at TemplateSharingService.acceptPendingOnLogin (C:/Users/scoot/poll/VaultLogic/server/services/TemplateSharingService.ts:210:27)\n    at C:/Users/scoot/poll/VaultLogic/server/googleAuth.ts:337:38\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)","codeFrame":"vi.mock(import(\"../../../server/db\"), async (importOriginal) => {\n  const actual = await importOriginal()\n  return {\n    ...actual,\n    // your mocked methods\n  }\n})"},"email":"testuser@example.com","msg":"Failed to accept pending template shares"}
+{"level":30,"time":1764871641402,"env":"test","module":"auth","email":"testuser@example.com","msg":"OAuth2 login successful"}
+{"level":40,"time":1764871641423,"env":"test","module":"auth-middleware","path":"/api/auth/user","msg":"No valid authentication found"}
+{"level":30,"time":1764871641437,"env":"test","module":"auth","hasToken":true,"origin":"http://localhost:5000","ip":"::ffff:127.0.0.1","msg":"OAuth2 login attempt"}
+{"level":30,"time":1764871641437,"env":"test","module":"auth","email":"testuser@example.com","msg":"Token verified successfully"}
+{"level":30,"time":1764871641438,"env":"test","module":"auth","userId":"google-user-id","msg":"User upserted successfully"}
+{"level":40,"time":1764871641438,"env":"test","module":"auth","err":{"type":"Error","message":"[vitest] No \"db\" export is defined on the \"../../../server/db\" mock. Did you forget to return it from \"vi.mock\"?\nIf you need to partially mock a module, you can use \"importOriginal\" helper inside:\n","stack":"Error: [vitest] No \"db\" export is defined on the \"../../../server/db\" mock. Did you forget to return it from \"vi.mock\"?\nIf you need to partially mock a module, you can use \"importOriginal\" helper inside:\n\n    at VitestMocker.createError (file:///C:/Users/scoot/poll/VaultLogic/node_modules/vitest/dist/chunks/startModuleRunner.BqQUfEjB.js:230:48)\n    at Object.get (file:///C:/Users/scoot/poll/VaultLogic/node_modules/vitest/dist/chunks/startModuleRunner.BqQUfEjB.js:279:16)\n    at TemplateShareRepository.acceptPendingForUser (C:/Users/scoot/poll/VaultLogic/server/repositories/TemplateShareRepository.ts:91:27)\n    at TemplateSharingService.acceptPendingOnLogin (C:/Users/scoot/poll/VaultLogic/server/services/TemplateSharingService.ts:210:27)\n    at C:/Users/scoot/poll/VaultLogic/server/googleAuth.ts:337:38\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)","codeFrame":"vi.mock(import(\"../../../server/db\"), async (importOriginal) => {\n  const actual = await importOriginal()\n  return {\n    ...actual,\n    // your mocked methods\n  }\n})"},"email":"testuser@example.com","msg":"Failed to accept pending template shares"}
+{"level":30,"time":1764871641440,"env":"test","module":"auth","email":"testuser@example.com","msg":"OAuth2 login successful"}
+{"level":30,"time":1764871641448,"env":"test","module":"auth","email":"testuser@example.com","msg":"User logged out"}
+{"level":40,"time":1764871641457,"env":"test","module":"auth-middleware","path":"/api/auth/user","msg":"No valid authentication found"}
+{"level":30,"time":1764871641470,"env":"test","module":"auth","msg":"User logged out"}
+[90mstdout[2m | tests/integration/routes/US-A-001-login.test.ts
+[22m[39m≡ƒº╣ Cleaning up test environment...
+
+ [32mΓ£ô[39m tests/integration/routes/US-A-001-login.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 379[2mms[22m[39m
+{"level":30,"time":1764871641670,"env":"test","module":"auth-routes","userId":"0-aB2tAIdfaAy7Xev6wlN","email":"test-me-Do4ex9rGsxByt-0dtz1Gu@example.com","msg":"User registered successfully"}
+{"level":40,"time":1764871641712,"env":"test","module":"auth-middleware","path":"/api/auth/me","msg":"No valid authentication found"}
+{"level":40,"time":1764871641718,"env":"test","module":"auth-middleware","path":"/api/auth/me","msg":"No valid authentication found"}
+{"level":30,"time":1764871641734,"env":"test","module":"auth","msg":"User logged out"}
+{"level":30,"time":1764871641818,"env":"test","module":"auth-routes","userId":"BiSwOnwv8y0lMsDw483ne","email":"owner-h_n3feHU1Jsc7Xs4st6yI@example.com","msg":"User registered successfully"}
+{"level":30,"time":1764871642115,"env":"test","module":"tenant-routes","tenantId":"ac43b994-3a9f-454c-afb0-aa59ec6ccbfa","userId":"BiSwOnwv8y0lMsDw483ne","msg":"Tenant created"}
+{"level":30,"time":1764871642189,"env":"test","module":"auth-routes","userId":"yfPkvPHNb58du5AdDbgYo","email":"builder-wEnh0mBfln3uXRSlH0FSJ@example.com","msg":"User registered successfully"}
+{"level":30,"time":1764871642265,"env":"test","module":"auth-routes","userId":"99WumvJu1PmdYfXWSGYgG","email":"viewer-Tq2agYi6MyaM9ye1t-oGr@example.com","msg":"User registered successfully"}
+{"level":40,"time":1764871642280,"env":"test","module":"tenant-middleware","userId":"BiSwOnwv8y0lMsDw483ne","path":"/api/tenants/current","msg":"User does not have an associated tenant"}
+{"level":40,"time":1764871642455,"env":"test","module":"rbac-middleware","userId":"yfPkvPHNb58du5AdDbgYo","userRole":"builder","requiredRoles":["owner"],"path":"/api/tenants/ac43b994-3a9f-454c-afb0-aa59ec6ccbfa","msg":"Role check failed"}
+{"level":40,"time":1764871642463,"env":"test","module":"rbac-middleware","userId":"99WumvJu1PmdYfXWSGYgG","userRole":"viewer","requiredRoles":["owner"],"path":"/api/tenants/ac43b994-3a9f-454c-afb0-aa59ec6ccbfa","msg":"Role check failed"}
+{"level":40,"time":1764871642467,"env":"test","module":"tenant-middleware","userId":"BiSwOnwv8y0lMsDw483ne","paramTenantId":"ac43b994-3a9f-454c-afb0-aa59ec6ccbfa","path":"/api/tenants/ac43b994-3a9f-454c-afb0-aa59ec6ccbfa","msg":"User has no tenant, cannot access tenant-specific route"}
+[90mstdout[2m | tests/integration/auth-jwt.integration.test.ts
+[22m[39m≡ƒº╣ Cleaning up test environment...
+
+ [31mΓ¥»[39m tests/integration/auth-jwt.integration.test.ts [2m([22m[2m17 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 2039[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should register a new user with email and password [33m 377[2mms[22m[39m
+       [32mΓ£ô[39m should reject registration with weak password[32m 110[2mms[22m[39m
+       [32mΓ£ô[39m should reject registration with invalid email[32m 8[2mms[22m[39m
+       [32mΓ£ô[39m should reject registration with missing fields[32m 7[2mms[22m[39m
+       [32mΓ£ô[39m should reject duplicate email registration[32m 129[2mms[22m[39m
+       [32mΓ£ô[39m should login with valid credentials[32m 94[2mms[22m[39m
+       [32mΓ£ô[39m should reject login with wrong password[32m 107[2mms[22m[39m
+       [32mΓ£ô[39m should reject login with non-existent email[32m 9[2mms[22m[39m
+       [32mΓ£ô[39m should reject login with missing fields[32m 78[2mms[22m[39m
+       [32mΓ£ô[39m should return current user with valid token[32m 23[2mms[22m[39m
+       [32mΓ£ô[39m should reject request without token[32m 9[2mms[22m[39m
+       [32mΓ£ô[39m should reject request with invalid token[32m 6[2mms[22m[39m
+       [32mΓ£ô[39m should logout successfully[32m 16[2mms[22m[39m
+[31m       [31m├ù[31m should allow owner to access tenant information[39m[32m 61[2mms[22m[39m
+       [32mΓ£ô[39m should allow builder to access tenant information[32m 61[2mms[22m[39m
+       [32mΓ£ô[39m should allow viewer to access tenant information[32m 62[2mms[22m[39m
+[31m       [31m├ù[31m should only allow owner to update tenant[39m[32m 17[2mms[22m[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m1 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m21 passed[39m[22m[90m (23)[39m
+[2m   Start at [22m 12:07:08
+[2m   Duration [22m 24.37s
+
+[1m[41m FAIL [49m[22m [31mTests failed. Watching for file changes...[39m
+       [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
+c[3J[1m[44m RERUN [49m[22m [34m[2mserver/routes/tenant.routes.ts [22m[39m
+       [2m Filename pattern: [22m[34mtests/integration/auth-jwt.integration.test.ts, tests/integration/routes/US-A-001-login.test.ts[39m
+
+[90mstdout[2m | tests/integration/auth-jwt.integration.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (11) from .env -- tip: ≡ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+
+{"level":40,"time":1764871701260,"env":"test","module":"auth-service","msg":"JWT_SECRET not set - falling back to SESSION_SECRET. This is acceptable for development but should be fixed for production."}
+{"level":30,"time":1764871701606,"env":"test","msg":"GEMINI_API_KEY not configured - AI features will be unavailable"}
+{"level":40,"time":1764871702413,"env":"test","module":"auth-service","msg":"JWT_SECRET not set - falling back to SESSION_SECRET. This is acceptable for development but should be fixed for production."}
+{"level":30,"time":1764871708652,"env":"test","multerImportKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceType":"function","uploadKeys":["storage","limits","preservePath","fileFilter"],"uploadType":"object","uploadPrototype":{},"msg":"Debug Multer Import"}
+{"level":30,"time":1764871708670,"env":"test","multerImportKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceType":"function","uploadKeys":["storage","limits","preservePath","fileFilter"],"uploadType":"object","uploadPrototype":{},"msg":"Debug Multer Import"}
+[90mstdout[2m | tests/integration/auth-jwt.integration.test.ts
+[22m[39m≡ƒº¬ Setting up test environment...
+
+{"level":30,"time":1764871710667,"env":"test","module":"file-routes","outputsDir":"C:\\Users\\scoot\\poll\\VaultLogic\\server\\files\\outputs","msg":"Secure file routes registered"}
+{"level":30,"time":1764871710668,"env":"test","module":"ai-routes","msg":"AI workflow generation routes registered"}
+{"level":30,"time":1764871710677,"env":"test","module":"collab-server","msg":"Initializing WebSocket collaboration server"}
+{"level":40,"time":1764871710677,"env":"test","module":"collab-persistence","msg":"REDIS_URL not configured, multi-instance collab will not work"}
+{"level":30,"time":1764871710678,"env":"test","module":"collab-server","msg":"WebSocket collaboration server initialized"}
+{"level":30,"time":1764871710678,"env":"test","module":"routes","msg":"Real-time collaboration server initialized"}
+[90mstdout[2m | tests/integration/routes/US-A-001-login.test.ts
+[22m[39m≡ƒº¬ Setting up test environment...
+
+{"level":30,"time":1764871710741,"env":"test","module":"file-routes","outputsDir":"C:\\Users\\scoot\\poll\\VaultLogic\\server\\files\\outputs","msg":"Secure file routes registered"}
+{"level":30,"time":1764871710742,"env":"test","module":"ai-routes","msg":"AI workflow generation routes registered"}
+{"level":30,"time":1764871710752,"env":"test","module":"collab-server","msg":"Initializing WebSocket collaboration server"}
+{"level":40,"time":1764871710752,"env":"test","module":"collab-persistence","msg":"REDIS_URL not configured, multi-instance collab will not work"}
+{"level":30,"time":1764871710753,"env":"test","module":"collab-server","msg":"WebSocket collaboration server initialized"}
+{"level":30,"time":1764871710753,"env":"test","module":"routes","msg":"Real-time collaboration server initialized"}
+{"level":30,"time":1764871710796,"env":"test","module":"auth","hasToken":true,"origin":"http://localhost:5000","ip":"::ffff:127.0.0.1","msg":"OAuth2 login attempt"}
+{"level":30,"time":1764871710810,"env":"test","module":"auth-routes","userId":"8RmzUquDEg7pEAH3-N-8P","email":"test-0osLojGqB5R2GUTUhFWZ7@example.com","msg":"User registered successfully"}
+{"level":30,"time":1764871710798,"env":"test","module":"auth","email":"testuser@example.com","msg":"Token verified successfully"}
+{"level":30,"time":1764871710816,"env":"test","module":"auth","userId":"google-user-id","msg":"User upserted successfully"}
+{"level":40,"time":1764871710817,"env":"test","module":"auth","err":{"type":"Error","message":"[vitest] No \"db\" export is defined on the \"../../../server/db\" mock. Did you forget to return it from \"vi.mock\"?\nIf you need to partially mock a module, you can use \"importOriginal\" helper inside:\n","stack":"Error: [vitest] No \"db\" export is defined on the \"../../../server/db\" mock. Did you forget to return it from \"vi.mock\"?\nIf you need to partially mock a module, you can use \"importOriginal\" helper inside:\n\n    at VitestMocker.createError (file:///C:/Users/scoot/poll/VaultLogic/node_modules/vitest/dist/chunks/startModuleRunner.BqQUfEjB.js:230:48)\n    at Object.get (file:///C:/Users/scoot/poll/VaultLogic/node_modules/vitest/dist/chunks/startModuleRunner.BqQUfEjB.js:279:16)\n    at TemplateShareRepository.acceptPendingForUser (C:/Users/scoot/poll/VaultLogic/server/repositories/TemplateShareRepository.ts:91:27)\n    at TemplateSharingService.acceptPendingOnLogin (C:/Users/scoot/poll/VaultLogic/server/services/TemplateSharingService.ts:210:27)\n    at C:/Users/scoot/poll/VaultLogic/server/googleAuth.ts:337:38\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)","codeFrame":"vi.mock(import(\"../../../server/db\"), async (importOriginal) => {\n  const actual = await importOriginal()\n  return {\n    ...actual,\n    // your mocked methods\n  }\n})"},"email":"testuser@example.com","msg":"Failed to accept pending template shares"}
+{"level":30,"time":1764871710823,"env":"test","module":"auth","email":"testuser@example.com","msg":"OAuth2 login successful"}
+{"level":30,"time":1764871710846,"env":"test","module":"auth","hasToken":false,"origin":"http://localhost:5000","ip":"::ffff:127.0.0.1","msg":"OAuth2 login attempt"}
+{"level":40,"time":1764871710846,"env":"test","module":"auth","msg":"OAuth2 login failed: No token provided"}
+{"level":30,"time":1764871710864,"env":"test","module":"auth","hasToken":true,"origin":"http://localhost:5000","ip":"::ffff:127.0.0.1","msg":"OAuth2 login attempt"}
+{"level":30,"time":1764871710864,"env":"test","module":"auth","email":"testuser@example.com","msg":"Token verified successfully"}
+{"level":30,"time":1764871710866,"env":"test","module":"auth","userId":"google-user-id","msg":"User upserted successfully"}
+{"level":40,"time":1764871710867,"env":"test","module":"auth","err":{"type":"Error","message":"[vitest] No \"db\" export is defined on the \"../../../server/db\" mock. Did you forget to return it from \"vi.mock\"?\nIf you need to partially mock a module, you can use \"importOriginal\" helper inside:\n","stack":"Error: [vitest] No \"db\" export is defined on the \"../../../server/db\" mock. Did you forget to return it from \"vi.mock\"?\nIf you need to partially mock a module, you can use \"importOriginal\" helper inside:\n\n    at VitestMocker.createError (file:///C:/Users/scoot/poll/VaultLogic/node_modules/vitest/dist/chunks/startModuleRunner.BqQUfEjB.js:230:48)\n    at Object.get (file:///C:/Users/scoot/poll/VaultLogic/node_modules/vitest/dist/chunks/startModuleRunner.BqQUfEjB.js:279:16)\n    at TemplateShareRepository.acceptPendingForUser (C:/Users/scoot/poll/VaultLogic/server/repositories/TemplateShareRepository.ts:91:27)\n    at TemplateSharingService.acceptPendingOnLogin (C:/Users/scoot/poll/VaultLogic/server/services/TemplateSharingService.ts:210:27)\n    at C:/Users/scoot/poll/VaultLogic/server/googleAuth.ts:337:38\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)","codeFrame":"vi.mock(import(\"../../../server/db\"), async (importOriginal) => {\n  const actual = await importOriginal()\n  return {\n    ...actual,\n    // your mocked methods\n  }\n})"},"email":"testuser@example.com","msg":"Failed to accept pending template shares"}
+{"level":30,"time":1764871710869,"env":"test","module":"auth","email":"testuser@example.com","msg":"OAuth2 login successful"}
+{"level":40,"time":1764871710898,"env":"test","module":"auth-middleware","path":"/api/auth/user","msg":"No valid authentication found"}
+{"level":30,"time":1764871710904,"env":"test","module":"auth","hasToken":true,"origin":"http://localhost:5000","ip":"::ffff:127.0.0.1","msg":"OAuth2 login attempt"}
+{"level":30,"time":1764871710904,"env":"test","module":"auth","email":"testuser@example.com","msg":"Token verified successfully"}
+{"level":30,"time":1764871710905,"env":"test","module":"auth","userId":"google-user-id","msg":"User upserted successfully"}
+{"level":40,"time":1764871710906,"env":"test","module":"auth","err":{"type":"Error","message":"[vitest] No \"db\" export is defined on the \"../../../server/db\" mock. Did you forget to return it from \"vi.mock\"?\nIf you need to partially mock a module, you can use \"importOriginal\" helper inside:\n","stack":"Error: [vitest] No \"db\" export is defined on the \"../../../server/db\" mock. Did you forget to return it from \"vi.mock\"?\nIf you need to partially mock a module, you can use \"importOriginal\" helper inside:\n\n    at VitestMocker.createError (file:///C:/Users/scoot/poll/VaultLogic/node_modules/vitest/dist/chunks/startModuleRunner.BqQUfEjB.js:230:48)\n    at Object.get (file:///C:/Users/scoot/poll/VaultLogic/node_modules/vitest/dist/chunks/startModuleRunner.BqQUfEjB.js:279:16)\n    at TemplateShareRepository.acceptPendingForUser (C:/Users/scoot/poll/VaultLogic/server/repositories/TemplateShareRepository.ts:91:27)\n    at TemplateSharingService.acceptPendingOnLogin (C:/Users/scoot/poll/VaultLogic/server/services/TemplateSharingService.ts:210:27)\n    at C:/Users/scoot/poll/VaultLogic/server/googleAuth.ts:337:38\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)","codeFrame":"vi.mock(import(\"../../../server/db\"), async (importOriginal) => {\n  const actual = await importOriginal()\n  return {\n    ...actual,\n    // your mocked methods\n  }\n})"},"email":"testuser@example.com","msg":"Failed to accept pending template shares"}
+{"level":30,"time":1764871710907,"env":"test","module":"auth","email":"testuser@example.com","msg":"OAuth2 login successful"}
+{"level":30,"time":1764871710915,"env":"test","module":"auth-routes","userId":"5hhEC61_lATn5CWQyfHfL","email":"test-GU9jKjdTzXFCN0zaAKYfp@example.com","msg":"User registered successfully"}
+{"level":30,"time":1764871710916,"env":"test","module":"auth","email":"testuser@example.com","msg":"User logged out"}
+{"level":40,"time":1764871710921,"env":"test","module":"auth-middleware","path":"/api/auth/user","msg":"No valid authentication found"}
+{"level":30,"time":1764871710929,"env":"test","module":"auth","msg":"User logged out"}
+[90mstdout[2m | tests/integration/routes/US-A-001-login.test.ts
+[22m[39m≡ƒº╣ Cleaning up test environment...
+
+ [32mΓ£ô[39m tests/integration/routes/US-A-001-login.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 199[2mms[22m[39m
+{"level":30,"time":1764871710991,"env":"test","module":"auth-routes","userId":"73XPQ2AK4-rabsjttpJ3q","email":"test-login-nm14hQWo7ADHWYw47v0tm@example.com","msg":"User registered successfully"}
+{"level":30,"time":1764871711052,"env":"test","module":"auth-routes","userId":"73XPQ2AK4-rabsjttpJ3q","email":"test-login-nm14hQWo7ADHWYw47v0tm@example.com","msg":"User logged in successfully"}
+{"level":30,"time":1764871711183,"env":"test","module":"auth-routes","userId":"8g1Tkjf27QUiwqxi9ktsJ","email":"test-me-M0kE5fLGTXbQ_7tJTO5mt@example.com","msg":"User registered successfully"}
+{"level":40,"time":1764871711197,"env":"test","module":"auth-middleware","path":"/api/auth/me","msg":"No valid authentication found"}
+{"level":40,"time":1764871711202,"env":"test","module":"auth-middleware","path":"/api/auth/me","msg":"No valid authentication found"}
+{"level":30,"time":1764871711206,"env":"test","module":"auth","msg":"User logged out"}
+{"level":30,"time":1764871711267,"env":"test","module":"auth-routes","userId":"hvH3V0q4CVsEcxu_KkKk3","email":"owner-rPFF4V7dKLbfEYANiwlRi@example.com","msg":"User registered successfully"}
+{"level":50,"time":1764871711470,"env":"test","module":"tenant-routes","error":{},"msg":"Failed to create tenant"}
+[90mstdout[2m | tests/integration/auth-jwt.integration.test.ts
+[22m[39m≡ƒº╣ Cleaning up test environment...
+
+ [31mΓ¥»[39m tests/integration/auth-jwt.integration.test.ts [2m([22m[2m17 tests[22m[2m | [22m[33m4 skipped[39m[2m)[22m[33m 814[2mms[22m[39m
+       [32mΓ£ô[39m should register a new user with email and password[32m 142[2mms[22m[39m
+       [32mΓ£ô[39m should reject registration with weak password[32m 9[2mms[22m[39m
+       [32mΓ£ô[39m should reject registration with invalid email[32m 7[2mms[22m[39m
+       [32mΓ£ô[39m should reject registration with missing fields[32m 6[2mms[22m[39m
+       [32mΓ£ô[39m should reject duplicate email registration[32m 80[2mms[22m[39m
+       [32mΓ£ô[39m should login with valid credentials[32m 62[2mms[22m[39m
+       [32mΓ£ô[39m should reject login with wrong password[32m 61[2mms[22m[39m
+       [32mΓ£ô[39m should reject login with non-existent email[32m 5[2mms[22m[39m
+       [32mΓ£ô[39m should reject login with missing fields[32m 4[2mms[22m[39m
+       [32mΓ£ô[39m should return current user with valid token[32m 8[2mms[22m[39m
+       [32mΓ£ô[39m should reject request without token[32m 8[2mms[22m[39m
+       [32mΓ£ô[39m should reject request with invalid token[32m 3[2mms[22m[39m
+       [32mΓ£ô[39m should logout successfully[32m 5[2mms[22m[39m
+       [2m[90mΓåô[39m[22m should allow owner to access tenant information
+       [2m[90mΓåô[39m[22m should allow builder to access tenant information
+       [2m[90mΓåô[39m[22m should allow viewer to access tenant information
+       [2m[90mΓåô[39m[22m should only allow owner to update tenant
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m1 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m19 passed[39m[22m[2m | [22m[33m4 skipped[39m[90m (23)[39m
+[2m   Start at [22m 12:08:17
+[2m   Duration [22m 25.07s
+
+[1m[41m FAIL [49m[22m [31mTests failed. Watching for file changes...[39m
+       [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
+c[3J[1m[44m RERUN [49m[22m [34m[2mserver/routes/tenant.routes.ts [22m[39m
+       [2m Filename pattern: [22m[34mtests/integration/auth-jwt.integration.test.ts, tests/integration/routes/US-A-001-login.test.ts[39m
+
+[90mstdout[2m | tests/integration/auth-jwt.integration.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (11) from .env -- tip: ≡ƒæÑ sync secrets across teammates & machines: https://dotenvx.com/ops
+
+{"level":40,"time":1764871752602,"env":"test","module":"auth-service","msg":"JWT_SECRET not set - falling back to SESSION_SECRET. This is acceptable for development but should be fixed for production."}
+{"level":30,"time":1764871753030,"env":"test","msg":"GEMINI_API_KEY not configured - AI features will be unavailable"}
+{"level":40,"time":1764871753475,"env":"test","module":"auth-service","msg":"JWT_SECRET not set - falling back to SESSION_SECRET. This is acceptable for development but should be fixed for production."}
+{"level":30,"time":1764871755971,"env":"test","multerImportKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceType":"function","uploadKeys":["storage","limits","preservePath","fileFilter"],"uploadType":"object","uploadPrototype":{},"msg":"Debug Multer Import"}
+{"level":30,"time":1764871756410,"env":"test","multerImportKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceType":"function","uploadKeys":["storage","limits","preservePath","fileFilter"],"uploadType":"object","uploadPrototype":{},"msg":"Debug Multer Import"}
+[90mstdout[2m | tests/integration/routes/US-A-001-login.test.ts
+[22m[39m≡ƒº¬ Setting up test environment...
+
+{"level":30,"time":1764871759333,"env":"test","module":"file-routes","outputsDir":"C:\\Users\\scoot\\poll\\VaultLogic\\server\\files\\outputs","msg":"Secure file routes registered"}
+{"level":30,"time":1764871759334,"env":"test","module":"ai-routes","msg":"AI workflow generation routes registered"}
+{"level":30,"time":1764871759344,"env":"test","module":"collab-server","msg":"Initializing WebSocket collaboration server"}
+{"level":40,"time":1764871759344,"env":"test","module":"collab-persistence","msg":"REDIS_URL not configured, multi-instance collab will not work"}
+{"level":30,"time":1764871759345,"env":"test","module":"collab-server","msg":"WebSocket collaboration server initialized"}
+{"level":30,"time":1764871759345,"env":"test","module":"routes","msg":"Real-time collaboration server initialized"}
+{"level":30,"time":1764871759409,"env":"test","module":"auth","hasToken":true,"origin":"http://localhost:5000","ip":"::ffff:127.0.0.1","msg":"OAuth2 login attempt"}
+{"level":30,"time":1764871759410,"env":"test","module":"auth","email":"testuser@example.com","msg":"Token verified successfully"}
+{"level":30,"time":1764871759412,"env":"test","module":"auth","userId":"google-user-id","msg":"User upserted successfully"}
+{"level":40,"time":1764871759413,"env":"test","module":"auth","err":{"type":"Error","message":"[vitest] No \"db\" export is defined on the \"../../../server/db\" mock. Did you forget to return it from \"vi.mock\"?\nIf you need to partially mock a module, you can use \"importOriginal\" helper inside:\n","stack":"Error: [vitest] No \"db\" export is defined on the \"../../../server/db\" mock. Did you forget to return it from \"vi.mock\"?\nIf you need to partially mock a module, you can use \"importOriginal\" helper inside:\n\n    at VitestMocker.createError (file:///C:/Users/scoot/poll/VaultLogic/node_modules/vitest/dist/chunks/startModuleRunner.BqQUfEjB.js:230:48)\n    at Object.get (file:///C:/Users/scoot/poll/VaultLogic/node_modules/vitest/dist/chunks/startModuleRunner.BqQUfEjB.js:279:16)\n    at TemplateShareRepository.acceptPendingForUser (C:/Users/scoot/poll/VaultLogic/server/repositories/TemplateShareRepository.ts:91:27)\n    at TemplateSharingService.acceptPendingOnLogin (C:/Users/scoot/poll/VaultLogic/server/services/TemplateSharingService.ts:210:27)\n    at C:/Users/scoot/poll/VaultLogic/server/googleAuth.ts:337:38\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)","codeFrame":"vi.mock(import(\"../../../server/db\"), async (importOriginal) => {\n  const actual = await importOriginal()\n  return {\n    ...actual,\n    // your mocked methods\n  }\n})"},"email":"testuser@example.com","msg":"Failed to accept pending template shares"}
+{"level":30,"time":1764871759419,"env":"test","module":"auth","email":"testuser@example.com","msg":"OAuth2 login successful"}
+{"level":30,"time":1764871759439,"env":"test","module":"auth","hasToken":false,"origin":"http://localhost:5000","ip":"::ffff:127.0.0.1","msg":"OAuth2 login attempt"}
+{"level":40,"time":1764871759440,"env":"test","module":"auth","msg":"OAuth2 login failed: No token provided"}
+{"level":30,"time":1764871759477,"env":"test","module":"auth","hasToken":true,"origin":"http://localhost:5000","ip":"::ffff:127.0.0.1","msg":"OAuth2 login attempt"}
+{"level":30,"time":1764871759478,"env":"test","module":"auth","email":"testuser@example.com","msg":"Token verified successfully"}
+{"level":30,"time":1764871759480,"env":"test","module":"auth","userId":"google-user-id","msg":"User upserted successfully"}
+{"level":40,"time":1764871759481,"env":"test","module":"auth","err":{"type":"Error","message":"[vitest] No \"db\" export is defined on the \"../../../server/db\" mock. Did you forget to return it from \"vi.mock\"?\nIf you need to partially mock a module, you can use \"importOriginal\" helper inside:\n","stack":"Error: [vitest] No \"db\" export is defined on the \"../../../server/db\" mock. Did you forget to return it from \"vi.mock\"?\nIf you need to partially mock a module, you can use \"importOriginal\" helper inside:\n\n    at VitestMocker.createError (file:///C:/Users/scoot/poll/VaultLogic/node_modules/vitest/dist/chunks/startModuleRunner.BqQUfEjB.js:230:48)\n    at Object.get (file:///C:/Users/scoot/poll/VaultLogic/node_modules/vitest/dist/chunks/startModuleRunner.BqQUfEjB.js:279:16)\n    at TemplateShareRepository.acceptPendingForUser (C:/Users/scoot/poll/VaultLogic/server/repositories/TemplateShareRepository.ts:91:27)\n    at TemplateSharingService.acceptPendingOnLogin (C:/Users/scoot/poll/VaultLogic/server/services/TemplateSharingService.ts:210:27)\n    at C:/Users/scoot/poll/VaultLogic/server/googleAuth.ts:337:38\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)","codeFrame":"vi.mock(import(\"../../../server/db\"), async (importOriginal) => {\n  const actual = await importOriginal()\n  return {\n    ...actual,\n    // your mocked methods\n  }\n})"},"email":"testuser@example.com","msg":"Failed to accept pending template shares"}
+{"level":30,"time":1764871759484,"env":"test","module":"auth","email":"testuser@example.com","msg":"OAuth2 login successful"}
+{"level":40,"time":1764871759525,"env":"test","module":"auth-middleware","path":"/api/auth/user","msg":"No valid authentication found"}
+{"level":30,"time":1764871759537,"env":"test","module":"auth","hasToken":true,"origin":"http://localhost:5000","ip":"::ffff:127.0.0.1","msg":"OAuth2 login attempt"}
+{"level":30,"time":1764871759537,"env":"test","module":"auth","email":"testuser@example.com","msg":"Token verified successfully"}
+{"level":30,"time":1764871759539,"env":"test","module":"auth","userId":"google-user-id","msg":"User upserted successfully"}
+{"level":40,"time":1764871759539,"env":"test","module":"auth","err":{"type":"Error","message":"[vitest] No \"db\" export is defined on the \"../../../server/db\" mock. Did you forget to return it from \"vi.mock\"?\nIf you need to partially mock a module, you can use \"importOriginal\" helper inside:\n","stack":"Error: [vitest] No \"db\" export is defined on the \"../../../server/db\" mock. Did you forget to return it from \"vi.mock\"?\nIf you need to partially mock a module, you can use \"importOriginal\" helper inside:\n\n    at VitestMocker.createError (file:///C:/Users/scoot/poll/VaultLogic/node_modules/vitest/dist/chunks/startModuleRunner.BqQUfEjB.js:230:48)\n    at Object.get (file:///C:/Users/scoot/poll/VaultLogic/node_modules/vitest/dist/chunks/startModuleRunner.BqQUfEjB.js:279:16)\n    at TemplateShareRepository.acceptPendingForUser (C:/Users/scoot/poll/VaultLogic/server/repositories/TemplateShareRepository.ts:91:27)\n    at TemplateSharingService.acceptPendingOnLogin (C:/Users/scoot/poll/VaultLogic/server/services/TemplateSharingService.ts:210:27)\n    at C:/Users/scoot/poll/VaultLogic/server/googleAuth.ts:337:38\n    at processTicksAndRejections (node:internal/process/task_queues:103:5)","codeFrame":"vi.mock(import(\"../../../server/db\"), async (importOriginal) => {\n  const actual = await importOriginal()\n  return {\n    ...actual,\n    // your mocked methods\n  }\n})"},"email":"testuser@example.com","msg":"Failed to accept pending template shares"}
+{"level":30,"time":1764871759541,"env":"test","module":"auth","email":"testuser@example.com","msg":"OAuth2 login successful"}
+{"level":30,"time":1764871759550,"env":"test","module":"auth","email":"testuser@example.com","msg":"User logged out"}
+{"level":40,"time":1764871759560,"env":"test","module":"auth-middleware","path":"/api/auth/user","msg":"No valid authentication found"}
+{"level":30,"time":1764871759572,"env":"test","module":"auth","msg":"User logged out"}
+[90mstdout[2m | tests/integration/routes/US-A-001-login.test.ts
+[22m[39m≡ƒº╣ Cleaning up test environment...
+
+ [32mΓ£ô[39m tests/integration/routes/US-A-001-login.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 254[2mms[22m[39m
+[90mstdout[2m | tests/integration/auth-jwt.integration.test.ts
+[22m[39m≡ƒº¬ Setting up test environment...
+
+{"level":30,"time":1764871759619,"env":"test","module":"file-routes","outputsDir":"C:\\Users\\scoot\\poll\\VaultLogic\\server\\files\\outputs","msg":"Secure file routes registered"}
+{"level":30,"time":1764871759620,"env":"test","module":"ai-routes","msg":"AI workflow generation routes registered"}
+{"level":30,"time":1764871759631,"env":"test","module":"collab-server","msg":"Initializing WebSocket collaboration server"}
+{"level":40,"time":1764871759631,"env":"test","module":"collab-persistence","msg":"REDIS_URL not configured, multi-instance collab will not work"}
+{"level":30,"time":1764871759631,"env":"test","module":"collab-server","msg":"WebSocket collaboration server initialized"}
+{"level":30,"time":1764871759631,"env":"test","module":"routes","msg":"Real-time collaboration server initialized"}
+{"level":30,"time":1764871759875,"env":"test","module":"auth-routes","userId":"_GDOJ7DKnrKRV4OOrI3wi","email":"test-MgOwmMFzei1dOFQmjx-yU@example.com","msg":"User registered successfully"}
+{"level":30,"time":1764871760094,"env":"test","module":"auth-routes","userId":"y6JS7XxVvyE4YUaEOGOzT","email":"test-hVELb2Zd3d3Aw8YJvpqH3@example.com","msg":"User registered successfully"}
+{"level":30,"time":1764871760188,"env":"test","module":"auth-routes","userId":"-fEFiqhHOOmPheK2Qk5rG","email":"test-login--FCaP7uycBSdXEclUwcRz@example.com","msg":"User registered successfully"}
+{"level":30,"time":1764871760275,"env":"test","module":"auth-routes","userId":"-fEFiqhHOOmPheK2Qk5rG","email":"test-login--FCaP7uycBSdXEclUwcRz@example.com","msg":"User logged in successfully"}
+{"level":30,"time":1764871760458,"env":"test","module":"auth-routes","userId":"MLiM1ufW4b1DQYVqdU8SU","email":"test-me-QJNqm0SgiWZVxUYl3K-0z@example.com","msg":"User registered successfully"}
+{"level":40,"time":1764871760488,"env":"test","module":"auth-middleware","path":"/api/auth/me","msg":"No valid authentication found"}
+{"level":40,"time":1764871760496,"env":"test","module":"auth-middleware","path":"/api/auth/me","msg":"No valid authentication found"}
+{"level":30,"time":1764871760505,"env":"test","module":"auth","msg":"User logged out"}
+{"level":30,"time":1764871760585,"env":"test","module":"auth-routes","userId":"2EHo6h1VhRetW2LQ1d9Z-","email":"owner-0OUKf-7TTCDhurH_h7w-I@example.com","msg":"User registered successfully"}
+{"level":50,"time":1764871760823,"env":"test","module":"tenant-routes","error":{},"msg":"Failed to create tenant"}
+[90mstdout[2m | tests/integration/auth-jwt.integration.test.ts
+[22m[39m≡ƒº╣ Cleaning up test environment...
+
+ [31mΓ¥»[39m tests/integration/auth-jwt.integration.test.ts [2m([22m[2m17 tests[22m[2m | [22m[33m4 skipped[39m[2m)[22m[33m 1258[2mms[22m[39m
+       [32mΓ£ô[39m should register a new user with email and password[32m 278[2mms[22m[39m
+       [32mΓ£ô[39m should reject registration with weak password[32m 10[2mms[22m[39m
+       [32mΓ£ô[39m should reject registration with invalid email[32m 49[2mms[22m[39m
+       [32mΓ£ô[39m should reject registration with missing fields[32m 20[2mms[22m[39m
+       [32mΓ£ô[39m should reject duplicate email registration[32m 110[2mms[22m[39m
+       [32mΓ£ô[39m should login with valid credentials[32m 85[2mms[22m[39m
+       [32mΓ£ô[39m should reject login with wrong password[32m 85[2mms[22m[39m
+       [32mΓ£ô[39m should reject login with non-existent email[32m 7[2mms[22m[39m
+       [32mΓ£ô[39m should reject login with missing fields[32m 5[2mms[22m[39m
+       [32mΓ£ô[39m should return current user with valid token[32m 11[2mms[22m[39m
+       [32mΓ£ô[39m should reject request without token[32m 16[2mms[22m[39m
+       [32mΓ£ô[39m should reject request with invalid token[32m 8[2mms[22m[39m
+       [32mΓ£ô[39m should logout successfully[32m 13[2mms[22m[39m
+       [2m[90mΓåô[39m[22m should allow owner to access tenant information
+       [2m[90mΓåô[39m[22m should allow builder to access tenant information
+       [2m[90mΓåô[39m[22m should allow viewer to access tenant information
+       [2m[90mΓåô[39m[22m should only allow owner to update tenant
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m1 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m19 passed[39m[22m[2m | [22m[33m4 skipped[39m[90m (23)[39m
+[2m   Start at [22m 12:09:08
+[2m   Duration [22m 21.08s
+
+[1m[41m FAIL [49m[22m [31mTests failed. Watching for file changes...[39m
+       [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
+c[3J[1m[44m RERUN [49m[22m [34m[2mtests/integration/auth-jwt.integration.test.ts [22m[34mx4 [34m[39m
+       [2m Filename pattern: [22m[34mtests/integration/auth-jwt.integration.test.ts, tests/integration/routes/US-A-001-login.test.ts[39m
+
+[90mstdout[2m | tests/integration/auth-jwt.integration.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (11) from .env -- tip: ≡ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+
+{"level":40,"time":1764871813373,"env":"test","module":"auth-service","msg":"JWT_SECRET not set - falling back to SESSION_SECRET. This is acceptable for development but should be fixed for production."}
+{"level":30,"time":1764871814377,"env":"test","multerImportKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceType":"function","uploadKeys":["storage","limits","preservePath","fileFilter"],"uploadType":"object","uploadPrototype":{},"msg":"Debug Multer Import"}
+[90mstdout[2m | tests/integration/auth-jwt.integration.test.ts
+[22m[39m≡ƒº¬ Setting up test environment...
+
+{"level":30,"time":1764871815834,"env":"test","module":"file-routes","outputsDir":"C:\\Users\\scoot\\poll\\VaultLogic\\server\\files\\outputs","msg":"Secure file routes registered"}
+{"level":30,"time":1764871815835,"env":"test","module":"ai-routes","msg":"AI workflow generation routes registered"}
+{"level":30,"time":1764871815843,"env":"test","module":"collab-server","msg":"Initializing WebSocket collaboration server"}
+{"level":40,"time":1764871815843,"env":"test","module":"collab-persistence","msg":"REDIS_URL not configured, multi-instance collab will not work"}
+{"level":30,"time":1764871815843,"env":"test","module":"collab-server","msg":"WebSocket collaboration server initialized"}
+{"level":30,"time":1764871815843,"env":"test","module":"routes","msg":"Real-time collaboration server initialized"}
+{"level":30,"time":1764871815966,"env":"test","module":"auth-routes","userId":"9gGiVCpXjJ2eWZgzFU6rv","email":"test-a29dNoY_-OHOhyAt-6XAy@example.com","msg":"User registered successfully"}
+{"level":30,"time":1764871816058,"env":"test","module":"auth-routes","userId":"v3ilCZEX6_6OTnm52HFt2","email":"test-jIm9XF-qyi_drhf_cRRBi@example.com","msg":"User registered successfully"}
+{"level":30,"time":1764871816126,"env":"test","module":"auth-routes","userId":"ftZ_mA8NF9bgYV2rJ2yn5","email":"test-login-8f7WR0lhBXjGftiib6GKi@example.com","msg":"User registered successfully"}
+{"level":30,"time":1764871816190,"env":"test","module":"auth-routes","userId":"ftZ_mA8NF9bgYV2rJ2yn5","email":"test-login-8f7WR0lhBXjGftiib6GKi@example.com","msg":"User logged in successfully"}
+{"level":30,"time":1764871816327,"env":"test","module":"auth-routes","userId":"QtmZVM_aExj26XoqecQtG","email":"test-me-cP09oN1DlQsyKC2oTfTaM@example.com","msg":"User registered successfully"}
+{"level":40,"time":1764871816337,"env":"test","module":"auth-middleware","path":"/api/auth/me","msg":"No valid authentication found"}
+{"level":40,"time":1764871816341,"env":"test","module":"auth-middleware","path":"/api/auth/me","msg":"No valid authentication found"}
+{"level":30,"time":1764871816345,"env":"test","module":"auth","msg":"User logged out"}
+{"level":30,"time":1764871816404,"env":"test","module":"auth-routes","userId":"xZWnI3IYJ3G-k-mL5Nsxe","email":"owner-hI2DeSeegmZwpox75e8Gw@example.com","msg":"User registered successfully"}
+{"level":30,"time":1764871816631,"env":"test","module":"tenant-routes","tenantId":"d43d4fb2-9777-4ee1-8f38-6b4dd18289d8","userId":"xZWnI3IYJ3G-k-mL5Nsxe","msg":"Tenant created"}
+{"level":30,"time":1764871816692,"env":"test","module":"auth-routes","userId":"oEPtSwFSBp8HkFJSazZu_","email":"builder-G7QTG1TjuR9H_8dAeOMWw@example.com","msg":"User registered successfully"}
+{"level":30,"time":1764871816755,"env":"test","module":"auth-routes","userId":"JRJiTf6_mYa_m_abhgf8O","email":"viewer-HKag4S5MSnWgjwPkDlnqx@example.com","msg":"User registered successfully"}
+{"level":40,"time":1764871816913,"env":"test","module":"rbac-middleware","userId":"oEPtSwFSBp8HkFJSazZu_","userRole":"builder","requiredRoles":["owner"],"path":"/api/tenants/d43d4fb2-9777-4ee1-8f38-6b4dd18289d8","msg":"Role check failed"}
+{"level":40,"time":1764871816920,"env":"test","module":"rbac-middleware","userId":"JRJiTf6_mYa_m_abhgf8O","userRole":"viewer","requiredRoles":["owner"],"path":"/api/tenants/d43d4fb2-9777-4ee1-8f38-6b4dd18289d8","msg":"Role check failed"}
+{"level":30,"time":1764871816970,"env":"test","module":"tenant-routes","tenantId":"d43d4fb2-9777-4ee1-8f38-6b4dd18289d8","msg":"Tenant updated"}
+[90mstdout[2m | tests/integration/auth-jwt.integration.test.ts
+[22m[39m≡ƒº╣ Cleaning up test environment...
+
+ [32mΓ£ô[39m tests/integration/auth-jwt.integration.test.ts [2m([22m[2m17 tests[22m[2m)[22m[33m 1144[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m17 passed[39m[22m[90m (17)[39m
+[2m   Start at [22m 12:10:11
+[2m   Duration [22m 5.09s
+
+[1m[42m PASS [49m[22m [32mWaiting for file changes...[39m
+       [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m

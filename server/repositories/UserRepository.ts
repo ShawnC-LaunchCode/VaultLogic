@@ -136,6 +136,29 @@ export class UserRepository extends BaseRepository<typeof users, User, UpsertUse
   }
 
   /**
+   * Update user fields
+   */
+  async updateUser(userId: string, data: Partial<User>, tx?: DbTransaction): Promise<User> {
+    const database = this.getDb(tx);
+    const updateData: any = { ...data, updatedAt: new Date() };
+
+    // Remove undefined fields
+    Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
+
+    const [updatedUser] = await database
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, userId))
+      .returning();
+
+    if (!updatedUser) {
+      throw new Error('User not found');
+    }
+
+    return updatedUser;
+  }
+
+  /**
    * Check database connectivity
    */
   async ping(): Promise<boolean> {

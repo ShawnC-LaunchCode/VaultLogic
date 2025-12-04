@@ -1,5 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { createLogger } from "../logger";
+import { userRepository } from "../repositories";
 import { hybridAuth, type AuthRequest } from "../middleware/auth";
 import { requireTenant, validateTenantParam } from "../middleware/tenant";
 import { requireOwner, requirePermission } from "../middleware/rbac";
@@ -244,14 +245,10 @@ export function registerTenantRoutes(app: Express): void {
 
       // Update user's tenantId and role to owner
       if (authReq.userId) {
-        await db
-          .update(users)
-          .set({
-            tenantId: newTenant.id,
-            tenantRole: 'owner',
-            updatedAt: new Date(),
-          })
-          .where(eq(users.id, authReq.userId));
+        await userRepository.updateUser(authReq.userId, {
+          tenantId: newTenant.id,
+          tenantRole: 'owner',
+        });
       }
 
       logger.info({ tenantId: newTenant.id, userId: authReq.userId }, 'Tenant created');

@@ -4,6 +4,38 @@ import express, { type Express } from "express";
 import { __setGoogleClient } from "../../../server/googleAuth";
 import { registerRoutes } from "../../../server/routes";
 
+// Mock repositories
+const mockUsers = new Map<string, any>();
+vi.mock('../../../server/repositories', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../server/repositories')>();
+  return {
+    ...actual,
+    userRepository: {
+      upsert: vi.fn(async (user) => {
+        mockUsers.set(user.id, user);
+        return true;
+      }),
+      findById: vi.fn(async (id) => {
+        return mockUsers.get(id) || null;
+      }),
+      findByEmail: vi.fn(async (email) => {
+        return Array.from(mockUsers.values()).find(u => u.email === email) || null;
+      }),
+    },
+  };
+});
+
+// Mock db for tenant query in googleAuth.ts
+vi.mock('../../../server/db', () => ({
+  getDb: () => ({
+    select: () => ({
+      from: () => ({
+        limit: () => Promise.resolve([{ id: 'default-tenant-id' }]),
+      }),
+    }),
+  }),
+}));
+
 /**
  * US-A-001: User Login with Google OAuth
  *

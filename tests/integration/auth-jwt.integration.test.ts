@@ -1,9 +1,54 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import request from "supertest";
 import express, { type Express } from "express";
 import { createServer, type Server } from "http";
 import { registerRoutes } from "../../server/routes";
 import { nanoid } from "nanoid";
+
+// Mock repositories with in-memory storage
+const mockUsers = new Map<string, any>();
+const mockCredentials = new Map<string, any>();
+
+vi.mock('../../server/repositories', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../server/repositories')>();
+  return {
+    ...actual,
+    userRepository: {
+      findByEmail: vi.fn(async (email) => {
+        return Array.from(mockUsers.values()).find(u => u.email === email) || null;
+      }),
+      create: vi.fn(async (user) => {
+        mockUsers.set(user.id, user);
+        return user;
+      }),
+      findById: vi.fn(async (id) => {
+        return mockUsers.get(id) || null;
+      }),
+      upsert: vi.fn(async (user) => {
+        mockUsers.set(user.id, user);
+        return true;
+      }),
+      updateUser: vi.fn(async (userId, data) => {
+        const user = mockUsers.get(userId);
+        if (user) {
+          const updatedUser = { ...user, ...data };
+          mockUsers.set(userId, updatedUser);
+          return updatedUser;
+        }
+        throw new Error('User not found');
+      }),
+    },
+    userCredentialsRepository: {
+      createCredentials: vi.fn(async (userId, passwordHash) => {
+        mockCredentials.set(userId, { userId, passwordHash });
+        return { userId, passwordHash };
+      }),
+      findByUserId: vi.fn(async (userId) => {
+        return mockCredentials.get(userId) || null;
+      }),
+    },
+  };
+});
 
 /**
  * JWT Authentication Integration Tests

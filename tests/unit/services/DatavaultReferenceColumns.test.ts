@@ -3,6 +3,13 @@ import { DatavaultColumnsService } from '../../../server/services/DatavaultColum
 import { DatavaultRowsService } from '../../../server/services/DatavaultRowsService';
 import type { DatavaultColumn, DatavaultTable } from '@shared/schema';
 
+// Mock db module
+vi.mock('../../../server/db', () => ({
+  db: {
+    transaction: vi.fn((callback) => callback({})),
+  },
+}));
+
 describe('DataVault Reference Columns', () => {
   describe('DatavaultColumnsService - Reference Column Validation', () => {
     let columnsService: DatavaultColumnsService;

@@ -2319,3 +2319,234 @@ error: update or delete on table "users" violates foreign key constraint "workfl
 
 [1m[41m FAIL [49m[22m [31mTests failed. Watching for file changes...[39m
        [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
+c[3J[1m[44m RERUN [49m[22m [34m[2mserver/repositories/UserRepository.ts [22m[34mx15 [34m[39m
+       [2m Filename pattern: [22m[34mtests/integration/api.workflows.test.ts[39m
+
+[90mstdout[2m | tests/integration/api.workflows.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (11) from .env -- tip: ≡ƒæÑ sync secrets across teammates & machines: https://dotenvx.com/ops
+
+{"level":40,"time":1764871634487,"env":"test","module":"auth-service","msg":"JWT_SECRET not set - falling back to SESSION_SECRET. This is acceptable for development but should be fixed for production."}
+{"level":30,"time":1764871637582,"env":"test","multerImportKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceType":"function","uploadKeys":["storage","limits","preservePath","fileFilter"],"uploadType":"object","uploadPrototype":{},"msg":"Debug Multer Import"}
+[90mstdout[2m | tests/integration/api.workflows.test.ts
+[22m[39m≡ƒº¬ Setting up test environment...
+
+{"level":30,"time":1764871641362,"env":"test","module":"file-routes","outputsDir":"C:\\Users\\scoot\\poll\\VaultLogic\\server\\files\\outputs","msg":"Secure file routes registered"}
+{"level":30,"time":1764871641362,"env":"test","module":"ai-routes","msg":"AI workflow generation routes registered"}
+{"level":30,"time":1764871641371,"env":"test","module":"collab-server","msg":"Initializing WebSocket collaboration server"}
+{"level":40,"time":1764871641371,"env":"test","module":"collab-persistence","msg":"REDIS_URL not configured, multi-instance collab will not work"}
+{"level":30,"time":1764871641371,"env":"test","module":"collab-server","msg":"WebSocket collaboration server initialized"}
+{"level":30,"time":1764871641372,"env":"test","module":"routes","msg":"Real-time collaboration server initialized"}
+{"level":30,"time":1764871641882,"env":"test","module":"user-credentials-repository","userId":"JHcMvMG0XawZXr-dpFVG2","msg":"User credentials created"}
+{"level":30,"time":1764871641886,"env":"test","module":"auth-routes","userId":"JHcMvMG0XawZXr-dpFVG2","email":"test-workflows-Abq6Wrsm-mabhWjkL4qZY@example.com","msg":"User registered successfully"}
+[90mstdout[2m | tests/integration/api.workflows.test.ts[2m > [22m[2mWorkflows API Integration Tests
+[22m[39mProject creation response: [33m201[39m {"id":"50a3c71c-32ba-4bf8-9468-459e8d64db9a","title":"Test Project for Workflows","name":"Test Project for Workflows","description":null,"creatorId":"JHcMvMG0XawZXr-dpFVG2","tenantId":"10af1162-a44c-4c96-abb7-f02c84811f88","createdBy":"JHcMvMG0XawZXr-dpFVG2","ownerId":"JHcMvMG0XawZXr-dpFVG2","status":"active","archived":false,"createdAt":"2025-12-04T18:07:23.463Z","updatedAt":"2025-12-04T18:07:23.463Z"}
+
+{"level":30,"time":1764871642568,"env":"test","module":"user-credentials-repository","userId":"48hgjDGfoUQ18xDmEuny7","msg":"User credentials created"}
+{"level":30,"time":1764871642569,"env":"test","module":"auth-routes","userId":"48hgjDGfoUQ18xDmEuny7","email":"viewer-CmzTWbMuxtl2L_gbPoZuM@example.com","msg":"User registered successfully"}
+{"level":40,"time":1764871642662,"env":"test","module":"rbac-middleware","userId":"48hgjDGfoUQ18xDmEuny7","userRole":"viewer","permission":"workflow:create","path":"/projects/50a3c71c-32ba-4bf8-9468-459e8d64db9a/workflows","msg":"Permission denied"}
+{"level":50,"time":1764871648662,"env":"test","error":{},"workflowId":"45465e2b-9d0e-4597-923f-cbd60639a129","userId":"JHcMvMG0XawZXr-dpFVG2","projectId":"00000000-0000-0000-0000-000000000000","msg":"Error moving workflow"}
+{"level":40,"time":1764871648965,"env":"test","module":"auth-middleware","path":"/api/workflows/f7f2aa33-ccc2-4ec9-befd-7d01ff973b42/move","msg":"No valid authentication found"}
+{"level":30,"time":1764871649443,"env":"test","module":"user-credentials-repository","userId":"j7A56FsWWVYlLe0Xki1HV","msg":"User credentials created"}
+{"level":30,"time":1764871649444,"env":"test","module":"auth-routes","userId":"j7A56FsWWVYlLe0Xki1HV","email":"test-workflows-M3LFIzht2VKanZ9pg-06n@example.com","msg":"User registered successfully"}
+{"level":50,"time":1764871649493,"env":"test","error":{},"workflowId":"0550ddbd-94c6-4bbc-b193-3769198424a5","userId":"j7A56FsWWVYlLe0Xki1HV","projectId":"39166f0b-f065-49b2-961f-e47217b90c4e","msg":"Error moving workflow"}
+{"level":50,"time":1764871649866,"env":"test","error":{"issues":[{"validation":"uuid","code":"invalid_string","message":"Invalid uuid","path":["projectId"]}],"name":"ZodError"},"workflowId":"80ffde53-4d8f-4c7c-ad29-ce24c4777e42","userId":"JHcMvMG0XawZXr-dpFVG2","projectId":"invalid-uuid","msg":"Error moving workflow"}
+{"level":50,"time":1764871650226,"env":"test","error":{"issues":[{"code":"invalid_type","expected":"string","received":"undefined","path":["projectId"],"message":"Required"}],"name":"ZodError"},"workflowId":"ad70c911-1d99-4b7b-a154-a81ac01688df","userId":"JHcMvMG0XawZXr-dpFVG2","msg":"Error moving workflow"}
+{"level":30,"time":1764871650719,"env":"test","module":"user-credentials-repository","userId":"HBt50D3pbs8GgY6LNxsR-","msg":"User credentials created"}
+{"level":30,"time":1764871650719,"env":"test","module":"auth-routes","userId":"HBt50D3pbs8GgY6LNxsR-","email":"test-workflows-gZylUzr83-7qS3guwkRt-@example.com","msg":"User registered successfully"}
+{"level":30,"time":1764871650918,"env":"test","module":"auth-routes","userId":"HBt50D3pbs8GgY6LNxsR-","email":"test-workflows-gZylUzr83-7qS3guwkRt-@example.com","msg":"User logged in successfully"}
+{"level":50,"time":1764871651093,"env":"test","error":{},"workflowId":"3a66e106-4232-4bbf-9a1a-de9cadea2cf3","userId":"JHcMvMG0XawZXr-dpFVG2","projectId":"af287ca8-09f7-4eaa-8d1e-4e7ab006d37d","msg":"Error moving workflow"}
+[90mstdout[2m | tests/integration/api.workflows.test.ts
+[22m[39m≡ƒº╣ Cleaning up test environment...
+
+ [32mΓ£ô[39m tests/integration/api.workflows.test.ts [2m([22m[2m17 tests[22m[2m)[22m[33m 10270[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should create a new draft workflow [33m 326[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should list workflows [33m 457[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should filter by status [33m 444[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should search by name [33m 728[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should update draft workflow [33m 599[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should not allow editing published workflow [33m 699[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should publish workflow [33m 602[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should list workflow versions [33m 744[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should move workflow to a project [33m 576[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should move workflow to Main Folder (projectId = null) [33m 693[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should reject move to non-existent project [33m 456[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should reject move without authentication [33m 303[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should reject move of workflow user does not own [33m 528[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should reject move with invalid projectId format [33m 375[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should reject move without projectId in body [33m 360[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should reject move to project user does not have access to [33m 865[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m17 passed[39m[22m[90m (17)[39m
+[2m   Start at [22m 12:07:08
+[2m   Duration [22m 21.80s
+
+[1m[42m PASS [49m[22m [32mWaiting for file changes...[39m
+       [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
+c[3J[1m[44m RERUN [49m[22m [34m[2mserver/routes/tenant.routes.ts [22m[34mx16 [34m[39m
+       [2m Filename pattern: [22m[34mtests/integration/api.workflows.test.ts[39m
+
+[90mstdout[2m | tests/integration/api.workflows.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (11) from .env -- tip: ≡ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+
+{"level":40,"time":1764871701366,"env":"test","module":"auth-service","msg":"JWT_SECRET not set - falling back to SESSION_SECRET. This is acceptable for development but should be fixed for production."}
+{"level":30,"time":1764871704477,"env":"test","multerImportKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceType":"function","uploadKeys":["storage","limits","preservePath","fileFilter"],"uploadType":"object","uploadPrototype":{},"msg":"Debug Multer Import"}
+[90mstdout[2m | tests/integration/api.workflows.test.ts
+[22m[39m≡ƒº¬ Setting up test environment...
+
+{"level":30,"time":1764871709012,"env":"test","module":"file-routes","outputsDir":"C:\\Users\\scoot\\poll\\VaultLogic\\server\\files\\outputs","msg":"Secure file routes registered"}
+{"level":30,"time":1764871709012,"env":"test","module":"ai-routes","msg":"AI workflow generation routes registered"}
+{"level":30,"time":1764871709023,"env":"test","module":"collab-server","msg":"Initializing WebSocket collaboration server"}
+{"level":40,"time":1764871709023,"env":"test","module":"collab-persistence","msg":"REDIS_URL not configured, multi-instance collab will not work"}
+{"level":30,"time":1764871709024,"env":"test","module":"collab-server","msg":"WebSocket collaboration server initialized"}
+{"level":30,"time":1764871709024,"env":"test","module":"routes","msg":"Real-time collaboration server initialized"}
+{"level":30,"time":1764871709572,"env":"test","module":"user-credentials-repository","userId":"goMLeY00AB6m8iFU8A3Nq","msg":"User credentials created"}
+{"level":30,"time":1764871709575,"env":"test","module":"auth-routes","userId":"goMLeY00AB6m8iFU8A3Nq","email":"test-workflows-hdPhCj_Ij716BZ8ZN8-V5@example.com","msg":"User registered successfully"}
+[90mstdout[2m | tests/integration/api.workflows.test.ts[2m > [22m[2mWorkflows API Integration Tests
+[22m[39mProject creation response: [33m201[39m {"id":"1d59e85d-c895-4f6e-8ae8-eedbfc05cc9a","title":"Test Project for Workflows","name":"Test Project for Workflows","description":null,"creatorId":"goMLeY00AB6m8iFU8A3Nq","tenantId":"775c8e83-49cc-4109-a86e-c68b804e1013","createdBy":"goMLeY00AB6m8iFU8A3Nq","ownerId":"goMLeY00AB6m8iFU8A3Nq","status":"active","archived":false,"createdAt":"2025-12-04T18:08:31.154Z","updatedAt":"2025-12-04T18:08:31.154Z"}
+
+{"level":30,"time":1764871710268,"env":"test","module":"user-credentials-repository","userId":"2rMj92nOfq0LRczLXl9_y","msg":"User credentials created"}
+{"level":30,"time":1764871710269,"env":"test","module":"auth-routes","userId":"2rMj92nOfq0LRczLXl9_y","email":"viewer-00YNoQWOsuZN3gdv17b4H@example.com","msg":"User registered successfully"}
+{"level":40,"time":1764871710356,"env":"test","module":"rbac-middleware","userId":"2rMj92nOfq0LRczLXl9_y","userRole":"viewer","permission":"workflow:create","path":"/projects/1d59e85d-c895-4f6e-8ae8-eedbfc05cc9a/workflows","msg":"Permission denied"}
+{"level":50,"time":1764871716779,"env":"test","error":{},"workflowId":"25174e7e-4cc5-4fc8-8637-415053b2f0ec","userId":"goMLeY00AB6m8iFU8A3Nq","projectId":"00000000-0000-0000-0000-000000000000","msg":"Error moving workflow"}
+{"level":40,"time":1764871717100,"env":"test","module":"auth-middleware","path":"/api/workflows/b329c354-e8c8-470a-b787-d9743a604a16/move","msg":"No valid authentication found"}
+{"level":30,"time":1764871717640,"env":"test","module":"user-credentials-repository","userId":"m8u87JkaxU92z9AYkAk4q","msg":"User credentials created"}
+{"level":30,"time":1764871717641,"env":"test","module":"auth-routes","userId":"m8u87JkaxU92z9AYkAk4q","email":"test-workflows-eKfQSTVxWbKHTZayCZAcZ@example.com","msg":"User registered successfully"}
+{"level":50,"time":1764871717694,"env":"test","error":{},"workflowId":"8ab4d307-3b89-46e3-9df6-b7bed5062e11","userId":"m8u87JkaxU92z9AYkAk4q","projectId":"fde6bc55-f3ff-4af4-88d0-307f53cc37f9","msg":"Error moving workflow"}
+{"level":50,"time":1764871718082,"env":"test","error":{"issues":[{"validation":"uuid","code":"invalid_string","message":"Invalid uuid","path":["projectId"]}],"name":"ZodError"},"workflowId":"03c84afb-6e6e-4954-a8c5-1a99297679fa","userId":"goMLeY00AB6m8iFU8A3Nq","projectId":"invalid-uuid","msg":"Error moving workflow"}
+{"level":50,"time":1764871718512,"env":"test","error":{"issues":[{"code":"invalid_type","expected":"string","received":"undefined","path":["projectId"],"message":"Required"}],"name":"ZodError"},"workflowId":"2e31e46b-4ea0-48a4-b791-4cd68ac81aec","userId":"goMLeY00AB6m8iFU8A3Nq","msg":"Error moving workflow"}
+{"level":30,"time":1764871719046,"env":"test","module":"user-credentials-repository","userId":"yICbbAZH9rF2eSwSdXTHS","msg":"User credentials created"}
+{"level":30,"time":1764871719047,"env":"test","module":"auth-routes","userId":"yICbbAZH9rF2eSwSdXTHS","email":"test-workflows-3dvd0RNh6pKwffhCNAeEz@example.com","msg":"User registered successfully"}
+{"level":30,"time":1764871719245,"env":"test","module":"auth-routes","userId":"yICbbAZH9rF2eSwSdXTHS","email":"test-workflows-3dvd0RNh6pKwffhCNAeEz@example.com","msg":"User logged in successfully"}
+{"level":50,"time":1764871719425,"env":"test","error":{},"workflowId":"63b5632c-6eb1-45b5-8484-c4cbf23f96d6","userId":"goMLeY00AB6m8iFU8A3Nq","projectId":"bfa03002-58be-483d-8921-9a93caea3da5","msg":"Error moving workflow"}
+[90mstdout[2m | tests/integration/api.workflows.test.ts
+[22m[39m≡ƒº╣ Cleaning up test environment...
+
+ [31mΓ¥»[39m tests/integration/api.workflows.test.ts [2m([22m[2m17 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 10708[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should create a new draft workflow [33m 332[2mms[22m[39m
+       [32mΓ£ô[39m should reject without permission[32m 296[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should list workflows [33m 464[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should filter by status [33m 474[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should search by name [33m 789[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should update draft workflow [33m 606[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should not allow editing published workflow [33m 728[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should publish workflow [33m 621[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should list workflow versions [33m 897[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should move workflow to a project [33m 621[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should move workflow to Main Folder (projectId = null) [33m 754[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should reject move to non-existent project [33m 468[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should reject move without authentication [33m 320[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should reject move of workflow user does not own [33m 594[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should reject move with invalid projectId format [33m 388[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should reject move without projectId in body [33m 429[2mms[22m[39m
+[31m       [31m├ù[31m should reject move to project user does not have access to[39m[33m 915[2mms[22m[39m
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ» Failed Tests 1 ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»
+
+ FAIL  tests/integration/api.workflows.test.ts > Workflows API Integration Tests > PUT /api/workflows/:id/move > should reject move to project user does not have access to
+Error: expected 403 "Forbidden", got 404 "Not Found"
+ Γ¥» tests/integration/api.workflows.test.ts:457:10
+    455|         .set("Authorization", `Bearer ${authToken}`)
+    456|         .send({ projectId: user2ProjectId })
+    457|         .expect(403);
+       |          ^
+    458| 
+    459|       expect(response.body).toHaveProperty("message");
+ Γ¥» Test._assertStatus node_modules/supertest/lib/test.js:309:14
+ Γ¥» node_modules/supertest/lib/test.js:365:13
+ Γ¥» Test._assertFunction node_modules/supertest/lib/test.js:342:13
+ Γ¥» Test.assert node_modules/supertest/lib/test.js:195:23
+ Γ¥» localAssert node_modules/supertest/lib/test.js:138:14
+ Γ¥» node_modules/supertest/lib/test.js:156:7
+ Γ¥» Test.Request.callback node_modules/superagent/lib/node/index.js:857:3
+ Γ¥» node_modules/superagent/lib/node/index.js:1102:18
+ Γ¥» IncomingMessage.<anonymous> node_modules/superagent/lib/node/parsers/json.js:21:7
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/1]ΓÄ»
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m16 passed[39m[22m[90m (17)[39m
+[2m   Start at [22m 12:08:17
+[2m   Duration [22m 21.21s
+
+[1m[41m FAIL [49m[22m [31mTests failed. Watching for file changes...[39m
+       [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
+c[3J[1m[44m RERUN [49m[22m [34m[2mserver/routes/tenant.routes.ts [22m[34mx17 [34m[39m
+       [2m Filename pattern: [22m[34mtests/integration/api.workflows.test.ts[39m
+
+[90mstdout[2m | tests/integration/api.workflows.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (11) from .env -- tip: ΓÜÖ∩╕Å  write to custom object with { processEnv: myObject }
+
+{"level":40,"time":1764871752553,"env":"test","module":"auth-service","msg":"JWT_SECRET not set - falling back to SESSION_SECRET. This is acceptable for development but should be fixed for production."}
+{"level":30,"time":1764871758563,"env":"test","multerImportKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceType":"function","uploadKeys":["storage","limits","preservePath","fileFilter"],"uploadType":"object","uploadPrototype":{},"msg":"Debug Multer Import"}
+[90mstdout[2m | tests/integration/api.workflows.test.ts
+[22m[39m≡ƒº¬ Setting up test environment...
+
+{"level":30,"time":1764871761069,"env":"test","module":"file-routes","outputsDir":"C:\\Users\\scoot\\poll\\VaultLogic\\server\\files\\outputs","msg":"Secure file routes registered"}
+{"level":30,"time":1764871761070,"env":"test","module":"ai-routes","msg":"AI workflow generation routes registered"}
+{"level":30,"time":1764871761086,"env":"test","module":"collab-server","msg":"Initializing WebSocket collaboration server"}
+{"level":40,"time":1764871761087,"env":"test","module":"collab-persistence","msg":"REDIS_URL not configured, multi-instance collab will not work"}
+{"level":30,"time":1764871761087,"env":"test","module":"collab-server","msg":"WebSocket collaboration server initialized"}
+{"level":30,"time":1764871761087,"env":"test","module":"routes","msg":"Real-time collaboration server initialized"}
+{"level":30,"time":1764871761648,"env":"test","module":"user-credentials-repository","userId":"kVybRQUEjAYoizipghWnZ","msg":"User credentials created"}
+{"level":30,"time":1764871761651,"env":"test","module":"auth-routes","userId":"kVybRQUEjAYoizipghWnZ","email":"test-workflows-a2pR_v269gKnFLKjVUFYP@example.com","msg":"User registered successfully"}
+[90mstdout[2m | tests/integration/api.workflows.test.ts[2m > [22m[2mWorkflows API Integration Tests
+[22m[39mProject creation response: [33m201[39m {"id":"73e130d8-1cbf-49df-9a36-22b6129c2739","title":"Test Project for Workflows","name":"Test Project for Workflows","description":null,"creatorId":"kVybRQUEjAYoizipghWnZ","tenantId":"6a2b0911-e8a3-4d87-9e42-e8d8476f325c","createdBy":"kVybRQUEjAYoizipghWnZ","ownerId":"kVybRQUEjAYoizipghWnZ","status":"active","archived":false,"createdAt":"2025-12-04T18:09:23.224Z","updatedAt":"2025-12-04T18:09:23.224Z"}
+
+{"level":30,"time":1764871762368,"env":"test","module":"user-credentials-repository","userId":"BKq_Jnxy_yUfHAdFN3am-","msg":"User credentials created"}
+{"level":30,"time":1764871762369,"env":"test","module":"auth-routes","userId":"BKq_Jnxy_yUfHAdFN3am-","email":"viewer-BUV84CG8yuaAshRliSrYb@example.com","msg":"User registered successfully"}
+{"level":40,"time":1764871762459,"env":"test","module":"rbac-middleware","userId":"BKq_Jnxy_yUfHAdFN3am-","userRole":"viewer","permission":"workflow:create","path":"/projects/73e130d8-1cbf-49df-9a36-22b6129c2739/workflows","msg":"Permission denied"}
+{"level":50,"time":1764871768438,"env":"test","error":{},"workflowId":"51f86976-209d-4eb4-90ca-249a6647f04e","userId":"kVybRQUEjAYoizipghWnZ","projectId":"00000000-0000-0000-0000-000000000000","msg":"Error moving workflow"}
+{"level":40,"time":1764871768759,"env":"test","module":"auth-middleware","path":"/api/workflows/bc660e79-f79b-4781-8f7e-cdc10c31518c/move","msg":"No valid authentication found"}
+{"level":30,"time":1764871769292,"env":"test","module":"user-credentials-repository","userId":"637-TEmDktp0s2DJN0iqi","msg":"User credentials created"}
+{"level":30,"time":1764871769293,"env":"test","module":"auth-routes","userId":"637-TEmDktp0s2DJN0iqi","email":"test-workflows-G67izYGJ692FX7eb920U4@example.com","msg":"User registered successfully"}
+{"level":50,"time":1764871769343,"env":"test","error":{},"workflowId":"87ec358d-5bd7-4d6a-bed4-eb0ba8e0b9e3","userId":"637-TEmDktp0s2DJN0iqi","projectId":"26bcfbf6-d968-4735-9b2b-f93e1871d195","msg":"Error moving workflow"}
+{"level":50,"time":1764871769714,"env":"test","error":{"issues":[{"validation":"uuid","code":"invalid_string","message":"Invalid uuid","path":["projectId"]}],"name":"ZodError"},"workflowId":"3d622837-803e-483e-b65a-5baccac708ad","userId":"kVybRQUEjAYoizipghWnZ","projectId":"invalid-uuid","msg":"Error moving workflow"}
+{"level":50,"time":1764871770079,"env":"test","error":{"issues":[{"code":"invalid_type","expected":"string","received":"undefined","path":["projectId"],"message":"Required"}],"name":"ZodError"},"workflowId":"87e975dc-e75d-4196-866c-4723b25dfed9","userId":"kVybRQUEjAYoizipghWnZ","msg":"Error moving workflow"}
+{"level":50,"time":1764871770573,"env":"test","module":"user-credentials-repository","error":{"length":320,"name":"error","severity":"ERROR","code":"23503","detail":"Key (user_id)=(mveZ_LFRonuClMAUlUBCI) is not present in table \"users\".","schema":"public","table":"user_credentials","constraint":"user_credentials_user_id_users_id_fk","file":"ri_triggers.c","line":"2599","routine":"ri_ReportViolation"},"userId":"mveZ_LFRonuClMAUlUBCI","msg":"Failed to create user credentials"}
+{"level":50,"time":1764871770573,"env":"test","module":"auth-routes","error":{"length":320,"name":"error","severity":"ERROR","code":"23503","detail":"Key (user_id)=(mveZ_LFRonuClMAUlUBCI) is not present in table \"users\".","schema":"public","table":"user_credentials","constraint":"user_credentials_user_id_users_id_fk","file":"ri_triggers.c","line":"2599","routine":"ri_ReportViolation"},"msg":"Registration failed"}
+[90mstdout[2m | tests/integration/api.workflows.test.ts
+[22m[39m≡ƒº╣ Cleaning up test environment...
+
+ [31mΓ¥»[39m tests/integration/api.workflows.test.ts [2m([22m[2m17 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 9915[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should create a new draft workflow [33m 346[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should reject without permission [33m 316[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should list workflows [33m 461[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should filter by status [33m 444[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should search by name [33m 741[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should update draft workflow [33m 562[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should not allow editing published workflow [33m 699[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should publish workflow [33m 604[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should list workflow versions [33m 736[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should move workflow to a project [33m 576[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should move workflow to Main Folder (projectId = null) [33m 719[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should reject move to non-existent project [33m 437[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should reject move without authentication [33m 322[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should reject move of workflow user does not own [33m 581[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should reject move with invalid projectId format [33m 372[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should reject move without projectId in body [33m 365[2mms[22m[39m
+[31m       [31m├ù[31m should reject move to project user does not have access to[39m[33m 496[2mms[22m[39m
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ» Failed Tests 1 ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»
+
+ FAIL  tests/integration/api.workflows.test.ts > Workflows API Integration Tests > PUT /api/workflows/:id/move > should reject move to project user does not have access to
+TypeError: Cannot read properties of undefined (reading 'id')
+ Γ¥» tests/integration/api.workflows.test.ts:426:51
+    424| 
+    425|       const authToken2 = registerResponse2.body.token;
+    426|       const user2Id = registerResponse2.body.user.id;
+       |                                                   ^
+    427| 
+    428|       await db.update(schema.users)
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/1]ΓÄ»
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m16 passed[39m[22m[90m (17)[39m
+[2m   Start at [22m 12:09:08
+[2m   Duration [22m 21.48s
+
+[1m[41m FAIL [49m[22m [31mTests failed. Watching for file changes...[39m
+       [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m

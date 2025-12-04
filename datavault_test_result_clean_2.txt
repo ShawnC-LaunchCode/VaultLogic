@@ -138,3 +138,1557 @@ Login Body: {
 
 [1m[42m PASS [49m[22m [32mWaiting for file changes...[39m
        [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
+c[3J[1m[44m RERUN [49m[22m [34m[2mserver/repositories/UserRepository.ts [22m[34mx1 [34m[39m
+       [2m Filename pattern: [22m[34mtests/integration/datavault-v4-regression.test.ts[39m
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (11) from .env -- tip: ΓÜÖ∩╕Å  suppress all logs with { quiet: true }
+
+{"level":40,"time":1764871633076,"env":"test","module":"auth-service","msg":"JWT_SECRET not set - falling back to SESSION_SECRET. This is acceptable for development but should be fixed for production."}
+{"level":30,"time":1764871636615,"env":"test","multerImportKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceType":"function","uploadKeys":["storage","limits","preservePath","fileFilter"],"uploadType":"object","uploadPrototype":{},"msg":"Debug Multer Import"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts
+[22m[39m≡ƒº¬ Setting up test environment...
+
+{"level":30,"time":1764871640544,"env":"test","module":"file-routes","outputsDir":"C:\\Users\\scoot\\poll\\VaultLogic\\server\\files\\outputs","msg":"Secure file routes registered"}
+{"level":30,"time":1764871640545,"env":"test","module":"ai-routes","msg":"AI workflow generation routes registered"}
+{"level":30,"time":1764871640562,"env":"test","module":"collab-server","msg":"Initializing WebSocket collaboration server"}
+{"level":40,"time":1764871640562,"env":"test","module":"collab-persistence","msg":"REDIS_URL not configured, multi-instance collab will not work"}
+{"level":30,"time":1764871640562,"env":"test","module":"collab-server","msg":"WebSocket collaboration server initialized"}
+{"level":30,"time":1764871640562,"env":"test","module":"routes","msg":"Real-time collaboration server initialized"}
+{"level":30,"time":1764871641133,"env":"test","module":"auth","hasToken":true,"origin":"http://localhost:5000","ip":"::ffff:127.0.0.1","msg":"OAuth2 login attempt"}
+{"level":30,"time":1764871641134,"env":"test","module":"auth","email":"testuser@example.com","msg":"Token verified successfully"}
+{"level":30,"time":1764871641185,"env":"test","module":"auth","userId":"google-user-id","msg":"User upserted successfully"}
+{"level":30,"time":1764871641286,"env":"test","module":"auth","email":"testuser@example.com","msg":"OAuth2 login successful"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests
+[22m[39mLogin Status: [33m200[39m
+Login Body: {
+  "message": "Authentication successful",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJnb29nbGUtdXNlci1pZCIsImVtYWlsIjoidGVzdHVzZXJAZXhhbXBsZS5jb20iLCJ0ZW5hbnRJZCI6IjMyZWFiMDEzLTM3ZDYtNDhlZi04ZDk5LWRmNjRkNGY1OTNiNSIsInJvbGUiOiJvd25lciIsImlhdCI6MTc2NDg3MTY0MSwiZXhwIjoxNzY1NDc2NDQxfQ.zXlHn_81y1kh-PkOus9KwiYG8DILMTlXTDBvosYKurs",
+  "user": {
+    "id": "google-user-id",
+    "email": "testuser@example.com",
+    "firstName": "Test",
+    "lastName": "User",
+    "profileImageUrl": "https://example.com/avatar.jpg",
+    "tenantId": "32eab013-37d6-48ef-8d99-df64d4f593b5",
+    "tenantRole": "owner"
+  }
+}
+
+{"level":30,"time":1764871641305,"env":"test","module":"auth","hasToken":true,"origin":"http://localhost:5000","ip":"::ffff:127.0.0.1","msg":"OAuth2 login attempt"}
+{"level":30,"time":1764871641305,"env":"test","module":"auth","email":"other@example.com","msg":"Token verified successfully"}
+{"level":30,"time":1764871641347,"env":"test","module":"auth","userId":"other-user-id","msg":"User upserted successfully"}
+{"level":30,"time":1764871641445,"env":"test","module":"auth","email":"other@example.com","msg":"OAuth2 login successful"}
+{"level":50,"time":1764871641735,"env":"test","error":{},"msg":"Error creating DataVault column"}
+{"level":50,"time":1764871641986,"env":"test","error":{},"msg":"Error creating DataVault column"}
+{"level":50,"time":1764871642233,"env":"test","error":{},"msg":"Error creating DataVault column"}
+{"level":50,"time":1764871642378,"env":"test","error":{},"msg":"Error creating DataVault row"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mSelect/Multiselect Columns[2m > [22m[2mshould validate select value against options
+[22m[39mRow creation error message: Access denied - write permission required
+
+{"level":50,"time":1764871642637,"env":"test","error":{},"msg":"Error creating DataVault column"}
+{"level":50,"time":1764871642785,"env":"test","error":{},"msg":"Error creating DataVault row"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mSelect/Multiselect Columns[2m > [22m[2mshould validate multiselect values as array
+[22m[39mRow creation error message: Access denied - write permission required
+
+{"level":50,"time":1764871643020,"env":"test","error":{},"msg":"Error creating DataVault column"}
+{"level":50,"time":1764871643253,"env":"test","error":{},"msg":"Error creating DataVault column"}
+{"level":50,"time":1764871643393,"env":"test","error":{},"msg":"Error creating DataVault row"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mAutonumber Columns[2m > [22m[2mshould format autonumber with prefix
+[22m[39mRow creation error message: Access denied - write permission required
+
+{"level":50,"time":1764871643736,"env":"test","error":{},"msg":"Error creating row note"}
+{"level":50,"time":1764871644094,"env":"test","error":{},"msg":"Error creating row note"}
+{"level":50,"time":1764871644276,"env":"test","error":{},"msg":"Error creating row note"}
+{"level":50,"time":1764871644463,"env":"test","error":{},"msg":"Error fetching row notes"}
+{"level":50,"time":1764871644799,"env":"test","error":{},"msg":"Error creating row note"}
+{"level":50,"time":1764871644944,"env":"test","error":{"length":141,"name":"error","severity":"ERROR","code":"22P02","where":"unnamed portal parameter $1 = '...'","file":"uuid.c","line":"138","routine":"string_to_uuid"},"msg":"Error deleting row note"}
+{"level":50,"time":1764871645406,"env":"test","error":{},"msg":"Error creating row note"}
+{"level":50,"time":1764871645549,"env":"test","error":{"length":141,"name":"error","severity":"ERROR","code":"22P02","where":"unnamed portal parameter $1 = '...'","file":"uuid.c","line":"138","routine":"string_to_uuid"},"msg":"Error deleting row note"}
+{"level":50,"time":1764871645940,"env":"test","error":{},"databaseId":"808930e5-af49-4650-a4b6-bebeb871fd37","msg":"Error creating API token"}
+{"level":50,"time":1764871646366,"env":"test","error":{},"databaseId":"6ed70b19-d5ea-40a4-8c24-337f365813be","msg":"Error creating API token"}
+{"level":40,"time":1764871646521,"env":"test","module":"auth-middleware","path":"/datavault/databases/4d855ca9-03be-4935-ad26-bde2a89ce2d9/tables","msg":"No valid authentication found"}
+{"level":50,"time":1764871646753,"env":"test","error":{},"msg":"Error granting table permission"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould grant table permission
+[22m[39mGrant permission catch block entered Error: Access denied - owner permission required
+    at DatavaultTablePermissionsService.requirePermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:108:13)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at DatavaultTablePermissionsService.grantPermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:138:5)
+    at C:/Users/scoot/poll/VaultLogic/server/routes/datavault.routes.ts:1155:26
+
+{"level":50,"time":1764871646992,"env":"test","error":{},"msg":"Error fetching table permissions"}
+{"level":50,"time":1764871647218,"env":"test","error":{},"msg":"Error granting table permission"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould update table permission role
+[22m[39mGrant permission catch block entered Error: Access denied - owner permission required
+    at DatavaultTablePermissionsService.requirePermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:108:13)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at DatavaultTablePermissionsService.grantPermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:138:5)
+    at C:/Users/scoot/poll/VaultLogic/server/routes/datavault.routes.ts:1155:26
+
+{"level":50,"time":1764871647355,"env":"test","error":{},"msg":"Error granting table permission"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould update table permission role
+[22m[39mGrant permission catch block entered Error: Access denied - owner permission required
+    at DatavaultTablePermissionsService.requirePermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:108:13)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at DatavaultTablePermissionsService.grantPermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:138:5)
+    at C:/Users/scoot/poll/VaultLogic/server/routes/datavault.routes.ts:1155:26
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould update table permission role
+[22m[39mUpdate permission failed: { message: [32m'Access denied - owner permission required'[39m }
+
+{"level":50,"time":1764871647582,"env":"test","error":{},"msg":"Error granting table permission"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould revoke table permission
+[22m[39mGrant permission catch block entered Error: Access denied - owner permission required
+    at DatavaultTablePermissionsService.requirePermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:108:13)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at DatavaultTablePermissionsService.grantPermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:138:5)
+    at C:/Users/scoot/poll/VaultLogic/server/routes/datavault.routes.ts:1155:26
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould revoke table permission
+[22m[39mrevokePermission called for permission: undefined
+
+{"level":50,"time":1764871647716,"env":"test","error":{},"msg":"Error revoking table permission"}
+{"level":50,"time":1764871647954,"env":"test","error":{},"msg":"Error granting table permission"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould enforce RBAC - only owners can manage permissions
+[22m[39mGrant permission catch block entered Error: Access denied - owner permission required
+    at DatavaultTablePermissionsService.requirePermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:108:13)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at DatavaultTablePermissionsService.grantPermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:138:5)
+    at C:/Users/scoot/poll/VaultLogic/server/routes/datavault.routes.ts:1155:26
+
+{"level":50,"time":1764871648801,"env":"test","error":{},"msg":"Error fetching DataVault rows"}
+{"level":50,"time":1764871649041,"env":"test","error":{},"msg":"Error creating DataVault column"}
+{"level":50,"time":1764871649282,"env":"test","error":{},"msg":"Error creating DataVault column"}
+{"level":50,"time":1764871649418,"env":"test","error":{},"msg":"Error creating DataVault row"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mError Handling[2m > [22m[2mshould return user-friendly error for missing required fields
+[22m[39mRow creation error message: Access denied - write permission required
+
+{"level":50,"time":1764871649670,"env":"test","error":{"length":144,"name":"error","severity":"ERROR","code":"22P02","where":"unnamed portal parameter $1 = '...'","file":"uuid.c","line":"138","routine":"string_to_uuid"},"msg":"Error fetching DataVault rows"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts
+[22m[39m≡ƒº╣ Cleaning up test environment...
+
+ [31mΓ¥»[39m tests/integration/datavault-v4-regression.test.ts [2m([22m[2m23 tests[22m[2m | [22m[31m19 failed[39m[2m)[22m[33m 9194[2mms[22m[39m
+[31m       [31m├ù[31m should create a select column with options[39m[32m 298[2mms[22m[39m
+[31m       [31m├ù[31m should create a multiselect column with options[39m[32m 243[2mms[22m[39m
+[31m       [31m├ù[31m should validate select value against options[39m[33m 392[2mms[22m[39m
+[31m       [31m├ù[31m should validate multiselect values as array[39m[33m 406[2mms[22m[39m
+[31m       [31m├ù[31m should create an autonumber column with sequence[39m[32m 235[2mms[22m[39m
+[31m       [31m├ù[31m should format autonumber with prefix[39m[33m 372[2mms[22m[39m
+[31m       [31m├ù[31m should create a note for a row[39m[33m 342[2mms[22m[39m
+[31m       [31m├ù[31m should get all notes for a row[39m[33m 727[2mms[22m[39m
+[31m       [31m├ù[31m should delete a note[39m[33m 484[2mms[22m[39m
+[31m       [31m├ù[31m should not allow deleting notes by other users[39m[33m 603[2mms[22m[39m
+[31m       [31m├ù[31m should create an API token[39m[33m 390[2mms[22m[39m
+       [32mΓ£ô[39m should validate API token scopes[32m 191[2mms[22m[39m
+[31m       [31m├ù[31m should revoke (delete) an API token[39m[32m 235[2mms[22m[39m
+       [32mΓ£ô[39m should deny access with expired token[32m 154[2mms[22m[39m
+[31m       [31m├ù[31m should grant table permission[39m[32m 233[2mms[22m[39m
+[31m       [31m├ù[31m should list table permissions[39m[32m 238[2mms[22m[39m
+[31m       [31m├ù[31m should update table permission role[39m[33m 364[2mms[22m[39m
+[31m       [31m├ù[31m should revoke table permission[39m[33m 360[2mms[22m[39m
+       [32mΓ£ô[39m should enforce RBAC - only owners can manage permissions[32m 237[2mms[22m[39m
+[31m       [31m├ù[31m should paginate rows efficiently[39m[33m 847[2mms[22m[39m
+[31m       [31m├ù[31m should return user-friendly error for invalid column type[39m[32m 240[2mms[22m[39m
+[31m       [31m├ù[31m should return user-friendly error for missing required fields[39m[33m 377[2mms[22m[39m
+       [32mΓ£ô[39m should handle network errors gracefully[32m 252[2mms[22m[39m
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ» Failed Tests 19 ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Select/Multiselect Columns > should create a select column with options
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:298:31
+    296|         });
+    297| 
+    298|       expect(response.status).toBe(201);
+       |                               ^
+    299|       expect(response.body).toBeDefined();
+    300|       expect(response.body.type).toBe('select');
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Select/Multiselect Columns > should create a multiselect column with options
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:321:31
+    319|         });
+    320| 
+    321|       expect(response.status).toBe(201);
+       |                               ^
+    322|       expect(response.body).toBeDefined();
+    323|       expect(response.body.type).toBe('multiselect');
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[2/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Select/Multiselect Columns > should validate select value against options
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:356:36
+    354|         });
+    355| 
+    356|       expect(validResponse.status).toBe(201);
+       |                                    ^
+    357| 
+    358|       // Create row with invalid value should fail
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[3/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Select/Multiselect Columns > should validate multiselect values as array
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:401:36
+    399|         });
+    400| 
+    401|       expect(validResponse.status).toBe(201);
+       |                                    ^
+    402|       expect(validResponse.body.values[testColumnId]).toEqual(['urgentΓÇª
+    403|     });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[4/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Autonumber Columns > should create an autonumber column with sequence
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:421:31
+    419|         });
+    420| 
+    421|       expect(response.status).toBe(201);
+       |                               ^
+    422|       expect(response.body).toBeDefined();
+    423|       expect(response.body.type).toBe('autonumber');
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[5/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Autonumber Columns > should format autonumber with prefix
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:455:34
+    453|         .send({ values: {} });
+    454| 
+    455|       expect(rowResponse.status).toBe(201);
+       |                                  ^
+    456|       // Check if formatted value is stored or displayed
+    457|       // This depends on implementation - adjust as needed
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[6/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Row Notes > should create a note for a row
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:481:31
+    479|         });
+    480| 
+    481|       expect(response.status).toBe(201);
+       |                               ^
+    482|       expect(response.body).toBeDefined();
+    483|       expect(response.body.text).toBe('This is a test note');
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[7/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Row Notes > should get all notes for a row
+AssertionError: expected 403 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:507:31
+    505|         .set('Cookie', authCookie);
+    506| 
+    507|       expect(response.status).toBe(200);
+       |                               ^
+    508|       expect(response.body).toHaveLength(2);
+    509|     });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[8/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Row Notes > should delete a note
+AssertionError: expected 500 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 500
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:527:37
+    525|         .set('Cookie', authCookie);
+    526| 
+    527|       expect(deleteResponse.status).toBe(200);
+       |                                     ^
+    528| 
+    529|       // Verify note is deleted
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[9/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Row Notes > should not allow deleting notes by other users
+AssertionError: expected 500 to be 403 // Object.is equality
+
+- Expected
++ Received
+
+- 403
++ 500
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:554:37
+    552|         .set('Cookie', otherUserCookie);
+    553| 
+    554|       expect(deleteResponse.status).toBe(403);
+       |                                     ^
+    555|     });
+    556|   });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[10/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > API Tokens > should create an API token
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:574:31
+    572|       // Assuming DB exists (created in beforeAll).
+    573|       // If 404 persists, we might need to debug route registration.
+    574|       expect(response.status).toBe(201);
+       |                               ^
+    575|       expect(response.body).toBeDefined();
+    576|       // plainToken is not returned in the object, it might be separatΓÇª
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[11/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > API Tokens > should revoke (delete) an API token
+TypeError: Cannot read properties of undefined (reading 'id')
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:608:49
+    606|         });
+    607| 
+    608|       const tokenId = createResponse.body.token.id;
+       |                                                 ^
+    609| 
+    610|       // Revoke token
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[12/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Table Permissions > should grant table permission
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:668:31
+    666|         });
+    667| 
+    668|       expect(response.status).toBe(201);
+       |                               ^
+    669|       expect(response.body).toBeDefined();
+    670|       expect(response.body.role).toBe('read');
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[13/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Table Permissions > should list table permissions
+AssertionError: expected 403 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:680:31
+    678|         .set('Cookie', authCookie);
+    679| 
+    680|       expect(response.status).toBe(200);
+       |                               ^
+    681|       expect(response.body).toBeDefined();
+    682|       expect(Array.isArray(response.body)).toBe(true);
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[14/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Table Permissions > should update table permission role
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:713:37
+    711|         console.log('Update permission failed:', updateResponse.body);
+    712|       }
+    713|       expect(updateResponse.status).toBe(201);
+       |                                     ^
+    714|       expect(updateResponse.body.role).toBe('write');
+    715|     });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[15/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Table Permissions > should revoke table permission
+AssertionError: expected 403 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:739:37
+    737| 
+    738|       // Revoke returns 200 with message
+    739|       expect(revokeResponse.status).toBe(200);
+       |                                     ^
+    740| 
+    741|       // Verify permission is deleted
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[16/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Grid Performance > should paginate rows efficiently
+AssertionError: expected 403 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:787:31
+    785|         .set('Cookie', authCookie);
+    786| 
+    787|       expect(response.status).toBe(200);
+       |                               ^
+    788|       expect(response.body.rows).toHaveLength(25);
+    789|       expect(response.body.pagination.total).toBe(100);
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[17/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Error Handling > should return user-friendly error for invalid column type
+AssertionError: expected 403 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:807:31
+    805|         });
+    806| 
+    807|       expect(response.status).toBe(400);
+       |                               ^
+    808|       expect(response.body.errors).toBeDefined();
+    809|       // expect(response.body.error).toContain('Invalid column type');
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[18/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Error Handling > should return user-friendly error for missing required fields
+AssertionError: expected 403 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:834:31
+    832| 
+    833|       // Improved error handling returns 400
+    834|       expect(response.status).toBe(400);
+       |                               ^
+    835|       expect(response.body.message).toBeDefined();
+    836|       expect(response.body.message).toContain('Required');
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[19/19]ΓÄ»
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m19 failed[39m[22m[2m | [22m[1m[32m4 passed[39m[22m[90m (23)[39m
+[2m   Start at [22m 12:07:08
+[2m   Duration [22m 19.82s
+
+[1m[41m FAIL [49m[22m [31mTests failed. Watching for file changes...[39m
+       [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
+c[3J[1m[44m RERUN [49m[22m [34m[2mserver/routes/tenant.routes.ts [22m[34mx2 [34m[39m
+       [2m Filename pattern: [22m[34mtests/integration/datavault-v4-regression.test.ts[39m
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (11) from .env -- tip: ΓÜÖ∩╕Å  load multiple .env files with { path: ['.env.local', '.env'] }
+
+{"level":40,"time":1764871701141,"env":"test","module":"auth-service","msg":"JWT_SECRET not set - falling back to SESSION_SECRET. This is acceptable for development but should be fixed for production."}
+{"level":30,"time":1764871704930,"env":"test","multerImportKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceType":"function","uploadKeys":["storage","limits","preservePath","fileFilter"],"uploadType":"object","uploadPrototype":{},"msg":"Debug Multer Import"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts
+[22m[39m≡ƒº¬ Setting up test environment...
+
+{"level":30,"time":1764871708738,"env":"test","module":"file-routes","outputsDir":"C:\\Users\\scoot\\poll\\VaultLogic\\server\\files\\outputs","msg":"Secure file routes registered"}
+{"level":30,"time":1764871708739,"env":"test","module":"ai-routes","msg":"AI workflow generation routes registered"}
+{"level":30,"time":1764871708750,"env":"test","module":"collab-server","msg":"Initializing WebSocket collaboration server"}
+{"level":40,"time":1764871708751,"env":"test","module":"collab-persistence","msg":"REDIS_URL not configured, multi-instance collab will not work"}
+{"level":30,"time":1764871708751,"env":"test","module":"collab-server","msg":"WebSocket collaboration server initialized"}
+{"level":30,"time":1764871708751,"env":"test","module":"routes","msg":"Real-time collaboration server initialized"}
+{"level":30,"time":1764871709246,"env":"test","module":"auth","hasToken":true,"origin":"http://localhost:5000","ip":"::ffff:127.0.0.1","msg":"OAuth2 login attempt"}
+{"level":30,"time":1764871709250,"env":"test","module":"auth","email":"testuser@example.com","msg":"Token verified successfully"}
+{"level":30,"time":1764871709308,"env":"test","module":"auth","userId":"google-user-id","msg":"User upserted successfully"}
+{"level":30,"time":1764871709404,"env":"test","module":"auth","email":"testuser@example.com","msg":"OAuth2 login successful"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests
+[22m[39mLogin Status: [33m200[39m
+Login Body: {
+  "message": "Authentication successful",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJnb29nbGUtdXNlci1pZCIsImVtYWlsIjoidGVzdHVzZXJAZXhhbXBsZS5jb20iLCJ0ZW5hbnRJZCI6ImQwODRiZWRjLTE0NjItNGU2Ni1iOGU0LTNiODZkMzM5ZWMxMCIsInJvbGUiOiJvd25lciIsImlhdCI6MTc2NDg3MTcwOSwiZXhwIjoxNzY1NDc2NTA5fQ.iCbn1Fr4MiPo3SyUsQwwJfkVic43cHBd330tC10uQVA",
+  "user": {
+    "id": "google-user-id",
+    "email": "testuser@example.com",
+    "firstName": "Test",
+    "lastName": "User",
+    "profileImageUrl": "https://example.com/avatar.jpg",
+    "tenantId": "d084bedc-1462-4e66-b8e4-3b86d339ec10",
+    "tenantRole": "owner"
+  }
+}
+
+{"level":30,"time":1764871709419,"env":"test","module":"auth","hasToken":true,"origin":"http://localhost:5000","ip":"::ffff:127.0.0.1","msg":"OAuth2 login attempt"}
+{"level":30,"time":1764871709419,"env":"test","module":"auth","email":"other@example.com","msg":"Token verified successfully"}
+{"level":30,"time":1764871709470,"env":"test","module":"auth","userId":"other-user-id","msg":"User upserted successfully"}
+{"level":30,"time":1764871709569,"env":"test","module":"auth","email":"other@example.com","msg":"OAuth2 login successful"}
+{"level":50,"time":1764871709824,"env":"test","error":{},"msg":"Error creating DataVault column"}
+{"level":50,"time":1764871710085,"env":"test","error":{},"msg":"Error creating DataVault column"}
+{"level":50,"time":1764871710341,"env":"test","error":{},"msg":"Error creating DataVault column"}
+{"level":50,"time":1764871710490,"env":"test","error":{},"msg":"Error creating DataVault row"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mSelect/Multiselect Columns[2m > [22m[2mshould validate select value against options
+[22m[39mRow creation error message: Access denied - write permission required
+
+{"level":50,"time":1764871710738,"env":"test","error":{},"msg":"Error creating DataVault column"}
+{"level":50,"time":1764871710885,"env":"test","error":{},"msg":"Error creating DataVault row"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mSelect/Multiselect Columns[2m > [22m[2mshould validate multiselect values as array
+[22m[39mRow creation error message: Access denied - write permission required
+
+{"level":50,"time":1764871711126,"env":"test","error":{},"msg":"Error creating DataVault column"}
+{"level":50,"time":1764871711357,"env":"test","error":{},"msg":"Error creating DataVault column"}
+{"level":50,"time":1764871711510,"env":"test","error":{},"msg":"Error creating DataVault row"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mAutonumber Columns[2m > [22m[2mshould format autonumber with prefix
+[22m[39mRow creation error message: Access denied - write permission required
+
+{"level":50,"time":1764871711841,"env":"test","error":{},"msg":"Error creating row note"}
+{"level":50,"time":1764871712183,"env":"test","error":{},"msg":"Error creating row note"}
+{"level":50,"time":1764871712373,"env":"test","error":{},"msg":"Error creating row note"}
+{"level":50,"time":1764871712556,"env":"test","error":{},"msg":"Error fetching row notes"}
+{"level":50,"time":1764871712884,"env":"test","error":{},"msg":"Error creating row note"}
+{"level":50,"time":1764871713024,"env":"test","error":{"length":141,"name":"error","severity":"ERROR","code":"22P02","where":"unnamed portal parameter $1 = '...'","file":"uuid.c","line":"138","routine":"string_to_uuid"},"msg":"Error deleting row note"}
+{"level":50,"time":1764871713485,"env":"test","error":{},"msg":"Error creating row note"}
+{"level":50,"time":1764871713621,"env":"test","error":{"length":141,"name":"error","severity":"ERROR","code":"22P02","where":"unnamed portal parameter $1 = '...'","file":"uuid.c","line":"138","routine":"string_to_uuid"},"msg":"Error deleting row note"}
+{"level":50,"time":1764871713949,"env":"test","error":{},"databaseId":"49472f16-96e2-4068-acd2-468e4987bb93","msg":"Error creating API token"}
+{"level":50,"time":1764871714338,"env":"test","error":{},"databaseId":"8fa608b1-88f8-4471-8c7b-fa301909a210","msg":"Error creating API token"}
+{"level":40,"time":1764871714476,"env":"test","module":"auth-middleware","path":"/datavault/databases/90b9e39b-59f3-4c5f-bca7-b25f6324bbdd/tables","msg":"No valid authentication found"}
+{"level":50,"time":1764871714693,"env":"test","error":{},"msg":"Error granting table permission"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould grant table permission
+[22m[39mGrant permission catch block entered Error: Access denied - owner permission required
+    at DatavaultTablePermissionsService.requirePermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:108:13)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at DatavaultTablePermissionsService.grantPermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:138:5)
+    at C:/Users/scoot/poll/VaultLogic/server/routes/datavault.routes.ts:1155:26
+
+{"level":50,"time":1764871714898,"env":"test","error":{},"msg":"Error fetching table permissions"}
+{"level":50,"time":1764871715116,"env":"test","error":{},"msg":"Error granting table permission"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould update table permission role
+[22m[39mGrant permission catch block entered Error: Access denied - owner permission required
+    at DatavaultTablePermissionsService.requirePermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:108:13)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at DatavaultTablePermissionsService.grantPermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:138:5)
+    at C:/Users/scoot/poll/VaultLogic/server/routes/datavault.routes.ts:1155:26
+
+{"level":50,"time":1764871715246,"env":"test","error":{},"msg":"Error granting table permission"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould update table permission role
+[22m[39mGrant permission catch block entered Error: Access denied - owner permission required
+    at DatavaultTablePermissionsService.requirePermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:108:13)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at DatavaultTablePermissionsService.grantPermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:138:5)
+    at C:/Users/scoot/poll/VaultLogic/server/routes/datavault.routes.ts:1155:26
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould update table permission role
+[22m[39mUpdate permission failed: { message: [32m'Access denied - owner permission required'[39m }
+
+{"level":50,"time":1764871715471,"env":"test","error":{},"msg":"Error granting table permission"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould revoke table permission
+[22m[39mGrant permission catch block entered Error: Access denied - owner permission required
+    at DatavaultTablePermissionsService.requirePermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:108:13)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at DatavaultTablePermissionsService.grantPermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:138:5)
+    at C:/Users/scoot/poll/VaultLogic/server/routes/datavault.routes.ts:1155:26
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould revoke table permission
+[22m[39mrevokePermission called for permission: undefined
+
+{"level":50,"time":1764871715613,"env":"test","error":{},"msg":"Error revoking table permission"}
+{"level":50,"time":1764871715820,"env":"test","error":{},"msg":"Error granting table permission"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould enforce RBAC - only owners can manage permissions
+[22m[39mGrant permission catch block entered Error: Access denied - owner permission required
+    at DatavaultTablePermissionsService.requirePermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:108:13)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at DatavaultTablePermissionsService.grantPermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:138:5)
+    at C:/Users/scoot/poll/VaultLogic/server/routes/datavault.routes.ts:1155:26
+
+{"level":50,"time":1764871716693,"env":"test","error":{},"msg":"Error fetching DataVault rows"}
+{"level":50,"time":1764871716931,"env":"test","error":{},"msg":"Error creating DataVault column"}
+{"level":50,"time":1764871717230,"env":"test","error":{},"msg":"Error creating DataVault column"}
+{"level":50,"time":1764871717365,"env":"test","error":{},"msg":"Error creating DataVault row"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mError Handling[2m > [22m[2mshould return user-friendly error for missing required fields
+[22m[39mRow creation error message: Access denied - write permission required
+
+{"level":50,"time":1764871717592,"env":"test","error":{"length":144,"name":"error","severity":"ERROR","code":"22P02","where":"unnamed portal parameter $1 = '...'","file":"uuid.c","line":"138","routine":"string_to_uuid"},"msg":"Error fetching DataVault rows"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts
+[22m[39m≡ƒº╣ Cleaning up test environment...
+
+ [31mΓ¥»[39m tests/integration/datavault-v4-regression.test.ts [2m([22m[2m23 tests[22m[2m | [22m[31m19 failed[39m[2m)[22m[33m 8918[2mms[22m[39m
+[31m       [31m├ù[31m should create a select column with options[39m[32m 261[2mms[22m[39m
+[31m       [31m├ù[31m should create a multiselect column with options[39m[32m 257[2mms[22m[39m
+[31m       [31m├ù[31m should validate select value against options[39m[33m 405[2mms[22m[39m
+[31m       [31m├ù[31m should validate multiselect values as array[39m[33m 393[2mms[22m[39m
+[31m       [31m├ù[31m should create an autonumber column with sequence[39m[32m 240[2mms[22m[39m
+[31m       [31m├ù[31m should format autonumber with prefix[39m[33m 384[2mms[22m[39m
+[31m       [31m├ù[31m should create a note for a row[39m[33m 331[2mms[22m[39m
+[31m       [31m├ù[31m should get all notes for a row[39m[33m 715[2mms[22m[39m
+[31m       [31m├ù[31m should delete a note[39m[33m 469[2mms[22m[39m
+[31m       [31m├ù[31m should not allow deleting notes by other users[39m[33m 596[2mms[22m[39m
+[31m       [31m├ù[31m should create an API token[39m[33m 327[2mms[22m[39m
+       [32mΓ£ô[39m should validate API token scopes[32m 176[2mms[22m[39m
+[31m       [31m├ù[31m should revoke (delete) an API token[39m[32m 214[2mms[22m[39m
+       [32mΓ£ô[39m should deny access with expired token[32m 137[2mms[22m[39m
+[31m       [31m├ù[31m should grant table permission[39m[32m 218[2mms[22m[39m
+[31m       [31m├ù[31m should list table permissions[39m[32m 206[2mms[22m[39m
+[31m       [31m├ù[31m should update table permission role[39m[33m 348[2mms[22m[39m
+[31m       [31m├ù[31m should revoke table permission[39m[33m 364[2mms[22m[39m
+       [32mΓ£ô[39m should enforce RBAC - only owners can manage permissions[32m 208[2mms[22m[39m
+[31m       [31m├ù[31m should paginate rows efficiently[39m[33m 874[2mms[22m[39m
+[31m       [31m├ù[31m should return user-friendly error for invalid column type[39m[32m 239[2mms[22m[39m
+[31m       [31m├ù[31m should return user-friendly error for missing required fields[39m[33m 433[2mms[22m[39m
+       [32mΓ£ô[39m should handle network errors gracefully[32m 230[2mms[22m[39m
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ» Failed Tests 19 ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Select/Multiselect Columns > should create a select column with options
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:298:31
+    296|         });
+    297| 
+    298|       expect(response.status).toBe(201);
+       |                               ^
+    299|       expect(response.body).toBeDefined();
+    300|       expect(response.body.type).toBe('select');
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Select/Multiselect Columns > should create a multiselect column with options
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:321:31
+    319|         });
+    320| 
+    321|       expect(response.status).toBe(201);
+       |                               ^
+    322|       expect(response.body).toBeDefined();
+    323|       expect(response.body.type).toBe('multiselect');
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[2/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Select/Multiselect Columns > should validate select value against options
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:356:36
+    354|         });
+    355| 
+    356|       expect(validResponse.status).toBe(201);
+       |                                    ^
+    357| 
+    358|       // Create row with invalid value should fail
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[3/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Select/Multiselect Columns > should validate multiselect values as array
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:401:36
+    399|         });
+    400| 
+    401|       expect(validResponse.status).toBe(201);
+       |                                    ^
+    402|       expect(validResponse.body.values[testColumnId]).toEqual(['urgentΓÇª
+    403|     });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[4/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Autonumber Columns > should create an autonumber column with sequence
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:421:31
+    419|         });
+    420| 
+    421|       expect(response.status).toBe(201);
+       |                               ^
+    422|       expect(response.body).toBeDefined();
+    423|       expect(response.body.type).toBe('autonumber');
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[5/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Autonumber Columns > should format autonumber with prefix
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:455:34
+    453|         .send({ values: {} });
+    454| 
+    455|       expect(rowResponse.status).toBe(201);
+       |                                  ^
+    456|       // Check if formatted value is stored or displayed
+    457|       // This depends on implementation - adjust as needed
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[6/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Row Notes > should create a note for a row
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:481:31
+    479|         });
+    480| 
+    481|       expect(response.status).toBe(201);
+       |                               ^
+    482|       expect(response.body).toBeDefined();
+    483|       expect(response.body.text).toBe('This is a test note');
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[7/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Row Notes > should get all notes for a row
+AssertionError: expected 403 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:507:31
+    505|         .set('Cookie', authCookie);
+    506| 
+    507|       expect(response.status).toBe(200);
+       |                               ^
+    508|       expect(response.body).toHaveLength(2);
+    509|     });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[8/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Row Notes > should delete a note
+AssertionError: expected 500 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 500
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:527:37
+    525|         .set('Cookie', authCookie);
+    526| 
+    527|       expect(deleteResponse.status).toBe(200);
+       |                                     ^
+    528| 
+    529|       // Verify note is deleted
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[9/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Row Notes > should not allow deleting notes by other users
+AssertionError: expected 500 to be 403 // Object.is equality
+
+- Expected
++ Received
+
+- 403
++ 500
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:554:37
+    552|         .set('Cookie', otherUserCookie);
+    553| 
+    554|       expect(deleteResponse.status).toBe(403);
+       |                                     ^
+    555|     });
+    556|   });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[10/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > API Tokens > should create an API token
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:574:31
+    572|       // Assuming DB exists (created in beforeAll).
+    573|       // If 404 persists, we might need to debug route registration.
+    574|       expect(response.status).toBe(201);
+       |                               ^
+    575|       expect(response.body).toBeDefined();
+    576|       // plainToken is not returned in the object, it might be separatΓÇª
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[11/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > API Tokens > should revoke (delete) an API token
+TypeError: Cannot read properties of undefined (reading 'id')
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:608:49
+    606|         });
+    607| 
+    608|       const tokenId = createResponse.body.token.id;
+       |                                                 ^
+    609| 
+    610|       // Revoke token
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[12/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Table Permissions > should grant table permission
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:668:31
+    666|         });
+    667| 
+    668|       expect(response.status).toBe(201);
+       |                               ^
+    669|       expect(response.body).toBeDefined();
+    670|       expect(response.body.role).toBe('read');
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[13/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Table Permissions > should list table permissions
+AssertionError: expected 403 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:680:31
+    678|         .set('Cookie', authCookie);
+    679| 
+    680|       expect(response.status).toBe(200);
+       |                               ^
+    681|       expect(response.body).toBeDefined();
+    682|       expect(Array.isArray(response.body)).toBe(true);
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[14/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Table Permissions > should update table permission role
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:713:37
+    711|         console.log('Update permission failed:', updateResponse.body);
+    712|       }
+    713|       expect(updateResponse.status).toBe(201);
+       |                                     ^
+    714|       expect(updateResponse.body.role).toBe('write');
+    715|     });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[15/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Table Permissions > should revoke table permission
+AssertionError: expected 403 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:739:37
+    737| 
+    738|       // Revoke returns 200 with message
+    739|       expect(revokeResponse.status).toBe(200);
+       |                                     ^
+    740| 
+    741|       // Verify permission is deleted
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[16/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Grid Performance > should paginate rows efficiently
+AssertionError: expected 403 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:787:31
+    785|         .set('Cookie', authCookie);
+    786| 
+    787|       expect(response.status).toBe(200);
+       |                               ^
+    788|       expect(response.body.rows).toHaveLength(25);
+    789|       expect(response.body.pagination.total).toBe(100);
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[17/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Error Handling > should return user-friendly error for invalid column type
+AssertionError: expected 403 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:807:31
+    805|         });
+    806| 
+    807|       expect(response.status).toBe(400);
+       |                               ^
+    808|       expect(response.body.errors).toBeDefined();
+    809|       // expect(response.body.error).toContain('Invalid column type');
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[18/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Error Handling > should return user-friendly error for missing required fields
+
+AssertionError: expected 403 to be 400 // Object.is equality
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m19 failed[39m[22m[2m | [22m[1m[32m4 passed[39m[22m[90m (23)[39m
+[2m   Start at [22m 12:08:17
+
+- Expected
++ Received
+
+- 400
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:834:31
+    832| 
+    833|       // Improved error handling returns 400
+    834|       expect(response.status).toBe(400);
+       |                               ^
+    835|       expect(response.body.message).toBeDefined();
+    836|       expect(response.body.message).toContain('Required');
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[19/19]ΓÄ»
+
+[2m   Duration [22m 19.16s
+
+[1m[41m FAIL [49m[22m [31mTests failed. Watching for file changes...[39m
+       [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
+c[3J[1m[44m RERUN [49m[22m [34m[2mserver/routes/tenant.routes.ts [22m[34mx3 [34m[39m
+       [2m Filename pattern: [22m[34mtests/integration/datavault-v4-regression.test.ts[39m
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (11) from .env -- tip: ≡ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+
+{"level":40,"time":1764871754009,"env":"test","module":"auth-service","msg":"JWT_SECRET not set - falling back to SESSION_SECRET. This is acceptable for development but should be fixed for production."}
+{"level":30,"time":1764871756804,"env":"test","multerImportKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceKeys":["diskStorage","memoryStorage","MulterError"],"multerInstanceType":"function","uploadKeys":["storage","limits","preservePath","fileFilter"],"uploadType":"object","uploadPrototype":{},"msg":"Debug Multer Import"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts
+[22m[39m≡ƒº¬ Setting up test environment...
+
+{"level":30,"time":1764871760175,"env":"test","module":"file-routes","outputsDir":"C:\\Users\\scoot\\poll\\VaultLogic\\server\\files\\outputs","msg":"Secure file routes registered"}
+{"level":30,"time":1764871760176,"env":"test","module":"ai-routes","msg":"AI workflow generation routes registered"}
+{"level":30,"time":1764871760189,"env":"test","module":"collab-server","msg":"Initializing WebSocket collaboration server"}
+{"level":40,"time":1764871760189,"env":"test","module":"collab-persistence","msg":"REDIS_URL not configured, multi-instance collab will not work"}
+{"level":30,"time":1764871760189,"env":"test","module":"collab-server","msg":"WebSocket collaboration server initialized"}
+{"level":30,"time":1764871760189,"env":"test","module":"routes","msg":"Real-time collaboration server initialized"}
+{"level":30,"time":1764871760637,"env":"test","module":"auth","hasToken":true,"origin":"http://localhost:5000","ip":"::ffff:127.0.0.1","msg":"OAuth2 login attempt"}
+{"level":30,"time":1764871760638,"env":"test","module":"auth","email":"testuser@example.com","msg":"Token verified successfully"}
+{"level":30,"time":1764871760683,"env":"test","module":"auth","userId":"google-user-id","msg":"User upserted successfully"}
+{"level":30,"time":1764871760778,"env":"test","module":"auth","email":"testuser@example.com","msg":"OAuth2 login successful"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests
+[22m[39mLogin Status: [33m200[39m
+Login Body: {
+  "message": "Authentication successful",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJnb29nbGUtdXNlci1pZCIsImVtYWlsIjoidGVzdHVzZXJAZXhhbXBsZS5jb20iLCJ0ZW5hbnRJZCI6ImNlZDI4Mzc1LTU0ODUtNDc4NC05ZTQyLWU1Y2JmMGNlMWIyYiIsInJvbGUiOiJvd25lciIsImlhdCI6MTc2NDg3MTc2MCwiZXhwIjoxNzY1NDc2NTYwfQ.iBgiTH_2zWzlfyFxR8HjcIJNvdR-XUDDM6G3pRFPua0",
+  "user": {
+    "id": "google-user-id",
+    "email": "testuser@example.com",
+    "firstName": "Test",
+    "lastName": "User",
+    "profileImageUrl": "https://example.com/avatar.jpg",
+    "tenantId": "ced28375-5485-4784-9e42-e5cbf0ce1b2b",
+    "tenantRole": "owner"
+  }
+}
+
+{"level":30,"time":1764871760796,"env":"test","module":"auth","hasToken":true,"origin":"http://localhost:5000","ip":"::ffff:127.0.0.1","msg":"OAuth2 login attempt"}
+{"level":30,"time":1764871760797,"env":"test","module":"auth","email":"other@example.com","msg":"Token verified successfully"}
+{"level":30,"time":1764871760847,"env":"test","module":"auth","userId":"other-user-id","msg":"User upserted successfully"}
+{"level":30,"time":1764871760935,"env":"test","module":"auth","email":"other@example.com","msg":"OAuth2 login successful"}
+{"level":50,"time":1764871761172,"env":"test","error":{},"msg":"Error creating DataVault column"}
+{"level":50,"time":1764871761401,"env":"test","error":{},"msg":"Error creating DataVault column"}
+{"level":50,"time":1764871761619,"env":"test","error":{},"msg":"Error creating DataVault column"}
+{"level":50,"time":1764871761760,"env":"test","error":{},"msg":"Error creating DataVault row"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mSelect/Multiselect Columns[2m > [22m[2mshould validate select value against options
+[22m[39mRow creation error message: Access denied - write permission required
+
+{"level":50,"time":1764871761987,"env":"test","error":{},"msg":"Error creating DataVault column"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mSelect/Multiselect Columns[2m > [22m[2mshould validate multiselect values as array
+[22m[39mRow creation error message: Access denied - write permission required
+
+{"level":50,"time":1764871762121,"env":"test","error":{},"msg":"Error creating DataVault row"}
+{"level":50,"time":1764871762389,"env":"test","error":{},"msg":"Error creating DataVault column"}
+{"level":50,"time":1764871762610,"env":"test","error":{},"msg":"Error creating DataVault column"}
+{"level":50,"time":1764871762736,"env":"test","error":{},"msg":"Error creating DataVault row"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mAutonumber Columns[2m > [22m[2mshould format autonumber with prefix
+[22m[39mRow creation error message: Access denied - write permission required
+
+{"level":50,"time":1764871763044,"env":"test","error":{},"msg":"Error creating row note"}
+{"level":50,"time":1764871763365,"env":"test","error":{},"msg":"Error creating row note"}
+{"level":50,"time":1764871763535,"env":"test","error":{},"msg":"Error creating row note"}
+{"level":50,"time":1764871763709,"env":"test","error":{},"msg":"Error fetching row notes"}
+{"level":50,"time":1764871764015,"env":"test","error":{},"msg":"Error creating row note"}
+{"level":50,"time":1764871764137,"env":"test","error":{"length":141,"name":"error","severity":"ERROR","code":"22P02","where":"unnamed portal parameter $1 = '...'","file":"uuid.c","line":"138","routine":"string_to_uuid"},"msg":"Error deleting row note"}
+{"level":50,"time":1764871764583,"env":"test","error":{},"msg":"Error creating row note"}
+{"level":50,"time":1764871764717,"env":"test","error":{"length":141,"name":"error","severity":"ERROR","code":"22P02","where":"unnamed portal parameter $1 = '...'","file":"uuid.c","line":"138","routine":"string_to_uuid"},"msg":"Error deleting row note"}
+{"level":50,"time":1764871765118,"env":"test","error":{},"databaseId":"3fd8c8ec-afe1-4727-857d-fbad63797542","msg":"Error creating API token"}
+{"level":50,"time":1764871765547,"env":"test","error":{},"databaseId":"334685b3-3b46-4475-b953-b2dd170ab63c","msg":"Error creating API token"}
+{"level":40,"time":1764871765703,"env":"test","module":"auth-middleware","path":"/datavault/databases/e9d242f6-ded8-493b-88a7-93550f530dd2/tables","msg":"No valid authentication found"}
+{"level":50,"time":1764871765945,"env":"test","error":{},"msg":"Error granting table permission"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould grant table permission
+[22m[39mGrant permission catch block entered Error: Access denied - owner permission required
+    at DatavaultTablePermissionsService.requirePermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:108:13)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at DatavaultTablePermissionsService.grantPermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:138:5)
+    at C:/Users/scoot/poll/VaultLogic/server/routes/datavault.routes.ts:1155:26
+
+{"level":50,"time":1764871766198,"env":"test","error":{},"msg":"Error fetching table permissions"}
+{"level":50,"time":1764871766443,"env":"test","error":{},"msg":"Error granting table permission"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould update table permission role
+[22m[39mGrant permission catch block entered Error: Access denied - owner permission required
+    at DatavaultTablePermissionsService.requirePermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:108:13)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at DatavaultTablePermissionsService.grantPermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:138:5)
+    at C:/Users/scoot/poll/VaultLogic/server/routes/datavault.routes.ts:1155:26
+
+{"level":50,"time":1764871766582,"env":"test","error":{},"msg":"Error granting table permission"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould update table permission role
+[22m[39mGrant permission catch block entered Error: Access denied - owner permission required
+    at DatavaultTablePermissionsService.requirePermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:108:13)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at DatavaultTablePermissionsService.grantPermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:138:5)
+    at C:/Users/scoot/poll/VaultLogic/server/routes/datavault.routes.ts:1155:26
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould update table permission role
+[22m[39mUpdate permission failed: { message: [32m'Access denied - owner permission required'[39m }
+
+{"level":50,"time":1764871766834,"env":"test","error":{},"msg":"Error granting table permission"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould revoke table permission
+[22m[39mGrant permission catch block entered Error: Access denied - owner permission required
+    at DatavaultTablePermissionsService.requirePermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:108:13)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at DatavaultTablePermissionsService.grantPermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:138:5)
+    at C:/Users/scoot/poll/VaultLogic/server/routes/datavault.routes.ts:1155:26
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould revoke table permission
+[22m[39mrevokePermission called for permission: undefined
+
+{"level":50,"time":1764871766985,"env":"test","error":{},"msg":"Error revoking table permission"}
+{"level":50,"time":1764871767212,"env":"test","error":{},"msg":"Error granting table permission"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould enforce RBAC - only owners can manage permissions
+[22m[39mGrant permission catch block entered Error: Access denied - owner permission required
+    at DatavaultTablePermissionsService.requirePermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:108:13)
+[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
+    at DatavaultTablePermissionsService.grantPermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:138:5)
+    at C:/Users/scoot/poll/VaultLogic/server/routes/datavault.routes.ts:1155:26
+
+{"level":50,"time":1764871768086,"env":"test","error":{},"msg":"Error fetching DataVault rows"}
+{"level":50,"time":1764871768322,"env":"test","error":{},"msg":"Error creating DataVault column"}
+{"level":50,"time":1764871768564,"env":"test","error":{},"msg":"Error creating DataVault column"}
+{"level":50,"time":1764871768707,"env":"test","error":{},"msg":"Error creating DataVault row"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mError Handling[2m > [22m[2mshould return user-friendly error for missing required fields
+[22m[39mRow creation error message: Access denied - write permission required
+
+{"level":50,"time":1764871768946,"env":"test","error":{"length":144,"name":"error","severity":"ERROR","code":"22P02","where":"unnamed portal parameter $1 = '...'","file":"uuid.c","line":"138","routine":"string_to_uuid"},"msg":"Error fetching DataVault rows"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts
+[22m[39m≡ƒº╣ Cleaning up test environment...
+
+ [31mΓ¥»[39m tests/integration/datavault-v4-regression.test.ts [2m([22m[2m23 tests[22m[2m | [22m[31m19 failed[39m[2m)[22m[33m 8823[2mms[22m[39m
+[31m       [31m├ù[31m should create a select column with options[39m[32m 246[2mms[22m[39m
+[31m       [31m├ù[31m should create a multiselect column with options[39m[32m 224[2mms[22m[39m
+[31m       [31m├ù[31m should validate select value against options[39m[33m 357[2mms[22m[39m
+[31m       [31m├ù[31m should validate multiselect values as array[39m[33m 360[2mms[22m[39m
+[31m       [31m├ù[31m should create an autonumber column with sequence[39m[32m 267[2mms[22m[39m
+[31m       [31m├ù[31m should format autonumber with prefix[39m[33m 346[2mms[22m[39m
+[31m       [31m├ù[31m should create a note for a row[39m[33m 308[2mms[22m[39m
+[31m       [31m├ù[31m should get all notes for a row[39m[33m 667[2mms[22m[39m
+[31m       [31m├ù[31m should delete a note[39m[33m 427[2mms[22m[39m
+[31m       [31m├ù[31m should not allow deleting notes by other users[39m[33m 579[2mms[22m[39m
+[31m       [31m├ù[31m should create an API token[39m[33m 400[2mms[22m[39m
+       [32mΓ£ô[39m should validate API token scopes[32m 193[2mms[22m[39m
+[31m       [31m├ù[31m should revoke (delete) an API token[39m[32m 236[2mms[22m[39m
+       [32mΓ£ô[39m should deny access with expired token[32m 156[2mms[22m[39m
+[31m       [31m├ù[31m should grant table permission[39m[32m 243[2mms[22m[39m
+[31m       [31m├ù[31m should list table permissions[39m[32m 253[2mms[22m[39m
+[31m       [31m├ù[31m should update table permission role[39m[33m 385[2mms[22m[39m
+[31m       [31m├ù[31m should revoke table permission[39m[33m 401[2mms[22m[39m
+       [32mΓ£ô[39m should enforce RBAC - only owners can manage permissions[32m 229[2mms[22m[39m
+[31m       [31m├ù[31m should paginate rows efficiently[39m[33m 873[2mms[22m[39m
+[31m       [31m├ù[31m should return user-friendly error for invalid column type[39m[32m 236[2mms[22m[39m
+[31m       [31m├ù[31m should return user-friendly error for missing required fields[39m[33m 387[2mms[22m[39m
+       [32mΓ£ô[39m should handle network errors gracefully[32m 238[2mms[22m[39m
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ» Failed Tests 19 ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Select/Multiselect Columns > should create a select column with options
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:298:31
+    296|         });
+    297| 
+    298|       expect(response.status).toBe(201);
+       |                               ^
+    299|       expect(response.body).toBeDefined();
+    300|       expect(response.body.type).toBe('select');
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Select/Multiselect Columns > should create a multiselect column with options
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:321:31
+    319|         });
+    320| 
+    321|       expect(response.status).toBe(201);
+       |                               ^
+    322|       expect(response.body).toBeDefined();
+    323|       expect(response.body.type).toBe('multiselect');
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[2/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Select/Multiselect Columns > should validate select value against options
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:356:36
+    354|         });
+    355| 
+    356|       expect(validResponse.status).toBe(201);
+       |                                    ^
+    357| 
+    358|       // Create row with invalid value should fail
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[3/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Select/Multiselect Columns > should validate multiselect values as array
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:401:36
+    399|         });
+    400| 
+    401|       expect(validResponse.status).toBe(201);
+       |                                    ^
+    402|       expect(validResponse.body.values[testColumnId]).toEqual(['urgentΓÇª
+    403|     });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[4/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Autonumber Columns > should create an autonumber column with sequence
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:421:31
+    419|         });
+    420| 
+    421|       expect(response.status).toBe(201);
+       |                               ^
+    422|       expect(response.body).toBeDefined();
+    423|       expect(response.body.type).toBe('autonumber');
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[5/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Autonumber Columns > should format autonumber with prefix
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:455:34
+    453|         .send({ values: {} });
+    454| 
+    455|       expect(rowResponse.status).toBe(201);
+       |                                  ^
+    456|       // Check if formatted value is stored or displayed
+    457|       // This depends on implementation - adjust as needed
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[6/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Row Notes > should create a note for a row
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:481:31
+    479|         });
+    480| 
+    481|       expect(response.status).toBe(201);
+       |                               ^
+    482|       expect(response.body).toBeDefined();
+    483|       expect(response.body.text).toBe('This is a test note');
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[7/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Row Notes > should get all notes for a row
+AssertionError: expected 403 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:507:31
+    505|         .set('Cookie', authCookie);
+    506| 
+    507|       expect(response.status).toBe(200);
+       |                               ^
+    508|       expect(response.body).toHaveLength(2);
+    509|     });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[8/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Row Notes > should delete a note
+AssertionError: expected 500 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 500
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:527:37
+    525|         .set('Cookie', authCookie);
+    526| 
+    527|       expect(deleteResponse.status).toBe(200);
+       |                                     ^
+    528| 
+    529|       // Verify note is deleted
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[9/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Row Notes > should not allow deleting notes by other users
+AssertionError: expected 500 to be 403 // Object.is equality
+
+- Expected
++ Received
+
+- 403
++ 500
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:554:37
+    552|         .set('Cookie', otherUserCookie);
+    553| 
+    554|       expect(deleteResponse.status).toBe(403);
+       |                                     ^
+    555|     });
+    556|   });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[10/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > API Tokens > should create an API token
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:574:31
+    572|       // Assuming DB exists (created in beforeAll).
+    573|       // If 404 persists, we might need to debug route registration.
+    574|       expect(response.status).toBe(201);
+       |                               ^
+    575|       expect(response.body).toBeDefined();
+    576|       // plainToken is not returned in the object, it might be separatΓÇª
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[11/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > API Tokens > should revoke (delete) an API token
+TypeError: Cannot read properties of undefined (reading 'id')
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:608:49
+    606|         });
+    607| 
+    608|       const tokenId = createResponse.body.token.id;
+       |                                                 ^
+    609| 
+    610|       // Revoke token
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[12/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Table Permissions > should grant table permission
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:668:31
+    666|         });
+    667| 
+    668|       expect(response.status).toBe(201);
+       |                               ^
+    669|       expect(response.body).toBeDefined();
+    670|       expect(response.body.role).toBe('read');
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[13/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Table Permissions > should list table permissions
+AssertionError: expected 403 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:680:31
+    678|         .set('Cookie', authCookie);
+    679| 
+    680|       expect(response.status).toBe(200);
+       |                               ^
+    681|       expect(response.body).toBeDefined();
+    682|       expect(Array.isArray(response.body)).toBe(true);
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[14/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Table Permissions > should update table permission role
+AssertionError: expected 403 to be 201 // Object.is equality
+
+- Expected
++ Received
+
+- 201
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:713:37
+    711|         console.log('Update permission failed:', updateResponse.body);
+    712|       }
+    713|       expect(updateResponse.status).toBe(201);
+       |                                     ^
+    714|       expect(updateResponse.body.role).toBe('write');
+    715|     });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[15/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Table Permissions > should revoke table permission
+AssertionError: expected 403 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:739:37
+    737| 
+    738|       // Revoke returns 200 with message
+    739|       expect(revokeResponse.status).toBe(200);
+       |                                     ^
+    740| 
+    741|       // Verify permission is deleted
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[16/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Grid Performance > should paginate rows efficiently
+AssertionError: expected 403 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:787:31
+    785|         .set('Cookie', authCookie);
+    786| 
+    787|       expect(response.status).toBe(200);
+       |                               ^
+    788|       expect(response.body.rows).toHaveLength(25);
+    789|       expect(response.body.pagination.total).toBe(100);
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[17/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Error Handling > should return user-friendly error for invalid column type
+AssertionError: expected 403 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:807:31
+    805|         });
+    806| 
+    807|       expect(response.status).toBe(400);
+       |                               ^
+    808|       expect(response.body.errors).toBeDefined();
+    809|       // expect(response.body.error).toContain('Invalid column type');
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[18/19]ΓÄ»
+
+ FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Error Handling > should return user-friendly error for missing required fields
+AssertionError: expected 403 to be 400 // Object.is equality
+
+- Expected
++ Received
+
+- 400
++ 403
+
+ Γ¥» tests/integration/datavault-v4-regression.test.ts:834:31
+
+    832| 
+    833|       // Improved error handling returns 400
+    834|       expect(response.status).toBe(400);
+       |                               ^
+    835|       expect(response.body.message).toBeDefined();
+    836|       expect(response.body.message).toContain('Required');
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[19/19]ΓÄ»
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m19 failed[39m[22m[2m | [22m[1m[32m4 passed[39m[22m[90m (23)[39m
+[2m   Start at [22m 12:09:08
+[2m   Duration [22m 19.08s
+
+[1m[41m FAIL [49m[22m [31mTests failed. Watching for file changes...[39m
+       [2mpress [22m[1mh[22m[2m to show help[22m[2m, [22m[2mpress [22m[1mq[22m[2m to quit[22m
