@@ -1,83 +1,30 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import request from "supertest";
-import express, { type Express } from "express";
-import { createServer, type Server } from "http";
-import { registerRoutes } from "../../server/routes";
-import { nanoid } from "nanoid";
-import { db } from "../../server/db";
-import * as schema from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { setupIntegrationTest, createAuthenticatedAgent, type IntegrationTestContext } from "../helpers/integrationTestHelper";
 
 /**
  * Expression Validation API Integration Tests
+ *
+ * Refactored to use integrationTestHelper for consistent setup/teardown
  */
 describe("Expression Validation API Integration Tests", () => {
-  let app: Express;
-  let server: Server;
-  let baseURL: string;
-  let authToken: string;
-  let tenantId: string;
-  let userId: string;
-  let projectId: string;
+  let ctx: IntegrationTestContext;
   let workflowId: string;
 
   beforeAll(async () => {
-    app = express();
-    app.use(express.json());
-    app.use(express.urlencoded({ extended: false }));
-
-    server = await registerRoutes(app);
-
-    const port = await new Promise<number>((resolve) => {
-      const testServer = server.listen(0, () => {
-        const addr = testServer.address();
-        const port = typeof addr === 'object' && addr ? addr.port : 5012;
-        resolve(port);
-      });
+    // Use integration test helper for consistent setup
+    ctx = await setupIntegrationTest({
+      tenantName: "Test Tenant for Expression Validation",
+      createProject: true,
+      projectName: "Test Project for Expression Validation",
+      userRole: "admin",
+      tenantRole: "owner",
     });
 
-    baseURL = `http://localhost:${port}`;
-
-    // Setup tenant
-    const [tenant] = await db.insert(schema.tenants).values({
-      name: "Test Tenant for Expression Validation",
-      plan: "free",
-    }).returning();
-    tenantId = tenant.id;
-
-    // Register user and get auth token
-    const email = `test-expr-${nanoid()}@example.com`;
-    const registerResponse = await request(baseURL)
-      .post("/api/auth/register")
-      .send({
-        email,
-        password: "TestPassword123",
-      })
-      .expect(201);
-
-    authToken = registerResponse.body.token;
-    userId = registerResponse.body.user.id;
-
-    // ✅ KEY FIX: Set admin/owner roles (not builder!)
-    await db.update(schema.users)
-      .set({
-        tenantId,
-        role: "admin",      // Admin for full API permissions
-        tenantRole: "owner" // Owner for tenant-level access
-      })
-      .where(eq(schema.users.id, userId));
-
-    // Create project
-    const projectResponse = await request(baseURL)
-      .post("/api/projects")
-      .set("Authorization", `Bearer ${authToken}`)
-      .send({ name: "Test Project for Expression Validation" });
-    projectId = projectResponse.body.id;
-
     // Create workflow with some nodes
-    const workflowResponse = await request(baseURL)
-      .post(`/api/projects/${projectId}/workflows`)
-      .set("Authorization", `Bearer ${authToken}`)
+    const workflowResponse = await request(ctx.ctx.baseURL)
+      .post(`/api/projects/${ctx.projectId}/workflows`)
+      .set("Authorization", `Bearer ${ctx.ctx.authToken}`)
       .send({
         name: "Test Workflow for Expressions",
         graphJson: {
@@ -110,21 +57,15 @@ describe("Expression Validation API Integration Tests", () => {
   });
 
   afterAll(async () => {
-    if (tenantId) {
-      await db.delete(schema.tenants).where(eq(schema.tenants.id, tenantId));
-    }
-    if (server) {
-      await new Promise<void>((resolve) => {
-        server.close(() => resolve());
-      });
-    }
+    // Use helper's cleanup function
+    await ctx.cleanup();
   });
 
   describe("POST /api/workflows/validateExpression", () => {
     it("should validate a correct expression", async () => {
-      const response = await request(baseURL)
+      const response = await request(ctx.ctx.baseURL)
         .post("/api/workflows/validateExpression")
-        .set("Authorization", `Bearer ${authToken}`)
+        .set("Authorization", `Bearer ${ctx.ctx.authToken}`)
         .send({
           workflowId,
           nodeId: "node_2",
@@ -136,9 +77,9 @@ describe("Expression Validation API Integration Tests", () => {
     });
 
     it("should reject expression with unknown variable", async () => {
-      const response = await request(baseURL)
+      const response = await request(ctx.ctx.baseURL)
         .post("/api/workflows/validateExpression")
-        .set("Authorization", `Bearer ${authToken}`)
+        .set("Authorization", `Bearer ${ctx.ctx.authToken}`)
         .send({
           workflowId,
           nodeId: "node_2",
@@ -153,9 +94,9 @@ describe("Expression Validation API Integration Tests", () => {
     });
 
     it("should validate expression with helper function", async () => {
-      const response = await request(baseURL)
+      const response = await request(ctx.baseURL)
         .post("/api/workflows/validateExpression")
-        .set("Authorization", `Bearer ${authToken}`)
+        .set("Authorization", `Bearer ${ctx.authToken}`)
         .send({
           workflowId,
           nodeId: "node_2",
@@ -167,9 +108,9 @@ describe("Expression Validation API Integration Tests", () => {
     });
 
     it("should reject invalid syntax", async () => {
-      const response = await request(baseURL)
+      const response = await request(ctx.baseURL)
         .post("/api/workflows/validateExpression")
-        .set("Authorization", `Bearer ${authToken}`)
+        .set("Authorization", `Bearer ${ctx.authToken}`)
         .send({
           workflowId,
           nodeId: "node_2",
@@ -182,7 +123,7 @@ describe("Expression Validation API Integration Tests", () => {
     });
 
     it("should reject without authentication", async () => {
-      await request(baseURL)
+      await request(ctx.baseURL)
         .post("/api/workflows/validateExpression")
         .send({
           workflowId,
@@ -193,9 +134,9 @@ describe("Expression Validation API Integration Tests", () => {
     });
 
     it("should reject missing required fields", async () => {
-      const response = await request(baseURL)
+      const response = await request(ctx.baseURL)
         .post("/api/workflows/validateExpression")
-        .set("Authorization", `Bearer ${authToken}`)
+        .set("Authorization", `Bearer ${ctx.authToken}`)
         .send({
           workflowId,
           // Missing nodeId and expression
@@ -208,9 +149,9 @@ describe("Expression Validation API Integration Tests", () => {
 
   describe("GET /api/workflows/:id/availableVars/:nodeId", () => {
     it("should return available variables for a node", async () => {
-      const response = await request(baseURL)
+      const response = await request(ctx.baseURL)
         .get(`/api/workflows/${workflowId}/availableVars/node_2`)
-        .set("Authorization", `Bearer ${authToken}`)
+        .set("Authorization", `Bearer ${ctx.authToken}`)
         .expect(200);
 
       expect(response.body).toHaveProperty("vars");
@@ -219,9 +160,9 @@ describe("Expression Validation API Integration Tests", () => {
     });
 
     it("should return empty array for first node", async () => {
-      const response = await request(baseURL)
+      const response = await request(ctx.baseURL)
         .get(`/api/workflows/${workflowId}/availableVars/node_1`)
-        .set("Authorization", `Bearer ${authToken}`)
+        .set("Authorization", `Bearer ${ctx.authToken}`)
         .expect(200);
 
       expect(response.body).toHaveProperty("vars");
@@ -229,24 +170,24 @@ describe("Expression Validation API Integration Tests", () => {
     });
 
     it("should reject without authentication", async () => {
-      await request(baseURL)
+      await request(ctx.baseURL)
         .get(`/api/workflows/${workflowId}/availableVars/node_2`)
         .expect(401);
     });
 
     it("should reject non-existent workflow", async () => {
-      await request(baseURL)
+      await request(ctx.baseURL)
         .get(`/api/workflows/non-existent-id/availableVars/node_2`)
-        .set("Authorization", `Bearer ${authToken}`)
+        .set("Authorization", `Bearer ${ctx.authToken}`)
         .expect(404);
     });
   });
 
   describe("GET /api/engine/helpers", () => {
     it("should return list of helper functions", async () => {
-      const response = await request(baseURL)
+      const response = await request(ctx.baseURL)
         .get("/api/engine/helpers")
-        .set("Authorization", `Bearer ${authToken}`)
+        .set("Authorization", `Bearer ${ctx.authToken}`)
         .expect(200);
 
       expect(response.body).toHaveProperty("helpers");
@@ -267,7 +208,7 @@ describe("Expression Validation API Integration Tests", () => {
     });
 
     it("should reject without authentication", async () => {
-      await request(baseURL)
+      await request(ctx.baseURL)
         .get("/api/engine/helpers")
         .expect(401);
     });
@@ -276,9 +217,9 @@ describe("Expression Validation API Integration Tests", () => {
   describe("Expression validation with complex graph", () => {
     it("should validate expressions with variables from multiple upstream nodes", async () => {
       // Create a more complex workflow
-      const complexWorkflowResponse = await request(baseURL)
+      const complexWorkflowResponse = await request(ctx.baseURL)
         .post(`/api/projects/${projectId}/workflows`)
-        .set("Authorization", `Bearer ${authToken}`)
+        .set("Authorization", `Bearer ${ctx.authToken}`)
         .send({
           name: "Complex Workflow",
           graphJson: {
@@ -320,9 +261,9 @@ describe("Expression Validation API Integration Tests", () => {
       const complexWorkflowId = complexWorkflowResponse.body.id;
 
       // Validate expression in c2 that uses variables from q1 and c1
-      const response = await request(baseURL)
+      const response = await request(ctx.baseURL)
         .post("/api/workflows/validateExpression")
-        .set("Authorization", `Bearer ${authToken}`)
+        .set("Authorization", `Bearer ${ctx.authToken}`)
         .send({
           workflowId: complexWorkflowId,
           nodeId: "c2",
