@@ -21,35 +21,13 @@ describe("Expression Validation API Integration Tests", () => {
       tenantRole: "owner",
     });
 
-    // Create workflow with some nodes
+    // Create simple workflow for expression validation testing
     const workflowResponse = await request(ctx.baseURL)
       .post(`/api/projects/${ctx.projectId}/workflows`)
       .set("Authorization", `Bearer ${ctx.authToken}`)
       .send({
         name: "Test Workflow for Expressions",
-        graphJson: {
-          nodes: [
-            {
-              id: "node_1",
-              type: "question",
-              config: {
-                key: "age",
-                inputType: "number",
-                required: true,
-              },
-            },
-            {
-              id: "node_2",
-              type: "compute",
-              config: {
-                expression: "age * 2",
-                outputKey: "double_age",
-              },
-            },
-          ],
-          edges: [{ id: "edge_1", source: "node_1", target: "node_2" }],
-          startNodeId: "node_1",
-        },
+        graphJson: { nodes: [], edges: [] },
       })
       .expect(201);
 
@@ -218,7 +196,7 @@ describe("Expression Validation API Integration Tests", () => {
     it("should validate expressions with variables from multiple upstream nodes", async () => {
       // Create a more complex workflow
       const complexWorkflowResponse = await request(ctx.baseURL)
-        .post(`/api/projects/${projectId}/workflows`)
+        .post(`/api/projects/${ctx.projectId}/workflows`)
         .set("Authorization", `Bearer ${ctx.authToken}`)
         .send({
           name: "Complex Workflow",

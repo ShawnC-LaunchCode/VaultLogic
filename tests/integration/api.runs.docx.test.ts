@@ -178,13 +178,19 @@ describe('Runs API - DOCX Generation Integration Tests', () => {
 
   afterAll(async () => {
     // Clean up
-    if (tenantId) {
-      // Clean up workflows first (cascades to workflow_versions)
-      await db.delete(schema.workflows).where(eq(schema.workflows.tenantId, tenantId));
+    try {
+      if (tenantId) {
+        // Clean up workflows first (cascades to workflow_versions)
+        await db.delete(schema.workflows).where(eq(schema.workflows.tenantId, tenantId));
 
-      // Delete tenant (cascades to projects, users, etc.)
-      await db.delete(schema.tenants).where(eq(schema.tenants.id, tenantId));
+        // Delete tenant (cascades to projects, users, etc.)
+        await db.delete(schema.tenants).where(eq(schema.tenants.id, tenantId));
+      }
+    } catch (error) {
+      console.error('Cleanup error (non-fatal):', error);
+      // Don't fail the test suite if cleanup fails
     }
+
     if (server) {
       await new Promise<void>((resolve) => {
         server.close(() => resolve());

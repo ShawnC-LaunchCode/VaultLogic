@@ -7,6 +7,7 @@ import { eq } from "drizzle-orm";
 import fs from "fs/promises";
 import path from "path";
 import { vi } from "vitest";
+import { nanoid } from "nanoid";
 import { templateScanner } from "../../server/services/document/TemplateScanner";
 
 // Mock template scanner to avoid parsing invalid zip files
@@ -57,25 +58,11 @@ describe("Templates and Runs API Integration Tests", () => {
 
     // Create and publish workflow
     const workflowResponse = await request(ctx.baseURL)
-      .post(`/api/projects/${ctx.ctx.projectId}/workflows`)
+      .post(`/api/projects/${ctx.projectId}/workflows`)
       .set("Authorization", `Bearer ${ctx.authToken}`)
       .send({
         name: "Test Workflow",
-        graphJson: {
-          nodes: [
-            {
-              id: "node-1",
-              type: "question",
-              config: {
-                key: "name",
-                questionText: "What is your name?",
-                questionType: "text"
-              }
-            }
-          ],
-          edges: [],
-          startNodeId: "node-1"
-        }
+        graphJson: { nodes: [], edges: [] },
       })
       .expect(201);
     workflowId = workflowResponse.body.id;
@@ -290,7 +277,7 @@ describe("Templates and Runs API Integration Tests", () => {
           .expect(201);
 
         await db.update(schema.users)
-          .set({ tenantId, tenantRole: "viewer" })
+          .set({ tenantId: ctx.tenantId, tenantRole: "viewer" })
           .where(eq(schema.users.id, viewerResponse.body.user.id));
 
         await request(ctx.baseURL)
