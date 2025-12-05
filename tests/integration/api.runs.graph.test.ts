@@ -95,11 +95,13 @@ describe("Stage 8: Runs API Integration Tests", () => {
       passwordHash: "hashed_password",
       tenantId,
       tenantRole: "owner",
+      role: "admin", // ✅ Admin for full API permissions
     }).onConflictDoUpdate({
       target: schema.users.id,
       set: {
         tenantId: tenantId,
         tenantRole: "owner",
+        role: "admin", // ✅ Also update on conflict
         email: email,
       }
     });
