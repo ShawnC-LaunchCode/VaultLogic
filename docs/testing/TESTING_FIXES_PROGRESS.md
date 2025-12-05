@@ -72,14 +72,18 @@ Status:          🎯 EXCELLENT (68% reduction in failures from original!)
 Progress:        56 → 18 failures (-38 tests fixed)
 ```
 
-### Current Status (After Phase 4 Completion):
+### Current Status (After Phase 5 Syntax Fixes):
 ```
 Unit Tests:      40 passed ✅ (100%)
 Integration Tests: 7 failed | 14 passed (21 total)
-Total:           12 failed | 277 passed | 28 skipped (317 total)
-Status:          🏆 OUTSTANDING (78% reduction in failures from original!)
-Progress:        56 → 12 failures (-44 tests fixed)
+Total:           23 failed | 283 passed | 28 skipped (334 total)
+Status:          🎯 STRONG (59% reduction in failures from original!)
+Progress:        56 → 23 failures (-33 tests fixed)
 Skipped:         28 tests (intentional - not counted as failures)
+
+Key Insight:     12 of 23 failures are in api.workflows.test.ts
+                 These tests PASS in isolation but FAIL in full suite
+                 → Test isolation issue, not application bugs
 ```
 
 ---
@@ -149,17 +153,74 @@ Skipped:         28 tests (intentional - not counted as failures)
 
 ---
 
-## Remaining Issues (7 Integration Test Files - 12 failures)
+### Phase 5: Syntax Error Fixes & Cleanup Enhancement ✅
+**Major Discovery:** Refactoring errors blocking test execution
+
+**Files Fixed:**
+1. `tests/integration/api.workflows.test.ts`
+   - Fixed syntax errors in object keys (`ctx.projectId` → `projectId`)
+   - Fixed variable declarations (`const ctx.authToken2` → `const authToken2`)
+   - Added missing imports (nanoid, db, schema, eq)
+   - Fixed tenantId references to use `ctx.tenantId`
+   - **Result:** Tests can now parse and run (previously had 15 syntax errors)
+
+2. `tests/integration/api.expression-validation.test.ts`
+   - Fixed context path errors (`ctx.ctx.baseURL` → `ctx.baseURL`)
+   - Fixed auth token references (`ctx.ctx.authToken` → `ctx.authToken`)
+   - **Result:** Suite can now execute (was completely blocked)
+
+3. `tests/integration/api.templates-runs.test.ts`
+   - Fixed context path errors (same as expression-validation)
+   - **Result:** Suite can now execute (was completely blocked)
+
+4. `tests/helpers/integrationTestHelper.ts`
+   - Enhanced cleanup function to delete workflows before tenants
+   - Prevents FK constraint violations from `workflow_versions` table
+   - Added try-catch to prevent cleanup failures from breaking tests
+   - **Result:** Cleanup no longer causes test suite failures
+
+**Impact:**
+- ✅ Resolved all syntax errors blocking test execution
+- ✅ Fixed 2 integration test suites (expression-validation, templates-runs)
+- ✅ Improved cleanup robustness with proper deletion order
+- ⚠️ Discovered test isolation issue: api.workflows.test.ts passes in isolation but fails in full suite
+
+**Git Commit:** `b26e4fb` - fix(tests): resolve syntax errors and improve cleanup
+
+---
+
+## Remaining Issues (7 Integration Test Files - 23 failures)
+
+### Critical Discovery: Test Isolation Issue ⚠️
+**File:** `api.workflows.test.ts`
+**Failures:** 12 tests (PASS in isolation, FAIL in full suite)
+**Tests Affected:**
+- PATCH /api/workflows/:id - Update and publish operations (4 failures)
+- PUT /api/workflows/:id/move - All move operations (8 failures)
+
+**Root Cause:** Test interference when running full suite
+- Tests pass 100% (17/17) when run alone
+- Tests fail 71% (12/17) when run with other integration tests
+- Indicates shared state or cleanup issues between test files
+
+**Priority:** HIGH - Fixing this resolves 52% of remaining failures!
 
 ### 1. datavault-v4-regression.test.ts
 **Status:** 6 failures
-**Tests:** Table permissions, RBAC enforcement, multiselect validation, notes
-**Issue:** Permission endpoints returning 500 instead of 403
-**Root Cause:** Likely test isolation or API validation issues
+**Tests:**
+- Table Permissions (4 failures) - grant, update, revoke, RBAC enforcement
+- Select/Multiselect validation (1 failure)
+- Row Notes deletion (1 failure)
+
+**Issue:** Permission endpoints returning 500 instead of 403/200
+**Root Cause:** Application errors in permission endpoints (not test issues)
 
 ### 2. api.runs.graph.test.ts
-**Status:** 1-2 failures
-**Tests:** Run comparison, tenant isolation
+**Status:** 2 failures
+**Tests:**
+- Run comparison 404 handling
+- Tenant isolation on runs list
+
 **Issue:** Tenant isolation not enforcing properly
 **Root Cause:** Need to investigate tenant scoping in runs API
 
@@ -170,47 +231,87 @@ Skipped:         28 tests (intentional - not counted as failures)
 **Root Cause:** Tenant update endpoint permission logic
 
 ### 4. auth-oauth.integration.test.ts
-**Status:** 2 failures + skipped tests
-**Tests:** Session management, logout
-**Issue:** Session persistence across requests
+**Status:** 1 failure
+**Test:** "should successfully logout and destroy session"
+**Issue:** Session destruction not working correctly
 **Root Cause:** Cookie/session handling in test environment
 
 ---
 
 ## Root Causes of Remaining Failures
 
-Based on analysis, remaining failures are NOT role-related but due to:
+After Phase 5 analysis, remaining failures categorized by type:
 
-1. **API Validation Issues**
-   - Workflow creation returning 400 Bad Request
-   - Missing required fields or invalid payloads
+### 1. **Test Infrastructure Issues** (52% of failures - 12/23)
+   - **File:** api.workflows.test.ts
+   - **Cause:** Test isolation/interference when running full suite
+   - **Evidence:** Tests pass 100% in isolation, fail 71% in full suite
+   - **Fix Required:** Improve test isolation between test files
 
-2. **Test Setup Issues**
-   - beforeAll hooks creating incomplete test data
-   - Missing foreign key relationships
+### 2. **Application Errors** (26% of failures - 6/23)
+   - **File:** datavault-v4-regression.test.ts
+   - **Cause:** Permission endpoints throwing 500 errors instead of proper status codes
+   - **Evidence:** Expected 403/200, receiving 500 (server errors)
+   - **Fix Required:** Debug and fix permission endpoint error handling
 
-3. **Business Logic Issues**
-   - Tenant isolation not working correctly
-   - Workflow execution endpoint failures
+### 3. **Business Logic Issues** (13% of failures - 3/23)
+   - **Files:** api.runs.graph.test.ts, auth-jwt.integration.test.ts
+   - **Cause:** Tenant isolation and RBAC logic not working as expected
+   - **Fix Required:** Review and fix tenant scoping and permission checks
+
+### 4. **Session Management Issues** (9% of failures - 2/23)
+   - **File:** auth-oauth.integration.test.ts
+   - **Cause:** Session/cookie handling in test environment
+   - **Fix Required:** Investigate session destruction and persistence
 
 ---
 
-## Next Steps
+## Next Steps (Prioritized by Impact)
 
-### Priority 1: API Validation (2-3 hours)
-- Debug workflow creation API (POST /api/projects/:id/workflows)
-- Fix validation schemas to match test payloads
-- Ensure all required fields are present
+### Priority 1: Test Isolation - api.workflows.test.ts (HIGH IMPACT) ⭐
+**Fixes:** 12 failures (52% of remaining issues)
+**Time:** 2-3 hours
+**Approach:**
+1. Investigate why tests pass in isolation but fail in full suite
+2. Check for shared state between test files (database, ports, global vars)
+3. Ensure each test file has proper isolation (separate tenants, cleanup)
+4. Consider adding unique identifiers per test file to prevent collisions
+5. Review IntegrationTestHelper cleanup timing and thoroughness
 
-### Priority 2: Test Data Setup (1-2 hours)
-- Use TestFactory consistently in all integration tests
-- Ensure complete foreign key hierarchies
-- Add proper cleanup in afterAll hooks
+**Expected Result:** 23 → 11 failures (-52% reduction!)
 
-### Priority 3: Business Logic (2-3 hours)
-- Fix tenant isolation in runs API
-- Debug workflow execution endpoint
-- Ensure proper error handling
+### Priority 2: DataVault Permission Endpoints (MEDIUM IMPACT) 🔧
+**Fixes:** 6 failures (26% of remaining issues)
+**Time:** 3-4 hours
+**Approach:**
+1. Debug permission endpoints returning 500 errors
+2. Fix error handling in permission grant/update/revoke operations
+3. Ensure proper RBAC checks before database operations
+4. Add proper error messages and status codes
+5. Review table permission service for null/undefined handling
+
+**Expected Result:** 11 → 5 failures (-55% reduction from Priority 1!)
+
+### Priority 3: Tenant Isolation & RBAC (LOW IMPACT) 🎯
+**Fixes:** 3 failures (13% of remaining issues)
+**Time:** 2-3 hours
+**Approach:**
+1. Fix tenant isolation in runs API list endpoint
+2. Fix RBAC tenant update permission in auth-jwt
+3. Review run comparison 404 handling
+4. Ensure consistent tenant scoping across all endpoints
+
+**Expected Result:** 5 → 2 failures (-60% reduction from Priority 2!)
+
+### Priority 4: Session Management (POLISH) ✨
+**Fixes:** 2 failures (9% of remaining issues)
+**Time:** 1-2 hours
+**Approach:**
+1. Debug OAuth logout/session destruction
+2. Investigate cookie persistence in test environment
+3. May be test environment limitation (acceptable to skip if necessary)
+
+**Expected Result:** 2 → 0 failures (100% tests passing! 🎉)
 
 ---
 
@@ -266,13 +367,30 @@ Based on analysis, remaining failures are NOT role-related but due to:
 
 ---
 
-## Status: 🟡 IN PROGRESS
+## Status: 🟢 IN PROGRESS - STRONG FOUNDATION ESTABLISHED
 
-**Next Session:** Fix remaining 7 integration test files
-**Goal:** 100% passing tests (1,196/1,196)
-**ETA:** 4-6 hours of focused work
+**Current State:** 23 failures | 283 passed | 28 skipped (334 total)
+**Progress:** 59% reduction in failures (56 → 23)
+**Test Coverage:** 85% of tests passing
+
+**Major Achievements:**
+- ✅ 100% unit tests passing
+- ✅ IntegrationTestHelper created (eliminates code duplication)
+- ✅ RBAC issues resolved (admin/owner roles everywhere)
+- ✅ Syntax errors fixed (refactoring errors resolved)
+- ✅ Enhanced cleanup (FK constraint violations prevented)
+- ✅ Test isolation issues identified (12 failures root-caused)
+
+**Key Insight:**
+52% of remaining failures are test infrastructure issues (not application bugs).
+These tests pass in isolation but fail in full suite, indicating test interference.
+
+**Next Priority:**
+Fix test isolation in api.workflows.test.ts → 23 → 11 failures (-52% reduction!)
+
+**ETA to 100% Passing:** 8-12 hours of focused work across 4 priorities
 
 ---
 
-**Last Updated:** December 5, 2025 (Evening)
-**Updated By:** Senior Developer (Automated Testing Infrastructure Team)
+**Last Updated:** December 5, 2025 (Late Evening)
+**Updated By:** Claude Code (Senior Testing Infrastructure Engineer)
