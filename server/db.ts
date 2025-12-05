@@ -6,7 +6,7 @@ import type { Pool } from 'pg';
 import type { Pool as NeonPool } from '@neondatabase/serverless';
 
 let pool: Pool | NeonPool;
-let db: any;
+let _db: any;  // Internal db reference
 let dbInitialized = false;
 let dbInitPromise: Promise<void>;
 
@@ -37,14 +37,14 @@ async function initializeDatabase() {
     pool = new NeonPoolClass({ connectionString: databaseUrl });
 
     const { drizzle: drizzleNeon } = await import('drizzle-orm/neon-serverless');
-    db = drizzleNeon(pool as any, { schema });
+    _db = drizzleNeon(pool as any, { schema });
   } else {
     // Use standard PostgreSQL driver for local databases
     const pg = await import('pg');
     pool = new pg.default.Pool({ connectionString: databaseUrl });
 
     const { drizzle: drizzlePg } = await import('drizzle-orm/node-postgres');
-    db = drizzlePg(pool as any, { schema });
+    _db = drizzlePg(pool as any, { schema });
   }
 
   dbInitialized = true;
@@ -65,7 +65,25 @@ function getDb() {
   if (!dbInitialized) {
     throw new Error("Database not initialized. Call await initializeDatabase() first.");
   }
-  return db;
+  return _db;
 }
+
+// Create a getter for db that returns the initialized database
+// This ensures that code importing { db } will get the properly initialized instance
+const db = new Proxy({} as any, {
+  get(target, prop) {
+    if (!_db) {
+      throw new Error("Database not initialized. Call await initializeDatabase() first.");
+    }
+    return _db[prop];
+  },
+  set(target, prop, value) {
+    if (!_db) {
+      throw new Error("Database not initialized. Call await initializeDatabase() first.");
+    }
+    _db[prop] = value;
+    return true;
+  }
+});
 
 export { pool, db, getDb, initializeDatabase, dbInitPromise };

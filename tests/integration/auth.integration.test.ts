@@ -77,10 +77,14 @@ describe("Authentication Integration Tests", () => {
   });
 
   describe("GET /api/auth/user", () => {
-    it("should return 401 for unauthenticated requests", async () => {
-      await request(baseURL)
+    it("should return null for unauthenticated requests", async () => {
+      // Note: /api/auth/user uses optionalHybridAuth and returns 200 with null
+      // for unauthenticated requests to avoid console errors in the frontend
+      const response = await request(baseURL)
         .get("/api/auth/user")
-        .expect(401);
+        .expect(200);
+
+      expect(response.body).toBeNull();
     });
 
     it("should return user data when authenticated", async () => {
@@ -198,10 +202,13 @@ describe("Authentication Integration Tests", () => {
       expect(response1.body.id).toBe(response2.body.id);
     });
 
-    it("should reject requests with no session cookie", async () => {
-      await request(baseURL)
+    it("should return null for requests with no session cookie", async () => {
+      // Note: /api/auth/user uses optionalHybridAuth and returns 200 with null
+      const response = await request(baseURL)
         .get("/api/auth/user")
-        .expect(401);
+        .expect(200);
+
+      expect(response.body).toBeNull();
     });
   });
 

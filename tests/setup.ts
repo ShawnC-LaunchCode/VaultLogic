@@ -47,8 +47,11 @@ beforeEach(async () => {
   // Reset mocks before each test
   vi.clearAllMocks();
 
-  // TODO: Clear test database tables
-  // await clearDatabase();
+  // Clear shared state to ensure test isolation
+  testUsersMap.clear();
+
+  // Note: For database cleanup, use runInTransaction() pattern
+  // or TestFactory.cleanup() in individual test files
 });
 
 afterEach(async () => {
@@ -66,7 +69,7 @@ vi.mock("../server/services/sendgrid", () => ({
 // Note: Google OAuth is mocked in individual test files for fine-grained control
 
 // Mock database storage operations for tests
-// Use a Map to store users in memory for tests
+// Use a Map to store users in memory for tests (cleared before each test)
 const testUsersMap = new Map();
 
 vi.mock("../server/storage", () => ({
@@ -81,6 +84,9 @@ vi.mock("../server/storage", () => ({
         throw new Error(`User not found: ${userId}`);
       }
       return user;
+    }),
+    deleteUser: vi.fn().mockImplementation(async (userId: string) => {
+      testUsersMap.delete(userId);
     }),
     ping: vi.fn().mockResolvedValue(true),
   },

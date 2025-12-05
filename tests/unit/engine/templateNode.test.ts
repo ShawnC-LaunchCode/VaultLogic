@@ -24,6 +24,7 @@ import type { TemplateNodeConfig, TemplateNodeInput } from '../../../server/engi
 import { eq, and } from 'drizzle-orm';
 import fs from 'fs/promises';
 import path from 'path';
+import { createTestFactory } from '../../helpers/testFactory';
 
 // Mock the docxRenderer2 module
 vi.mock('../../../server/services/docxRenderer2', () => ({
@@ -59,124 +60,65 @@ vi.mock('fs/promises', () => ({
 }));
 
 describeWithDb('Template Node - Multi-Template Support', () => {
+  let factory: ReturnType<typeof createTestFactory>;
   let testProjectId: string;
   let testWorkflowId: string;
   let testVersionId: string;
   let testTemplateId1: string;
   let testTemplateId2: string;
   let testTenantId: string;
+  let testUserId: string;
   let testRunId: string;
 
   beforeEach(async () => {
-    testTenantId = '00000000-0000-0000-0000-000000000000';
+    factory = createTestFactory();
 
-    // Create test tenant
-    await db.insert(tenants).values({
-      id: testTenantId,
-      name: 'Test Tenant',
-      plan: 'free',
-    });
-
-    // Create test user
-    const [user] = await db
-      .insert(users)
-      .values({
-        email: 'test@example.com',
-        tenantId: testTenantId,
-        role: 'creator',
-      })
-      .returning();
-
-    // Create test project
-    const [project] = await db
-      .insert(projects)
-      .values({
-        name: 'Test Project',
-        title: 'Test Project',
-        description: 'Test project',
-        tenantId: testTenantId,
-        creatorId: user.id,
-        ownerId: user.id,
-      })
-      .returning();
+    // Create test hierarchy using factory
+    const { tenant, user, project } = await factory.createTenant();
+    testTenantId = tenant.id;
+    testUserId = user.id;
     testProjectId = project.id;
 
-    // Create test workflow
-    const [workflow] = await db
-      .insert(workflows)
-      .values({
-        projectId: testProjectId,
-        title: 'Test Workflow',
-        description: 'Test workflow',
-        status: 'draft',
-        creatorId: user.id,
-        ownerId: user.id,
-      })
-      .returning();
-    testWorkflowId = workflow.id;
-
-    // Create test workflow version
-    const [version] = await db
-      .insert(workflowVersions)
-      .values({
-        workflowId: testWorkflowId,
+    // Create test workflow with version
+    const { workflow, version } = await factory.createWorkflow(project.id, user.id, {
+      version: {
         version: '1.0.0',
         status: 'draft',
         changelog: 'Initial version',
         createdBy: user.id,
         graphJson: {},
-      })
-      .returning();
+      },
+    });
+    testWorkflowId = workflow.id;
     testVersionId = version.id;
 
     // Create test templates
-    const [template1] = await db
-      .insert(templates)
-      .values({
-        projectId: testProjectId,
-        name: 'Engagement Letter',
-        description: 'Main engagement letter',
-        type: 'docx',
-        fileRef: 'template1.docx',
-      })
-      .returning();
+    const { template: template1 } = await factory.createTemplate(project.id, user.id, {
+      name: 'Engagement Letter',
+      description: 'Main engagement letter',
+      type: 'docx',
+      fileRef: 'template1.docx',
+    });
     testTemplateId1 = template1.id;
 
-    const [template2] = await db
-      .insert(templates)
-      .values({
-        projectId: testProjectId,
-        name: 'Schedule A',
-        description: 'Schedule A annex',
-        type: 'docx',
-        fileRef: 'template2.docx',
-      })
-      .returning();
+    const { template: template2 } = await factory.createTemplate(project.id, user.id, {
+      name: 'Schedule A',
+      description: 'Schedule A annex',
+      type: 'docx',
+      fileRef: 'template2.docx',
+    });
     testTemplateId2 = template2.id;
 
     // Create test run
-    const [run] = await db
-      .insert(runs)
-      .values({
-        workflowVersionId: testVersionId,
-        status: 'pending',
-        createdBy: user.id,
-      })
-      .returning();
+    const { run } = await factory.createRun(version.id, user.id, {
+      status: 'pending',
+    });
     testRunId = run.id;
   });
 
   afterEach(async () => {
-    // Cleanup in reverse order of dependencies
-    await db.delete(runOutputs).where(eq(runOutputs.runId, testRunId));
-    await db.delete(runs).where(eq(runs.id, testRunId));
-    await db.delete(workflowTemplates).where(eq(workflowTemplates.workflowVersionId, testVersionId));
-    await db.delete(workflowVersions).where(eq(workflowVersions.id, testVersionId));
-    await db.delete(workflows).where(eq(workflows.id, testWorkflowId));
-    await db.delete(templates).where(eq(templates.projectId, testProjectId));
-    await db.delete(projects).where(eq(projects.id, testProjectId));
-    await db.delete(users).where(eq(users.tenantId, testTenantId));
-    await db.delete(tenants).where(eq(tenants.id, testTenantId));
+    // Cleanup using factory (respects foreign key order)
+    await factory.cleanup({ tenantIds: [testTenantId] });
   });
 
   describe('Template Key Resolution (New Path)', () => {

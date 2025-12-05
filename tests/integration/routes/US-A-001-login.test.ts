@@ -121,13 +121,15 @@ describe("Authentication Integration Tests", () => {
       expect(response.body).toHaveProperty("email");
     });
 
-    it("should return 401 if not authenticated", async () => {
+    it("should return null if not authenticated", async () => {
+      // Note: /api/auth/user uses optionalHybridAuth and returns 200 with null
+      // for unauthenticated requests to avoid console errors in the frontend
       const response = await request(app)
         .get("/api/auth/user")
         .set("Origin", "http://localhost:5000")
-        .expect(401);
+        .expect(200);
 
-      expect(response.body).toHaveProperty("message", "Authentication required");
+      expect(response.body).toBeNull();
     });
   });
 
@@ -151,12 +153,14 @@ describe("Authentication Integration Tests", () => {
 
       expect(response.body).toHaveProperty("message", "Logout successful");
 
-      // Verify session is destroyed
-      await request(app)
+      // Verify session is destroyed - should return null after logout
+      const userResponse = await request(app)
         .get("/api/auth/user")
         .set("Origin", "http://localhost:5000")
         .set("Cookie", cookies)
-        .expect(401);
+        .expect(200);
+
+      expect(userResponse.body).toBeNull();
     });
 
     it("should handle logout when not logged in", async () => {

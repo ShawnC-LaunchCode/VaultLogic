@@ -30,12 +30,15 @@ export default defineConfig({
         "**/types/**",
       ],
       thresholds: {
-        // Current baseline: ~8.5% coverage
-        // TODO: Gradually increase these as test coverage improves
-        lines: 8,
-        functions: 5,
-        branches: 5,
-        statements: 8,
+        // Phase 1 (Dec 2025): Establish realistic baseline
+        // After infrastructure refactor and initial critical tests
+        // Previous: 8% lines, 5% functions (way too low)
+        // Target Phase 2 (Q1 2026): 50% coverage
+        // Target Phase 3 (Q2 2026): 80% coverage
+        lines: 20,
+        functions: 20,
+        branches: 15,
+        statements: 20,
       },
     },
     testTimeout: 30000,
