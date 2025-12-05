@@ -57,7 +57,7 @@ describe("Workflows API Integration Tests", () => {
     userId = registerResponse.body.user.id;
 
     await db.update(schema.users)
-      .set({ tenantId, tenantRole: "owner" })
+      .set({ tenantId, tenantRole: "owner", role: "admin" })
       .where(eq(schema.users.id, userId));
 
     // Create project

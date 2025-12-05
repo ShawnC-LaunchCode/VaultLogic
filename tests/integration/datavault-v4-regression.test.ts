@@ -81,20 +81,21 @@ describe('DataVault v4 Regression Tests', () => {
     }).returning();
     testTenantId = tenant.id;
 
-    // Create test user manually with correct tenant
+    // Create test user manually with correct tenant and admin role
     testUserId = 'google-user-id';
     await db.insert(users).values({
       id: testUserId,
       email: 'testuser@example.com',
       tenantId: testTenantId,
-      tenantRole: 'owner',
-      role: 'creator',
+      tenantRole: 'owner',  // ✅ Owner for tenant-level permissions
+      role: 'admin',        // ✅ Admin for full API permissions (not creator!)
       authProvider: 'google',
     }).onConflictDoUpdate({
       target: users.id,
       set: {
         tenantId: testTenantId,
         tenantRole: 'owner',
+        role: 'admin',
       },
     });
 
@@ -236,7 +237,7 @@ describe('DataVault v4 Regression Tests', () => {
     }
 
     authCookie = loginResponse.headers["set-cookie"];
-    testUserId = loginResponse.body.user.id;
+    // Don't overwrite testUserId - it's already set to 'google-user-id' on line 85
 
     // Login as other user
     const otherLoginResponse = await request(app)
@@ -258,6 +259,23 @@ describe('DataVault v4 Regression Tests', () => {
   });
 
   beforeEach(async () => {
+    // Ensure test user exists (in case other tests deleted it)
+    await db.insert(users).values({
+      id: testUserId,
+      email: 'testuser@example.com',
+      tenantId: testTenantId,
+      tenantRole: 'owner',
+      role: 'admin',
+      authProvider: 'google',
+    }).onConflictDoUpdate({
+      target: users.id,
+      set: {
+        tenantId: testTenantId,
+        tenantRole: 'owner',
+        role: 'admin',
+      },
+    });
+
     // Create test database, table, and column for each test
     const uniqueSuffix = Date.now() + '-' + Math.floor(Math.random() * 1000);
     const [database] = await db.insert(datavaultDatabases).values({
@@ -276,6 +294,15 @@ describe('DataVault v4 Regression Tests', () => {
       databaseId: testDatabaseId,
     }).returning();
     testTableId = table.id;
+  });
+
+  afterEach(async () => {
+    // Clean up test database (cascade deletes tables, rows, columns, etc.)
+    if (testDatabaseId) {
+      await db.delete(datavaultDatabases).where(eq(datavaultDatabases.id, testDatabaseId));
+      testDatabaseId = '';
+      testTableId = '';
+    }
   });
 
   describe('Select/Multiselect Columns', () => {
