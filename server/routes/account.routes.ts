@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { hybridAuth } from '../middleware/auth';
+import { hybridAuth, type AuthRequest } from '../middleware/auth';
 import { accountService } from "../services/AccountService";
 import { z } from "zod";
 import { logger } from "../logger";
@@ -15,7 +15,8 @@ export function registerAccountRoutes(app: Express): void {
    */
   app.get('/api/account/preferences', hybridAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       if (!userId) {
         return res.status(401).json({ success: false, error: "Unauthorized - no user ID" });
       }
@@ -36,7 +37,8 @@ export function registerAccountRoutes(app: Express): void {
    */
   app.put('/api/account/preferences', hybridAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       if (!userId) {
         return res.status(401).json({ success: false, error: "Unauthorized - no user ID" });
       }

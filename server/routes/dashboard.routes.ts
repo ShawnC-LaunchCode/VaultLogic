@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { WorkflowRepository } from "../repositories/WorkflowRepository";
 import { WorkflowRunRepository } from "../repositories/WorkflowRunRepository";
-import { hybridAuth } from '../middleware/auth';
+import { hybridAuth, type AuthRequest } from '../middleware/auth';
 import { createLogger } from "../logger";
 
 const logger = createLogger({ module: 'dashboard-routes' });
@@ -23,7 +23,8 @@ export function registerDashboardRoutes(app: Express): void {
    */
   app.get('/api/dashboard/stats', hybridAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized - no user ID" });
       }
@@ -71,7 +72,8 @@ export function registerDashboardRoutes(app: Express): void {
    */
   app.get('/api/dashboard/workflows', hybridAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized - no user ID" });
       }
@@ -109,7 +111,8 @@ export function registerDashboardRoutes(app: Express): void {
    */
   app.get('/api/dashboard/recent-runs', hybridAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized - no user ID" });
       }

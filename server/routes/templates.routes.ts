@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { hybridAuth } from '../middleware/auth';
+import { hybridAuth, type AuthRequest } from '../middleware/auth';
 import { templateService } from "../services/TemplateService";
 import { templateInsertionService } from "../services/TemplateInsertionService";
 import { templateSharingService } from "../services/TemplateSharingService";
@@ -21,7 +21,8 @@ export function registerTemplateRoutes(app: Express): void {
    */
   app.get('/api/templates', hybridAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized - no user ID" });
       }
@@ -40,7 +41,8 @@ export function registerTemplateRoutes(app: Express): void {
    */
   app.post('/api/templates/from-survey/:id', hybridAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized - no user ID" });
       }
@@ -91,7 +93,8 @@ export function registerTemplateRoutes(app: Express): void {
    */
   app.get('/api/templates/:id', hybridAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized - no user ID" });
       }
@@ -126,7 +129,8 @@ export function registerTemplateRoutes(app: Express): void {
    */
   app.put('/api/templates/:id', hybridAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized - no user ID" });
       }
@@ -183,7 +187,8 @@ export function registerTemplateRoutes(app: Express): void {
    */
   app.delete('/api/templates/:id', hybridAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized - no user ID" });
       }
@@ -207,7 +212,8 @@ export function registerTemplateRoutes(app: Express): void {
    */
   app.post('/api/templates/:templateId/insert/:surveyId', hybridAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized - no user ID" });
       }

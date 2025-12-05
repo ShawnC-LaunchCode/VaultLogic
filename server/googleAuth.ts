@@ -119,6 +119,7 @@ async function upsertUser(payload: TokenPayload) {
       profileImageUrl: payload.picture || null,
       defaultMode: 'easy' as const,
       tenantId: defaultTenant.id, // Assign default tenant to new users
+      tenantRole: 'viewer' as const, // Default role for new users
     };
     logger.debug({ userId: userData.id, email: userData.email, tenantId: defaultTenant.id }, 'Upserting user');
     await userRepository.upsert(userData);

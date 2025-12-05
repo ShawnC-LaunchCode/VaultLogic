@@ -8,7 +8,7 @@ import {
   validateEmail,
   validatePasswordStrength
 } from "../services/auth";
-import { requireAuth, hybridAuth, type AuthRequest } from "../middleware/auth";
+import { requireAuth, hybridAuth, optionalHybridAuth, type AuthRequest } from "../middleware/auth";
 import { nanoid } from "nanoid";
 
 const logger = createLogger({ module: 'auth-routes' });
@@ -332,14 +332,22 @@ export function registerAuthRoutes(app: Express): void {
   }
 
   // Legacy route for backward compatibility (uses session-based auth)
-  app.get('/api/auth/user', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/auth/user', optionalHybridAuth, async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const userId = authReq.userId;
+
+      // Return null instead of 401 to avoid console errors
       if (!userId) {
-        return res.status(401).json({ message: "Unauthorized - no user ID" });
+        return res.json(null);
       }
+
       const user = await userRepository.findById(userId);
+      if (!user) {
+        // If we have a userId but can't find the user, that's a valid 404 or null
+        return res.json(null);
+      }
+
       res.json(user);
     } catch (error) {
       logger.error({ error }, "Error fetching user");

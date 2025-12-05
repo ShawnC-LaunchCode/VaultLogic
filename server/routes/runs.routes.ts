@@ -154,7 +154,8 @@ export function registerRunRoutes(app: Express): void {
   app.get('/api/runs/:runId', creatorOrRunTokenAuth, async (req: RunAuthRequest, res) => {
     try {
       const { runId } = req.params;
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       if (!userId) {
         return res.status(401).json({ success: false, error: "Unauthorized - no user ID" });
       }
@@ -177,7 +178,8 @@ export function registerRunRoutes(app: Express): void {
   app.get('/api/runs/:runId/values', creatorOrRunTokenAuth, async (req: RunAuthRequest, res) => {
     try {
       const { runId } = req.params;
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       const runAuth = req.runAuth;
 
       // For run token auth, verify the runId matches
@@ -209,7 +211,7 @@ export function registerRunRoutes(app: Express): void {
         runId: req.params.runId,
         hasUser: !!req.user,
         hasRunAuth: !!req.runAuth,
-        userId: req.user?.claims?.sub
+        userId: (req as AuthRequest).userId
       }, "Error fetching run with values");
       const message = error instanceof Error ? error.message : "Failed to fetch run";
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
@@ -226,7 +228,8 @@ export function registerRunRoutes(app: Express): void {
     try {
       const { runId } = req.params;
       const { stepId, value } = req.body;
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       const runAuth = req.runAuth;
 
       if (!stepId) {
@@ -272,7 +275,8 @@ export function registerRunRoutes(app: Express): void {
     try {
       const { runId, sectionId } = req.params;
       const { values } = req.body;
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       const runAuth = req.runAuth;
 
       logger.info({
@@ -340,7 +344,8 @@ export function registerRunRoutes(app: Express): void {
   app.post('/api/runs/:runId/next', creatorOrRunTokenAuth, async (req: RunAuthRequest, res) => {
     try {
       const { runId } = req.params;
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       const runAuth = req.runAuth;
 
       // For run token auth
@@ -377,7 +382,8 @@ export function registerRunRoutes(app: Express): void {
     try {
       const { runId } = req.params;
       const { values } = req.body;
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       if (!userId) {
         return res.status(401).json({ success: false, error: "Unauthorized - no user ID" });
       }
@@ -406,7 +412,8 @@ export function registerRunRoutes(app: Express): void {
   app.put('/api/runs/:runId/complete', creatorOrRunTokenAuth, async (req: RunAuthRequest, res) => {
     try {
       const { runId } = req.params;
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       const runAuth = req.runAuth;
 
       // For run token auth
@@ -439,7 +446,8 @@ export function registerRunRoutes(app: Express): void {
    */
   app.get('/api/workflows/:workflowId/runs', hybridAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized - no user ID" });
       }
@@ -463,7 +471,8 @@ export function registerRunRoutes(app: Express): void {
   app.get('/api/runs/:runId/documents', creatorOrRunTokenAuth, async (req: RunAuthRequest, res) => {
     try {
       const { runId } = req.params;
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       const runAuth = req.runAuth;
 
       // For run token auth, verify the runId matches

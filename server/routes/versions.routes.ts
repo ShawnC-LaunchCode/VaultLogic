@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { hybridAuth } from '../middleware/auth';
+import { hybridAuth, type AuthRequest } from '../middleware/auth';
 import { versionService } from "../services/VersionService";
 import { z } from "zod";
 import { createLogger } from "../logger";
@@ -77,7 +77,8 @@ export function registerVersionRoutes(app: Express): void {
   app.post('/api/workflows/:id/publish', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
 
       if (!userId) {
         return res.status(401).json({ success: false, error: "Unauthorized" });
@@ -113,7 +114,8 @@ export function registerVersionRoutes(app: Express): void {
   app.post('/api/workflows/:id/rollback', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
 
       if (!userId) {
         return res.status(401).json({ success: false, error: "Unauthorized" });
@@ -143,7 +145,8 @@ export function registerVersionRoutes(app: Express): void {
   app.post('/api/workflows/:id/pin', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
 
       if (!userId) {
         return res.status(401).json({ success: false, error: "Unauthorized" });
@@ -172,7 +175,8 @@ export function registerVersionRoutes(app: Express): void {
   app.post('/api/workflows/:id/unpin', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
 
       if (!userId) {
         return res.status(401).json({ success: false, error: "Unauthorized" });

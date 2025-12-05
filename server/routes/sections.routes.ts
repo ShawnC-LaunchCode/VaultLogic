@@ -77,7 +77,8 @@ export function registerSectionRoutes(app: Express): void {
   app.get('/api/workflows/:workflowId/sections', creatorOrRunTokenAuth, async (req: RunAuthRequest, res: Response) => {
     try {
       // Get userId from either session auth or bearer token auth
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       const runAuth = req.runAuth;
 
       // For run token auth, we need to verify the workflowId matches

@@ -204,6 +204,75 @@ export async function hybridAuth(req: Request, res: Response, next: NextFunction
 }
 
 /**
+ * Optional Hybrid Authentication Middleware
+ * Attempts to authenticate via JWT or session, but continues even if it fails.
+ * Does NOT return 401.
+ */
+export async function optionalHybridAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    // Try JWT authentication first
+    const authHeader = req.headers.authorization;
+    const token = extractTokenFromHeader(authHeader);
+
+    if (token && looksLikeJwt(token)) {
+      try {
+        const payload = verifyToken(token);
+        const authReq = req as AuthRequest;
+        authReq.userId = payload.userId;
+        authReq.userEmail = payload.email;
+        authReq.tenantId = payload.tenantId || undefined;
+        authReq.userRole = payload.role;
+        authReq.jwtPayload = payload;
+
+        if (!authReq.tenantId && authReq.userId) {
+          try {
+            const user = await userRepository.findById(authReq.userId);
+            if (user?.tenantId) {
+              authReq.tenantId = user.tenantId;
+              authReq.userRole = user.tenantRole;
+            }
+          } catch (dbError) {
+            // Ignore db error for optional auth
+          }
+        }
+
+        next();
+        return;
+      } catch (error) {
+        // JWT failed, try session
+      }
+    }
+
+    // Fallback to session-based authentication
+    const sessionUser = req.session?.user || req.user;
+    if (sessionUser?.claims?.sub) {
+      const authReq = req as AuthRequest;
+      authReq.userId = sessionUser.claims.sub;
+      authReq.userEmail = sessionUser.claims.email;
+
+      try {
+        const user = await userRepository.findById(sessionUser.claims.sub);
+        if (user) {
+          authReq.tenantId = user.tenantId || undefined;
+          authReq.userRole = user.tenantRole;
+        }
+      } catch (error) {
+        // Ignore db error
+      }
+
+      next();
+      return;
+    }
+
+    // No auth found - just continue without setting userId
+    next();
+  } catch (error) {
+    // On error, just continue without auth
+    next();
+  }
+}
+
+/**
  * Get authenticated user ID from request
  * Works with both JWT and session-based authentication
  */

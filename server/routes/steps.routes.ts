@@ -169,7 +169,8 @@ export function registerStepRoutes(app: Express): void {
   app.get('/api/sections/:sectionId/steps', creatorOrRunTokenAuth, async (req: RunAuthRequest, res: Response) => {
     try {
       // Get userId from either session auth or bearer token auth
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       const runAuth = req.runAuth;
 
       const { sectionId } = req.params;

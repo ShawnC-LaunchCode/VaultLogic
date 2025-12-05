@@ -127,6 +127,11 @@ export function hasPermission(role: UserRole | null | undefined, permission: Per
 
   const permissions = RolePermissions[role];
 
+  // Guard against invalid role types
+  if (!permissions) {
+    return false;
+  }
+
   // Check for wildcard permission
   if (permissions.includes('*')) {
     return true;

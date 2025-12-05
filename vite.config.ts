@@ -39,6 +39,12 @@ export default defineConfig(({ mode }) => {
             emptyOutDir: true,
         },
         server: {
+            hmr: {
+                // Ensure HMR works correctly behind proxy or in different environments
+                protocol: 'ws',
+                host: 'localhost',
+                clientPort: 5000,
+            },
             fs: {
                 strict: true,
                 deny: ["**/.*"],

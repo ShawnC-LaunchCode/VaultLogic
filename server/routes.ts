@@ -6,6 +6,7 @@ import { registerAllRoutes } from "./routes/index";
 import { createLogger } from "./logger";
 import { initCollabServer, getMetrics, getRoomStats } from "./realtime/collabServer";
 import { startRollupWorker } from "./jobs/metricsRollup";
+import { registerDiagnosticRoutes } from "./routes/diagnostic.routes";
 
 const logger = createLogger({ module: 'routes' });
 
@@ -18,6 +19,9 @@ const logger = createLogger({ module: 'routes' });
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication middleware
   await setupAuth(app);
+
+  // Register diagnostic routes (dev only/debugging)
+  registerDiagnosticRoutes(app);
 
   // Health check endpoint for Docker health checks and monitoring
   app.get('/api/health', async (req, res) => {

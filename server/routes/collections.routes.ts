@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from 'express';
-import { hybridAuth } from '../middleware/auth';
+import { hybridAuth, type AuthRequest } from '../middleware/auth';
 import { insertCollectionSchema, insertCollectionFieldSchema, insertRecordSchema } from '@shared/schema';
 import { collectionService } from '../services/CollectionService';
 import { collectionFieldService } from '../services/CollectionFieldService';
@@ -393,7 +393,8 @@ export function registerCollectionsRoutes(app: Express): void {
   app.post('/api/tenants/:tenantId/collections/:collectionId/records', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { tenantId, collectionId } = req.params;
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
 
       const recordData = insertRecordSchema.parse({
         tenantId,
@@ -426,7 +427,8 @@ export function registerCollectionsRoutes(app: Express): void {
   app.post('/api/tenants/:tenantId/collections/:collectionId/records/bulk', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { tenantId, collectionId } = req.params;
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
 
       const bulkSchema = z.object({
         records: z.array(z.record(z.any())),
@@ -507,7 +509,8 @@ export function registerCollectionsRoutes(app: Express): void {
   app.patch('/api/tenants/:tenantId/collections/:collectionId/records/:recordId', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { tenantId, recordId } = req.params;
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
 
       // Updates can be partial field updates
       const updates = req.body.data || req.body; // Support both {data: {...}} and direct {...}

@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { hybridAuth } from '../middleware/auth';
+import { hybridAuth, type AuthRequest } from '../middleware/auth';
 import { userPreferencesService } from "../services/UserPreferencesService";
 import { createLogger } from "../logger";
 
@@ -15,7 +15,8 @@ export function registerUserPreferencesRoutes(app: Express): void {
    */
   app.get('/api/preferences', hybridAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized - no user ID" });
       }
@@ -34,7 +35,8 @@ export function registerUserPreferencesRoutes(app: Express): void {
    */
   app.put('/api/preferences', hybridAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized - no user ID" });
       }
@@ -54,7 +56,8 @@ export function registerUserPreferencesRoutes(app: Express): void {
    */
   app.post('/api/preferences/reset', hybridAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized - no user ID" });
       }

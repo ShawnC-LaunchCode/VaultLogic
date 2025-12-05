@@ -15,16 +15,16 @@ const __dirname = path.dirname(__filename);
 const viteLogger = createLogger();
 
 export async function setupVite(app: Express, server: Server) {
-  const serverOptions = {
-    middlewareMode: true,
-    hmr: { server },
-    allowedHosts: true as const,
-  };
-
   // Resolve vite config (it's a function that needs to be called)
   const resolvedConfig = typeof viteConfig === 'function'
     ? viteConfig({ mode: process.env.NODE_ENV || 'development', command: 'serve', isSsrBuild: false, isPreview: false })
     : viteConfig;
+
+  const serverOptions = {
+    ...resolvedConfig.server,
+    middlewareMode: true,
+    allowedHosts: true as const,
+  };
 
   const vite = await createViteServer({
     ...resolvedConfig,
@@ -37,7 +37,13 @@ export async function setupVite(app: Express, server: Server) {
         viteLogger.error(msg, options);
       },
     },
-    server: serverOptions,
+    server: {
+      ...serverOptions,
+      hmr: {
+        ...(typeof resolvedConfig.server?.hmr === 'object' ? resolvedConfig.server.hmr : {}),
+        server,
+      },
+    },
     appType: "custom",
   });
 

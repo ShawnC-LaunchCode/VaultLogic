@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { hybridAuth } from '../middleware/auth';
+import { hybridAuth, type AuthRequest } from '../middleware/auth';
 import { workflowExportService } from "../services/WorkflowExportService";
 import { createLogger } from "../logger";
 
@@ -16,7 +16,8 @@ export function registerWorkflowExportRoutes(app: Express): void {
    */
   app.get('/api/workflows/:workflowId/export', hybridAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized - no user ID" });
       }

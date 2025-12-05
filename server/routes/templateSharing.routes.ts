@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { hybridAuth } from '../middleware/auth';
+import { hybridAuth, type AuthRequest } from '../middleware/auth';
 import { TemplateSharingService } from "../services/TemplateSharingService";
 import { createLogger } from "../logger";
 import { userRepository } from "../repositories";
@@ -20,7 +20,8 @@ export function registerTemplateSharingRoutes(app: Express): void {
   app.get("/api/templates/:id/shares", hybridAuth, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       if (!userId) {
         return res.status(401).json({ error: "Unauthorized - no user ID" });
       }
@@ -50,7 +51,8 @@ export function registerTemplateSharingRoutes(app: Express): void {
    */
   app.post("/api/templates/:id/share", hybridAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       if (!userId) {
         return res.status(401).json({ error: "Unauthorized - no user ID" });
       }
@@ -100,7 +102,8 @@ export function registerTemplateSharingRoutes(app: Express): void {
    */
   app.put("/api/template-shares/:shareId", hybridAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       if (!userId) {
         return res.status(401).json({ error: "Unauthorized - no user ID" });
       }
@@ -139,7 +142,8 @@ export function registerTemplateSharingRoutes(app: Express): void {
    */
   app.delete("/api/template-shares/:shareId", hybridAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       if (!userId) {
         return res.status(401).json({ error: "Unauthorized - no user ID" });
       }
@@ -172,7 +176,8 @@ export function registerTemplateSharingRoutes(app: Express): void {
    */
   app.get("/api/templates-shared-with-me", hybridAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
       if (!userId) {
         return res.status(401).json({ error: "Unauthorized - no user ID" });
       }

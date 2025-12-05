@@ -20,6 +20,12 @@ import logo from "@/assets/images/logo.jpg";
 export default function Landing() {
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
+  // Debug logging for Google Sign-In
+  if (import.meta.env.DEV) {
+    console.log('[Landing] Current Origin:', window.location.origin);
+    console.log('[Landing] Google Client ID configured:', googleClientId ? 'Yes (Masked)' : 'No');
+  }
+
   const fadeIn = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 },
@@ -53,13 +59,7 @@ export default function Landing() {
               <Button variant="ghost" disabled className="opacity-50">
                 Watch Demo (Coming Soon)
               </Button>
-              {googleClientId ? (
-                <GoogleLogin data-testid="button-login" />
-              ) : (
-                <Button onClick={() => window.location.href = '/api/auth/dev-login'}>
-                  Sign In
-                </Button>
-              )}
+              <GoogleLogin data-testid="button-login" />
             </div>
           </div>
         </div>
@@ -148,38 +148,39 @@ export default function Landing() {
               </Button>
             </motion.div>
           </motion.div>
-
-          {/* Floating cards animation */}
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.8 }}
-            className="mt-20 relative"
-          >
-            <div className="grid grid-cols-3 gap-4 max-w-4xl mx-auto">
-              {[
-                { label: "If-Then", icon: GitBranch, delay: 0.6 },
-                { label: "Variables", icon: Variable, delay: 0.7 },
-                { label: "JS Blocks", icon: Code2, delay: 0.8 },
-              ].map((item, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: item.delay }}
-                  className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-6 text-center hover:border-indigo-500/50 transition-colors"
-                >
-                  <item.icon className="w-8 h-8 mx-auto mb-2 text-indigo-600" />
-                  <p className="text-sm font-medium text-foreground">{item.label}</p>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
         </div>
+
+        {/* Floating cards animation */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.8 }}
+          className="mt-20 relative"
+        >
+          <div className="grid grid-cols-3 gap-4 max-w-4xl mx-auto">
+            {[
+              { label: "If-Then", icon: GitBranch, delay: 0.6 },
+              { label: "Variables", icon: Variable, delay: 0.7 },
+              { label: "JS Blocks", icon: Code2, delay: 0.8 },
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: item.delay }}
+                className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-6 text-center hover:border-indigo-500/50 transition-colors"
+              >
+                <item.icon className="w-8 h-8 mx-auto mb-2 text-indigo-600" />
+                <p className="text-sm font-medium text-foreground">{item.label}</p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
       </section>
 
       {/* Product Highlights */}
-      <section className="py-24 bg-muted/30">
+      <section className="py-24 bg-muted/30" >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial="hidden"
@@ -260,7 +261,7 @@ export default function Landing() {
       </section>
 
       {/* Visual Split Section */}
-      <section className="py-24">
+      <section className="py-24" >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div
@@ -317,7 +318,7 @@ export default function Landing() {
       </section>
 
       {/* Why Vault-Logic - Comparison */}
-      <section className="py-24 bg-muted/30">
+      <section className="py-24 bg-muted/30" >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial="hidden"
@@ -376,11 +377,10 @@ export default function Landing() {
             ].map((audience, i) => (
               <motion.div key={i} variants={fadeIn}>
                 <Card
-                  className={`h-full ${
-                    audience.highlight
-                      ? "border-2 border-indigo-500 shadow-xl shadow-indigo-500/20 bg-gradient-to-b from-indigo-500/5 to-transparent"
-                      : "border-border/50 bg-card/50 backdrop-blur-sm"
-                  }`}
+                  className={`h-full ${audience.highlight
+                    ? "border-2 border-indigo-500 shadow-xl shadow-indigo-500/20 bg-gradient-to-b from-indigo-500/5 to-transparent"
+                    : "border-border/50 bg-card/50 backdrop-blur-sm"
+                    }`}
                 >
                   <CardHeader>
                     <CardTitle className="text-2xl">{audience.title}</CardTitle>
@@ -406,7 +406,7 @@ export default function Landing() {
       </section>
 
       {/* Quick Demo Section */}
-      <section className="py-24">
+      <section className="py-24" >
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -437,7 +437,7 @@ export default function Landing() {
       </section>
 
       {/* Pricing Section */}
-      <section className="py-24 bg-muted/30">
+      <section className="py-24 bg-muted/30" >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial="hidden"
@@ -494,11 +494,10 @@ export default function Landing() {
             ].map((plan, i) => (
               <motion.div key={i} variants={fadeIn}>
                 <Card
-                  className={`h-full ${
-                    plan.highlight
-                      ? "border-2 border-indigo-500 shadow-xl shadow-indigo-500/20 bg-gradient-to-b from-indigo-500/5 to-transparent"
-                      : "border-border/50 bg-card/50 backdrop-blur-sm"
-                  }`}
+                  className={`h-full ${plan.highlight
+                    ? "border-2 border-indigo-500 shadow-xl shadow-indigo-500/20 bg-gradient-to-b from-indigo-500/5 to-transparent"
+                    : "border-border/50 bg-card/50 backdrop-blur-sm"
+                    }`}
                 >
                   <CardHeader className="text-center">
                     <CardTitle className="text-2xl mb-2">{plan.name}</CardTitle>
@@ -520,11 +519,10 @@ export default function Landing() {
                       ))}
                     </ul>
                     <Button
-                      className={`w-full ${
-                        plan.highlight
-                          ? "bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 hover:opacity-90 text-white"
-                          : ""
-                      }`}
+                      className={`w-full ${plan.highlight
+                        ? "bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 hover:opacity-90 text-white"
+                        : ""
+                        }`}
                       variant={plan.highlight ? "default" : "outline"}
                       size="lg"
                       onClick={() => window.location.href = '/app'}
@@ -540,7 +538,7 @@ export default function Landing() {
       </section>
 
       {/* Closing CTA */}
-      <section className="py-24">
+      <section className="py-24" >
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -583,7 +581,7 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border/40 py-12 bg-muted/20">
+      <footer className="border-t border-border/40 py-12 bg-muted/20" >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
             <div>

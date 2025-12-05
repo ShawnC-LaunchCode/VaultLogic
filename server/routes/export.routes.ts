@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { hybridAuth } from '../middleware/auth';
+import { hybridAuth, type AuthRequest } from '../middleware/auth';
 // DEPRECATED: Legacy survey export service - disabled as part of survey system removal (Nov 2025)
 // import { exportService } from "../services/exportService";
 // import type { ExportOptions } from "../services/exportService";
@@ -35,7 +35,8 @@ export function registerExportRoutes(app: Express): void {
   app.get('/api/surveys/:surveyId/export', hybridAuth, async (req: Request, res: Response) => {
     try {
       const { surveyId } = req.params;
-      const userId = req.user?.claims?.sub;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
 
       if (!userId) {
         return res.status(401).json({
