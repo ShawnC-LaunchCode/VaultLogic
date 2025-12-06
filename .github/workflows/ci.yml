@@ -128,7 +128,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-summary
-          path: coverage-summary.txt
+          path: |
+            coverage-summary.txt
+            coverage/coverage-summary.json
           retention-days: 1
 
       - name: Upload Vitest JSON summary
@@ -361,6 +363,19 @@ jobs:
             --coverage-delta coverage-delta.json \
             --failure-delta test-failures-delta.json \
             --output slack-payload.json
+
+      # Save current coverage for next run
+      - name: Save coverage for next run
+        if: always()
+        run: |
+          # Copy current coverage to be used by next run for delta calculation
+          if [ -f "coverage-parsed.json" ]; then
+            cp coverage-parsed.json coverage-for-next-run.json
+            echo "✓ Saved coverage for next run"
+          else
+            echo '{"statements":{"total":0,"covered":0,"pct":0},"branches":{"total":0,"covered":0,"pct":0},"functions":{"total":0,"covered":0,"pct":0},"lines":{"total":0,"covered":0,"pct":0},"summary":{"pct":0,"color":"gray","emoji":"⚪"},"topFiles":{"best":[],"worst":[]}}' > coverage-for-next-run.json
+            echo "⚠️ No coverage data, created empty placeholder"
+          fi
 
       # Upload artifacts for next run
       - name: Upload coverage for next run
