@@ -16,6 +16,7 @@
  *     "failed": 0,
  *     "skipped": 0,
  *     "duration": 0,
+ *     "slowestTests": [ { "name": "string", "duration": 0 } ],
  *     "failures": [
  *       {
  *         "suite": "string",
@@ -33,6 +34,7 @@
  *     "flaky": 0,
  *     "duration": 0,
  *     "didNotRun": false,
+ *     "slowestTests": [ { "name": "string", "duration": 0 } ],
  *     "failures": []
  *   },
  *   "summary": {
@@ -41,7 +43,8 @@
  *     "failed": 0,
  *     "skipped": 0,
  *     "duration": 0,
- *     "status": "success|failure|warning"
+ *     "status": "success|failure|warning",
+ *     "slowestTest": { "name": "string", "duration": 0, "framework": "vitest|playwright" }
  *   }
  * }
  */
@@ -93,7 +96,29 @@ function parseVitestResults(filePath) {
       skipped: data.numPendingTests || 0,
       duration: data.testResults?.reduce((sum, r) => sum + (r.endTime - r.startTime), 0) || 0,
       failures: [],
+      slowestTests: [],
     };
+
+    // Extract all tests with durations for slowest test tracking
+    const allTests = [];
+    if (data.testResults) {
+      data.testResults.forEach(testFile => {
+        if (testFile.assertionResults) {
+          testFile.assertionResults.forEach(test => {
+            const name = test.ancestorTitles?.join(' › ') + ' › ' + test.title || test.fullName || 'Unknown test';
+            const duration = test.duration || 0;
+            if (duration > 0) {
+              allTests.push({ name, duration });
+            }
+          });
+        }
+      });
+    }
+
+    // Sort by duration and take top 5 slowest
+    result.slowestTests = allTests
+      .sort((a, b) => b.duration - a.duration)
+      .slice(0, 5);
 
     // Extract failure details
     if (data.testResults && data.numFailedTests > 0) {
@@ -148,6 +173,7 @@ function parsePlaywrightResults(filePath) {
       duration: 0,
       didNotRun: false,
       failures: [],
+      slowestTests: [],
     };
 
     // Check if tests didn't run at all
@@ -198,6 +224,16 @@ function parsePlaywrightResults(filePath) {
       result.failed = allTests.filter(t => t.status === 'unexpected' || t.status === 'failed').length;
       result.skipped = allTests.filter(t => t.status === 'skipped').length;
       result.flaky = allTests.filter(t => t.status === 'flaky').length;
+
+      // Extract slowest tests
+      result.slowestTests = allTests
+        .filter(t => t.duration > 0)
+        .map(t => ({
+          name: `${t.projectName || 'Unknown'} › ${t.title || 'Unknown test'}`,
+          duration: t.duration,
+        }))
+        .sort((a, b) => b.duration - a.duration)
+        .slice(0, 5);
 
       // Extract failures
       allTests.filter(t => t.status === 'failed' || t.status === 'unexpected').forEach(test => {
@@ -278,6 +314,15 @@ function main() {
   const vitest = parseVitestResults(args.vitestJson);
   const playwright = parsePlaywrightResults(args.playwrightJson);
 
+  // Find the slowest test overall
+  const allSlowTests = [
+    ...(vitest?.slowestTests || []).map(t => ({ ...t, framework: 'vitest' })),
+    ...(playwright?.slowestTests || []).map(t => ({ ...t, framework: 'playwright' })),
+  ];
+  const slowestTest = allSlowTests.length > 0
+    ? allSlowTests.sort((a, b) => b.duration - a.duration)[0]
+    : null;
+
   // Build summary
   const summary = {
     total: (vitest?.total || 0) + (playwright?.total || 0),
@@ -286,11 +331,12 @@ function main() {
     skipped: (vitest?.skipped || 0) + (playwright?.skipped || 0),
     duration: (vitest?.duration || 0) + (playwright?.duration || 0),
     status: determineStatus(vitest, playwright),
+    slowestTest,
   };
 
   const result = {
-    vitest: vitest || { total: 0, passed: 0, failed: 0, skipped: 0, duration: 0, failures: [] },
-    playwright: playwright || { total: 0, passed: 0, failed: 0, skipped: 0, flaky: 0, duration: 0, didNotRun: false, failures: [] },
+    vitest: vitest || { total: 0, passed: 0, failed: 0, skipped: 0, duration: 0, failures: [], slowestTests: [] },
+    playwright: playwright || { total: 0, passed: 0, failed: 0, skipped: 0, flaky: 0, duration: 0, didNotRun: false, failures: [], slowestTests: [] },
     summary,
   };
 

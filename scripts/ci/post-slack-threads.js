@@ -112,6 +112,7 @@ async function postAllThreads(client, channel, threadTs, threads) {
   const results = {
     links: null,
     failures: null,
+    performance: null,
     coverage: null,
     artifacts: null,
   };
@@ -143,7 +144,21 @@ async function postAllThreads(client, channel, threadTs, threads) {
     console.log('\n✓ Skipping failures thread (all tests passed)');
   }
 
-  // 3. Post coverage thread
+  // 3. Post performance thread (slowest tests)
+  if (threads.performance && !threads.performance.text.includes('No timing data')) {
+    results.performance = await postThreadReply(
+      client,
+      channel,
+      threadTs,
+      threads.performance,
+      'Performance thread'
+    );
+    await new Promise(resolve => setTimeout(resolve, 500));
+  } else if (threads.performance) {
+    console.log('\n✓ Skipping performance thread (no timing data)');
+  }
+
+  // 4. Post coverage thread
   if (threads.coverage) {
     results.coverage = await postThreadReply(
       client,
@@ -155,7 +170,7 @@ async function postAllThreads(client, channel, threadTs, threads) {
     await new Promise(resolve => setTimeout(resolve, 500));
   }
 
-  // 4. Post artifacts thread (if configured)
+  // 5. Post artifacts thread (if configured)
   if (threads.artifacts && !threads.artifacts.text.includes('not configured')) {
     results.artifacts = await postThreadReply(
       client,

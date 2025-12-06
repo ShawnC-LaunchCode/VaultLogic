@@ -46,6 +46,7 @@ function parseArgs() {
     coverage: 'coverage-parsed.json',
     fileChanges: 'file-changes.json',
     coverageDelta: 'coverage-delta.json',
+    failureDelta: 'test-failures-delta.json',
     output: 'slack-payload.json',
   };
 
@@ -59,6 +60,8 @@ function parseArgs() {
       args.fileChanges = process.argv[++i];
     } else if (arg === '--coverage-delta' && i + 1 < process.argv.length) {
       args.coverageDelta = process.argv[++i];
+    } else if (arg === '--failure-delta' && i + 1 < process.argv.length) {
+      args.failureDelta = process.argv[++i];
     } else if (arg === '--output' && i + 1 < process.argv.length) {
       args.output = process.argv[++i];
     }
@@ -113,7 +116,7 @@ function getStatusEmoji(status) {
 /**
  * Build main Slack message (compact, no links)
  */
-function buildMainMessage(testResults, coverage, fileChanges, coverageDelta) {
+function buildMainMessage(testResults, coverage, fileChanges, coverageDelta, failureDelta) {
   const runNumber = process.env.GITHUB_RUN_NUMBER || '0';
   const branch = process.env.GITHUB_REF_NAME || 'unknown';
   const status = testResults?.summary?.status || 'unknown';
@@ -131,6 +134,12 @@ function buildMainMessage(testResults, coverage, fileChanges, coverageDelta) {
   const passed = testResults?.summary?.passed || 0;
   const failed = testResults?.summary?.failed || 0;
   const skipped = testResults?.summary?.skipped || 0;
+  const activeTests = total - skipped; // Tests that actually ran
+  const passRate = activeTests > 0 ? ((passed / activeTests) * 100).toFixed(1) : '0.0';
+
+  // New failure detection
+  const newFailures = failureDelta?.summary?.newCount || 0;
+  const hasNewFailures = failureDelta?.summary?.hasNewFailures || false;
 
   // Coverage
   const coveragePct = coverage?.summary?.pct?.toFixed(1) || 'N/A';
@@ -143,18 +152,9 @@ function buildMainMessage(testResults, coverage, fileChanges, coverageDelta) {
     coverageDeltaText = ` (${sign}${coverageDelta.delta.toFixed(1)}%)`;
   }
 
-  // File changes
-  const filesChanged = fileChanges?.filesChanged || 0;
-  const heatEmoji = fileChanges?.heat?.emoji || '';
-  const heatLabel = fileChanges?.heat?.label || '';
-
   // Duration
   const duration = testResults?.summary?.duration || 0;
   const durationText = formatDuration(duration);
-
-  // Event type
-  const eventName = process.env.GITHUB_EVENT_NAME || 'push';
-  const triggerText = eventName === 'pull_request' ? 'PR' : eventName === 'push' ? 'Push' : eventName;
 
   // Build header
   const headerText = `🚀 Build #${runNumber} — ${branch} — ${statusEmoji} ${statusLabel}`;
@@ -163,12 +163,15 @@ function buildMainMessage(testResults, coverage, fileChanges, coverageDelta) {
   const bodyLines = [
     `• *Commit:* ${commitSha} — "${commitMessage}"`,
     `• *By:* @${actor}`,
-    `• *Tests:* ✔ ${passed} passed${failed > 0 ? `, ❌ ${failed} failed` : ''}${skipped > 0 ? `, ➖ ${skipped} skipped` : ''}`,
+    `• *Tests:* ✅ ${passed}/${activeTests} passed (${passRate}%)${failed > 0 ? ` • ❌ ${failed} failed` : ''}${skipped > 0 ? ` • ⏭️ ${skipped} skipped` : ''}`,
     `• *Coverage:* ${coverageEmoji} ${coveragePct}%${coverageDeltaText}`,
-    `• *Changes:* ${filesChanged} files changed ${heatEmoji}${heatLabel ? ` ${heatLabel}` : ''}`,
-    `• *Duration:* ${durationText}`,
-    `• *Trigger:* ${triggerText}`,
+    `• *Test Duration:* ${durationText}`,
   ];
+
+  // Add new failure warning if present
+  if (hasNewFailures) {
+    bodyLines.push(`• ⚠️ *${newFailures} NEW failure(s)* (previously passing)`);
+  }
 
   const bodyText = bodyLines.join('\n');
 
@@ -212,16 +215,23 @@ function buildLinksThread(fileChanges) {
   const repo = process.env.GITHUB_REPOSITORY || 'unknown';
   const runId = process.env.GITHUB_RUN_ID || '0';
   const serverUrl = process.env.GITHUB_SERVER_URL || 'https://github.com';
+  const eventName = process.env.GITHUB_EVENT_NAME || 'push';
+  const triggerText = eventName === 'pull_request' ? 'Pull Request' : eventName === 'push' ? 'Push' : eventName;
 
   const runUrl = `${serverUrl}/${repo}/actions/runs/${runId}`;
   const logsUrl = `${runUrl}/attempts/1`;
+  const artifactsUrl = `${runUrl}#artifacts`;
   const compareUrl = fileChanges?.compareUrl || null;
   const prUrl = fileChanges?.pr?.url || null;
 
   const links = [
-    `🔗 *Links*`,
+    `🔗 *Links & Info*`,
+    ``,
+    `*Trigger:* ${triggerText}`,
+    ``,
     `• <${runUrl}|View Run>`,
     `• <${logsUrl}|Build Logs>`,
+    `• <${artifactsUrl}|Artifacts>`,
   ];
 
   if (compareUrl) {
@@ -242,7 +252,7 @@ function buildLinksThread(fileChanges) {
 /**
  * Build failed tests thread message
  */
-function buildFailuresThread(testResults) {
+function buildFailuresThread(testResults, failureDelta) {
   const failed = testResults?.summary?.failed || 0;
 
   if (failed === 0) {
@@ -251,40 +261,98 @@ function buildFailuresThread(testResults) {
     };
   }
 
-  const vitestFailures = testResults?.vitest?.failures || [];
-  const playwrightFailures = testResults?.playwright?.failures || [];
-  const allFailures = [...vitestFailures, ...playwrightFailures];
-
-  if (allFailures.length === 0) {
-    return {
-      text: `❌ *${failed} test(s) failed* (details not available)`,
-    };
-  }
+  const newFailures = failureDelta?.newFailures || [];
+  const persistentFailures = failureDelta?.persistentFailures || [];
+  const isFirstRun = failureDelta?.summary?.isFirstRun || false;
 
   const lines = [`❌ *${failed} Test(s) Failed*\n`];
 
-  allFailures.slice(0, 10).forEach((failure, index) => {
-    const suite = failure.suite || 'Unknown';
-    const test = failure.test || 'Unknown test';
-    const error = failure.error || 'No error details';
-    const location = failure.location || '';
+  // Show new failures first if any
+  if (newFailures.length > 0) {
+    lines.push(`🆕 *${newFailures.length} NEW Failure(s)* (previously passing):\n`);
 
-    // Truncate error to first 200 chars
-    const errorShort = error.substring(0, 200) + (error.length > 200 ? '...' : '');
+    newFailures.slice(0, 5).forEach((failure, index) => {
+      const suite = failure.suite || 'Unknown';
+      const test = failure.test || 'Unknown test';
+      const error = failure.error || 'No error details';
+      const location = failure.location || '';
 
-    lines.push(`${index + 1}) *${suite}* › ${test}`);
-    if (location) {
-      lines.push(`   _${location}_`);
+      // Truncate error to first 150 chars
+      const errorShort = error.substring(0, 150) + (error.length > 150 ? '...' : '');
+
+      lines.push(`${index + 1}) *${suite}* › ${test}`);
+      if (location) {
+        lines.push(`   _${location}_`);
+      }
+      lines.push('   ```');
+      lines.push(`   ${errorShort}`);
+      lines.push('   ```');
+      lines.push('');
+    });
+
+    if (newFailures.length > 5) {
+      lines.push(`_...and ${newFailures.length - 5} more new failure(s)._\n`);
     }
-    lines.push('   ```');
-    lines.push(`   ${errorShort}`);
-    lines.push('   ```');
-    lines.push('');
-  });
-
-  if (allFailures.length > 10) {
-    lines.push(`_...and ${allFailures.length - 10} more failure(s). See logs for details._`);
   }
+
+  // Show persistent failures if any and not first run
+  if (persistentFailures.length > 0 && !isFirstRun) {
+    lines.push(`\n🔁 *${persistentFailures.length} Persistent Failure(s)* (still failing):\n`);
+
+    persistentFailures.slice(0, 3).forEach((failure, index) => {
+      const suite = failure.suite || 'Unknown';
+      const test = failure.test || 'Unknown test';
+      const location = failure.location || '';
+
+      lines.push(`${index + 1}) *${suite}* › ${test}`);
+      if (location) {
+        lines.push(`   _${location}_`);
+      }
+    });
+
+    if (persistentFailures.length > 3) {
+      lines.push(`\n_...and ${persistentFailures.length - 3} more persistent failure(s)._`);
+    }
+  }
+
+  // If first run, show all failures
+  if (isFirstRun) {
+    const allFailures = [
+      ...(testResults.vitest?.failures || []),
+      ...(testResults.playwright?.failures || []),
+    ];
+
+    allFailures.slice(0, 5).forEach((failure, index) => {
+      const suite = failure.suite || 'Unknown';
+      const test = failure.test || 'Unknown test';
+      const error = failure.error || 'No error details';
+      const location = failure.location || '';
+
+      const errorShort = error.substring(0, 150) + (error.length > 150 ? '...' : '');
+
+      lines.push(`${index + 1}) *${suite}* › ${test}`);
+      if (location) {
+        lines.push(`   _${location}_`);
+      }
+      lines.push('   ```');
+      lines.push(`   ${errorShort}`);
+      lines.push('   ```');
+      lines.push('');
+    });
+
+    if (allFailures.length > 5) {
+      lines.push(`_...and ${allFailures.length - 5} more failure(s)._`);
+    }
+  }
+
+  // Add link to fix context artifact
+  const repo = process.env.GITHUB_REPOSITORY || 'unknown';
+  const runId = process.env.GITHUB_RUN_ID || '0';
+  const serverUrl = process.env.GITHUB_SERVER_URL || 'https://github.com';
+  const artifactsUrl = `${serverUrl}/${repo}/actions/runs/${runId}#artifacts`;
+
+  lines.push('');
+  lines.push(`📋 *Fix Context:* Download the \`fix-context\` artifact from <${artifactsUrl}|Artifacts> for comprehensive debugging info to paste into Claude Code.`);
 
   return {
     text: lines.join('\n').substring(0, 3000), // Slack limit
@@ -315,20 +383,69 @@ function buildCoverageThread(coverage, coverageDelta) {
     `• Lines:      ${coverage.lines.pct.toFixed(1)}% (${coverage.lines.covered}/${coverage.lines.total})`,
   ];
 
-  // Add top/bottom files if available
-  if (coverage.topFiles?.best?.length > 0) {
+  // Prioritize files needing attention
+  if (coverage.topFiles?.worst?.length > 0) {
     lines.push('');
-    lines.push('*Best Coverage:*');
-    coverage.topFiles.best.slice(0, 3).forEach(file => {
-      lines.push(`  • ${file.file}: ${file.pct.toFixed(1)}%`);
+    lines.push('⚠️ *Files Needing Attention:*');
+    coverage.topFiles.worst.slice(0, 3).forEach(file => {
+      const icon = file.pct < 50 ? '🔴' : file.pct < 80 ? '🟡' : '🟢';
+      lines.push(`  ${icon} \`${file.file}\`: ${file.pct.toFixed(1)}%`);
     });
   }
 
-  if (coverage.topFiles?.worst?.length > 0) {
+  // Add best coverage files (secondary)
+  if (coverage.topFiles?.best?.length > 0) {
     lines.push('');
-    lines.push('*Needs Improvement:*');
-    coverage.topFiles.worst.slice(0, 3).forEach(file => {
-      lines.push(`  • ${file.file}: ${file.pct.toFixed(1)}%`);
+    lines.push('✅ *Best Coverage:*');
+    coverage.topFiles.best.slice(0, 3).forEach(file => {
+      lines.push(`  • \`${file.file}\`: ${file.pct.toFixed(1)}%`);
+    });
+  }
+
+  return {
+    text: lines.join('\n'),
+  };
+}
+
+/**
+ * Build performance/slowest test thread message
+ */
+function buildPerformanceThread(testResults) {
+  const slowestTest = testResults?.summary?.slowestTest;
+
+  if (!slowestTest) {
+    return {
+      text: '⚡ *Test Performance*\nNo timing data available',
+    };
+  }
+
+  const lines = [
+    `⚡ *Test Performance*`,
+    ``,
+    `*Slowest Test:* ${formatDuration(slowestTest.duration)}`,
+    `\`\`\``,
+    slowestTest.name,
+    `\`\`\``,
+    `_Framework: ${slowestTest.framework}_`,
+  ];
+
+  // Add top 5 slowest from Vitest
+  const vitestSlowest = testResults?.vitest?.slowestTests || [];
+  if (vitestSlowest.length > 0) {
+    lines.push('');
+    lines.push('*Slowest Vitest Tests:*');
+    vitestSlowest.slice(0, 5).forEach((test, index) => {
+      lines.push(`  ${index + 1}. ${formatDuration(test.duration)} - ${test.name.substring(0, 60)}${test.name.length > 60 ? '...' : ''}`);
+    });
+  }
+
+  // Add top 5 slowest from Playwright
+  const playwrightSlowest = testResults?.playwright?.slowestTests || [];
+  if (playwrightSlowest.length > 0) {
+    lines.push('');
+    lines.push('*Slowest Playwright Tests:*');
+    playwrightSlowest.slice(0, 5).forEach((test, index) => {
+      lines.push(`  ${index + 1}. ${formatDuration(test.duration)} - ${test.name.substring(0, 60)}${test.name.length > 60 ? '...' : ''}`);
     });
   }
 
@@ -360,6 +477,7 @@ function main() {
   const coverage = loadJSON(args.coverage);
   const fileChanges = loadJSON(args.fileChanges);
   const coverageDelta = loadJSON(args.coverageDelta);
+  const failureDelta = loadJSON(args.failureDelta);
 
   if (!testResults) {
     console.error('❌ Test results are required');
@@ -370,14 +488,16 @@ function main() {
   if (coverage) console.log('✓ Loaded coverage');
   if (fileChanges) console.log('✓ Loaded file changes');
   if (coverageDelta) console.log('✓ Loaded coverage delta');
+  if (failureDelta) console.log('✓ Loaded failure delta');
 
   // Build payloads
   const payload = {
-    main: buildMainMessage(testResults, coverage, fileChanges, coverageDelta),
+    main: buildMainMessage(testResults, coverage, fileChanges, coverageDelta, failureDelta),
     threads: {
       links: buildLinksThread(fileChanges),
-      failures: buildFailuresThread(testResults),
+      failures: buildFailuresThread(testResults, failureDelta),
       coverage: buildCoverageThread(coverage, coverageDelta),
+      performance: buildPerformanceThread(testResults),
       artifacts: buildArtifactsThread(),
     },
   };
@@ -387,6 +507,9 @@ function main() {
   console.log(`\n✅ Slack payload built successfully`);
   console.log(`   Output: ${args.output}`);
   console.log(`   Status: ${testResults.summary.status.toUpperCase()}`);
+  if (failureDelta?.summary?.hasNewFailures) {
+    console.log(`   ⚠️  ${failureDelta.summary.newCount} NEW failure(s) detected`);
+  }
 
   process.exit(0);
 }

@@ -238,12 +238,19 @@ jobs:
           name: coverage-summary
           path: ./
 
-      # Download previous coverage for delta calculation
+      # Download previous data for delta calculation
       - name: Download previous coverage
         uses: actions/download-artifact@v4
         continue-on-error: true
         with:
           name: coverage-for-next-run
+          path: ./
+
+      - name: Download previous test results
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: test-results-for-next-run
           path: ./
 
       # Parse test results
@@ -271,14 +278,14 @@ jobs:
             --previous coverage-for-next-run.json \
             --output coverage-delta.json
 
-      # Upload current coverage for next run
-      - name: Upload coverage for next run
-        uses: actions/upload-artifact@v4
+      # Detect new test failures
+      - name: Detect new failures
         if: always()
-        with:
-          name: coverage-for-next-run
-          path: coverage-for-next-run.json
-          retention-days: 30
+        run: |
+          node scripts/ci/detect-new-failures.js \
+            --current test-results-parsed.json \
+            --previous test-results-for-next-run.json \
+            --output test-failures-delta.json
 
       # Get file change statistics
       - name: Get file changes
@@ -286,6 +293,16 @@ jobs:
         run: |
           node scripts/ci/get-file-changes.js \
             --output file-changes.json
+
+      # Generate fix context for Claude Code
+      - name: Generate fix context
+        if: always()
+        run: |
+          node scripts/ci/generate-fix-context.js \
+            --test-results test-results-parsed.json \
+            --failure-delta test-failures-delta.json \
+            --file-changes file-changes.json \
+            --output fix-context.md
 
       # Build Slack payload
       - name: Build Slack payload
@@ -296,7 +313,33 @@ jobs:
             --coverage coverage-parsed.json \
             --file-changes file-changes.json \
             --coverage-delta coverage-delta.json \
+            --failure-delta test-failures-delta.json \
             --output slack-payload.json
+
+      # Upload artifacts for next run
+      - name: Upload coverage for next run
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-for-next-run
+          path: coverage-for-next-run.json
+          retention-days: 30
+
+      - name: Upload test results for next run
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-for-next-run
+          path: test-results-parsed.json
+          retention-days: 30
+
+      - name: Upload fix context
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fix-context
+          path: fix-context.md
+          retention-days: 7
 
       # Post main Slack message
       - name: Post Slack main message
