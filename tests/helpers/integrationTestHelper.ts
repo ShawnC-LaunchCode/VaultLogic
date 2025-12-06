@@ -13,7 +13,7 @@
 import express, { type Express } from 'express';
 import { type Server } from 'http';
 import { registerRoutes } from '../../server/routes';
-import { db, dbInitPromise } from '../../server/db';
+import { db, initializeDatabase } from '../../server/db';
 import * as schema from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
@@ -62,7 +62,7 @@ export async function setupIntegrationTest(
   } = options;
 
   // Ensure database is initialized before proceeding
-  await dbInitPromise;
+  await initializeDatabase();
 
   // Setup Express app
   const app = express();

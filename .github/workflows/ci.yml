@@ -83,12 +83,16 @@ jobs:
         if: always()
         run: |
           # Vitest generates coverage-summary.json automatically with v8 provider
-          # Just verify it exists and display a summary
+          # Create coverage-summary.txt for artifacts
           if [ -f "coverage/coverage-summary.json" ]; then
             echo "✓ Coverage file generated"
             cat coverage/coverage-summary.json | head -20
+            # Create text summary for artifact upload
+            echo "Coverage Summary" > coverage-summary.txt
+            cat coverage/coverage-summary.json >> coverage-summary.txt
           else
             echo "⚠️  No coverage file found"
+            echo "No coverage data generated" > coverage-summary.txt
           fi
 
       - name: Upload coverage summary artifact
@@ -106,6 +110,7 @@ jobs:
           name: vitest-summary
           path: vitest-summary.json
           retention-days: 1
+          if-no-files-found: warn
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
@@ -117,6 +122,12 @@ jobs:
           flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: false
+
+      - name: Fail if tests failed
+        if: steps.vitest.outcome == 'failure'
+        run: |
+          echo "Tests failed - marking job as failed"
+          exit 1
 
   # E2E Tests (Playwright) - Disabled in CI
   # Run e2e tests locally with: npm run test:e2e
