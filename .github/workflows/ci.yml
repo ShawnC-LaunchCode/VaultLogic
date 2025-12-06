@@ -34,6 +34,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify environment variables
+        run: |
+          echo "🔍 Checking environment variables..."
+          if [ -z "$DATABASE_URL" ]; then
+            echo "❌ ERROR: DATABASE_URL is not set"
+            echo "Please configure DATABASE_URL secret in GitHub repository settings"
+            exit 1
+          else
+            echo "✅ DATABASE_URL is configured"
+          fi
+          echo "✅ NODE_ENV: $NODE_ENV"
+          echo "✅ GOOGLE_CLIENT_ID: $([ -n "$GOOGLE_CLIENT_ID" ] && echo 'SET' || echo 'NOT SET')"
+          echo "✅ SESSION_SECRET: $([ -n "$SESSION_SECRET" ] && echo 'SET' || echo 'NOT SET')"
+
       - name: Run type checking
         run: npm run check
 
@@ -72,6 +86,20 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Verify environment variables
+        run: |
+          echo "🔍 Checking environment variables..."
+          if [ -z "$DATABASE_URL" ]; then
+            echo "❌ ERROR: DATABASE_URL is not set"
+            echo "Please configure DATABASE_URL secret in GitHub repository settings"
+            exit 1
+          else
+            echo "✅ DATABASE_URL is configured"
+          fi
+          echo "✅ NODE_ENV: $NODE_ENV"
+          echo "✅ GOOGLE_CLIENT_ID: $([ -n "$GOOGLE_CLIENT_ID" ] && echo 'SET' || echo 'NOT SET')"
+          echo "✅ SESSION_SECRET: $([ -n "$SESSION_SECRET" ] && echo 'SET' || echo 'NOT SET')"
 
       - name: Run tests with coverage
         id: vitest
