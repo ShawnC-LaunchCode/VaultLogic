@@ -3,14 +3,11 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./googleAuth";
 import { userRepository } from "./repositories";
 import { registerAllRoutes } from "./routes/index";
-import { createLogger } from "./logger";
 import { initCollabServer, getMetrics, getRoomStats } from "./realtime/collabServer";
 import { startRollupWorker } from "./jobs/metricsRollup";
 import { registerDiagnosticRoutes } from "./routes/diagnostic.routes";
-
-const logger = createLogger({ module: 'routes' });
-
-
+import { logger } from "./lib/observability/logger";
+import { metrics } from "./lib/observability/metrics";
 
 /**
  * Main route registration function

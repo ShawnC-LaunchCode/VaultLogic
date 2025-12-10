@@ -1,7 +1,7 @@
 # VaultLogic - Architecture & Current State
 
-**Last Updated:** December 6, 2025
-**Version:** 1.6.0 - DataVault v4 + Visibility Logic Builder
+**Last Updated:** December 7, 2025
+**Version:** 1.7.0 - Custom Scripting System (Lifecycle & Document Hooks)
 **Status:** Production Ready
 
 ---
@@ -162,6 +162,30 @@ Projects
 
 **Logic actions:** show, hide, require, make_optional, set_value, skip_section
 
+### Custom Scripting System Tables
+
+| Table | Purpose | Key Columns |
+|-------|---------|-------------|
+| `lifecycle_hooks` | Workflow phase hooks | `id`, `workflowId`, `sectionId`, `name`, `phase`, `language`, `code`, `mutationMode` |
+| `document_hooks` | Document transformation hooks | `id`, `workflowId`, `documentId`, `name`, `phase`, `language`, `code` |
+| `script_execution_log` | Script execution audit trail | `id`, `runId`, `scriptType`, `scriptId`, `status`, `consoleOutput`, `durationMs` |
+
+**Lifecycle hook phases:** beforePage, afterPage, beforeFinalBlock, afterDocumentsGenerated
+
+**Document hook phases:** beforeGeneration, afterGeneration
+
+**Supported languages:** JavaScript (vm2/vm sandbox), Python (subprocess isolation)
+
+**Key Features:**
+- **Helper Library:** 40+ safe utility functions (date, string, number, array, object, math, console, http)
+- **Context Injection:** Workflow/run/phase metadata available via `context` object
+- **Console Capture:** `helpers.console.log/warn/error()` captured for debugging
+- **Mutation Mode:** Lifecycle hooks can transform workflow data between phases
+- **Non-Breaking Execution:** Hook failures logged but don't crash workflows
+- **Timeout Enforcement:** Configurable timeouts (100-3000ms) prevent infinite loops
+- **Input/Output Whitelisting:** Explicit `inputKeys` and `outputKeys` for security
+- **Execution Logging:** All script executions logged with console output and performance metrics
+
 ### Integration Tables
 
 | Table | Purpose | Key Columns |
@@ -202,6 +226,11 @@ Projects
 - WorkflowService, SectionService, StepService, RunService
 - LogicService, TransformBlockService, BlockRunner
 - VariableService, IntakeQuestionVisibilityService, IntakeNavigationService
+
+**Scripting Services (Prompt 12):**
+- ScriptEngine, HelperLibrary, ScriptContext
+- LifecycleHookService, DocumentHookService
+- LifecycleHookRepository, DocumentHookRepository, ScriptExecutionLogRepository
 
 **DataVault Services:**
 - DatabaseService, TableService, TableRowService
@@ -256,6 +285,22 @@ PUT/DELETE  /api/transform-blocks/:id         # Update/Delete
 POST        /api/transform-blocks/:id/test    # Test execution
 ```
 
+### Lifecycle & Document Hooks (Prompt 12)
+```
+# Lifecycle Hooks
+GET/POST    /api/workflows/:workflowId/lifecycle-hooks # List/Create hooks
+PUT/DELETE  /api/lifecycle-hooks/:hookId      # Update/Delete hook
+POST        /api/lifecycle-hooks/:hookId/test # Test hook with sample data
+
+# Document Hooks
+GET/POST    /api/workflows/:workflowId/document-hooks # List/Create hooks
+PUT/DELETE  /api/document-hooks/:hookId       # Update/Delete hook
+POST        /api/document-hooks/:hookId/test  # Test hook with sample data
+
+# Script Console (Execution Logs)
+GET/DELETE  /api/runs/:runId/script-console   # Get/Clear execution logs
+```
+
 ### DataVault
 ```
 # Databases
@@ -306,6 +351,7 @@ GET         /api/workflows/:id/export/{format} # Export (json/csv/pdf)
 | **DataVault** | Production | Complete data platform with tables, permissions, API tokens |
 | **Visibility Logic** | Production | Two-tier: workflow rules + step-level expressions |
 | **Transform Blocks** | Production | Sandboxed JS/Python execution with virtual steps |
+| **Custom Scripting System** | Production | Lifecycle & document hooks, helper library, script console (Prompt 12) |
 | **Step Aliases** | Production | Human-friendly variable names |
 | **Run Token Auth** | Production | Bearer token + session auth, anonymous runs |
 | **Conditional Logic** | Production | Show/hide, require, skip sections |
@@ -335,12 +381,15 @@ GET         /api/workflows/:id/export/{format} # Export (json/csv/pdf)
 
 ## Security Features
 
-### Transform Block Sandboxing
+### Scripting System Sandboxing
 
-**JavaScript (vm2):**
+**JavaScript (vm2/vm):**
 - No access to: `require`, `process`, `Buffer`, `global`, timers
-- Only `input` object and `emit()` available
-- Timeout enforced (max 3000ms)
+- Only `input`, `context`, and `helpers` objects available
+- `emit()` function for output
+- Timeout enforced (100-3000ms configurable)
+- Code size limit: 32KB
+- Output size limit: 64KB
 
 **Python (subprocess):**
 - Isolated subprocess execution
@@ -348,6 +397,20 @@ GET         /api/workflows/:id/export/{format} # Export (json/csv/pdf)
 - No file system or network access
 - Timeout with process termination
 - Max output: 64KB
+
+**Helper Library Security:**
+- HTTP requests proxied through backend (URL whitelist validation)
+- No direct network access from sandbox
+- Console capture instead of native console
+- Date/math operations use safe libraries (date-fns)
+- All helpers designed to prevent code injection
+
+**Script Execution Security:**
+- Input/output key whitelisting (explicit allowlists)
+- Non-breaking error handling (workflows continue on script failure)
+- Execution audit logging (all scripts logged with performance metrics)
+- Workflow ownership validation (only owners can create/modify hooks)
+- Rate limiting on test endpoints (10 req/min)
 
 ### General Security
 
@@ -435,6 +498,7 @@ npm run test:ui          # Interactive UI
 npm run build            # Build for production
 npm start                # Start server
 npm run db:push          # Apply migrations
+npm run kill-server      # Gracefully kill server on port 5000
 ```
 
 **Railway Configuration:**
@@ -443,6 +507,9 @@ Set all environment variables above with production values.
 ---
 
 ## Recent Architecture Changes
+
+### Custom Scripting System - Prompt 12 (Dec 7, 2025)
+Comprehensive scripting infrastructure with lifecycle hooks (beforePage, afterPage, beforeFinalBlock, afterDocumentsGenerated) and document hooks (beforeGeneration, afterGeneration). Features 40+ helper functions, context injection, console capture, mutation mode, and script console for debugging. Unified ScriptEngine orchestrates JavaScript (vm2/vm) and Python (subprocess) execution with security sandboxing.
 
 ### DataVault v4 (Nov 18-26, 2025)
 Complete data management platform with databases, tables, permissions, API tokens, and row comments. 7 column types, infinite scroll, advanced filtering, optimistic updates.
@@ -524,7 +591,8 @@ Adds missing columns to `users`, `projects`, `workflows` tables, creates default
 
 **Document Maintainer:** Development Team
 **Review Cycle:** Monthly
-**Next Review:** January 6, 2026
+**Next Review:** February 7, 2026
 **Version History:**
+- v1.7.0 (Dec 7, 2025) - Custom Scripting System (Lifecycle & Document Hooks)
 - v1.6.0 (Nov 26, 2025) - DataVault v4 + Visibility Logic Builder
 - v1.5.0 (Nov 17, 2025) - Survey Removal + Navigation Overhaul
