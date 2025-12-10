@@ -1,0 +1,722 @@
+# Document Generation Engine - Architecture Documentation
+
+**Last Updated:** December 6, 2025
+**Status:** Production - Extended for Final Block Integration
+**Purpose:** Reference documentation for document generation capabilities
+
+---
+
+## Overview
+
+The VaultLogic Document Generation Engine provides enterprise-grade document templating and rendering with support for DOCX templates, PDF conversion, variable substitution, and dynamic field mapping.
+
+### Core Capabilities
+
+✅ **DOCX Template Rendering** - Variable substitution with `{{ placeholder }}` syntax
+✅ **PDF Conversion** - Multi-strategy (Puppeteer/LibreOffice)
+✅ **60+ Helper Functions** - Formatting, date, currency, math operations
+✅ **Template Analysis** - Extract variables, validate coverage
+✅ **Nested Variable Support** - Dot notation `{{ user.address.city }}`
+✅ **Loop & Conditionals** - `{#items}...{/items}`, `{#if}...{/if}`
+✅ **Variable Mapping** - (NEW) Override field names for Final Block
+✅ **Conditional Output** - (NEW) Logic-based document inclusion
+✅ **Multi-Document ZIP** - (NEW) Bundle multiple outputs
+
+---
+
+## Architecture Components
+
+### Layer 1: Template Parser (DOCX Rendering)
+
+**File:** `TemplateParser.ts`
+**Technology:** docxtemplater + pizzip
+**Syntax:** `{{ variable }}`
+
+**Responsibilities:**
+- Load DOCX template files (unzip → parse XML)
+- Parse placeholder syntax
+- Substitute variables with data
+- Apply helper functions
+- Handle loops and conditionals
+- Return rendered DOCX buffer
+
+**Variable Resolution:**
+```typescript
+// Simple variable
+{{ firstName }} → resolves from data.firstName
+
+// Nested object (dot notation)
+{{ user.address.city }} → resolves from data.user.address.city
+
+// Helper function
+{{ upper firstName }} → applies uppercase transformation
+
+// Loop
+{#items}
+  {{ name }}: {{ currency price USD }}
+{/items}
+```
+
+**Supported Placeholder Types:**
+- Text substitution: `{{ name }}`
+- Conditionals: `{#if approved}...{/if}`
+- Loops: `{#items}...{/items}`
+- Helpers: `{{ formatDate date "MM/DD/YYYY" }}`
+
+**Error Handling:**
+- Missing variables → empty string (configurable)
+- Invalid syntax → detailed error extraction
+- Template corruption → validation with repair suggestions
+
+---
+
+### Layer 2: PDF Converter (Format Transformation)
+
+**File:** `PdfConverter.ts`
+**Strategies:** Puppeteer (default) | LibreOffice (fallback)
+
+#### Strategy 1: Puppeteer Pipeline
+```
+DOCX → Mammoth (DOCX→HTML) → Puppeteer (HTML→PDF) → PDF Buffer
+```
+
+**Pros:**
+- No system dependencies
+- Customizable CSS styling
+- Consistent across platforms
+
+**Cons:**
+- Layout fidelity depends on Mammoth conversion quality
+- Complex formatting may not be preserved
+
+**Configuration:**
+- Page size: A4
+- Margins: 20mm
+- Print background: enabled
+- Scale: 1.0
+
+#### Strategy 2: LibreOffice CLI
+```
+DOCX → LibreOffice --headless --convert-to pdf → PDF Buffer
+```
+
+**Pros:**
+- Native DOCX support
+- Excellent layout fidelity
+- Preserves complex formatting
+
+**Cons:**
+- Requires LibreOffice installed on system
+- Platform-dependent behavior
+
+**Command:**
+```bash
+libreoffice --headless --convert-to pdf --outdir /tmp input.docx
+```
+
+---
+
+### Layer 3: Document Engine (Orchestration)
+
+**File:** `DocumentEngine.ts`
+**Role:** High-level wrapper coordinating template parsing and conversion
+
+**Function Signature:**
+```typescript
+generateDocument({
+  templatePath: string,      // Path to DOCX template
+  data: Record<string, any>, // Variable data (normalized)
+  outputPath: string,        // Output file path
+  convertToPdf?: boolean     // Optional PDF conversion
+}): Promise<GeneratedDocument>
+```
+
+**Workflow:**
+1. Load template file from disk
+2. Call TemplateParser.render(template, data)
+3. Write rendered DOCX to output path
+4. If convertToPdf: call PdfConverter.convert()
+5. Return file paths and metadata
+
+**Return Type:**
+```typescript
+interface GeneratedDocument {
+  docxPath: string;
+  pdfPath?: string;
+  fileSize: number;
+  generatedAt: Date;
+}
+```
+
+---
+
+### Layer 4: Variable Normalization (NEW - Final Block Extension)
+
+**File:** `VariableNormalizer.ts` (NEW)
+**Purpose:** Flatten nested values and arrays for template compatibility
+
+**Transformation Rules:**
+
+#### Nested Objects → Dot Notation
+```typescript
+Input:
+{
+  user: {
+    name: { first: "John", last: "Doe" },
+    address: { city: "NYC" }
+  }
+}
+
+Output:
+{
+  "user.name.first": "John",
+  "user.name.last": "Doe",
+  "user.address.city": "NYC"
+}
+```
+
+#### Arrays → Comma-Separated Strings
+```typescript
+Input:
+{
+  hobbies: ["biking", "hiking", "reading"]
+}
+
+Output:
+{
+  "hobbies": "biking, hiking, reading"
+}
+```
+
+#### Multi-Field Values → Flat Structure
+```typescript
+Input (AddressValue):
+{
+  street: "123 Main St",
+  city: "NYC",
+  state: "NY",
+  zip: "10001"
+}
+
+Output (with prefix):
+{
+  "address.street": "123 Main St",
+  "address.city": "NYC",
+  "address.state": "NY",
+  "address.zip": "10001"
+}
+```
+
+**Usage:**
+```typescript
+const normalized = normalizeVariables(stepValues, {
+  flattenNested: true,
+  joinArrays: true,
+  arrayDelimiter: ", "
+});
+```
+
+---
+
+### Layer 5: Mapping Interpreter (NEW - Final Block Extension)
+
+**File:** `MappingInterpreter.ts` (NEW)
+**Purpose:** Apply custom field mappings from Final Block configuration
+
+**Configuration Format (from FinalBlockConfig):**
+```typescript
+mapping: {
+  "docFieldName": {
+    type: "variable",
+    source: "stepAlias"  // Workflow variable alias
+  }
+}
+```
+
+**Example:**
+```typescript
+// Final Block Config
+{
+  mapping: {
+    "client_name": { type: "variable", source: "fullName" },
+    "client_email": { type: "variable", source: "email" },
+    "total_amount": { type: "variable", source: "invoiceTotal" }
+  }
+}
+
+// Step Values (normalized)
+{
+  "fullName": "John Doe",
+  "email": "john@example.com",
+  "invoiceTotal": "$1,234.56"
+}
+
+// Applied Mapping (for template)
+{
+  "client_name": "John Doe",
+  "client_email": "john@example.com",
+  "total_amount": "$1,234.56"
+}
+```
+
+**Behavior:**
+- If mapping exists: use mapped field names (high priority)
+- If no mapping: pass through original variable names
+- Preserves backward compatibility with existing templates
+
+**Implementation:**
+```typescript
+function applyMapping(
+  normalizedData: Record<string, any>,
+  mapping: FinalBlockConfig['documents'][0]['mapping']
+): Record<string, any> {
+  if (!mapping) return normalizedData;
+
+  const mapped: Record<string, any> = {};
+  for (const [targetField, config] of Object.entries(mapping)) {
+    if (config.type === 'variable') {
+      mapped[targetField] = normalizedData[config.source];
+    }
+  }
+  return mapped;
+}
+```
+
+---
+
+### Layer 6: Conditional Document Output (NEW - Final Block Extension)
+
+**File:** Uses existing `shared/conditionalLogic.ts`
+**Purpose:** Evaluate conditions to determine which documents to generate
+
+**Logic Expression Format:**
+```typescript
+interface LogicExpression {
+  operator?: 'AND' | 'OR';
+  conditions: Array<{
+    key: string;      // Step alias
+    op: 'equals' | 'not_equals' | 'contains' | 'greater_than' | 'less_than' | 'is_empty' | 'is_not_empty';
+    value?: any;
+  }>;
+}
+```
+
+**Example:**
+```typescript
+// Only generate invoice if amount > 0
+{
+  operator: 'AND',
+  conditions: [
+    { key: 'invoiceTotal', op: 'greater_than', value: 0 },
+    { key: 'approved', op: 'equals', value: true }
+  ]
+}
+```
+
+**Evaluation:**
+```typescript
+function shouldGenerateDocument(
+  conditions: LogicExpression | null,
+  stepValues: Record<string, any>
+): boolean {
+  if (!conditions) return true;  // No conditions = always generate
+  return evaluateExpression(conditions, stepValues);
+}
+```
+
+---
+
+### Layer 7: Final Block Renderer (NEW)
+
+**File:** `FinalBlockRenderer.ts` (NEW)
+**Purpose:** Orchestrate multi-document generation for Final Blocks
+
+**Workflow:**
+```
+1. Load Final Block config
+2. For each document in config.documents:
+   a. Evaluate conditions → skip if false
+   b. Load document template
+   c. Normalize step values
+   d. Apply mapping (if defined)
+   e. Call DocumentEngine.generateDocument()
+   f. Collect output buffer
+3. If multiple outputs → ZIP archive
+4. Return download URL(s)
+```
+
+**Function Signature:**
+```typescript
+async function renderFinalBlock(
+  finalBlockConfig: FinalBlockConfig,
+  stepValues: Record<string, any>,
+  workflowId: string,
+  runId: string
+): Promise<FinalBlockOutput>
+```
+
+**Return Type:**
+```typescript
+interface FinalBlockOutput {
+  documents: Array<{
+    alias: string;
+    filename: string;
+    buffer: Buffer;
+    mimeType: string;
+  }>;
+  zipArchive?: {
+    filename: string;
+    buffer: Buffer;
+  };
+}
+```
+
+---
+
+### Layer 8: ZIP Bundler (NEW)
+
+**File:** `ZipBundler.ts` (NEW)
+**Technology:** archiver or pizzip (reuse existing)
+**Purpose:** Create ZIP archives for multiple document outputs
+
+**Usage:**
+```typescript
+const archive = await createZipArchive([
+  { filename: "invoice.pdf", buffer: pdfBuffer1 },
+  { filename: "receipt.pdf", buffer: pdfBuffer2 },
+  { filename: "contract.docx", buffer: docxBuffer }
+]);
+```
+
+**Output:**
+```typescript
+{
+  filename: "workflow_documents_2025-12-06.zip",
+  buffer: Buffer,
+  size: 1234567
+}
+```
+
+**Configuration:**
+- Compression level: 6 (balanced)
+- Include manifest.txt with file list
+- Preserve file timestamps
+
+---
+
+## Helper Functions (60+)
+
+**File:** `docxHelpers.ts`
+**Registered with docxtemplater expression parser**
+
+### Categories
+
+#### String Manipulation
+- `upper(text)` - Uppercase
+- `lower(text)` - Lowercase
+- `capitalize(text)` - First letter uppercase
+- `truncate(text, length)` - Trim to length
+- `replace(text, search, replacement)` - String replace
+
+#### Date Formatting
+- `formatDate(date, format)` - Format with YYYY/MM/DD/HH/mm/ss tokens
+- `addDays(date, days)` - Date arithmetic
+- `daysBetween(date1, date2)` - Calculate difference
+
+#### Currency & Numbers
+- `currency(amount, code?, showSymbol?)` - Format as currency
+- `formatNumber(number, decimals?, thousands?)` - Number formatting
+- `round(number, decimals)` - Round to precision
+
+#### Math Operations
+- `add(a, b)` - Addition
+- `subtract(a, b)` - Subtraction
+- `multiply(a, b)` - Multiplication
+- `divide(a, b)` - Division
+- `percentage(value, total)` - Calculate percentage
+
+#### Array Operations
+- `join(array, delimiter)` - Join array to string
+- `length(array)` - Get count
+- `first(array)` - First element
+- `last(array)` - Last element
+
+#### Logic & Defaults
+- `defaultValue(value, fallback)` - Use fallback if empty
+- `isEmpty(value)` - Check if empty
+- `isNotEmpty(value)` - Check if not empty
+
+#### Utility
+- `pluralize(count, singular, plural)` - Pluralize words
+- `concat(...values)` - Concatenate strings
+
+**Usage in Templates:**
+```docx
+Total: {{ currency totalAmount "USD" }}
+Date: {{ formatDate createdAt "MM/DD/YYYY" }}
+Name: {{ capitalize firstName }}
+Items: {{ length items }}
+```
+
+---
+
+## Database Schema
+
+### Templates Table
+```sql
+CREATE TABLE templates (
+  id UUID PRIMARY KEY,
+  projectId UUID NOT NULL,
+  name VARCHAR(255),
+  description TEXT,
+  fileRef VARCHAR(500),  -- Filename in /server/files/
+  type VARCHAR(10),      -- 'docx' | 'html'
+  helpersVersion INTEGER DEFAULT 1,
+  createdAt TIMESTAMP,
+  updatedAt TIMESTAMP
+);
+```
+
+### Run Generated Documents Table
+```sql
+CREATE TABLE run_generated_documents (
+  id UUID PRIMARY KEY,
+  runId UUID NOT NULL,
+  fileName TEXT,
+  fileUrl TEXT,
+  mimeType TEXT,
+  fileSize INTEGER,
+  templateId UUID,
+  createdAt TIMESTAMP
+);
+```
+
+---
+
+## API Endpoints
+
+### Template Management
+```
+POST   /api/projects/:projectId/templates       # Upload template
+GET    /api/templates/:id                       # Get template
+GET    /api/templates/:id/placeholders          # Extract variables
+DELETE /api/templates/:id                       # Delete template
+```
+
+### Template Analysis
+```
+GET    /api/templates/:templateId/analyze       # Full analysis
+POST   /api/templates/:templateId/validate      # Validate with data
+```
+
+### Document Generation (NEW - Final Block)
+```
+POST   /api/workflows/:workflowId/runs/:runId/generate-final   # Generate Final Block docs
+GET    /api/runs/:runId/outputs                                 # List generated docs
+GET    /api/runs/:runId/outputs/:outputId/download             # Download doc
+```
+
+### File Download
+```
+GET    /api/files/download/:filename            # Download file
+```
+
+---
+
+## File Storage Structure
+
+```
+server/files/
+├── /                        # Uploaded templates
+│   └── {nanoid}.docx
+├── /outputs/               # Generated documents
+│   ├── {name}-{timestamp}.docx
+│   └── {name}-{timestamp}.pdf
+└── /archives/              # ZIP bundles (NEW)
+    └── {runId}-final-{timestamp}.zip
+```
+
+**Naming Conventions:**
+- Templates: `{nanoid(16)}.docx` (unpredictable, unique)
+- Outputs: `{templateName}-run-{runId}-{timestamp}.{ext}`
+- Archives: `final-docs-{runId}-{timestamp}.zip`
+
+---
+
+## Error Handling
+
+### Template Errors
+```typescript
+try {
+  const rendered = TemplateParser.render(template, data);
+} catch (error) {
+  if (error.name === 'TemplateError') {
+    // Handle: missing tags, syntax errors, corrupted template
+    return { success: false, errors: extractTemplateErrors(error) };
+  }
+}
+```
+
+### Conversion Errors
+```typescript
+try {
+  const pdf = await PdfConverter.convert(docx, 'puppeteer');
+} catch (error) {
+  // Fallback to LibreOffice
+  return await PdfConverter.convert(docx, 'libreoffice');
+}
+```
+
+### Mapping Errors
+```typescript
+// Missing source variable in mapping
+if (mapping[field] && !normalizedData[mapping[field].source]) {
+  logger.warn(`Mapping references missing variable: ${mapping[field].source}`);
+  // Continue with empty value rather than failing
+}
+```
+
+---
+
+## Security Considerations
+
+### Template Upload Validation
+- File type: Must be `.docx` (MIME type check)
+- File size: Max 10MB
+- ZIP structure: Valid DOCX structure (not arbitrary ZIP)
+- Content scan: No macros or embedded executables
+
+### Variable Injection Protection
+- No code execution in templates (static substitution only)
+- HTML escaping in converted content
+- Path traversal prevention in file references
+
+### Download Security
+- Filename sanitization
+- Ownership verification (user can only download their runs)
+- Temporary URL expiration (future enhancement)
+
+---
+
+## Performance Optimization
+
+### Caching
+- Template files cached in memory (LRU cache, max 50 templates)
+- Parsed template AST cached (avoid re-parsing)
+- Helper function registry initialized once
+
+### Parallel Processing
+- Multiple documents rendered in parallel (Promise.all)
+- Independent PDF conversions run concurrently
+
+### Resource Limits
+- Max template size: 10MB
+- Max output size: 50MB per document
+- Max documents per Final Block: 20
+- ZIP compression level: 6 (balanced speed/size)
+
+---
+
+## Testing Strategy
+
+### Unit Tests
+- Variable normalization edge cases
+- Mapping application logic
+- Conditional evaluation
+- Helper function behavior
+
+### Integration Tests
+- End-to-end document generation
+- PDF conversion (both strategies)
+- Multi-document ZIP creation
+- API endpoint functionality
+
+### E2E Tests
+- Upload template → configure Final Block → run workflow → download docs
+- Preview mode document generation
+- Conditional document logic
+
+---
+
+## Migration from Existing System
+
+**Backward Compatibility:**
+- Existing templates continue to work unchanged
+- Existing DocumentGenerationService remains functional
+- New Final Block system is additive, not replacement
+
+**Coexistence:**
+- Old: `DocumentGenerationService.generateDocumentsForRun(runId)`
+- New: `FinalBlockRenderer.renderFinalBlock(config, values, workflowId, runId)`
+
+**Future Deprecation Path:**
+- Migrate existing "Final Documents" sections to Final Blocks
+- Consolidate into single document generation pipeline
+- Archive old service after migration complete
+
+---
+
+## Troubleshooting
+
+### Issue: Template variables not rendering
+**Check:**
+1. Variable names match exactly (case-sensitive)
+2. Nested values are flattened with dot notation
+3. Arrays are converted to strings
+
+### Issue: PDF conversion fails
+**Check:**
+1. LibreOffice installed and in PATH
+2. Puppeteer dependencies installed
+3. Fallback strategy configured
+
+### Issue: Mapping not working
+**Check:**
+1. Mapping config structure correct
+2. Source variable exists in normalized data
+3. Field names in template match mapped names
+
+### Issue: Conditional logic not excluding document
+**Check:**
+1. Step alias matches condition key
+2. Operator and value types match
+3. AND/OR logic configured correctly
+
+---
+
+## Future Enhancements
+
+### Planned
+- [ ] Email delivery integration (SendGrid available)
+- [ ] Batch document generation endpoint
+- [ ] Template versioning
+- [ ] Document preview (PNG thumbnails)
+- [ ] Custom helper function registration
+
+### Under Consideration
+- [ ] HTML template support (in addition to DOCX)
+- [ ] Excel template rendering
+- [ ] Digital signature integration
+- [ ] Watermark support
+- [ ] Multi-language template support
+
+---
+
+## References
+
+**External Documentation:**
+- [docxtemplater](https://docxtemplater.com/docs/get-started/)
+- [PizZip](https://github.com/open-xml-templating/pizzip)
+- [Mammoth.js](https://github.com/mwilliamson/mammoth.js)
+- [Puppeteer](https://pptr.dev/)
+
+**Internal Documentation:**
+- [VaultLogic Architecture](../../../CLAUDE.md)
+- [Final Block Implementation](../../../docs/FINAL_BLOCKS_COMPLETE_FIX.md)
+- [Conditional Logic System](../../../shared/conditionalLogic.ts)
+
+---
+
+**Document Maintainer:** Development Team
+**Review Cycle:** Monthly
+**Next Review:** January 6, 2026

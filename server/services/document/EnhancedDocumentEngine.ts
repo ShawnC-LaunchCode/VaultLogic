@@ -1,0 +1,447 @@
+/**
+ * Enhanced Document Engine
+ *
+ * Extends the existing DocumentEngine with Final Block capabilities:
+ * - Variable normalization (flatten nested, convert arrays)
+ * - Field mapping (map workflow variables to document fields)
+ * - Conditional document generation
+ * - Multi-document rendering
+ *
+ * This is a THIN WRAPPER that preserves all existing functionality while
+ * adding new capabilities needed for Final Block integration.
+ *
+ * @version 1.0.0 - Final Block Extension (Prompt 10)
+ * @date December 6, 2025
+ */
+
+import { DocumentEngine } from './DocumentEngine.js';
+import type { DocumentGenerationOptions, DocumentGenerationResult } from './DocumentEngine.js';
+import { normalizeVariables, type NormalizedData, type NormalizationOptions } from './VariableNormalizer.js';
+import { applyMapping, type DocumentMapping, type MappingResult } from './MappingInterpreter.js';
+import type { FinalBlockConfig, LogicExpression } from '../../../shared/types/stepConfigs.js';
+import { createLogger } from '../../logger.js';
+
+const logger = createLogger({ module: 'enhanced-doc-engine' });
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
+/**
+ * Enhanced generation options (with normalization and mapping)
+ */
+export interface EnhancedGenerationOptions extends Omit<DocumentGenerationOptions, 'data'> {
+  /** Raw step values (will be normalized) */
+  rawData: Record<string, any>;
+
+  /** Optional field mapping */
+  mapping?: DocumentMapping;
+
+  /** Normalization options */
+  normalizationOptions?: NormalizationOptions;
+
+  /** Whether to apply normalization (default: true) */
+  normalize?: boolean;
+}
+
+/**
+ * Enhanced generation result (with mapping metadata)
+ */
+export interface EnhancedGenerationResult extends DocumentGenerationResult {
+  /** Normalized data that was used */
+  normalizedData: NormalizedData;
+
+  /** Mapping result (if mapping was applied) */
+  mappingResult?: MappingResult;
+
+  /** Document alias (for Final Block) */
+  alias?: string;
+}
+
+/**
+ * Single document configuration for Final Block
+ */
+export interface FinalBlockDocument {
+  /** Document ID (reference to template) */
+  documentId: string;
+
+  /** Template file path */
+  templatePath: string;
+
+  /** Document alias */
+  alias: string;
+
+  /** Optional field mapping */
+  mapping?: DocumentMapping;
+
+  /** Optional conditional logic */
+  conditions?: LogicExpression | null;
+}
+
+/**
+ * Final Block rendering options
+ */
+export interface FinalBlockRenderOptions {
+  /** Documents to generate */
+  documents: FinalBlockDocument[];
+
+  /** Step values from workflow run */
+  stepValues: Record<string, any>;
+
+  /** Output directory */
+  outputDir?: string;
+
+  /** Whether to convert to PDF */
+  toPdf?: boolean;
+
+  /** PDF conversion strategy */
+  pdfStrategy?: 'puppeteer' | 'libreoffice';
+
+  /** Normalization options */
+  normalizationOptions?: NormalizationOptions;
+}
+
+/**
+ * Final Block rendering result
+ */
+export interface FinalBlockRenderResult {
+  /** Successfully generated documents */
+  documents: EnhancedGenerationResult[];
+
+  /** Documents that were skipped (conditions = false) */
+  skipped: Array<{
+    alias: string;
+    reason: string;
+  }>;
+
+  /** Documents that failed to generate */
+  failed: Array<{
+    alias: string;
+    error: string;
+  }>;
+
+  /** Total number of documents attempted */
+  totalAttempted: number;
+
+  /** Total number of documents generated */
+  totalGenerated: number;
+}
+
+// ============================================================================
+// ENHANCED DOCUMENT ENGINE CLASS
+// ============================================================================
+
+/**
+ * Enhanced Document Engine
+ *
+ * Wraps existing DocumentEngine with Final Block capabilities.
+ * Preserves all existing functionality - this is ADDITIVE, not a replacement.
+ */
+export class EnhancedDocumentEngine {
+  private engine: DocumentEngine;
+
+  constructor() {
+    this.engine = new DocumentEngine();
+  }
+
+  /**
+   * Generate document with normalization and mapping
+   *
+   * This method extends the base DocumentEngine.generate() with:
+   * - Automatic variable normalization
+   * - Field mapping application
+   * - Metadata tracking
+   *
+   * @param options - Enhanced generation options
+   * @returns Enhanced generation result
+   */
+  async generateWithMapping(
+    options: EnhancedGenerationOptions
+  ): Promise<EnhancedGenerationResult> {
+    const {
+      rawData,
+      mapping,
+      normalizationOptions = {},
+      normalize = true,
+      ...baseOptions
+    } = options;
+
+    logger.info('Generating document with mapping', {
+      outputName: baseOptions.outputName,
+      hasMapping: !!mapping,
+      normalize,
+    });
+
+    // Step 1: Normalize variables
+    const normalizedData = normalize
+      ? normalizeVariables(rawData, normalizationOptions)
+      : (rawData as NormalizedData);
+
+    logger.debug('Variables normalized', {
+      originalKeys: Object.keys(rawData).length,
+      normalizedKeys: Object.keys(normalizedData).length,
+    });
+
+    // Step 2: Apply mapping (if provided)
+    let mappingResult: MappingResult | undefined;
+    let finalData: NormalizedData = normalizedData;
+
+    if (mapping) {
+      mappingResult = applyMapping(normalizedData, mapping);
+      finalData = mappingResult.data;
+
+      logger.debug('Mapping applied', {
+        mapped: mappingResult.mapped.length,
+        missing: mappingResult.missing.length,
+        unused: mappingResult.unused.length,
+      });
+
+      // Log warnings for missing source variables
+      if (mappingResult.missing.length > 0) {
+        logger.warn('Mapping references missing variables', {
+          missing: mappingResult.missing,
+        });
+      }
+    }
+
+    // Step 3: Generate document using base engine
+    const result = await this.engine.generate({
+      ...baseOptions,
+      data: finalData,
+    });
+
+    // Step 4: Return enhanced result
+    return {
+      ...result,
+      normalizedData,
+      mappingResult,
+    };
+  }
+
+  /**
+   * Generate document using base engine (passthrough)
+   *
+   * This preserves the original DocumentEngine.generate() behavior.
+   * No normalization or mapping - just direct passthrough.
+   *
+   * @param options - Base generation options
+   * @returns Base generation result
+   */
+  async generate(options: DocumentGenerationOptions): Promise<DocumentGenerationResult> {
+    return this.engine.generate(options);
+  }
+
+  /**
+   * Render all documents for a Final Block
+   *
+   * This is the main entry point for Final Block document generation.
+   *
+   * Workflow:
+   * 1. Normalize step values once (reused for all documents)
+   * 2. For each document:
+   *    a. Evaluate conditions → skip if false
+   *    b. Apply mapping
+   *    c. Generate document
+   *    d. Handle errors gracefully
+   * 3. Return results + metadata
+   *
+   * @param options - Final Block render options
+   * @returns Render result with all documents
+   */
+  async renderFinalBlock(
+    options: FinalBlockRenderOptions
+  ): Promise<FinalBlockRenderResult> {
+    const {
+      documents,
+      stepValues,
+      outputDir,
+      toPdf = false,
+      pdfStrategy = 'puppeteer',
+      normalizationOptions = {},
+    } = options;
+
+    logger.info('Rendering Final Block documents', {
+      documentCount: documents.length,
+      toPdf,
+      pdfStrategy,
+    });
+
+    // Pre-normalize step values once (reused for all documents)
+    const normalizedStepValues = normalizeVariables(stepValues, normalizationOptions);
+
+    logger.debug('Step values normalized', {
+      originalKeys: Object.keys(stepValues).length,
+      normalizedKeys: Object.keys(normalizedStepValues).length,
+    });
+
+    const results: EnhancedGenerationResult[] = [];
+    const skipped: FinalBlockRenderResult['skipped'] = [];
+    const failed: FinalBlockRenderResult['failed'] = [];
+
+    // Process each document
+    for (const doc of documents) {
+      try {
+        // Step 1: Evaluate conditions
+        if (doc.conditions) {
+          const conditionMet = this.evaluateConditions(doc.conditions, stepValues);
+
+          if (!conditionMet) {
+            skipped.push({
+              alias: doc.alias,
+              reason: 'Conditions not met',
+            });
+            logger.info('Document skipped (conditions not met)', { alias: doc.alias });
+            continue;
+          }
+        }
+
+        // Step 2: Generate document
+        const result = await this.generateWithMapping({
+          templatePath: doc.templatePath,
+          rawData: stepValues, // Pass raw data, will be normalized internally
+          mapping: doc.mapping,
+          outputName: doc.alias,
+          outputDir,
+          toPdf,
+          pdfStrategy,
+          normalizationOptions,
+          normalize: true,
+        });
+
+        results.push({
+          ...result,
+          alias: doc.alias,
+        });
+
+        logger.info('Document generated successfully', {
+          alias: doc.alias,
+          docxPath: result.docxPath,
+          pdfPath: result.pdfPath,
+        });
+      } catch (error) {
+        failed.push({
+          alias: doc.alias,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+
+        logger.error('Document generation failed', {
+          alias: doc.alias,
+          error,
+        });
+      }
+    }
+
+    const finalResult: FinalBlockRenderResult = {
+      documents: results,
+      skipped,
+      failed,
+      totalAttempted: documents.length,
+      totalGenerated: results.length,
+    };
+
+    logger.info('Final Block rendering complete', {
+      totalAttempted: finalResult.totalAttempted,
+      generated: finalResult.totalGenerated,
+      skipped: skipped.length,
+      failed: failed.length,
+    });
+
+    return finalResult;
+  }
+
+  /**
+   * Evaluate conditional logic for document inclusion
+   *
+   * Uses simplified logic evaluation (can be replaced with full logic engine later)
+   *
+   * @param conditions - Logic expression
+   * @param stepValues - Step values to evaluate against
+   * @returns Whether conditions are met
+   */
+  private evaluateConditions(
+    conditions: LogicExpression,
+    stepValues: Record<string, any>
+  ): boolean {
+    if (!conditions || !conditions.conditions || conditions.conditions.length === 0) {
+      return true;
+    }
+
+    const operator = conditions.operator || 'AND';
+    const results = conditions.conditions.map(cond => {
+      const value = stepValues[cond.key];
+
+      switch (cond.op) {
+        case 'equals':
+          return value === cond.value;
+        case 'not_equals':
+          return value !== cond.value;
+        case 'contains':
+          if (typeof value === 'string') {
+            return value.includes(String(cond.value));
+          }
+          if (Array.isArray(value)) {
+            return value.includes(cond.value);
+          }
+          return false;
+        case 'greater_than':
+          return Number(value) > Number(cond.value);
+        case 'less_than':
+          return Number(value) < Number(cond.value);
+        case 'is_empty':
+          return !value || value === '' || (Array.isArray(value) && value.length === 0);
+        case 'is_not_empty':
+          return !!value && value !== '' && (!Array.isArray(value) || value.length > 0);
+        default:
+          return true;
+      }
+    });
+
+    if (operator === 'AND') {
+      return results.every(r => r);
+    } else {
+      return results.some(r => r);
+    }
+  }
+}
+
+// ============================================================================
+// SINGLETON INSTANCE
+// ============================================================================
+
+/**
+ * Singleton instance for reuse across application
+ */
+export const enhancedDocumentEngine = new EnhancedDocumentEngine();
+
+// ============================================================================
+// CONVENIENCE FUNCTIONS
+// ============================================================================
+
+/**
+ * Generate document with mapping (convenience function)
+ */
+export async function generateDocumentWithMapping(
+  options: EnhancedGenerationOptions
+): Promise<EnhancedGenerationResult> {
+  return enhancedDocumentEngine.generateWithMapping(options);
+}
+
+/**
+ * Render Final Block documents (convenience function)
+ */
+export async function renderFinalBlockDocuments(
+  options: FinalBlockRenderOptions
+): Promise<FinalBlockRenderResult> {
+  return enhancedDocumentEngine.renderFinalBlock(options);
+}
+
+// ============================================================================
+// EXPORTS
+// ============================================================================
+
+export default {
+  EnhancedDocumentEngine,
+  enhancedDocumentEngine,
+  generateDocumentWithMapping,
+  renderFinalBlockDocuments,
+};
