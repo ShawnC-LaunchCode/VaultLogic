@@ -1,4 +1,14 @@
 import { spawn } from "child_process";
+import { createLogger } from "../logger";
+
+const logger = createLogger({ module: "sandbox-executor" });
+
+// Security Constants
+const MAX_CODE_SIZE = parseInt(process.env.SANDBOX_MAX_CODE_SIZE || "32768", 10); // 32KB
+const MAX_INPUT_SIZE = parseInt(process.env.SANDBOX_MAX_INPUT_SIZE || "65536", 10); // 64KB
+const MAX_OUTPUT_SIZE = parseInt(process.env.SANDBOX_MAX_OUTPUT_SIZE || "65536", 10); // 64KB
+const MIN_TIMEOUT_MS = 100;
+const MAX_TIMEOUT_MS = 3000;
 
 /**
  * Sandbox Executor for Transform Blocks
@@ -27,6 +37,45 @@ interface ExecutionResult {
   };
 }
 
+// LRU cache for compiled scripts using Map's insertion order
+const scriptCache = new Map<string, any>();
+const MAX_CACHE_SIZE = 100;
+
+/**
+ * Add script to cache with proper LRU eviction
+ * Map maintains insertion order, so we can use it for LRU
+ */
+function addToCache(key: string, script: any): void {
+  // If key exists, delete it first so we can re-insert at the end
+  if (scriptCache.has(key)) {
+    scriptCache.delete(key);
+  }
+
+  // Evict oldest entry if cache is full
+  if (scriptCache.size >= MAX_CACHE_SIZE) {
+    const firstKey = scriptCache.keys().next().value;
+    if (firstKey !== undefined) {
+      scriptCache.delete(firstKey);
+    }
+  }
+
+  // Add to end (most recently used)
+  scriptCache.set(key, script);
+}
+
+/**
+ * Get script from cache and mark as recently used
+ */
+function getFromCache(key: string): any | undefined {
+  const script = scriptCache.get(key);
+  if (script !== undefined) {
+    // Move to end (most recently used)
+    scriptCache.delete(key);
+    scriptCache.set(key, script);
+  }
+  return script;
+}
+
 /**
  * Execute JavaScript code in a vm2 sandbox
  *
@@ -49,61 +98,86 @@ export async function runJsVm2(
 ): Promise<ExecutionResult> {
   try {
     // Enforce timeout limits
-    const actualTimeout = Math.min(Math.max(timeoutMs, 100), 3000);
+    const actualTimeout = Math.min(Math.max(timeoutMs, MIN_TIMEOUT_MS), MAX_TIMEOUT_MS);
 
     // Validate code size
-    if (code.length > 32 * 1024) {
+    if (code.length > MAX_CODE_SIZE) {
       return {
         ok: false,
-        error: "Code size exceeds 32KB limit",
+        error: `Code size exceeds ${MAX_CODE_SIZE / 1024}KB limit`,
       };
     }
 
     // Validate input size
     const inputJson = JSON.stringify(input);
-    if (inputJson.length > 64 * 1024) {
+    if (inputJson.length > MAX_INPUT_SIZE) {
       return {
         ok: false,
-        error: "Input size exceeds 64KB limit",
+        error: `Input size exceeds ${MAX_INPUT_SIZE / 1024}KB limit`,
       };
     }
 
-    // Dynamically import vm2 (may not be available in all environments)
+    // Dynamically import vm2
     let VM2: any;
+    let VMScript: any;
     try {
-      // @ts-ignore - vm2 is optional and may not be installed
       const vm2Module = await import("vm2");
       VM2 = vm2Module.VM;
+      VMScript = vm2Module.VMScript;
     } catch (importError) {
-      // Fallback: vm2 not available - use Node.js vm module with warnings
-      return runJsNodeVm(code, input, actualTimeout);
+      // CRITICAL: Do not fallback to insecure vm module
+      logger.error({ error: importError }, "Failed to initialize vm2 sandbox");
+      return {
+        ok: false,
+        error: "SandboxInitializationError: Secure sandbox engine (vm2) is not available. Execution aborted for security.",
+      };
     }
 
-    // Create VM2 sandbox with restricted globals
-    const vm = new VM2({
-      timeout: actualTimeout,
-      sandbox: {
-        input,
-      },
-      eval: false,
-      wasm: false,
-    });
+    try {
+      // Wrap code in a function
+      const wrappedCode = `
+        (function(input) {
+          ${code}
+        })(input);
+      `;
 
-    // Wrap code in a function and execute it
-    // This allows the code to use 'return' statements
-    const wrappedCode = `
-      (function(input) {
-        ${code}
-      })(input);
-    `;
+      // Check cache (LRU)
+      let script = getFromCache(wrappedCode);
+      if (!script) {
+        try {
+          script = new VMScript(wrappedCode);
+          addToCache(wrappedCode, script);
+        } catch (compileError: any) {
+          return {
+            ok: false,
+            error: `CompilationError: ${compileError.message}`
+          };
+        }
+      }
 
-    // Execute code and capture return value
-    const result = vm.run(wrappedCode);
+      // Create VM2 sandbox with restricted globals
+      const vm = new VM2({
+        timeout: actualTimeout,
+        sandbox: {
+          input,
+        },
+        eval: false,
+        wasm: false,
+      });
 
-    return {
-      ok: true,
-      output: result as Record<string, unknown> | string | number | boolean | null,
-    };
+      // Execute cached script
+      const result = vm.run(script);
+
+      return {
+        ok: true,
+        output: result as Record<string, unknown> | string | number | boolean | null,
+      };
+    } catch (error: any) {
+      if (error.message && (error.message.includes("timeout") || error.message.includes("timed out") || error.code === 'ERR_SCRIPT_EXECUTION_TIMEOUT')) {
+        throw new Error("TimeoutError: Execution exceeded time limit");
+      }
+      throw error;
+    }
   } catch (error) {
     if (error instanceof Error) {
       // Check for timeout
@@ -154,89 +228,7 @@ export async function runJsVm2(
 
     return {
       ok: false,
-      error: "Unknown execution error",
-    };
-  }
-}
-
-/**
- * Fallback JavaScript executor using Node.js built-in vm module
- * WARNING: Less secure than vm2, use only when vm2 is not available
- */
-async function runJsNodeVm(
-  code: string,
-  input: Record<string, unknown>,
-  timeoutMs: number
-): Promise<ExecutionResult> {
-  try {
-    const vm = await import("vm");
-
-    const sandbox = {
-      input,
-      console: undefined,
-      require: undefined,
-      process: undefined,
-      global: undefined,
-      Buffer: undefined,
-      setTimeout: undefined,
-      setInterval: undefined,
-      setImmediate: undefined,
-    };
-
-    // Wrap code in a function and execute it
-    const wrappedCode = `
-      (function(input) {
-        ${code}
-      })(input);
-    `;
-
-    const context = vm.createContext(sandbox);
-    const result = vm.runInContext(wrappedCode, context, {
-      timeout: timeoutMs,
-      displayErrors: true,
-    });
-
-    return {
-      ok: true,
-      output: result as Record<string, unknown> | string | number | boolean | null,
-    };
-  } catch (error) {
-    if (error instanceof Error) {
-      // Parse stack trace to extract line and column numbers
-      const stackLines = error.stack?.split('\n') || [];
-      let line: number | undefined;
-      let column: number | undefined;
-
-      // Look for line numbers in stack trace
-      for (const stackLine of stackLines) {
-        const match = stackLine.match(/:(\d+):(\d+)/);
-        if (match) {
-          line = parseInt(match[1], 10);
-          column = parseInt(match[2], 10);
-          // Adjust line number to account for wrapper function (subtract 2 lines)
-          if (line > 2) {
-            line = line - 2;
-          }
-          break;
-        }
-      }
-
-      return {
-        ok: false,
-        error: `SandboxError: ${error.message}`,
-        errorDetails: {
-          message: error.message,
-          name: error.name,
-          stack: error.stack,
-          line,
-          column,
-        },
-      };
-    }
-
-    return {
-      ok: false,
-      error: "Unknown execution error",
+      error: `Unknown execution error: ${error}`,
     };
   }
 }
@@ -244,11 +236,7 @@ async function runJsNodeVm(
 /**
  * Execute Python code in a subprocess with restricted environment
  *
- * Example code:
- * ```python
- * # input = {"amount": 100, "taxRate": 0.07}
- * # emit(input["amount"] * (1 + input["taxRate"]))
- * ```
+ * Code is passed to the subprocess via STDIN to prevent injection attacks.
  *
  * Security:
  * - No file system access
@@ -270,28 +258,36 @@ export async function runPythonSubprocess(
   return new Promise((resolve) => {
     try {
       // Enforce timeout limits
-      const actualTimeout = Math.min(Math.max(timeoutMs, 100), 3000);
+      const actualTimeout = Math.min(Math.max(timeoutMs, MIN_TIMEOUT_MS), MAX_TIMEOUT_MS);
 
       // Validate code size
-      if (code.length > 32 * 1024) {
+      if (code.length > MAX_CODE_SIZE) {
         resolve({
           ok: false,
-          error: "Code size exceeds 32KB limit",
+          error: `Code size exceeds ${MAX_CODE_SIZE / 1024}KB limit`,
         });
         return;
       }
 
-      // Validate input size
-      const inputJson = JSON.stringify(input);
-      if (inputJson.length > 64 * 1024) {
+      // Prepare payload (Input + Code)
+      // This allows us to pass the code safely without string interpolation injection risks
+      const payload = {
+        input,
+        __sys_code__: code
+      };
+
+      // Validate payload size
+      const payloadJson = JSON.stringify(payload);
+      if (payloadJson.length > MAX_INPUT_SIZE) {
         resolve({
           ok: false,
-          error: "Input size exceeds 64KB limit",
+          error: `Input size exceeds ${MAX_INPUT_SIZE / 1024}KB limit`,
         });
         return;
       }
 
       // Python wrapper script that creates a restricted execution environment
+      // Reads BOTH input data AND user code from STDIN
       const pythonWrapper = `
 import json
 import sys
@@ -326,8 +322,14 @@ safe_builtins = {
     'None': None,
 }
 
-# Read input from stdin
-input_data = json.loads(sys.stdin.read())
+# Read payload from stdin
+try:
+    payload = json.loads(sys.stdin.read())
+    input_data = payload.get('input', {})
+    user_code = payload.get('__sys_code__', '')
+except Exception as e:
+    print(json.dumps({"ok": False, "error": "SystemError: Failed to read input payload"}))
+    sys.exit(1)
 
 # Track output
 result = None
@@ -347,15 +349,28 @@ namespace = {
     'emit': emit,
 }
 
-# Execute user code
-user_code = """${code.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n')}"""
-exec(user_code, namespace)
+# Execute user code safely
+try:
+    exec(user_code, namespace)
+except Exception as e:
+    # Capture exception details
+    print(json.dumps({
+        "ok": False, 
+        "error": f"{type(e).__name__}: {str(e)}"
+    }))
+    sys.exit(0)
 
 if not emit_called:
-    raise Exception("Code did not call emit() to produce output")
+    # Default to None if not emitted, or raise error? 
+    # Current contract expects emit, but let's handle gracefully
+    print(json.dumps({"ok": False, "error": "Code did not call emit() to produce output"}))
+    sys.exit(0)
 
 # Output result as JSON
-print(json.dumps({"ok": True, "output": result}))
+try:
+    print(json.dumps({"ok": True, "output": result}))
+except Exception as e:
+    print(json.dumps({"ok": False, "error": "OutputError: Failed to serialize output to JSON"}))
 `;
 
       let stdout = "";
@@ -363,6 +378,7 @@ print(json.dumps({"ok": True, "output": result}))
       let killed = false;
 
       // Spawn Python subprocess
+      // We pass the wrapper itself via -c
       const pythonProcess = spawn("python3", ["-c", pythonWrapper], {
         timeout: actualTimeout,
         stdio: ["pipe", "pipe", "pipe"],
@@ -379,18 +395,18 @@ print(json.dumps({"ok": True, "output": result}))
       // Collect stdout
       pythonProcess.stdout.on("data", (data: Buffer) => {
         stdout += data.toString();
-        // Enforce max output size (64KB)
-        if (stdout.length > 64 * 1024) {
+        // Enforce max output size
+        if (stdout.length > MAX_OUTPUT_SIZE) {
           pythonProcess.kill("SIGKILL");
           killed = true;
         }
       });
 
-      // Collect stderr
+      // Collect stderr (only used for system-level errors since we catch exceptions in python)
       pythonProcess.stderr.on("data", (data: Buffer) => {
         stderr += data.toString();
-        // Enforce max error size (64KB)
-        if (stderr.length > 64 * 1024) {
+        // Enforce max error size
+        if (stderr.length > MAX_OUTPUT_SIZE) {
           pythonProcess.kill("SIGKILL");
           killed = true;
         }
@@ -414,16 +430,27 @@ print(json.dumps({"ok": True, "output": result}))
           const lastLine = errorLines[errorLines.length - 1] || "Unknown error";
           resolve({
             ok: false,
-            error: `PythonError: ${lastLine.slice(0, 500)}`, // Truncate long errors
+            error: `PythonProcessError: ${lastLine.slice(0, 500)}`,
           });
           return;
         }
 
         try {
-          // Parse JSON output
+          // Parse JSON output from the wrapper
           const result = JSON.parse(stdout.trim());
-          resolve(result);
+          if (result.ok) {
+            resolve({
+              ok: true,
+              output: result.output
+            });
+          } else {
+            resolve({
+              ok: false,
+              error: result.error || "Unknown execution error"
+            });
+          }
         } catch (parseError) {
+          console.error("Failed to parse stdout:", stdout);
           resolve({
             ok: false,
             error: `OutputError: Failed to parse Python output - ${parseError instanceof Error ? parseError.message : 'unknown error'}`,
@@ -440,8 +467,8 @@ print(json.dumps({"ok": True, "output": result}))
         });
       });
 
-      // Send input to stdin
-      pythonProcess.stdin.write(inputJson);
+      // Send payload to stdin
+      pythonProcess.stdin.write(payloadJson);
       pythonProcess.stdin.end();
     } catch (error) {
       resolve({
