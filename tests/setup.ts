@@ -1,5 +1,9 @@
 ﻿import { beforeAll, afterAll, beforeEach, afterEach, vi } from "vitest";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
+import dotenv from "dotenv";
+
+// Load environment variables immediately
+dotenv.config();
 
 /**
  * Global test setup file
