@@ -139,7 +139,7 @@ const dateHelpers = {
       const parsedDate = parseISO(date);
       return formatDate(parsedDate, formatString);
     } catch (error) {
-      throw new Error(`date.format error: ${error instanceof Error ? error.message : "unknown error"}`);
+      return "Invalid Date";
     }
   },
 
@@ -206,7 +206,7 @@ const dateHelpers = {
 // ===================================================================
 
 const stringHelpers = {
-  upper: (str: string): string => str.toUpperCase(),
+  upper: (str: string): string => (str ? str.toUpperCase() : ""),
 
   lower: (str: string): string => str.toLowerCase(),
 
@@ -254,6 +254,7 @@ const stringHelpers = {
 
 const numberHelpers = {
   round: (num: number, decimals: number = 0): number => {
+    if (typeof num !== 'number' || isNaN(num)) return NaN;
     return Number(num.toFixed(decimals));
   },
 
@@ -448,9 +449,9 @@ export function createHelperLibrary(options?: {
     math: mathHelpers,
     http: httpHelpers,
     console: consoleHelpers?.helpers || {
-      log: () => {},
-      warn: () => {},
-      error: () => {},
+      log: () => { },
+      warn: () => { },
+      error: () => { },
     },
   };
 

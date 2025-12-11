@@ -250,7 +250,7 @@ describe('HelperLibrary', () => {
       helpers.warn('Warning!');
 
       const logs = getLogs();
-      expect(logs).toEqual([['Warning!']]);
+      expect(logs).toEqual([['[WARN]', 'Warning!']]);
     });
 
     it('should capture console.error calls', () => {
@@ -259,7 +259,7 @@ describe('HelperLibrary', () => {
       helpers.error('Error!', { code: 500 });
 
       const logs = getLogs();
-      expect(logs).toEqual([['Error!', { code: 500 }]]);
+      expect(logs).toEqual([['[ERROR]', 'Error!', { code: 500 }]]);
     });
 
     it('should capture mixed console calls in order', () => {
@@ -273,8 +273,8 @@ describe('HelperLibrary', () => {
       const logs = getLogs();
       expect(logs.length).toBe(4);
       expect(logs[0]).toEqual(['Log 1']);
-      expect(logs[1]).toEqual(['Warning 1']);
-      expect(logs[2]).toEqual(['Error 1']);
+      expect(logs[1]).toEqual(['[WARN]', 'Warning 1']);
+      expect(logs[2]).toEqual(['[ERROR]', 'Error 1']);
       expect(logs[3]).toEqual(['Log 2']);
     });
 

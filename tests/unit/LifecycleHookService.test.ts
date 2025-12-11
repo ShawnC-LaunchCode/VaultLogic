@@ -331,12 +331,13 @@ describe('LifecycleHookService', () => {
         data: { value: 42, other: 'ignored' },
       });
 
-      expect(scriptEngine.execute).toHaveBeenCalledWith(
-        expect.objectContaining({
-          inputKeys: ['value'],
-          data: { value: 42, other: 'ignored' },
-        })
-      );
+      const executeSpy = vi.mocked(scriptEngine.execute);
+
+      expect(executeSpy).toHaveBeenCalled();
+      const callArgs = executeSpy.mock.calls[0][0];
+      expect(callArgs.inputKeys).toEqual(['value']);
+      expect(callArgs.data.value).toBe(42);
+      expect(callArgs.data.other).toBe('ignored');
     });
   });
 
