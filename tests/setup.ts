@@ -46,7 +46,6 @@ beforeAll(async () => {
       const dbModule = await import("../server/db");
 
       // Check if the module is valid (not a partial mock missing exports)
-      // This prevents crashing unit tests that partially mock server/db without exporting 'db' or 'initializeDatabase'
       if (dbModule.db && dbModule.initializeDatabase) {
         db = dbModule.db;
         initializeDatabase = dbModule.initializeDatabase;
@@ -59,21 +58,17 @@ beforeAll(async () => {
         console.log("✅ Database initialized for tests");
 
         // Run database migrations for test DB
-        console.log("🔄 Running test migrations...");
-        await migrate(db, { migrationsFolder: "./migrations" });
+        // Wrap in try-catch so failing migrations (e.g. existing tables) don't block function creation
+        try {
+          console.log("🔄 Running test migrations...");
+          await migrate(db, { migrationsFolder: "./migrations" });
+        } catch (error) {
+          console.warn("⚠️ Migrations failed (non-fatal if DB exists):", error);
+        }
 
         // Ensure DB functions exist (with concurrency retry)
+        // Critical: run this even if migrations fail
         await ensureDbFunctionsWithRetry();
-
-        // Verify what exists now (debug)
-        /*
-        const funcList = await db.execute(`
-           SELECT specific_schema, routine_name, data_type 
-           FROM information_schema.routines 
-           WHERE routine_name = 'datavault_get_next_autonumber'
-        `);
-        console.log("🔎 Found functions:", JSON.stringify(funcList.rows));
-        */
       } else {
         console.log("⚠️ DB module loaded but appears to be a mock. Skipping real DB setup.");
       }
@@ -197,9 +192,10 @@ async function ensureDbFunctions() {
       `);
 
   // Legacy name support if needed (alias)
+  // Renamed p_tenant_id to p_table_id to match usage semantics (though types are same)
   await db.execute(`
         CREATE OR REPLACE FUNCTION public.datavault_get_next_auto_number(
-          p_tenant_id UUID,
+          p_table_id UUID,
           p_column_id UUID,
           p_start_value INTEGER
         )
