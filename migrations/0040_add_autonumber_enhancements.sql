@@ -79,15 +79,7 @@ SELECT
   dc."id" as "column_id",
   NULL as "prefix",  -- No prefix by default
   4 as "padding",    -- Default padding
-  COALESCE(
-    (
-      SELECT MAX((dv."value"->>0)::integer) + 1
-      FROM "datavault_values" dv
-      WHERE dv."column_id" = dc."id"
-        AND jsonb_typeof(dv."value") = 'number'
-    ),
-    COALESCE(dc."auto_number_start", 1)
-  ) as "next_value",
+  COALESCE(dc."auto_number_start", 1) as "next_value",
   'never' as "reset_policy"
 FROM "datavault_columns" dc
 JOIN "datavault_tables" dt ON dc."table_id" = dt."id"
