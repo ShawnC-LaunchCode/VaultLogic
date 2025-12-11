@@ -1,4 +1,5 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
+import { eq } from 'drizzle-orm';
 import pg from 'pg';
 import dotenv from 'dotenv';
 import { nanoid } from 'nanoid';
@@ -126,7 +127,7 @@ async function seed() {
     await db
       .update(schema.workflows)
       .set({ currentVersionId: workflowVersion.id })
-      .where(schema.workflows.id.eq(workflow.id));
+      .where(eq(schema.workflows.id, workflow.id));
 
     console.log(`✅ Set current version for workflow`);
 
@@ -243,8 +244,8 @@ async function seed() {
 
     console.log(`✅ Created API key (${apiKey.id})`);
 
-    console.log('\\n✅ Seeding completed successfully!');
-    console.log('\\n📊 Summary:');
+    console.log('\n✅ Seeding completed successfully!');
+    console.log('\n📊 Summary:');
     console.log(`   Tenant: ${tenant.name}`);
     console.log(`   User: ${user.email}`);
     console.log(`   Project: ${project.name}`);
