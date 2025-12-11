@@ -393,7 +393,7 @@ export class DatavaultRowsRepository extends BaseRepository<
     // Use PostgreSQL function to get next value from sequence
     // This is atomic and prevents race conditions
     const res = await database.execute(
-      sql`SELECT datavault_get_next_auto_number(${tableId}::UUID, ${columnId}::UUID, ${startValue}::INTEGER) as next_value`
+      sql`SELECT public.datavault_get_next_auto_number(${tableId}::UUID, ${columnId}::UUID, ${startValue}::INTEGER) as next_value`
     );
     const result = Array.isArray(res) ? res[0] : (res as any)?.rows?.[0] || res;
 
@@ -432,7 +432,7 @@ export class DatavaultRowsRepository extends BaseRepository<
 
     // Call the database function with all parameters
     const res = await database.execute(
-      sql`SELECT datavault_get_next_autonumber(
+      sql`SELECT public.datavault_get_next_autonumber(
         ${tenantId}::UUID,
         ${tableId}::UUID,
         ${columnId}::UUID,
@@ -462,7 +462,7 @@ export class DatavaultRowsRepository extends BaseRepository<
 
     // Call PostgreSQL function to drop the sequence
     await database.execute(
-      sql`SELECT datavault_cleanup_sequence(${columnId}::UUID)`
+      sql`SELECT public.datavault_cleanup_sequence(${columnId}::UUID)`
     );
   }
 
