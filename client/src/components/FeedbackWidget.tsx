@@ -23,23 +23,29 @@ export default function FeedbackWidget() {
   return (
     <>
       <div className="fixed bottom-6 right-6 z-50">
-        <DialogContent
-          className="sm:max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 p-8 text-center"
-        >
-          <div className="flex flex-col items-center justify-center space-y-4">
-            <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-full">
-              <MessageSquare className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+        <Dialog>
+          <DialogTrigger asChild>
+            <button className="bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 p-3 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 hover:scale-105 active:scale-95 transition-all">
+              <MessageSquare className="w-6 h-6" />
+            </button>
+          </DialogTrigger>
+          <DialogContent
+            className="sm:max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 p-8 text-center"
+          >
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-full">
+                <MessageSquare className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <h2 className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-fuchsia-600">
+                Feedback Coming Soon
+              </h2>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
+                We are preparing a new feedback survey to better capture your thoughts. Stay tuned!
+              </p>
             </div>
-            <h2 className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-fuchsia-600">
-              Feedback Coming Soon
-            </h2>
-            <p className="text-gray-500 dark:text-gray-400 text-sm">
-              We are preparing a new feedback survey to better capture your thoughts. Stay tuned!
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div >
+          </DialogContent>
+        </Dialog>
+      </div>
 
       <AnimatePresence>
         {submitted && (
