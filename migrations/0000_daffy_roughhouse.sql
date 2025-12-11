@@ -198,3 +198,26 @@ CREATE INDEX "global_recipients_email_idx" ON "global_recipients" USING btree ("
 CREATE INDEX "global_recipients_creator_email_idx" ON "global_recipients" USING btree ("creator_id","email");--> statement-breakpoint
 CREATE INDEX "IDX_session_expire" ON "sessions" USING btree ("expire");--> statement-breakpoint
 CREATE INDEX "surveys_public_link_unique_idx" ON "surveys" USING btree ("public_link");
+
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "workflows" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"title" varchar NOT NULL,
+	"created_at" timestamp DEFAULT now()
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "sections" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"title" varchar
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "workflow_runs" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"participant_id" uuid,
+	"workflow_id" uuid,
+	"created_at" timestamp DEFAULT now()
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "participants" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL
+);

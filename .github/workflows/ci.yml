@@ -48,13 +48,16 @@ jobs:
     - name: Lint (if available)
       run: npm run lint --if-present
       
-    - name: Unit Tests (Config & Logic)
-      run: npm run test:coverage -- --reporter=default --reporter=json --outputFile=vitest-summary.json
-      
     - name: Setup Database
       run: |
         npm run db:migrate
         npm run db:seed
+      env:
+        NODE_ENV: test
+        DATABASE_URL: "postgresql://postgres:postgrespw@localhost:5432/test_db"
+
+    - name: Unit Tests (Config & Logic)
+      run: npm run test:coverage -- --reporter=default --reporter=json --outputFile=vitest-summary.json
       env:
         NODE_ENV: test
         DATABASE_URL: "postgresql://postgres:postgrespw@localhost:5432/test_db"
