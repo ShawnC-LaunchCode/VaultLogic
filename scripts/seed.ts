@@ -237,6 +237,7 @@ async function seed() {
       .insert(schema.apiKeys)
       .values({
         projectId: project.id,
+        prefix: 'sk_test',
         keyHash: 'hashed_api_key_' + nanoid(),
         scopes: ['read', 'write'],
       })
