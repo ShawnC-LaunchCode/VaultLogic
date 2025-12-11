@@ -22,7 +22,6 @@
     "generate-fake-data": "tsx scripts/generateFakeData.ts",
     "test-gemini": "tsx scripts/testGeminiApi.ts",
     "test-gemini-direct": "tsx scripts/testGeminiApiDirect.ts",
-    "slack:test": "node scripts/slackNotifier.js",
     "test": "vitest run --coverage",
     "test:unit": "vitest run tests/unit",
     "test:integration": "cross-env VITEST_INTEGRATION=true vitest run tests/integration",

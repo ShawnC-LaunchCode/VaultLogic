@@ -49,7 +49,7 @@ jobs:
       run: npm run lint --if-present
       
     - name: Unit Tests (Config & Logic)
-      run: npm run test:unit -- --reporter=default --reporter=json --outputFile=vitest-summary.json
+      run: npm run test:coverage -- --reporter=default --reporter=json --outputFile=vitest-summary.json
       
     - name: Setup Database
       run: |
@@ -71,14 +71,18 @@ jobs:
       # For now, we'll placeholder this or run the actual migration check script if implemented
       run: echo "Checking migration safety..."
 
-    - name: Slack Notification
+    - name: Slack Notification Suite
       if: always()
-      run: npm run slack:test
       env:
         SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
-        GITHUB_SHA: ${{ github.sha }}
-        GITHUB_ACTOR: ${{ github.actor }}
-        GITHUB_REPOSITORY: ${{ github.repository }}
-        GITHUB_RUN_ID: ${{ github.run_id }}
-        GITHUB_SERVER_URL: ${{ github.server_url }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        npm install
+        node scripts/ci/parse-test-results.js
+        node scripts/ci/parse-coverage.js
+        node scripts/ci/compute-coverage-delta.js
+        node scripts/ci/get-file-changes.js
+        node scripts/ci/build-slack-payload.js
+        node scripts/ci/post-slack-main.js
+        node scripts/ci/post-slack-threads.js
