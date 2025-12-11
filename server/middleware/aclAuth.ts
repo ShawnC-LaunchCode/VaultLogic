@@ -133,35 +133,3 @@ export function requireWorkflowRole(
   };
 }
 
-/**
- * Helper to check user authentication without ACL checks
- * Just ensures user is logged in and attaches userId to request
- */
-export const requireAuth: RequestHandler = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const user = req.session?.user || req.user;
-
-    if (!user?.claims?.sub) {
-      logger.warn({ ip: req.ip }, 'Authentication required');
-      return res.status(401).json({
-        success: false,
-        error: "Unauthorized - You must be logged in",
-      });
-    }
-
-    // Attach user ID to request for use in route handlers
-    req.userId = user.claims.sub;
-
-    next();
-  } catch (error) {
-    logger.error({ err: error }, 'Error in auth middleware');
-    res.status(500).json({
-      success: false,
-      error: "Internal server error during authentication",
-    });
-  }
-};

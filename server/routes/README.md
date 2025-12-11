@@ -57,7 +57,7 @@ export function registerSurveyRoutes(app: Express) {
 import { Router } from 'express';
 const router = Router();
 
-router.get('/', requireAuth, requireTenant, requirePermission('project:view'),
+router.get('/', hybridAuth, requireTenant, requirePermission('project:view'),
   async (req, res) => {
     // Handler logic with pagination, validation, etc.
   }
@@ -167,7 +167,7 @@ registerApiRunRoutes(app);
 - Use structured logging (Pino)
 
 ### For Modern API Routes:
-- Always use `requireAuth`, `requireTenant`, `requirePermission`
+- Always use `hybridAuth`, `requireTenant`, `requirePermission`
 - Implement cursor-based pagination for list endpoints
 - Use Zod schemas from `server/api/validators/`
 - Return standardized error responses

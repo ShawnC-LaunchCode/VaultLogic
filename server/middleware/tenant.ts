@@ -82,7 +82,7 @@ export function validateTenantAccess(resourceTenantId: string | null, req: Reque
  * Tenant Isolation Middleware for Request Parameters
  * Validates that route parameters like :tenantId match the authenticated user's tenant
  *
- * Usage: app.get('/api/tenants/:tenantId/projects', requireAuth, validateTenantParam, handler)
+ * Usage: app.get('/api/tenants/:tenantId/projects', hybridAuth, validateTenantParam, handler)
  */
 export function validateTenantParam(req: Request, res: Response, next: NextFunction): void {
   const authReq = req as AuthRequest;
@@ -200,7 +200,7 @@ export function getTenantId(req: Request): string | undefined {
 /**
  * Ensure Tenant Middleware
  * Combines authentication and tenant validation in one middleware
- * Use this as a shorthand for requireAuth + requireTenant
+ * Use this as a shorthand for hybridAuth + requireTenant
  */
 export function ensureTenant(req: Request, res: Response, next: NextFunction): void {
   const authReq = req as AuthRequest;

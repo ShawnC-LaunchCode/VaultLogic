@@ -1,7 +1,15 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { WorkflowService } from "../../../server/services/WorkflowService";
+import { aclService } from "../../../server/services/AclService";
 import { createTestWorkflow, createTestSection, createTestStep, createTestLogicRule } from "../../factories/workflowFactory";
 import type { InsertWorkflow } from "@shared/schema";
+
+vi.mock("../../../server/services/AclService", () => ({
+  aclService: {
+    hasWorkflowRole: vi.fn().mockResolvedValue(true),
+    hasProjectRole: vi.fn().mockResolvedValue(true),
+  },
+}));
 
 describe("WorkflowService", () => {
   let service: WorkflowService;
@@ -49,6 +57,9 @@ describe("WorkflowService", () => {
       mockLogicRuleRepo,
       mockWorkflowAccessRepo
     );
+
+    vi.mocked(aclService.hasWorkflowRole).mockResolvedValue(true);
+    vi.mocked(aclService.hasProjectRole).mockResolvedValue(true);
   });
 
   describe("verifyOwnership", () => {
@@ -160,6 +171,7 @@ describe("WorkflowService", () => {
     it("should throw error if user does not own workflow", async () => {
       const workflow = createTestWorkflow({ creatorId: "user-123" });
       mockWorkflowRepo.findByIdOrSlug.mockResolvedValue(workflow);
+      vi.mocked(aclService.hasWorkflowRole).mockResolvedValue(false);
 
       await expect(service.getWorkflowWithDetails(workflow.id, "other-user")).rejects.toThrow(
         "Access denied"
@@ -214,6 +226,7 @@ describe("WorkflowService", () => {
     it("should throw error if user does not own workflow", async () => {
       const workflow = createTestWorkflow({ creatorId: "user-123" });
       mockWorkflowRepo.findByIdOrSlug.mockResolvedValue(workflow);
+      vi.mocked(aclService.hasWorkflowRole).mockResolvedValue(false);
 
       await expect(
         service.updateWorkflow(workflow.id, "other-user", { title: "Updated" })
@@ -237,6 +250,7 @@ describe("WorkflowService", () => {
     it("should throw error if user does not own workflow", async () => {
       const workflow = createTestWorkflow({ creatorId: "user-123" });
       mockWorkflowRepo.findByIdOrSlug.mockResolvedValue(workflow);
+      vi.mocked(aclService.hasWorkflowRole).mockResolvedValue(false);
 
       await expect(service.deleteWorkflow(workflow.id, "other-user")).rejects.toThrow(
         "Access denied"
@@ -275,6 +289,7 @@ describe("WorkflowService", () => {
     it("should throw error if user does not own workflow", async () => {
       const workflow = createTestWorkflow({ creatorId: "user-123" });
       mockWorkflowRepo.findByIdOrSlug.mockResolvedValue(workflow);
+      vi.mocked(aclService.hasWorkflowRole).mockResolvedValue(false);
 
       await expect(service.changeStatus(workflow.id, "other-user", "active")).rejects.toThrow(
         "Access denied"

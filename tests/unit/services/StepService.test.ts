@@ -29,6 +29,7 @@ describe("StepService", () => {
 
     mockWorkflowSvc = {
       verifyOwnership: vi.fn(),
+      verifyAccess: vi.fn(),
     };
 
     service = new StepService(mockStepRepo, mockSectionRepo, mockWorkflowSvc);
@@ -169,13 +170,13 @@ describe("StepService", () => {
         config: {},
       };
 
-      mockWorkflowSvc.verifyOwnership.mockRejectedValue(new Error("Access denied"));
+      mockWorkflowSvc.verifyAccess.mockRejectedValue(new Error("Access denied"));
 
       await expect(
         service.createStep(workflow.id, section.id, "other-user", newStepData)
       ).rejects.toThrow("Access denied");
 
-      expect(mockWorkflowSvc.verifyOwnership).toHaveBeenCalledWith(workflow.id, "other-user");
+      expect(mockWorkflowSvc.verifyAccess).toHaveBeenCalledWith(workflow.id, "other-user");
     });
   });
 
