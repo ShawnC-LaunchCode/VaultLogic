@@ -134,19 +134,15 @@ BEGIN
   v_current_year := EXTRACT(YEAR FROM now());
 
   -- Get or create sequence row with row-level lock
-  -- We use SELECT INTO variable FOR UPDATE as the most reliable locking method
-  SELECT 1 INTO v_next_value
-  FROM "datavault_number_sequences"
+  -- Get or create sequence row with row-level lock
+  -- Approach: Use a dummy UPDATE to lock the row and return its current state
+  -- This avoids PL/pgSQL limitations with SELECT ... INTO ... FOR UPDATE
+  UPDATE "datavault_number_sequences"
+  SET "updated_at" = now() -- Minimal side-effect to support locking
   WHERE "tenant_id" = p_tenant_id
     AND "table_id" = p_table_id
     AND "column_id" = p_column_id
-  FOR UPDATE;
-
-  SELECT * INTO v_sequence_row
-  FROM "datavault_number_sequences"
-  WHERE "tenant_id" = p_tenant_id
-    AND "table_id" = p_table_id
-    AND "column_id" = p_column_id;
+  RETURNING * INTO v_sequence_row;
 
   -- If sequence doesn't exist, create it
   IF NOT FOUND THEN
