@@ -28,5 +28,6 @@ export {
 
 // Auth Middleware (existing)
 export { isAdmin, checkIsAdmin } from './adminAuth';
-export { requireAuth, requireProjectRole, requireWorkflowRole } from './aclAuth';
+export { requireProjectRole, requireWorkflowRole } from './aclAuth';
 export { runTokenAuth, creatorOrRunTokenAuth, type RunAuthRequest } from './runTokenAuth';
+export { hybridAuth, optionalHybridAuth } from './auth';

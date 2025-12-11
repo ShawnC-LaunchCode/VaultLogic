@@ -8,7 +8,7 @@ import {
   validateEmail,
   validatePasswordStrength
 } from "../services/auth";
-import { requireAuth, hybridAuth, optionalHybridAuth, type AuthRequest } from "../middleware/auth";
+import { hybridAuth, optionalHybridAuth, type AuthRequest } from "../middleware/auth";
 import { nanoid } from "nanoid";
 
 const logger = createLogger({ module: 'auth-routes' });

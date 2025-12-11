@@ -1,14 +1,14 @@
 
 import { Router } from "express";
 import { documentAIAssistService } from "../lib/ai/DocumentAIAssistService";
-import { requireAuth } from "../middleware/auth";
+import { hybridAuth } from "../middleware/auth";
 import multer from "multer";
 
 const router = Router();
 const upload = multer(); // Memory storage for parsing
 
 // Middleware
-router.use(requireAuth);
+router.use(hybridAuth);
 
 /**
  * POST /api/ai/template/analyze

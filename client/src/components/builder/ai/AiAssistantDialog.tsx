@@ -68,13 +68,13 @@ export function AiAssistantDialog({ workflowId, open, onOpenChange }: AiAssistan
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md" aria-describedby="ai-assistant-desc">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Sparkles className="h-5 w-5 text-indigo-600" />
                         AI Assistant
                     </DialogTitle>
-                    <DialogDescription>
+                    <DialogDescription id="ai-assistant-desc">
                         Describe what you want to add to your workflow (e.g., "Add a contact info section" or "Add a validation rule for email").
                     </DialogDescription>
                 </DialogHeader>

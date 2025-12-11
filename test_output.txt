@@ -1,153 +1,144 @@
-npm warn Unknown project config "puppeteer_skip_download". This will stop working in the next major version of npm.
+
+> vault-logic@1.0.0 test
+> vitest run --coverage tests/unit/ScriptEngine.test.ts tests/unit/LifecycleHookService.test.ts tests/unit/HelperLibrary.test.ts
+
 
 [1m[46m RUN [49m[22m [36mv4.0.5 [39m[90mC:/Users/scoot/poll/VaultLogic[39m
+      [2mCoverage enabled with [22m[33mv8[39m
 
-[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts
-[22m[39m[dotenv@17.2.3] injecting env (11) from .env -- tip: ΓÜÖ∩╕Å  enable debug logging with { debug: true }
+[90mstdout[2m | tests/unit/ScriptEngine.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (13) from .env -- tip: ≡ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
 
-{"level":40,"time":1764701309389,"env":"test","module":"auth-service","msg":"JWT_SECRET not set - falling back to SESSION_SECRET. This is acceptable for development but should be fixed for production."}
-[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts
+[90mstdout[2m | tests/unit/HelperLibrary.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (13) from .env -- tip: Γ£à audit secrets and track compliance: https://dotenvx.com/ops
+
+[90mstdout[2m | tests/unit/LifecycleHookService.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (13) from .env -- tip: ΓÜÖ∩╕Å  enable debug logging with { debug: true }
+
+[90mstdout[2m | tests/unit/HelperLibrary.test.ts
 [22m[39m≡ƒº¬ Setting up test environment...
 
-{"level":30,"time":1764701312882,"env":"test","module":"file-routes","outputsDir":"C:\\Users\\scoot\\poll\\VaultLogic\\server\\files\\outputs","msg":"Secure file routes registered"}
-{"level":30,"time":1764701312882,"env":"test","module":"ai-routes","msg":"AI workflow generation routes registered"}
-{"level":30,"time":1764701312889,"env":"test","module":"collab-server","msg":"Initializing WebSocket collaboration server"}
-{"level":40,"time":1764701312889,"env":"test","module":"collab-persistence","msg":"REDIS_URL not configured, multi-instance collab will not work"}
-{"level":30,"time":1764701312890,"env":"test","module":"collab-server","msg":"WebSocket collaboration server initialized"}
-{"level":30,"time":1764701312890,"env":"test","module":"routes","msg":"Real-time collaboration server initialized"}
-{"level":30,"time":1764701313240,"env":"test","module":"auth","hasToken":true,"origin":"http://localhost:5000","ip":"::ffff:127.0.0.1","msg":"OAuth2 login attempt"}
-{"level":30,"time":1764701313241,"env":"test","module":"auth","email":"testuser@example.com","msg":"Token verified successfully"}
-{"level":30,"time":1764701313291,"env":"test","module":"auth","userId":"google-user-id","msg":"User upserted successfully"}
-{"level":30,"time":1764701313394,"env":"test","module":"auth","email":"testuser@example.com","msg":"OAuth2 login successful"}
-[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests
-[22m[39mLogin Status: [33m200[39m
-Login Body: {
-  "message": "Authentication successful",
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJnb29nbGUtdXNlci1pZCIsImVtYWlsIjoidGVzdHVzZXJAZXhhbXBsZS5jb20iLCJ0ZW5hbnRJZCI6ImYzYWQ0ZDliLWFhMjYtNDI2NC1hODRkLWNkMDUwNGUwY2ZlNyIsInJvbGUiOiJvd25lciIsImlhdCI6MTc2NDcwMTMxMywiZXhwIjoxNzY1MzA2MTEzfQ.f8eh4r62qy4hYJsLUKMw4oBWp7o5h1Ei6W_IYgyMlk8",
-  "user": {
-    "id": "google-user-id",
-    "email": "testuser@example.com",
-    "firstName": "Test",
-    "lastName": "User",
-    "profileImageUrl": "https://example.com/avatar.jpg",
-    "tenantId": "f3ad4d9b-aa26-4264-a84d-cd0504e0cfe7",
-    "tenantRole": "owner"
-  }
-}
+[90mstdout[2m | tests/unit/HelperLibrary.test.ts
+[22m[39mΓ£à Database initialized for tests
 
-{"level":30,"time":1764701313404,"env":"test","module":"auth","hasToken":true,"origin":"http://localhost:5000","ip":"::ffff:127.0.0.1","msg":"OAuth2 login attempt"}
-{"level":30,"time":1764701313404,"env":"test","module":"auth","email":"other@example.com","msg":"Token verified successfully"}
-{"level":30,"time":1764701313458,"env":"test","module":"auth","userId":"other-user-id","msg":"User upserted successfully"}
-{"level":30,"time":1764701313560,"env":"test","module":"auth","email":"other@example.com","msg":"OAuth2 login successful"}
-[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould grant table permission
-[22m[39mPOST permissions route entered for table: 48aa9087-14c9-4fb3-a2b2-2378bae214d3
-Request body: {"userId":"other-user-id","role":"read"}
-grantPermission called for table: 48aa9087-14c9-4fb3-a2b2-2378bae214d3 user: other-user-id data: {"tableId":"48aa9087-14c9-4fb3-a2b2-2378bae214d3","userId":"other-user-id","role":"read"}
+[90mstdout[2m | tests/unit/ScriptEngine.test.ts
+[22m[39m≡ƒº¬ Setting up test environment...
 
-[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould grant table permission
-[22m[39mupsert result: {"id":"725d6042-37fb-43a4-aad6-8d292e4c1cc0","tableId":"48aa9087-14c9-4fb3-a2b2-2378bae214d3","userId":"other-user-id","role":"read","createdAt":"2025-12-02T18:48:37.056Z"}
+[90mstdout[2m | tests/unit/ScriptEngine.test.ts
+[22m[39mΓ£à Database initialized for tests
 
-[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould grant table permission
-[22m[39mGrant permission success, sending 201. Permission: {"id":"725d6042-37fb-43a4-aad6-8d292e4c1cc0","tableId":"48aa9087-14c9-4fb3-a2b2-2378bae214d3","userId":"other-user-id","role":"read","createdAt":"2025-12-02T18:48:37.056Z"}
-
-[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould update table permission role
-[22m[39mPOST permissions route entered for table: ee47e571-a9d5-4b1e-852d-ccb327fcc8e7
-Request body: {"userId":"other-user-id","role":"read"}
-grantPermission called for table: ee47e571-a9d5-4b1e-852d-ccb327fcc8e7 user: other-user-id data: {"tableId":"ee47e571-a9d5-4b1e-852d-ccb327fcc8e7","userId":"other-user-id","role":"read"}
-
-[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould update table permission role
-[22m[39mupsert result: {"id":"c565c48d-c638-4b71-aac5-74da045b11ce","tableId":"ee47e571-a9d5-4b1e-852d-ccb327fcc8e7","userId":"other-user-id","role":"read","createdAt":"2025-12-02T18:48:37.627Z"}
-
-[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould update table permission role
-[22m[39mGrant permission success, sending 201. Permission: {"id":"c565c48d-c638-4b71-aac5-74da045b11ce","tableId":"ee47e571-a9d5-4b1e-852d-ccb327fcc8e7","userId":"other-user-id","role":"read","createdAt":"2025-12-02T18:48:37.627Z"}
-
-[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould update table permission role
-[22m[39mUpdate permission failed: {}
-
-[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould revoke table permission
-[22m[39mPOST permissions route entered for table: 399fc880-56ba-4acd-a545-e8bed3d6c649
-Request body: {"userId":"other-user-id","role":"read"}
-grantPermission called for table: 399fc880-56ba-4acd-a545-e8bed3d6c649 user: other-user-id data: {"tableId":"399fc880-56ba-4acd-a545-e8bed3d6c649","userId":"other-user-id","role":"read"}
-
-[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould revoke table permission
-[22m[39mupsert result: {"id":"fbe10e7e-743a-44da-9c7f-2d3dfa6f2a9f","tableId":"399fc880-56ba-4acd-a545-e8bed3d6c649","userId":"other-user-id","role":"read","createdAt":"2025-12-02T18:48:37.952Z"}
-
-[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould revoke table permission
-[22m[39mGrant permission success, sending 201. Permission: {"id":"fbe10e7e-743a-44da-9c7f-2d3dfa6f2a9f","tableId":"399fc880-56ba-4acd-a545-e8bed3d6c649","userId":"other-user-id","role":"read","createdAt":"2025-12-02T18:48:37.952Z"}
-
-[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould revoke table permission
-[22m[39mrevokePermission called for permission: fbe10e7e-743a-44da-9c7f-2d3dfa6f2a9f
-
-[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould enforce RBAC - only owners can manage permissions
-[22m[39mPOST permissions route entered for table: e8b98823-20fc-4f54-a0e5-3799d6957f5e
-Request body: {"userId":"some-user-id","role":"read"}
-grantPermission called for table: e8b98823-20fc-4f54-a0e5-3799d6957f5e user: some-user-id data: {"tableId":"e8b98823-20fc-4f54-a0e5-3799d6957f5e","userId":"some-user-id","role":"read"}
-
-{"level":50,"time":1764701315280,"env":"test","error":{},"msg":"Error granting table permission"}
-[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts[2m > [22m[2mDataVault v4 Regression Tests[2m > [22m[2mTable Permissions[2m > [22m[2mshould enforce RBAC - only owners can manage permissions
-[22m[39mGrant permission catch block entered Error: Access denied - owner permission required
-    at DatavaultTablePermissionsService.requirePermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:108:13)
-[90m    at processTicksAndRejections (node:internal/process/task_queues:103:5)[39m
-    at DatavaultTablePermissionsService.grantPermission (C:/Users/scoot/poll/VaultLogic/server/services/DatavaultTablePermissionsService.ts:139:5)
-    at C:/Users/scoot/poll/VaultLogic/server/routes/datavault.routes.ts:1154:26
-Grant permission error: Access denied - owner permission required Status: [33m403[39m
-
-[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts
+[90mstdout[2m | tests/unit/HelperLibrary.test.ts
 [22m[39m≡ƒº╣ Cleaning up test environment...
 
- [31mΓ¥»[39m tests/integration/datavault-v4-regression.test.ts [2m([22m[2m27 tests[22m[2m | [22m[31m1 failed[39m[2m | [22m[33m22 skipped[39m[2m)[22m[33m 2454[2mms[22m[39m
-       [2m[90mΓåô[39m[22m should create a select column with options
-       [2m[90mΓåô[39m[22m should create a multiselect column with options
-       [2m[90mΓåô[39m[22m should validate select value against options
-       [2m[90mΓåô[39m[22m should validate multiselect values as array
-       [2m[90mΓåô[39m[22m should create an autonumber column with sequence
-       [2m[90mΓåô[39m[22m should auto-increment autonumber on row creation
-       [2m[90mΓåô[39m[22m should format autonumber with prefix
-       [2m[90mΓåô[39m[22m should create a note for a row
-       [2m[90mΓåô[39m[22m should get all notes for a row
-       [2m[90mΓåô[39m[22m should delete a note
-       [2m[90mΓåô[39m[22m should not allow deleting notes by other users
-       [2m[90mΓåô[39m[22m should track row creation in history
-       [2m[90mΓåô[39m[22m should track value changes in history
-       [2m[90mΓåô[39m[22m should create an API token
-       [2m[90mΓåô[39m[22m should validate API token scopes
-       [2m[90mΓåô[39m[22m should revoke (delete) an API token
-       [2m[90mΓåô[39m[22m should deny access with expired token
-       [33m[2mΓ£ô[22m[39m should grant table permission [33m 320[2mms[22m[39m
-       [32mΓ£ô[39m should list table permissions[32m 263[2mms[22m[39m
-[31m       [31m├ù[31m should update table permission role[39m[33m 314[2mms[22m[39m
-       [33m[2mΓ£ô[22m[39m should revoke table permission [33m 621[2mms[22m[39m
-       [32mΓ£ô[39m should enforce RBAC - only owners can manage permissions[32m 202[2mms[22m[39m
-       [2m[90mΓåô[39m[22m should paginate rows efficiently
-       [2m[90mΓåô[39m[22m should handle sorting efficiently
-       [2m[90mΓåô[39m[22m should return user-friendly error for invalid column type
-       [2m[90mΓåô[39m[22m should return user-friendly error for missing required fields
-       [2m[90mΓåô[39m[22m should handle network errors gracefully
+[90mstdout[2m | tests/unit/ScriptEngine.test.ts
+[22m[39m≡ƒº╣ Cleaning up test environment...
 
-ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ» Failed Tests 1 ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»
+ [31mΓ¥»[39m tests/unit/HelperLibrary.test.ts [2m([22m[2m60 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 59[2mms[22m[39m
+       [32mΓ£ô[39m should return current date[32m 4[2mms[22m[39m
+       [32mΓ£ô[39m should add days to date[32m 2[2mms[22m[39m
+       [32mΓ£ô[39m should subtract months from date[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m should format dates[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m should parse date strings[32m 2[2mms[22m[39m
+       [32mΓ£ô[39m should calculate date difference[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should handle invalid dates gracefully[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should convert to uppercase[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should convert to lowercase[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should trim whitespace[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should replace text[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should replace all occurrences[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should split strings[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m should join arrays[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should create slugs[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should handle empty strings[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should round numbers[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should ceil numbers[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should floor numbers[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should get absolute value[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should clamp numbers[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should format currency[32m 20[2mms[22m[39m
+       [32mΓ£ô[39m should format percentages[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should get unique values[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should flatten arrays[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should chunk arrays[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should sort by property[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should filter arrays[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should map arrays[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should handle empty arrays[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should get object keys[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should get object values[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should pick properties[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should omit properties[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should merge objects[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should deep merge objects[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should handle empty objects[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should generate random numbers[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should generate random integers[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should sum arrays[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should calculate average[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should find min[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should find max[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should capture console.log calls[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should capture console.warn calls[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should capture console.error calls[32m 0[2mms[22m[39m
+[31m       [31m├ù[31m should capture mixed console calls in order[39m[32m 11[2mms[22m[39m
+       [32mΓ£ô[39m should handle objects and arrays[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should create independent console instances[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should export all helper categories[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should have all expected date methods[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should have all expected string methods[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should have all expected number methods[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should have all expected array methods[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should have all expected object methods[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should have all expected math methods[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should handle null/undefined inputs gracefully[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m should handle non-numeric inputs to number helpers[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should handle invalid date formats[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should handle array operations on non-arrays[32m 0[2mms[22m[39m
+[90mstdout[2m | tests/unit/LifecycleHookService.test.ts
+[22m[39m≡ƒº¬ Setting up test environment...
 
- FAIL  tests/integration/datavault-v4-regression.test.ts > DataVault v4 Regression Tests > Table Permissions > should update table permission role
-AssertionError: expected 404 to be 200 // Object.is equality
+ [31mΓ¥»[39m tests/unit/ScriptEngine.test.ts [2m([22m[2m26 tests[22m[2m | [22m[31m13 failed[39m[2m | [22m[33m4 skipped[39m[2m)[22m[32m 27[2mms[22m[39m
+         [32mΓ£ô[39m should execute simple JavaScript code[32m 2[2mms[22m[39m
+         [32mΓ£ô[39m should whitelist input keys correctly[32m 0[2mms[22m[39m
+         [32mΓ£ô[39m should inject helpers into execution context[32m 0[2mms[22m[39m
+[31m         [31m├ù[31m should inject context into execution[39m[32m 8[2mms[22m[39m
+[31m         [31m├ù[31m should capture console logs when enabled[39m[32m 1[2mms[22m[39m
+[31m         [31m├ù[31m should handle errors gracefully[39m[32m 1[2mms[22m[39m
+[31m         [31m├ù[31m should enforce timeout[39m[32m 1[2mms[22m[39m
+[31m         [31m├ù[31m should handle missing emit() call[39m[32m 0[2mms[22m[39m
+[31m         [31m├ù[31m should use custom helpers if provided[39m[32m 1[2mms[22m[39m
+[31m         [31m├ù[31m should measure execution duration[39m[32m 1[2mms[22m[39m
+[31m         [31m├ù[31m should execute simple Python code[39m[32m 1[2mms[22m[39m
+[31m         [31m├ù[31m should whitelist input keys in Python[39m[32m 1[2mms[22m[39m
+[31m         [31m├ù[31m should handle Python errors gracefully[39m[32m 1[2mms[22m[39m
+         [2m[90mΓåô[39m[22m should enforce timeout for Python
+[31m         [31m├ù[31m should handle missing emit() in Python[39m[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m should validate JavaScript syntax[32m 1[2mms[22m[39m
+[31m       [31m├ù[31m should reject invalid JavaScript syntax[39m[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m should reject code exceeding size limit[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should reject empty code[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should validate Python requires emit()[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should accept Python code with emit()[32m 0[2mms[22m[39m
+       [2m[90mΓåô[39m[22m should test execute with sample data
+       [2m[90mΓåô[39m[22m should capture console logs in test mode
+       [2m[90mΓåô[39m[22m should use test context
+[31m       [31m├ù[31m should handle unexpected errors gracefully[39m[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m should handle malformed output gracefully[32m 0[2mms[22m[39m
+[90mstdout[2m | tests/unit/LifecycleHookService.test.ts
+[22m[39mΓ£à Database initialized for tests
 
-- Expected
-+ Received
+{"level":40,"time":1765388913473,"env":"test","hookId":"hook-1","hookName":"Hook 1","error":"Test error","msg":"LifecycleHookService: Hook execution failed"}
+[90mstdout[2m | tests/unit/LifecycleHookService.test.ts
+[22m[39m≡ƒº╣ Cleaning up test environment...
 
-- 200
-+ 404
+{"level":50,"time":1765388913479,"env":"test","error":{},"workflowId":"workflow-1","runId":"run-1","phase":"beforePage","msg":"LifecycleHookService: Failed to execute hooks for phase"}
+{"level":30,"time":1765388913481,"env":"test","hookId":"hook-1","workflowId":"workflow-1","phase":"beforePage","msg":"LifecycleHookService: Created lifecycle hook"}
+{"level":30,"time":1765388913485,"env":"test","hookId":"hook-1","workflowId":"workflow-1","msg":"LifecycleHookService: Updated lifecycle hook"}
+{"level":30,"time":1765388913486,"env":"test","hookId":"hook-1","workflowId":"workflow-1","msg":"LifecycleHookService: Deleted lifecycle hook"}
+ [32mΓ£ô[39m tests/unit/LifecycleHookService.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 24[2mms[22m[39m
 
- Γ¥» tests/integration/datavault-v4-regression.test.ts:707:37
-    705|         console.log('Update permission failed:', updateResponse.body);
-    706|       }
-    707|       expect(updateResponse.status).toBe(200);
-       |                                     ^
-    708|       expect(updateResponse.body.role).toBe('write');
-    709|     });
-
-ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/1]ΓÄ»
-
-
-[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
-[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m4 passed[39m[22m[2m | [22m[33m22 skipped[39m[90m (27)[39m
-[2m   Start at [22m 12:48:27
-[2m   Duration [22m 7.84s[2m (transform 2.14s, setup 63ms, collect 4.87s, tests 2.45s, environment 0ms, prepare 16ms)[22m
+[2m Test Files [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m1 passed[39m[22m[90m (3)[39m
+[2m      Tests [22m [1m[31m14 failed[39m[22m[2m | [22m[1m[32m85 passed[39m[22m[2m | [22m[33m4 skipped[39m[90m (103)[39m
+[2m   Start at [22m 11:48:31
+[2m   Duration [22m 5.84s[2m (transform 856ms, setup 2.13s, collect 1.13s, tests 111ms, environment 1ms, prepare 113ms)[22m
 

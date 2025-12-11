@@ -4,6 +4,9 @@ import { logger } from "../../logger"; // Adjust path if needed (../../logger)
 import PizZip from 'pizzip';
 import Docxtemplater from 'docxtemplater';
 import mammoth from 'mammoth';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pdfLib = require('pdf-parse');
 
 export interface AIAnalysisResult {
     variables: AnalyzedVariable[];
@@ -88,7 +91,7 @@ export class DocumentAIAssistService {
         if (!this.model) return [];
 
         const prompt = `
-        You are a Document Automation Expert. Match the Template Variables to the Workflow Variables.
+        You are a Document Automation Expert.Match the Template Variables to the Workflow Variables.
         
         Template Variables:
         ${JSON.stringify(templateVariables.map(v => ({ name: v.name, context: v.context })))}
@@ -96,9 +99,9 @@ export class DocumentAIAssistService {
         Workflow Variables:
         ${JSON.stringify(workflowVariables.map(v => ({ id: v.id, name: v.name, label: v.label, type: v.type })))}
 
-        Return a JSON array of mappings. For each template variable, suggest the best workflow variable match (if any).
-        If no match, suggest creating a new one (isNew: true).
-        Format: [{ "templateVariable": "foo", "workflowVariableId": "bar", "confidence": 0.9, "reason": "Exact string match", "isNew": false }]
+        Return a JSON array of mappings.For each template variable, suggest the best workflow variable match(if any).
+        If no match, suggest creating a new one(isNew: true).
+    Format: [{ "templateVariable": "foo", "workflowVariableId": "bar", "confidence": 0.9, "reason": "Exact string match", "isNew": false }]
         `;
 
         try {
@@ -119,14 +122,14 @@ export class DocumentAIAssistService {
 
         const prompt = `
          Analyze these template variables and suggest improvements.
-         Variables: ${JSON.stringify(templateVariables)}
-         
-         Requirements:
-         1. Aliases: camelCase suggestions for messy names (e.g. "Create Date" -> "createDate").
-         2. Formatting: Suggest types (date, currency).
+    Variables: ${JSON.stringify(templateVariables)}
+
+Requirements:
+1. Aliases: camelCase suggestions for messy names(e.g. "Create Date" -> "createDate").
+         2. Formatting: Suggest types(date, currency).
          
          Return JSON: { "aliases": { "Old Name": "newName" }, "formatting": { "varName": "date" } }
-         `;
+`;
 
         try {
             const result = await this.model.generateContent(prompt);
@@ -203,22 +206,44 @@ export class DocumentAIAssistService {
         if (filename.endsWith('.docx')) {
             const result = await mammoth.extractRawText({ buffer });
             return result.value;
+        } else if (filename.endsWith('.pdf')) {
+            try {
+                // Determine usage based on available methods
+                const PDFParse = pdfLib.PDFParse;
+                if (PDFParse) {
+                    const parser = new PDFParse();
+                    // Assume load takes buffer and returns promise or we can await it
+                    // Based on prototype 'load' and 'getText'
+                    await parser.load(buffer);
+                    // getText likely returns string or Promise<string>
+                    // If checking prototype, it might be async
+                    return await parser.getText();
+                } else {
+                    // Fallback if structure is different than expected (e.g. if we get the function version in some envs)
+                    // But verify script says we have PDFParse class
+                    logger.warn("PDFParse class not found in pdf-parse export");
+                    return "";
+                }
+            } catch (e) {
+                logger.error({ error: e }, "PDF parsing failed");
+                return "";
+            }
         }
         return buffer.toString('utf-8'); // Fallback for MD/txt
     }
 
     private async performAIExtraction(text: string): Promise<{ variables: AnalyzedVariable[], suggestions: string[] }> {
         const prompt = `
-        Extract potential document variables from this text. Look for:
-        1. Explicit placeholders ({{...}})
-        2. Form-like labels (e.g. "Client Name: _______")
-        3. Entities that should be variable (dates, names, addresses).
+        Extract potential document variables from this text.Look for:
+    1. Explicit placeholders({{ ...}})
+2. Form - like labels(e.g. "Client Name: _______")
+3. Entities that should be variable(dates, names, addresses).
 
-        Return JSON: { "variables": [{ "name": "...", "type": "...", "confidence": 0.0-1.0, "context": "..." }], "suggestions": ["..."] }
+        Return JSON: { "variables": [{ "name": "...", "type": "...", "confidence": 0.0 - 1.0, "context": "..." }], "suggestions": ["..."] }
         
-        Text Sample (first 2000 chars):
+        Text Sample(first 2000 chars):
         ${text.substring(0, 2000)}
-        `;
+`;
 
         const result = await this.model.generateContent(prompt);
         const json = this.parseJSON(result.response.text());

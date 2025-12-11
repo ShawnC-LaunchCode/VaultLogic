@@ -1,6 +1,6 @@
 import type { Express, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
-import { hybridAuth, requireAuth } from '../middleware/auth';
+import { hybridAuth } from '../middleware/auth';
 import type { AuthRequest } from '../middleware/auth';
 import { geminiService } from "../services/geminiService";
 import { logger } from "../logger";
@@ -126,7 +126,7 @@ export function registerAiRoutes(app: Express): void {
    */
   app.post(
     '/api/ai/workflows/generate',
-    requireAuth,
+    hybridAuth,
     requireBuilder,
     aiWorkflowRateLimit,
     async (req: Request, res: Response) => {
@@ -236,7 +236,7 @@ export function registerAiRoutes(app: Express): void {
    */
   app.post(
     '/api/ai/workflows/:id/suggest',
-    requireAuth,
+    hybridAuth,
     requireBuilder,
     aiWorkflowRateLimit,
     async (req: Request, res: Response) => {
@@ -359,7 +359,7 @@ export function registerAiRoutes(app: Express): void {
    */
   app.post(
     '/api/ai/templates/:templateId/bindings',
-    requireAuth,
+    hybridAuth,
     requireBuilder,
     aiWorkflowRateLimit,
     async (req: Request, res: Response) => {
@@ -483,7 +483,7 @@ export function registerAiRoutes(app: Express): void {
    */
   app.post(
     '/api/ai/workflows/revise',
-    requireAuth,
+    hybridAuth,
     requireBuilder,
     aiWorkflowRateLimit,
     async (req: Request, res: Response) => {
@@ -578,7 +578,6 @@ export function registerAiRoutes(app: Express): void {
   app.post(
     '/api/ai/suggest-values',
     hybridAuth,
-    requireAuth,
     aiWorkflowRateLimit,
     async (req: Request, res: Response) => {
       try {
@@ -650,7 +649,7 @@ export function registerAiRoutes(app: Express): void {
    */
   app.post(
     '/api/ai/workflows/generate-logic',
-    requireAuth,
+    hybridAuth,
     requireBuilder,
     aiWorkflowRateLimit,
     async (req: Request, res: Response) => {
@@ -707,7 +706,7 @@ export function registerAiRoutes(app: Express): void {
    */
   app.post(
     '/api/ai/workflows/debug-logic',
-    requireAuth,
+    hybridAuth,
     requireBuilder,
     aiWorkflowRateLimit,
     async (req: Request, res: Response) => {
@@ -729,7 +728,7 @@ export function registerAiRoutes(app: Express): void {
    */
   app.post(
     '/api/ai/workflows/visualize-logic',
-    requireAuth,
+    hybridAuth,
     requireBuilder,
     aiWorkflowRateLimit,
     async (req: Request, res: Response) => {

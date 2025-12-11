@@ -47,6 +47,11 @@ export function DocumentTemplateEditor({ templateId, isOpen, onClose, workflowVa
                 if (name.endsWith('.docx')) {
                     const result = await mammoth.convertToHtml({ arrayBuffer: buffer });
                     setHtmlContent(result.value);
+                } else if (name.endsWith('.pdf')) {
+                    // Create a Blob URL for PDF preview
+                    const blob = new Blob([buffer], { type: 'application/pdf' });
+                    const url = URL.createObjectURL(blob);
+                    setHtmlContent(url); // We'll use this as the src
                 } else {
                     setHtmlContent("<p>Preview not available for this file type.</p>");
                 }
@@ -81,10 +86,18 @@ export function DocumentTemplateEditor({ templateId, isOpen, onClose, workflowVa
                             {isLoading ? (
                                 <Loader2 className="animate-spin w-8 h-8 text-muted-foreground mt-10" />
                             ) : (
-                                <div
-                                    className="bg-white shadow-lg p-10 min-h-[800px] w-[800px] prose dark:prose-invert max-w-none"
-                                    dangerouslySetInnerHTML={{ __html: htmlContent }}
-                                />
+                                fileName.endsWith('.pdf') ? (
+                                    <iframe
+                                        src={htmlContent}
+                                        className="w-full h-full min-h-[800px] shadow-lg"
+                                        title="PDF Preview"
+                                    />
+                                ) : (
+                                    <div
+                                        className="bg-white shadow-lg p-10 min-h-[800px] w-[800px] prose dark:prose-invert max-w-none"
+                                        dangerouslySetInnerHTML={{ __html: htmlContent }}
+                                    />
+                                )
                             )}
                         </div>
                     </div>

@@ -20,18 +20,20 @@ export function DevToolsPanel({ env, isOpen, onClose }: DevToolsPanelProps) {
         if (!state || !env) return [];
 
         // Map steps to variables
-        return env.getSteps().map(step => {
-            const section = env.getSections().find(s => s.id === step.sectionId);
-            return {
-                key: step.id,
-                alias: step.alias || null,
-                label: step.title,
-                type: step.type,
-                sectionId: step.sectionId,
-                sectionTitle: section?.title || "Unknown Section",
-                stepId: step.id
-            };
-        });
+        return env.getSteps()
+            .map(step => {
+                const section = env.getSections().find(s => s.id === step.sectionId);
+                return {
+                    key: step.id,
+                    alias: step.alias || null,
+                    label: step.title,
+                    type: step.type,
+                    sectionId: step.sectionId,
+                    sectionTitle: section?.title || "Unknown Section",
+                    stepId: step.id
+                };
+            })
+            .filter(v => v.sectionTitle !== "Final Documents");
     }, [state, env]);
 
     if (!isOpen || !state) return null;

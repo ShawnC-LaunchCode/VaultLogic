@@ -7,7 +7,7 @@
 import type { Express } from 'express';
 import express from 'express';
 import { z } from 'zod';
-import { requireAuth } from '../middleware';
+import { hybridAuth } from '../middleware';
 import { db } from '../db';
 import {
   metricsEvents,
@@ -66,7 +66,7 @@ const sliConfigCreateSchema = z.object({
  * GET /api/analytics/overview
  * Get high-level analytics overview for a project or workflow
  */
-router.get('/overview', requireAuth, async (req, res) => {
+router.get('/overview', hybridAuth, async (req, res) => {
   try {
     const query = overviewQuerySchema.parse(req.query);
 
@@ -158,7 +158,7 @@ router.get('/overview', requireAuth, async (req, res) => {
  * GET /api/analytics/timeseries
  * Get timeseries data for charts
  */
-router.get('/timeseries', requireAuth, async (req, res) => {
+router.get('/timeseries', hybridAuth, async (req, res) => {
   try {
     const query = timeseriesQuerySchema.parse(req.query);
 
@@ -211,7 +211,7 @@ router.get('/timeseries', requireAuth, async (req, res) => {
  * GET /api/analytics/sli
  * Get SLI data and configuration
  */
-router.get('/sli', requireAuth, async (req, res) => {
+router.get('/sli', hybridAuth, async (req, res) => {
   try {
     const query = overviewQuerySchema.parse(req.query);
 
@@ -255,7 +255,7 @@ router.get('/sli', requireAuth, async (req, res) => {
  * POST /api/analytics/sli-config
  * Create or update SLI configuration
  */
-router.post('/sli-config', requireAuth, async (req, res) => {
+router.post('/sli-config', hybridAuth, async (req, res) => {
   try {
     const body = sliConfigCreateSchema.parse(req.body);
 
@@ -305,7 +305,7 @@ router.post('/sli-config', requireAuth, async (req, res) => {
  * PUT /api/analytics/sli-config/:id
  * Update SLI configuration
  */
-router.put('/sli-config/:id', requireAuth, async (req, res) => {
+router.put('/sli-config/:id', hybridAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const body = sliConfigUpdateSchema.parse(req.body);
@@ -344,7 +344,7 @@ router.post('/events', async (req, res) => {
 /**
  * GET /api/workflow-analytics/:workflowId/dropoff
  */
-router.get('/:workflowId/dropoff', requireAuth, async (req, res) => {
+router.get('/:workflowId/dropoff', hybridAuth, async (req, res) => {
   try {
     const { workflowId } = req.params;
     const { versionId } = req.query;
@@ -363,7 +363,7 @@ router.get('/:workflowId/dropoff', requireAuth, async (req, res) => {
 /**
  * GET /api/workflow-analytics/:workflowId/heatmap
  */
-router.get('/:workflowId/heatmap', requireAuth, async (req, res) => {
+router.get('/:workflowId/heatmap', hybridAuth, async (req, res) => {
   try {
     const { workflowId } = req.params;
     const { versionId } = req.query;
@@ -382,7 +382,7 @@ router.get('/:workflowId/heatmap', requireAuth, async (req, res) => {
 /**
  * GET /api/workflow-analytics/:workflowId/branching
  */
-router.get('/:workflowId/branching', requireAuth, async (req, res) => {
+router.get('/:workflowId/branching', hybridAuth, async (req, res) => {
   try {
     const { workflowId } = req.params;
     const { versionId } = req.query;
@@ -401,7 +401,7 @@ router.get('/:workflowId/branching', requireAuth, async (req, res) => {
 /**
  * GET /api/workflow-analytics/run/:runId/timeline
  */
-router.get('/run/:runId/timeline', requireAuth, async (req, res) => {
+router.get('/run/:runId/timeline', hybridAuth, async (req, res) => {
   try {
     const { runId } = req.params;
     const timeline = await analyticsService.getRunTimeline(runId);

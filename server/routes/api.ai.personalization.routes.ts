@@ -1,7 +1,7 @@
 
 import { Router } from "express";
 import { personalizationService } from "../lib/ai/personalization";
-import { requireAuth } from "../middleware/auth";
+import { hybridAuth } from "../middleware/auth";
 import { db } from "../db";
 import { userPersonalizationSettings, workflowPersonalizationSettings } from "../../shared/schema";
 import { eq } from "drizzle-orm";
@@ -53,7 +53,7 @@ const getUserContext = async (req: any, res: any, next: any) => {
     }
 };
 
-router.post("/block", requireAuth, getUserContext, async (req: any, res) => {
+router.post("/block", hybridAuth, getUserContext, async (req: any, res) => {
     try {
         const { block } = req.body;
         if (!block || !block.text) return res.status(400).json({ error: "Block data required" });
@@ -69,7 +69,7 @@ router.post("/block", requireAuth, getUserContext, async (req: any, res) => {
     }
 });
 
-router.post("/help", requireAuth, getUserContext, async (req: any, res) => {
+router.post("/help", hybridAuth, getUserContext, async (req: any, res) => {
     try {
         const { text } = req.body;
         if (!text) return res.status(400).json({ error: "Text required" });
@@ -85,7 +85,7 @@ router.post("/help", requireAuth, getUserContext, async (req: any, res) => {
     }
 });
 
-router.post("/clarify", requireAuth, getUserContext, async (req: any, res) => {
+router.post("/clarify", hybridAuth, getUserContext, async (req: any, res) => {
     try {
         const { question, answer } = req.body;
         if (!question || !answer) return res.status(400).json({ error: "Question and answer required" });
@@ -102,7 +102,7 @@ router.post("/clarify", requireAuth, getUserContext, async (req: any, res) => {
     }
 });
 
-router.post("/followup", requireAuth, getUserContext, async (req: any, res) => {
+router.post("/followup", hybridAuth, getUserContext, async (req: any, res) => {
     try {
         const { question, answer } = req.body;
         const result = await personalizationService.generateFollowUp(question, answer, req.personalizationContext);
@@ -112,7 +112,7 @@ router.post("/followup", requireAuth, getUserContext, async (req: any, res) => {
     }
 });
 
-router.post("/translate", requireAuth, getUserContext, async (req: any, res) => {
+router.post("/translate", hybridAuth, getUserContext, async (req: any, res) => {
     try {
         const { text, targetLanguage } = req.body;
         if (!text || !targetLanguage) return res.status(400).json({ error: "Text and targetLanguage required" });
@@ -125,7 +125,7 @@ router.post("/translate", requireAuth, getUserContext, async (req: any, res) => 
 });
 
 // Settings Management
-router.get("/settings", requireAuth, async (req: any, res) => {
+router.get("/settings", hybridAuth, async (req: any, res) => {
     try {
         const [settings] = await db.select().from(userPersonalizationSettings).where(eq(userPersonalizationSettings.userId, req.user.id)).limit(1);
         res.json({ settings });
@@ -134,7 +134,7 @@ router.get("/settings", requireAuth, async (req: any, res) => {
     }
 });
 
-router.post("/settings", requireAuth, async (req: any, res) => {
+router.post("/settings", hybridAuth, async (req: any, res) => {
     try {
         const settings = req.body;
         // Upsert

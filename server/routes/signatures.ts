@@ -1,5 +1,5 @@
 import express from "express";
-import { requireAuth } from "../middleware/auth";
+import { hybridAuth } from "../middleware/auth";
 import { signatureRequestService } from "../services";
 import { resumeRunFromNode } from "../services/runs";
 import { createError } from "../utils/errors";
@@ -23,7 +23,7 @@ const signActionSchema = z.object({
  * GET /api/signatures/requests/:id
  * Get signature request by ID (authenticated)
  */
-router.get("/requests/:id", requireAuth, async (req, res, next) => {
+router.get("/requests/:id", hybridAuth, async (req, res, next) => {
   try {
     const { id } = req.params;
     const userId = (req.user as any).id;
@@ -40,7 +40,7 @@ router.get("/requests/:id", requireAuth, async (req, res, next) => {
  * GET /api/signatures/requests/project/:projectId
  * Get pending signature requests for a project
  */
-router.get("/requests/project/:projectId", requireAuth, async (req, res, next) => {
+router.get("/requests/project/:projectId", hybridAuth, async (req, res, next) => {
   try {
     const { projectId } = req.params;
     const userId = (req.user as any).id;
@@ -60,7 +60,7 @@ router.get("/requests/project/:projectId", requireAuth, async (req, res, next) =
  * GET /api/signatures/requests/:id/events
  * Get signature events for a request
  */
-router.get("/requests/:id/events", requireAuth, async (req, res, next) => {
+router.get("/requests/:id/events", hybridAuth, async (req, res, next) => {
   try {
     const { id } = req.params;
     const userId = (req.user as any).id;

@@ -6,7 +6,8 @@
 
 import type { Express } from 'express';
 import express from 'express';
-import { requireAuth, asyncHandler } from '../middleware';
+import { asyncHandler } from '../middleware';
+import { hybridAuth } from '../middleware/auth';
 import { db } from '../db';
 import { runOutputs } from '@shared/schema';
 import { eq } from 'drizzle-orm';
@@ -19,7 +20,7 @@ import path from 'path';
 const router = express.Router();
 
 // All routes require authentication
-router.use(requireAuth);
+router.use(hybridAuth);
 
 /**
  * List all outputs for a run

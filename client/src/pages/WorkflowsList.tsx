@@ -208,7 +208,7 @@ export default function WorkflowsList() {
             ) : (projects && projects.length > 0) || (workflows && workflows.length > 0) ? (
               <>
                 {/* Projects - shown first */}
-                {projects?.map((project) => (
+                {projects?.filter(p => p.title !== 'Other Project').map((project) => (
                   <ProjectCard
                     key={project.id}
                     project={project}

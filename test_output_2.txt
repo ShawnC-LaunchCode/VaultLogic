@@ -1,0 +1,84 @@
+
+> vault-logic@1.0.0 test
+> vitest run --coverage tests/unit/ScriptEngine.test.ts tests/unit/LifecycleHookService.test.ts tests/unit/HelperLibrary.test.ts
+
+
+[1m[46m RUN [49m[22m [36mv4.0.5 [39m[90mC:/Users/scoot/poll/VaultLogic[39m
+      [2mCoverage enabled with [22m[33mv8[39m
+
+[90mstdout[2m | tests/unit/HelperLibrary.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (13) from .env -- tip: ΓÜÖ∩╕Å  suppress all logs with { quiet: true }
+
+[90mstdout[2m | tests/unit/ScriptEngine.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (13) from .env -- tip: ΓÜÖ∩╕Å  enable debug logging with { debug: true }
+
+[90mstdout[2m | tests/unit/LifecycleHookService.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (13) from .env -- tip: ΓÜÖ∩╕Å  load multiple .env files with { path: ['.env.local', '.env'] }
+
+[90mstdout[2m | tests/unit/HelperLibrary.test.ts
+[22m[39m≡ƒº¬ Setting up test environment...
+
+[90mstdout[2m | tests/unit/HelperLibrary.test.ts
+[22m[39mΓ£à Database initialized for tests
+
+[90mstdout[2m | tests/unit/HelperLibrary.test.ts
+[22m[39m≡ƒº╣ Cleaning up test environment...
+
+ [32mΓ£ô[39m tests/unit/HelperLibrary.test.ts [2m([22m[2m60 tests[22m[2m)[22m[32m 39[2mms[22m[39m
+[90mstdout[2m | tests/unit/ScriptEngine.test.ts
+[22m[39m≡ƒº¬ Setting up test environment...
+
+[90mstdout[2m | tests/unit/ScriptEngine.test.ts
+[22m[39mΓ£à Database initialized for tests
+
+[90mstdout[2m | tests/unit/ScriptEngine.test.ts
+[22m[39m≡ƒº╣ Cleaning up test environment...
+
+[90mstdout[2m | tests/unit/LifecycleHookService.test.ts
+[22m[39m≡ƒº¬ Setting up test environment...
+
+[90mstdout[2m | tests/unit/LifecycleHookService.test.ts
+[22m[39mΓ£à Database initialized for tests
+
+{"level":40,"time":1765389179481,"env":"test","hookId":"hook-1","hookName":"Hook 1","error":"Test error","msg":"LifecycleHookService: Hook execution failed"}
+ [31mΓ¥»[39m tests/unit/ScriptEngine.test.ts [2m([22m[2m26 tests[22m[2m | [22m[31m1 failed[39m[2m | [22m[33m4 skipped[39m[2m)[22m[32m 17[2mms[22m[39m
+         [32mΓ£ô[39m should execute simple JavaScript code[32m 3[2mms[22m[39m
+         [32mΓ£ô[39m should whitelist input keys correctly[32m 0[2mms[22m[39m
+         [32mΓ£ô[39m should inject helpers into execution context[32m 0[2mms[22m[39m
+         [32mΓ£ô[39m should inject context into execution[32m 0[2mms[22m[39m
+         [32mΓ£ô[39m should capture console logs when enabled[32m 0[2mms[22m[39m
+         [32mΓ£ô[39m should handle errors gracefully[32m 0[2mms[22m[39m
+         [32mΓ£ô[39m should enforce timeout[32m 0[2mms[22m[39m
+         [32mΓ£ô[39m should handle missing emit() call[32m 0[2mms[22m[39m
+         [32mΓ£ô[39m should use custom helpers if provided[32m 0[2mms[22m[39m
+         [32mΓ£ô[39m should measure execution duration[32m 0[2mms[22m[39m
+         [32mΓ£ô[39m should execute simple Python code[32m 0[2mms[22m[39m
+         [32mΓ£ô[39m should whitelist input keys in Python[32m 0[2mms[22m[39m
+         [32mΓ£ô[39m should handle Python errors gracefully[32m 0[2mms[22m[39m
+         [2m[90mΓåô[39m[22m should enforce timeout for Python
+         [32mΓ£ô[39m should handle missing emit() in Python[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should validate JavaScript syntax[32m 0[2mms[22m[39m
+[31m       [31m├ù[31m should reject invalid JavaScript syntax[39m[32m 6[2mms[22m[39m
+       [32mΓ£ô[39m should reject code exceeding size limit[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should reject empty code[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should validate Python requires emit()[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should accept Python code with emit()[32m 0[2mms[22m[39m
+       [2m[90mΓåô[39m[22m should test execute with sample data
+       [2m[90mΓåô[39m[22m should capture console logs in test mode
+       [2m[90mΓåô[39m[22m should use test context
+       [32mΓ£ô[39m should handle unexpected errors gracefully[32m 0[2mms[22m[39m
+       [32mΓ£ô[39m should handle malformed output gracefully[32m 0[2mms[22m[39m
+[90mstdout[2m | tests/unit/LifecycleHookService.test.ts
+[22m[39m≡ƒº╣ Cleaning up test environment...
+
+{"level":50,"time":1765389179484,"env":"test","error":{},"workflowId":"workflow-1","runId":"run-1","phase":"beforePage","msg":"LifecycleHookService: Failed to execute hooks for phase"}
+{"level":30,"time":1765389179485,"env":"test","hookId":"hook-1","workflowId":"workflow-1","phase":"beforePage","msg":"LifecycleHookService: Created lifecycle hook"}
+{"level":30,"time":1765389179487,"env":"test","hookId":"hook-1","workflowId":"workflow-1","msg":"LifecycleHookService: Updated lifecycle hook"}
+{"level":30,"time":1765389179488,"env":"test","hookId":"hook-1","workflowId":"workflow-1","msg":"LifecycleHookService: Deleted lifecycle hook"}
+ [32mΓ£ô[39m tests/unit/LifecycleHookService.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m2 passed[39m[22m[90m (3)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m98 passed[39m[22m[2m | [22m[33m4 skipped[39m[90m (103)[39m
+[2m   Start at [22m 11:52:57
+[2m   Duration [22m 5.94s[2m (transform 606ms, setup 1.48s, collect 873ms, tests 71ms, environment 1ms, prepare 91ms)[22m
+

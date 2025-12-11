@@ -6,7 +6,7 @@
 
 import type { Express } from 'express';
 import express from 'express';
-import { requireAuth, asyncHandler } from '../middleware';
+import { hybridAuth, asyncHandler } from '../middleware';
 import { z } from 'zod';
 import { documentTemplateService } from '../services/DocumentTemplateService';
 import {
@@ -20,7 +20,7 @@ import { createError } from '../utils/errors';
 const router = express.Router();
 
 // All routes require authentication
-router.use(requireAuth);
+router.use(hybridAuth);
 
 /**
  * Analyze template structure

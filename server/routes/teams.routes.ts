@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { requireAuth } from "../middleware/aclAuth";
+import { hybridAuth } from "../middleware/auth";
 import { teamService } from "../services/TeamService";
 import { z } from "zod";
 import { createLogger } from "../logger";
@@ -28,7 +28,7 @@ export function registerTeamRoutes(app: Express): void {
    * POST /api/teams
    * Create a new team (user becomes team admin)
    */
-  app.post("/api/teams", requireAuth, async (req: Request, res: Response) => {
+  app.post("/api/teams", hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.userId;
       if (!userId) {
@@ -61,7 +61,7 @@ export function registerTeamRoutes(app: Express): void {
    * GET /api/teams
    * Get all teams for the authenticated user
    */
-  app.get("/api/teams", requireAuth, async (req: Request, res: Response) => {
+  app.get("/api/teams", hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.userId;
       if (!userId) {
@@ -84,7 +84,7 @@ export function registerTeamRoutes(app: Express): void {
    * GET /api/teams/:id
    * Get team details with members
    */
-  app.get("/api/teams/:id", requireAuth, async (req: Request, res: Response) => {
+  app.get("/api/teams/:id", hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.userId;
       if (!userId) {
@@ -103,8 +103,8 @@ export function registerTeamRoutes(app: Express): void {
       const status = message.includes("not found")
         ? 404
         : message.includes("Access denied")
-        ? 403
-        : 500;
+          ? 403
+          : 500;
 
       res.status(status).json({ success: false, error: message });
     }
@@ -114,7 +114,7 @@ export function registerTeamRoutes(app: Express): void {
    * PUT /api/teams/:id
    * Update team details (admin only)
    */
-  app.put("/api/teams/:id", requireAuth, async (req: Request, res: Response) => {
+  app.put("/api/teams/:id", hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.userId;
       if (!userId) {
@@ -150,7 +150,7 @@ export function registerTeamRoutes(app: Express): void {
    * DELETE /api/teams/:id
    * Delete a team (admin only)
    */
-  app.delete("/api/teams/:id", requireAuth, async (req: Request, res: Response) => {
+  app.delete("/api/teams/:id", hybridAuth, async (req: Request, res: Response) => {
     try {
       const userId = req.userId;
       if (!userId) {
@@ -176,7 +176,7 @@ export function registerTeamRoutes(app: Express): void {
    * POST /api/teams/:id/members
    * Add or update a team member (admin only)
    */
-  app.post("/api/teams/:id/members", requireAuth, async (req: Request, res: Response) => {
+  app.post("/api/teams/:id/members", hybridAuth, async (req: Request, res: Response) => {
     try {
       const requestorId = req.userId;
       if (!requestorId) {
@@ -205,8 +205,8 @@ export function registerTeamRoutes(app: Express): void {
       const status = message.includes("Access denied")
         ? 403
         : message.includes("not found")
-        ? 404
-        : 500;
+          ? 404
+          : 500;
 
       res.status(status).json({ success: false, error: message });
     }
@@ -216,7 +216,7 @@ export function registerTeamRoutes(app: Express): void {
    * DELETE /api/teams/:id/members/:userId
    * Remove a team member (admin only)
    */
-  app.delete("/api/teams/:id/members/:userId", requireAuth, async (req: Request, res: Response) => {
+  app.delete("/api/teams/:id/members/:userId", hybridAuth, async (req: Request, res: Response) => {
     try {
       const requestorId = req.userId;
       if (!requestorId) {
@@ -235,8 +235,8 @@ export function registerTeamRoutes(app: Express): void {
       const status = message.includes("Access denied")
         ? 403
         : message.includes("Cannot remove")
-        ? 400
-        : 500;
+          ? 400
+          : 500;
 
       res.status(status).json({ success: false, error: message });
     }

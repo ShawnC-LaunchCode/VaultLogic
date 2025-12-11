@@ -1,5 +1,5 @@
 import express from "express";
-import { requireAuth } from "../middleware/auth";
+import { hybridAuth } from "../middleware/auth";
 import { reviewTaskService } from "../services";
 import { resumeRunFromNode } from "../services/runs";
 import { createError } from "../utils/errors";
@@ -23,7 +23,7 @@ const decisionSchema = z.object({
  * GET /api/review/tasks/:id
  * Get review task by ID
  */
-router.get("/tasks/:id", requireAuth, async (req, res, next) => {
+router.get("/tasks/:id", hybridAuth, async (req, res, next) => {
   try {
     const { id } = req.params;
     const userId = (req.user as any).id;
@@ -43,7 +43,7 @@ router.get("/tasks/:id", requireAuth, async (req, res, next) => {
  * GET /api/review/tasks/project/:projectId
  * Get pending review tasks for a project
  */
-router.get("/tasks/project/:projectId", requireAuth, async (req, res, next) => {
+router.get("/tasks/project/:projectId", hybridAuth, async (req, res, next) => {
   try {
     const { projectId } = req.params;
     const userId = (req.user as any).id;
@@ -60,7 +60,7 @@ router.get("/tasks/project/:projectId", requireAuth, async (req, res, next) => {
  * GET /api/review/my-tasks
  * Get review tasks assigned to the current user
  */
-router.get("/my-tasks", requireAuth, async (req, res, next) => {
+router.get("/my-tasks", hybridAuth, async (req, res, next) => {
   try {
     const userId = (req.user as any).id;
 
@@ -78,7 +78,7 @@ router.get("/my-tasks", requireAuth, async (req, res, next) => {
  *
  * Body: { decision: 'approved' | 'changes_requested' | 'rejected', comment?: string }
  */
-router.post("/tasks/:id/decision", requireAuth, async (req, res, next) => {
+router.post("/tasks/:id/decision", hybridAuth, async (req, res, next) => {
   try {
     const { id } = req.params;
     const userId = (req.user as any).id;
