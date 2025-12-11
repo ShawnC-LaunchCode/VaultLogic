@@ -73,7 +73,9 @@ async function seed() {
         title: 'Document Automation Project',
         name: 'Document Automation Project',
         description: 'A sample project for testing document automation workflows',
+        creatorId: user.id,
         createdBy: user.id,
+        ownerId: user.id,
         tenantId: tenant.id,
         archived: false,
       })
