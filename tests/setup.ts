@@ -1,5 +1,4 @@
 ﻿import { beforeAll, afterAll, beforeEach, afterEach, vi } from "vitest";
-import { dbInitPromise, initializeDatabase, db } from "../server/db";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 
 /**
@@ -7,20 +6,32 @@ import { migrate } from "drizzle-orm/node-postgres/migrator";
  * Runs before all tests
  */
 
-// Mock environment variables for tests
+// Define db and helpers at file scope but initialize them dynamically
+let db: any;
+let initializeDatabase: any;
+let dbInitPromise: any;
+
+// Correctly configure environment variables BEFORE importing DB (executed when setup files run)
 process.env.NODE_ENV = "test";
-process.env.GEMINI_API_KEY = "dummy-key-for-tests"; // Ensure services initialize with a key available
-// Only set DATABASE_URL if explicitly provided (don't default to localhost)
-// This allows database-dependent tests to be skipped via describeWithDb
-if (!process.env.DATABASE_URL && process.env.TEST_DATABASE_URL) {
-  process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
-}
+process.env.GEMINI_API_KEY = "dummy-key-for-tests";
 process.env.SESSION_SECRET = process.env.SESSION_SECRET || "test-secret-key-for-testing-only";
 process.env.GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "test-google-client-id";
 process.env.VITE_GOOGLE_CLIENT_ID = process.env.VITE_GOOGLE_CLIENT_ID || "test-google-client-id";
 
+// Enforce usage of TEST_DATABASE_URL if available
+if (process.env.TEST_DATABASE_URL) {
+  process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
+}
+
 // Global test hooks
 beforeAll(async () => {
+  // Helper: Reset db module state if possible (hard with ESM, but we delay import so it should get fresh env)
+  // Dynamically import server/db to ensure it picks up the mutated env vars
+  const dbModule = await import("../server/db");
+  db = dbModule.db;
+  initializeDatabase = dbModule.initializeDatabase;
+  dbInitPromise = dbModule.dbInitPromise;
+
   // Setup test database
   console.log("🧪 Setting up test environment...");
 
@@ -61,8 +72,6 @@ beforeAll(async () => {
 afterAll(async () => {
   // Cleanup test database
   console.log("🧹 Cleaning up test environment...");
-
-  // TODO: Teardown test database
   // await db.destroy();
 });
 
@@ -74,8 +83,7 @@ beforeEach(async () => {
   testUsersMap.clear();
 
   // Ensure DB functions exist (critical for parallel execution resiliency)
-  // Re-running this is idempotent and cheap (CREATE OR REPLACE)
-  if (process.env.DATABASE_URL) {
+  if (process.env.DATABASE_URL && db) {
     await ensureDbFunctions();
   }
 });
@@ -182,8 +190,6 @@ vi.mock("../server/services/sendgrid", () => ({
   sendInvitation: vi.fn().mockResolvedValue({ success: true }),
   sendReminder: vi.fn().mockResolvedValue({ success: true }),
 }));
-
-// Note: Google OAuth is mocked in individual test files for fine-grained control
 
 // Mock database storage operations for tests
 // Use a Map to store users in memory for tests (cleared before each test)
