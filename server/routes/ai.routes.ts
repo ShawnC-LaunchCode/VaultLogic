@@ -690,11 +690,29 @@ export function registerAiRoutes(app: Express): void {
 
       } catch (error: any) {
         aiLogger.error({ error }, 'AI logic generation failed');
-        // Standard error handling (rate limit, etc) - simplified for now
+
+        if (error.name === 'ZodError') {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid request data',
+            error: 'validation_error',
+            details: error.errors,
+          });
+        }
+
+        if (error.code === 'RATE_LIMIT') {
+          return res.status(429).json({
+            success: false,
+            message: 'AI API rate limit exceeded. Please try again later.',
+            error: 'ai_rate_limit',
+          });
+        }
+
         res.status(500).json({
           success: false,
           message: 'Failed to generate logic',
-          error: 'internal_error'
+          error: 'internal_error',
+          details: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
       }
     }
@@ -717,6 +735,24 @@ export function registerAiRoutes(app: Express): void {
         res.status(200).json({ success: true, ...result });
       } catch (error: any) {
         aiLogger.error({ error }, 'AI debug logic failed');
+
+        if (error.name === 'ZodError') {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid request data',
+            error: 'validation_error',
+            details: error.errors,
+          });
+        }
+
+        if (error.code === 'RATE_LIMIT') {
+          return res.status(429).json({
+            success: false,
+            message: 'AI API rate limit exceeded. Please try again later.',
+            error: 'ai_rate_limit',
+          });
+        }
+
         res.status(500).json({ success: false, message: 'Failed to debug logic' });
       }
     }
@@ -739,6 +775,24 @@ export function registerAiRoutes(app: Express): void {
         res.status(200).json({ success: true, ...result });
       } catch (error: any) {
         aiLogger.error({ error }, 'AI visualize logic failed');
+
+        if (error.name === 'ZodError') {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid request data',
+            error: 'validation_error',
+            details: error.errors,
+          });
+        }
+
+        if (error.code === 'RATE_LIMIT') {
+          return res.status(429).json({
+            success: false,
+            message: 'AI API rate limit exceeded. Please try again later.',
+            error: 'ai_rate_limit',
+          });
+        }
+
         res.status(500).json({ success: false, message: 'Failed to visualize logic' });
       }
     }
