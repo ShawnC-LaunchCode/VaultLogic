@@ -53,16 +53,76 @@ export function DevToolsPanel({ env, isOpen, onClose }: DevToolsPanelProps) {
 
         const contextAwareValues: Record<string, any> = {};
 
+        // Helper to deep set values
+        const deepSet = (obj: Record<string, any>, path: string[], value: any) => {
+            let current = obj;
+            for (let i = 0; i < path.length - 1; i++) {
+                const key = path[i];
+                // If the key doesn't exist, create an object
+                if (!(key in current)) {
+                    current[key] = {};
+                }
+                // If it exists but isn't an object (collision), we have a problem.
+                if (current[key] !== undefined && (typeof current[key] !== 'object' || current[key] === null)) {
+                    // Collision: Primitive blocks path. Skip this nested value to prevent crash.
+                    return;
+                }
+                current = current[key];
+            }
+            const lastKey = path[path.length - 1];
+            current[lastKey] = value;
+        };
+
+        // First pass: Put all values in.
+        // We need to handle the case where "pet" (object) and "pet.email" (string) both exist.
+        // If "pet.email" is processed BEFORE "pet" (object), we create { pet: { email: ... } }.
+        // Then "pet" (object) comes along and overwrites it!
+        // So we should process "deep" objects (shorter keys / objects) first? 
+        // Or process everything and do a smart merge?
+
+        // Better strategy:
+        // 1. Map all entries to { path: string[], value: any }
+        // 2. Sort by path length? Or just use a deep merge utility.
+
         Object.entries(values).forEach(([stepId, value]) => {
-            // Filter out null/undefined values to keep JSON view clean
             if (value === undefined || value === null) return;
 
             const step = steps.find(s => s.id === stepId);
-            // Use alias if available, otherwise fall back to stepId
             const key = step?.alias || stepId;
-            contextAwareValues[key] = value;
+            const path = key.split('.');
+
+            if (path.length === 1) {
+                // Top level assignment
+                // If existing value is an object (created by a previous nested child), we should merge this value into it?
+                // Example: processed 'pet.email' -> context['pet'] = { email: ... }
+                // Now processing 'pet' -> value is { street: ... }
+                // We should merge { street: ... } into existing { email: ... }
+                if (contextAwareValues[key] && typeof contextAwareValues[key] === 'object' && typeof value === 'object') {
+                    Object.assign(contextAwareValues[key], value);
+                } else {
+                    // Overwrite (or first assignment)
+                    // If we overwrite an existing object created by children, we lose those children!
+                    // So if existing is object, we must merge.
+                    if (contextAwareValues[key] && typeof contextAwareValues[key] === 'object') {
+                        if (typeof value === 'object') {
+                            Object.assign(contextAwareValues[key], value);
+                        } else {
+                            // Collision: existing is object (container), new is primitive.
+                            // Rare case. Just overwrite? 
+                            contextAwareValues[key] = value;
+                        }
+                    } else {
+                        contextAwareValues[key] = value;
+                    }
+                }
+            } else {
+                // Nested assignment
+                deepSet(contextAwareValues, path, value);
+            }
         });
 
+        // Re-sorting keys for display?
+        // JS objects preserve insertion order mostly, but recursive structure is what matters.
         return contextAwareValues;
     }, [state, env]);
 

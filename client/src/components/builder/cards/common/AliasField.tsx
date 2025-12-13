@@ -3,7 +3,7 @@
  * Editable variable name field for all block types
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertCircle } from "lucide-react";
@@ -17,9 +17,26 @@ interface AliasFieldProps {
 export function AliasField({ value, onChange, placeholder = "variable_name" }: AliasFieldProps) {
   const [localValue, setLocalValue] = useState(value || "");
   const [error, setError] = useState<string | null>(null);
+  const lastSubmittedValue = useRef(value);
 
+  // Sync local value with prop, but be resilient to "rollbacks" on validation error
   useEffect(() => {
-    setLocalValue(value || "");
+    // If the incoming value is different from what we have locally...
+    if (value !== localValue) {
+      // ...check if we just submitted our current local value.
+      // If we did, and the incoming value is DIFFERENT (e.g., the server rejected it and sent back the old value),
+      // we ignore the update to prevent the UI from "reverting" while the user is typing/thinking.
+      const isRollback = localValue === lastSubmittedValue.current && value !== lastSubmittedValue.current;
+
+      if (!isRollback) {
+        setLocalValue(value || "");
+      }
+    }
+    // Always update the ref if the prop changes to something new that matches our current state (successful sync)
+    if (value === localValue) {
+      lastSubmittedValue.current = value;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   const validateAlias = (alias: string): string | null => {
@@ -33,8 +50,8 @@ export function AliasField({ value, onChange, placeholder = "variable_name" }: A
     }
 
     // Check if it contains only valid characters
-    if (!/^[a-zA-Z0-9_]+$/.test(alias)) {
-      return "Can only contain letters, numbers, and underscores";
+    if (!/^[a-zA-Z0-9_.]+$/.test(alias)) {
+      return "Can only contain letters, numbers, underscores, and dots";
     }
 
     return null;
@@ -57,6 +74,7 @@ export function AliasField({ value, onChange, placeholder = "variable_name" }: A
     const finalValue = trimmedValue === "" ? null : trimmedValue;
 
     if (finalValue !== value) {
+      lastSubmittedValue.current = finalValue; // Track what we are submitting
       onChange(finalValue);
     }
   };

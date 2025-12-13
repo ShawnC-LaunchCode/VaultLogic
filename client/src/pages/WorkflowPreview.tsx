@@ -384,7 +384,7 @@ export default function WorkflowPreview() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen h-[100dvh] overflow-hidden bg-background flex flex-col">
       {/* Preview Header */}
       <div className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 px-6 py-3 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">

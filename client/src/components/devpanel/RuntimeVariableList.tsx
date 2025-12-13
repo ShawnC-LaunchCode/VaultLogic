@@ -120,6 +120,7 @@ export function RuntimeVariableList({ workflowId, variables, values }: RuntimeVa
                                                 const pinned = isPinned(workflowId, displayKey);
                                                 const currentValue = values[variable.stepId];
                                                 const isUndefined = currentValue === undefined || currentValue === null;
+                                                const isObjectView = variable.type === 'address' && !isUndefined && typeof currentValue === 'object';
 
                                                 return (
                                                     <div
@@ -129,74 +130,99 @@ export function RuntimeVariableList({ workflowId, variables, values }: RuntimeVa
                                                             pinned && "bg-accent/50"
                                                         )}
                                                     >
-                                                        <div className="flex items-center justify-between gap-2">
-                                                            {/* Variable Name + Value Inline */}
-                                                            <div className="flex-1 min-w-0 flex items-center justify-between overflow-hidden">
-                                                                <div className="flex items-center gap-2 min-w-0 flex-1">
+                                                        {isObjectView ? (
+                                                            // Object / Address View
+                                                            <div className="flex flex-col gap-1">
+                                                                <div className="flex items-center justify-between">
                                                                     <span className="font-mono text-xs font-bold text-primary truncate" title={displayKey}>
-                                                                        {variable.alias || variable.key}
+                                                                        {displayKey} (Object)
                                                                     </span>
-                                                                    {/* Tooltip handling only */}
+                                                                    {/* Actions (Hover only, tight) */}
+                                                                    <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                                                                        <Button
+                                                                            size="icon"
+                                                                            variant="ghost"
+                                                                            className="h-5 w-5"
+                                                                            onClick={() => handleCopy(JSON.stringify(currentValue))}
+                                                                            title="Copy value"
+                                                                        >
+                                                                            <Copy className="h-3 w-3" />
+                                                                        </Button>
+                                                                        <Button
+                                                                            size="icon"
+                                                                            variant="ghost"
+                                                                            className={cn(
+                                                                                "h-5 w-5",
+                                                                                pinned && "text-primary opacity-100"
+                                                                            )}
+                                                                            onClick={() => handlePin(displayKey)}
+                                                                            title={pinned ? "Unpin" : "Pin"}
+                                                                        >
+                                                                            <Pin className={cn("h-3 w-3", pinned && "fill-current")} />
+                                                                        </Button>
+                                                                    </div>
                                                                 </div>
 
-                                                                {/* Runtime Value - Inline, Bold, Variable Color? */}
-                                                                <div className={cn(
-                                                                    "ml-2 font-mono text-xs font-bold",
-                                                                    isUndefined ? "text-muted-foreground/50 italic" : "text-foreground",
-                                                                    // For address, allow wrapping and full width. For others, truncate.
-                                                                    variable.type === 'address' ? "whitespace-normal break-words w-full" : "truncate max-w-[50%]"
-                                                                )} title={isUndefined ? "undefined" : String(currentValue)}>
-                                                                    {variable.type === 'address' && !isUndefined && typeof currentValue === 'object' ? (
-                                                                        // Address specific formatting: alias.field: value
-                                                                        <span className="text-[10px] leading-tight block">
-                                                                            {Object.entries(currentValue as Record<string, any>)
-                                                                                .filter(([_, v]) => v) // Only show fields with values? "show all of the values" implies all present in object
-                                                                                .map(([field, val], i, arr) => (
-                                                                                    <span key={field}>
-                                                                                        <span className="text-muted-foreground">{variable.alias || variable.key}.{field}:</span>
-                                                                                        <span className="text-foreground ml-0.5">{String(val)}</span>
-                                                                                        {i < arr.length - 1 && <span className="mr-1">,</span>}
-                                                                                    </span>
-                                                                                ))}
+                                                                <div className="pl-3 space-y-0.5">
+                                                                    {Object.entries(currentValue as Record<string, any>)
+                                                                        .filter(([_, v]) => v) // Only show fields with values
+                                                                        .map(([field, val]) => (
+                                                                            <div key={field} className="text-[11px] font-mono flex items-start">
+                                                                                <span className="text-muted-foreground mr-1">.{field}:</span>
+                                                                                <span className="text-foreground break-all">{String(val)}</span>
+                                                                            </div>
+                                                                        ))}
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            // Standard View
+                                                            <div className="flex items-center justify-between gap-2">
+                                                                {/* Variable Name + Value Inline */}
+                                                                <div className="flex-1 min-w-0 flex items-center justify-between overflow-hidden">
+                                                                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                                                                        <span className="font-mono text-xs font-bold text-primary truncate" title={displayKey}>
+                                                                            {displayKey}
                                                                         </span>
-                                                                    ) : (
-                                                                        formatValue(currentValue)
-                                                                    )}
+                                                                    </div>
+
+                                                                    {/* Runtime Value */}
+                                                                    <div className={cn(
+                                                                        "ml-2 font-mono text-xs font-bold",
+                                                                        isUndefined ? "text-muted-foreground/50 italic" : "text-foreground",
+                                                                        "truncate max-w-[50%]"
+                                                                    )} title={isUndefined ? "undefined" : String(currentValue)}>
+                                                                        {formatValue(currentValue)}
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Actions */}
+                                                                <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                                                                    <Button
+                                                                        size="icon"
+                                                                        variant="ghost"
+                                                                        className="h-5 w-5"
+                                                                        onClick={() => handleCopy(JSON.stringify(currentValue))}
+                                                                        disabled={isUndefined}
+                                                                        title="Copy value"
+                                                                    >
+                                                                        <Copy className="h-3 w-3" />
+                                                                    </Button>
+                                                                    <Button
+                                                                        size="icon"
+                                                                        variant="ghost"
+                                                                        className={cn(
+                                                                            "h-5 w-5",
+                                                                            pinned && "text-primary opacity-100"
+                                                                        )}
+                                                                        onClick={() => handlePin(displayKey)}
+                                                                        title={pinned ? "Unpin" : "Pin"}
+                                                                    >
+                                                                        <Pin className={cn("h-3 w-3", pinned && "fill-current")} />
+                                                                    </Button>
                                                                 </div>
                                                             </div>
+                                                        )}
 
-                                                            {/* Actions (Hover only, tight) */}
-                                                            <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                                                                <Button
-                                                                    size="icon"
-                                                                    variant="ghost"
-                                                                    className="h-5 w-5"
-                                                                    onClick={() => handleCopy(JSON.stringify(currentValue))}
-                                                                    disabled={isUndefined}
-                                                                    title="Copy value"
-                                                                >
-                                                                    <Copy className="h-3 w-3" />
-                                                                </Button>
-                                                                <Button
-                                                                    size="icon"
-                                                                    variant="ghost"
-                                                                    className={cn(
-                                                                        "h-5 w-5",
-                                                                        pinned && "text-primary opacity-100"
-                                                                    )}
-                                                                    onClick={() => handlePin(displayKey)}
-                                                                    title={pinned ? "Unpin" : "Pin"}
-                                                                >
-                                                                    <Pin className={cn("h-3 w-3", pinned && "fill-current")} />
-                                                                </Button>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Optional: Label on second line if needed, or tooltip? 
-                                                            User said "make card shorter", so single line is best if possible.
-                                                            Let's show label very small below if we have space, otherwise tooltip.
-                                                            Actually, putting label below makes it taller. Let's try to keep it very tight.
-                                                        */}
                                                         <div className="text-[10px] text-muted-foreground truncate -mt-0.5" title={variable.label}>
                                                             {variable.label}
                                                         </div>

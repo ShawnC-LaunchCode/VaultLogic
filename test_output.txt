@@ -1,0 +1,57 @@
+npm warn Unknown project config "puppeteer_skip_download". This will stop working in the next major version of npm.
+
+[1m[46m RUN [49m[22m [36mv4.0.5 [39m[90mC:/Users/scoot/poll/VaultLogic[39m
+
+[90mstdout[2m | tests/unit/shared/validation/Validator.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (14) from .env -- tip: ΓÜÖ∩╕Å  enable debug logging with { debug: true }
+
+[90mstdout[2m | tests/unit/shared/validation/Validator.test.ts
+[22m[39m≡ƒº╣ Cleaning up test environment...
+
+ [31mΓ¥»[39m tests/unit/shared/validation/Validator.test.ts [2m([22m[2m12 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 19[2mms[22m[39m
+[31m       [31m├ù[31m should validate required values[39m[32m 10[2mms[22m[39m
+       [32mΓ£ô[39m should respect custom required message[32m 1[2mms[22m[39m
+       [32mΓ£ô[39m should skip other validation if value is empty and not required[32m 0[2mms[22m[39m
+         [32mΓ£ô[39m should validate minValue[32m 2[2mms[22m[39m
+         [32mΓ£ô[39m should validate maxValue[32m 1[2mms[22m[39m
+         [32mΓ£ô[39m should validate minLength[32m 0[2mms[22m[39m
+         [32mΓ£ô[39m should validate maxLength[32m 0[2mms[22m[39m
+         [32mΓ£ô[39m should validate email[32m 0[2mms[22m[39m
+         [32mΓ£ô[39m should validate url[32m 0[2mms[22m[39m
+         [32mΓ£ô[39m should validate pattern (regex)[32m 0[2mms[22m[39m
+         [32mΓ£ô[39m should pass if condition evaluates to true[32m 0[2mms[22m[39m
+         [32mΓ£ô[39m should fail if condition evaluates to false[32m 0[2mms[22m[39m
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ» Failed Tests 1 ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»
+
+ FAIL  tests/unit/shared/validation/Validator.test.ts > Validator > validateValue > should validate required values
+AssertionError: expected { valid: false, ΓÇª(1) } to deeply equal { valid: false, ΓÇª(1) }
+
+- Expected
++ Received
+
+  {
+-   "errors": ArrayContaining [
+-     StringContaining "Required",
++   "errors": [
++     "This field is required",
+    ],
+    "valid": false,
+  }
+
+ Γ¥» tests/unit/shared/validation/Validator.test.ts:25:64
+     23| 
+     24|             // Empty string
+     25|             expect(await validateValue({ schema, value: '' })).toEqualΓÇª
+       |                                                                ^
+     26|                 valid: false,
+     27|                 errors: expect.arrayContaining([expect.stringContaininΓÇª
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/1]ΓÄ»
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m11 passed[39m[22m[90m (12)[39m
+[2m   Start at [22m 19:55:48
+[2m   Duration [22m 573ms[2m (transform 106ms, setup 83ms, collect 66ms, tests 19ms, environment 0ms, prepare 14ms)[22m
+

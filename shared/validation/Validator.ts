@@ -140,6 +140,18 @@ async function validateRule(
             }
             break;
 
+        case "maxDecimalPlaces":
+            if (typeof value === "number" || typeof value === "string") {
+                const strVal = String(value);
+                if (strVal.includes(".")) {
+                    const decimals = strVal.split(".")[1];
+                    if (decimals && decimals.length > rule.value) {
+                        return formatMessage(msg, { value: rule.value });
+                    }
+                }
+            }
+            break;
+
         case "conditional":
             if (rule.condition) {
                 // Use structured condition evaluator

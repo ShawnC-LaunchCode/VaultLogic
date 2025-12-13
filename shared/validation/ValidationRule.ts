@@ -9,6 +9,8 @@ export type ValidationRuleType =
     | "pattern"
     | "email"
     | "url"
+    | "url"
+    | "maxDecimalPlaces" // validation for currency/numbers
     | "custom"      // Custom sync JS function (legacy/simple)
     | "conditional" // DSL or simple conditional
     | "script";     // Full custom script execution
@@ -56,6 +58,11 @@ export interface UrlRule extends ValidationRuleBase {
     type: "url";
 }
 
+export interface MaxDecimalPlacesRule extends ValidationRuleBase {
+    type: "maxDecimalPlaces";
+    value: number;
+}
+
 export interface ConditionalRule extends ValidationRuleBase {
     type: "conditional";
     expression?: string; // "age > 18" (Legacy or DSL string)
@@ -76,5 +83,6 @@ export type ValidationRule =
     | PatternRule
     | EmailRule
     | UrlRule
+    | MaxDecimalPlacesRule
     | ConditionalRule
     | ScriptRule;

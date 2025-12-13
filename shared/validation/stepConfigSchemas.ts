@@ -263,6 +263,7 @@ export const LegacyMultipleChoiceConfigSchema = z.object({
   options: z.array(z.object({
     id: z.string(),
     label: z.string(),
+    alias: z.string().optional(),
   })),
   minSelections: z.number().int().min(0).optional(),
   maxSelections: z.number().int().min(1).optional(),
@@ -272,6 +273,7 @@ export const LegacyRadioConfigSchema = z.object({
   options: z.array(z.object({
     id: z.string(),
     label: z.string(),
+    alias: z.string().optional(),
   })),
   displayLayout: z.enum(['vertical', 'horizontal']).optional(),
 });

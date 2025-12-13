@@ -370,6 +370,7 @@ export interface LegacyMultipleChoiceConfig {
   options: Array<{
     id: string;
     label: string;
+    alias?: string;
   }>;
   minSelections?: number;
   maxSelections?: number;
@@ -383,6 +384,7 @@ export interface LegacyRadioConfig {
   options: Array<{
     id: string;
     label: string;
+    alias?: string;
   }>;
   displayLayout?: 'vertical' | 'horizontal';
 }

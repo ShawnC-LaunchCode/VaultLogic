@@ -95,6 +95,25 @@ describe('Validator', () => {
                 expect(await validateValue({ schema, value: 10 })).toEqual({ valid: true, errors: [] });
                 expect(await validateValue({ schema, value: 5 })).toEqual({ valid: true, errors: [] });
             });
+
+            it('should validate maxDecimalPlaces', async () => {
+                const schema: ValidationSchema = {
+                    required: false,
+                    rules: [{ type: 'maxDecimalPlaces', value: 2 }],
+                };
+
+                expect(await validateValue({ schema, value: 10.555 })).toEqual({
+                    valid: false,
+                    errors: expect.any(Array),
+                });
+                expect(await validateValue({ schema, value: "10.555" })).toEqual({
+                    valid: false,
+                    errors: expect.any(Array),
+                });
+                expect(await validateValue({ schema, value: 10.55 })).toEqual({ valid: true, errors: [] });
+                expect(await validateValue({ schema, value: 10.5 })).toEqual({ valid: true, errors: [] });
+                expect(await validateValue({ schema, value: 10 })).toEqual({ valid: true, errors: [] });
+            });
         });
 
         describe('String Rules', () => {

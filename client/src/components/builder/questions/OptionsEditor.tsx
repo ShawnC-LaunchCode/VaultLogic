@@ -2,9 +2,10 @@
  * Options Editor Component
  * Inline editor for radio and multiple choice options
  * Supports add/remove/reorder with drag and drop
+ * Supports value aliases (Display Value vs Saved Value)
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, X, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,14 +28,42 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
 
+export interface OptionItemData {
+  id: string;
+  label: string;
+  alias?: string;
+}
+
 interface OptionsEditorProps {
-  options: string[];
-  onChange: (options: string[]) => void;
+  options: (string | OptionItemData)[];
+  onChange: (options: OptionItemData[]) => void;
   className?: string;
 }
 
 export function OptionsEditor({ options, onChange, className }: OptionsEditorProps) {
-  const [localOptions, setLocalOptions] = useState<string[]>(options);
+  // Normalize options to objects
+  const normalizeOptions = (opts: (string | OptionItemData)[]): OptionItemData[] => {
+    return opts.map((opt, index) => {
+      if (typeof opt === 'string') {
+        return {
+          id: `opt-${Date.now()}-${index}`,
+          label: opt,
+          alias: opt.toLowerCase().replace(/\s+/g, '_')
+        };
+      }
+      return {
+        ...opt,
+        id: opt.id || `opt-${Date.now()}-${index}`
+      };
+    });
+  };
+
+  const [localOptions, setLocalOptions] = useState<OptionItemData[]>(normalizeOptions(options));
+
+  // Sync with props if they change externally (and aren't just what we passed up)
+  useEffect(() => {
+    setLocalOptions(normalizeOptions(options));
+  }, [options]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -44,7 +73,13 @@ export function OptionsEditor({ options, onChange, className }: OptionsEditorPro
   );
 
   const handleAddOption = () => {
-    const newOptions = [...localOptions, `Option ${localOptions.length + 1}`];
+    const newId = `opt-${Date.now()}`;
+    const newOption: OptionItemData = {
+      id: newId,
+      label: `Option ${localOptions.length + 1}`,
+      alias: `option_${localOptions.length + 1}`
+    };
+    const newOptions = [...localOptions, newOption];
     setLocalOptions(newOptions);
     onChange(newOptions);
   };
@@ -55,13 +90,13 @@ export function OptionsEditor({ options, onChange, className }: OptionsEditorPro
     onChange(newOptions);
   };
 
-  const handleOptionTextChange = (index: number, text: string) => {
+  const handleUpdateOption = (index: number, field: keyof OptionItemData, value: string) => {
     const newOptions = [...localOptions];
-    newOptions[index] = text;
+    newOptions[index] = { ...newOptions[index], [field]: value };
     setLocalOptions(newOptions);
   };
 
-  const handleOptionTextBlur = () => {
+  const handleBlur = () => {
     onChange(localOptions);
   };
 
@@ -69,8 +104,8 @@ export function OptionsEditor({ options, onChange, className }: OptionsEditorPro
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      const oldIndex = localOptions.findIndex((_, i) => i.toString() === active.id);
-      const newIndex = localOptions.findIndex((_, i) => i.toString() === over.id);
+      const oldIndex = localOptions.findIndex((o) => o.id === active.id);
+      const newIndex = localOptions.findIndex((o) => o.id === over.id);
 
       if (oldIndex !== -1 && newIndex !== -1) {
         const reordered = arrayMove(localOptions, oldIndex, newIndex);
@@ -106,18 +141,24 @@ export function OptionsEditor({ options, onChange, className }: OptionsEditorPro
           onDragEnd={handleDragEnd}
         >
           <SortableContext
-            items={localOptions.map((_, i) => i.toString())}
+            items={localOptions.map((o) => o.id)}
             strategy={verticalListSortingStrategy}
           >
-            <div className="space-y-1.5">
+            <div className="space-y-2">
+              <div className="grid grid-cols-[24px_1fr_1fr_24px] gap-2 px-1.5 mb-1">
+                <span />
+                <span className="text-[10px] text-muted-foreground pl-1">Display Value</span>
+                <span className="text-[10px] text-muted-foreground pl-1">Saved Value</span>
+                <span />
+              </div>
               {localOptions.map((option, index) => (
                 <OptionItem
-                  key={index}
-                  id={index.toString()}
-                  option={option}
+                  key={option.id}
+                  id={option.id}
+                  data={option}
                   index={index}
-                  onChange={(text) => handleOptionTextChange(index, text)}
-                  onBlur={handleOptionTextBlur}
+                  onUpdate={handleUpdateOption}
+                  onBlur={handleBlur}
                   onRemove={() => handleRemoveOption(index)}
                 />
               ))}
@@ -131,14 +172,14 @@ export function OptionsEditor({ options, onChange, className }: OptionsEditorPro
 
 interface OptionItemProps {
   id: string;
-  option: string;
+  data: OptionItemData;
   index: number;
-  onChange: (text: string) => void;
+  onUpdate: (index: number, field: keyof OptionItemData, value: string) => void;
   onBlur: () => void;
   onRemove: () => void;
 }
 
-function OptionItem({ id, option, index, onChange, onBlur, onRemove }: OptionItemProps) {
+function OptionItem({ id, data, index, onUpdate, onBlur, onRemove }: OptionItemProps) {
   const {
     attributes,
     listeners,
@@ -158,32 +199,40 @@ function OptionItem({ id, option, index, onChange, onBlur, onRemove }: OptionIte
       ref={setNodeRef}
       style={style}
       className={cn(
-        "flex items-center gap-1.5 p-1.5 rounded border bg-background group",
+        "flex items-center gap-2 p-1.5 rounded border bg-background group",
         isDragging && "opacity-50"
       )}
     >
       <button
-        className="cursor-grab active:cursor-grabbing p-0.5 hover:bg-accent rounded opacity-0 group-hover:opacity-100"
+        className="cursor-grab active:cursor-grabbing p-0.5 hover:bg-accent rounded opacity-0 group-hover:opacity-100 mt-1"
         {...attributes}
         {...listeners}
       >
         <GripVertical className="h-3 w-3 text-muted-foreground" />
       </button>
 
-      <span className="text-xs text-muted-foreground w-4">{index + 1}.</span>
-
+      {/* Display Value (Label) */}
       <Input
-        value={option}
-        onChange={(e) => onChange(e.target.value)}
+        value={data.label}
+        onChange={(e) => onUpdate(index, 'label', e.target.value)}
         onBlur={onBlur}
-        className="flex-1 h-7 text-sm"
-        placeholder={`Option ${index + 1}`}
+        className="flex-1 h-8 text-sm"
+        placeholder="Display Value"
+      />
+
+      {/* Saved Value (Alias) */}
+      <Input
+        value={data.alias || ""}
+        onChange={(e) => onUpdate(index, 'alias', e.target.value)}
+        onBlur={onBlur}
+        className="flex-1 h-8 text-sm font-mono text-muted-foreground"
+        placeholder="Saved Value"
       />
 
       <Button
         variant="ghost"
         size="icon"
-        className="h-6 w-6 opacity-0 group-hover:opacity-100"
+        className="h-8 w-8 opacity-0 group-hover:opacity-100"
         onClick={onRemove}
       >
         <X className="h-3 w-3" />

@@ -49,7 +49,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useUpdateStep, useDeleteStep, useWorkflowMode } from "@/lib/vault-hooks";
 import { useToast } from "@/hooks/use-toast";
-import { OptionsEditor } from "./OptionsEditor";
+import { OptionsEditor, type OptionItemData } from "./OptionsEditor";
 import { JSQuestionEditor, type JSQuestionConfig } from "./JSQuestionEditor";
 import type { ApiStep, StepType } from "@/lib/vault-api";
 
@@ -117,22 +117,34 @@ export function QuestionCard({
   const [localRequired, setLocalRequired] = useState(step.required || false);
   const [localType, setLocalType] = useState<StepType>(step.type);
   const [isVisibilityOpen, setIsVisibilityOpen] = useState(false);
-  const [localOptions, setLocalOptions] = useState<string[]>(
-    step.type === "radio" || step.type === "multiple_choice"
-      ? step.options?.options || []
-      : []
-  );
+  const [localOptions, setLocalOptions] = useState<OptionItemData[]>(() => {
+    if (step.type === "radio" || step.type === "multiple_choice") {
+      const opts = step.options?.options || [];
+      // Normalize to OptionItemData
+      return opts.map((opt: any, idx: number) => {
+        if (typeof opt === 'string') {
+          return {
+            id: `opt-${Date.now()}-${idx}`,
+            label: opt,
+            alias: opt.toLowerCase().replace(/\s+/g, '_')
+          };
+        }
+        return opt;
+      });
+    }
+    return [];
+  });
   const [localJsConfig, setLocalJsConfig] = useState<JSQuestionConfig>(
     step.type === "js_question" && step.options
       ? (step.options as JSQuestionConfig)
       : {
-          display: "hidden",
-          code: "return input;",
-          inputKeys: [],
-          outputKey: "computed_value",
-          timeoutMs: 1000,
-          helpText: "",
-        }
+        display: "hidden",
+        code: "return input;",
+        inputKeys: [],
+        outputKey: "computed_value",
+        timeoutMs: 1000,
+        helpText: "",
+      }
   );
 
   // Auto-focus on mount if requested
@@ -148,7 +160,17 @@ export function QuestionCard({
     setLocalRequired(step.required || false);
     setLocalType(step.type);
     if (step.type === "radio" || step.type === "multiple_choice") {
-      setLocalOptions(step.options?.options || []);
+      const opts = step.options?.options || [];
+      setLocalOptions(opts.map((opt: any, idx: number) => {
+        if (typeof opt === 'string') {
+          return {
+            id: `opt-${Date.now()}-${idx}`,
+            label: opt,
+            alias: opt.toLowerCase().replace(/\s+/g, '_')
+          };
+        }
+        return opt;
+      }));
     }
   }, [step]);
 
@@ -229,7 +251,11 @@ export function QuestionCard({
     // Initialize type-specific options
     const updates: any = { id: step.id, sectionId, type };
     if (type === "radio" || type === "multiple_choice") {
-      const defaultOptions = ["Option 1", "Option 2", "Option 3"];
+      const defaultOptions: OptionItemData[] = [
+        { id: 'opt-1', label: 'Option 1', alias: 'option_1' },
+        { id: 'opt-2', label: 'Option 2', alias: 'option_2' },
+        { id: 'opt-3', label: 'Option 3', alias: 'option_3' },
+      ];
       updates.options = { options: defaultOptions };
       setLocalOptions(defaultOptions);
     } else if (type === "js_question") {
@@ -251,7 +277,7 @@ export function QuestionCard({
     updateStepMutation.mutate(updates);
   };
 
-  const handleOptionsChange = (options: string[]) => {
+  const handleOptionsChange = (options: OptionItemData[]) => {
     setLocalOptions(options);
     updateStepMutation.mutate({
       id: step.id,
@@ -514,8 +540,8 @@ export function QuestionCard({
                           step.defaultValue === null || step.defaultValue === undefined
                             ? "none"
                             : step.defaultValue === true
-                            ? "yes"
-                            : "no"
+                              ? "yes"
+                              : "no"
                         }
                         onValueChange={(value) => {
                           if (value === "none") {
@@ -540,18 +566,18 @@ export function QuestionCard({
                           step.defaultValue === null || step.defaultValue === undefined
                             ? ""
                             : typeof step.defaultValue === "object"
-                            ? JSON.stringify(step.defaultValue)
-                            : String(step.defaultValue)
+                              ? JSON.stringify(step.defaultValue)
+                              : String(step.defaultValue)
                         }
                         onChange={(e) => handleDefaultValueChange(e.target.value)}
                         placeholder={
                           localType === "multiple_choice"
                             ? '["Option 1", "Option 2"]'
                             : localType === "radio"
-                            ? "Option text"
-                            : localType === "date_time"
-                            ? "YYYY-MM-DD or YYYY-MM-DDTHH:mm"
-                            : "Enter default value..."
+                              ? "Option text"
+                              : localType === "date_time"
+                                ? "YYYY-MM-DD or YYYY-MM-DDTHH:mm"
+                                : "Enter default value..."
                         }
                         className="h-9 text-sm"
                       />

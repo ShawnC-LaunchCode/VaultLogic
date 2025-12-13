@@ -6,6 +6,7 @@
  * - Thousand separators (commas)
  * - Decimal support (whole or decimal)
  * - Min/max validation
+ * - Max decimal places validation (2 places)
  *
  * Storage: number (pure numeric value without formatting)
  */
@@ -84,6 +85,15 @@ export function CurrencyBlockRenderer({ step, value, onChange, readOnly }: Curre
 
     if (isNaN(parsed)) {
       return;
+    }
+
+    // Check decimal places
+    if (allowDecimal && cleanValue.includes(".")) {
+      const decimals = cleanValue.split(".")[1];
+      // Hardcoded to 2 for currency, could be configurable in future
+      if (decimals && decimals.length > 2) {
+        return; // Ignore input if more than 2 decimal places
+      }
     }
 
     // Enforce min/max

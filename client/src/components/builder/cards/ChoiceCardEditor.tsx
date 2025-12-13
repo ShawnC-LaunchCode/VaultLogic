@@ -63,20 +63,20 @@ export function ChoiceCardEditor({ stepId, sectionId, step }: ChoiceCardEditorPr
       // Convert string[] to ChoiceOption[]
       const options: ChoiceOption[] = Array.isArray(legacyOptions)
         ? legacyOptions.map((opt: any, idx: number) => {
-            if (typeof opt === 'string') {
-              return {
-                id: `opt${idx + 1}`,
-                label: opt,
-                alias: `option${idx + 1}`,
-              };
-            } else {
-              return {
-                id: opt.id || `opt${idx + 1}`,
-                label: opt.label || opt,
-                alias: opt.id || `option${idx + 1}`,
-              };
-            }
-          })
+          if (typeof opt === 'string') {
+            return {
+              id: `opt${idx + 1}`,
+              label: opt,
+              alias: `option${idx + 1}`,
+            };
+          } else {
+            return {
+              id: opt.id || `opt${idx + 1}`,
+              label: opt.label || opt,
+              alias: opt.alias || opt.id || `option${idx + 1}`,
+            };
+          }
+        })
         : [];
 
       return {
@@ -143,6 +143,7 @@ export function ChoiceCardEditor({ stepId, sectionId, step }: ChoiceCardEditorPr
         options: newConfig.options.map(opt => ({
           id: opt.id,
           label: opt.label,
+          alias: opt.alias,
         })),
       };
       updateStepMutation.mutate({ id: stepId, sectionId, config: configToSave });
@@ -283,7 +284,7 @@ export function ChoiceCardEditor({ stepId, sectionId, step }: ChoiceCardEditorPr
                 <Input
                   value={option.label}
                   onChange={(e) => handleUpdateOption(index, 'label', e.target.value)}
-                  placeholder="Display label"
+                  placeholder="Display Value"
                   className="text-sm"
                 />
 
@@ -291,9 +292,9 @@ export function ChoiceCardEditor({ stepId, sectionId, step }: ChoiceCardEditorPr
                 <Input
                   value={option.alias || option.id}
                   onChange={(e) => handleUpdateOption(index, 'alias', e.target.value)}
-                  placeholder="Variable value"
+                  placeholder="Saved Value"
                   className="text-sm font-mono"
-                  disabled={isEasyMode}
+                  disabled={false}
                 />
               </div>
 
