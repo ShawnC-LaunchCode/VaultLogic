@@ -260,11 +260,14 @@ export type BlockKind =
  */
 export interface BlockContext {
   workflowId: string;
-  runId: string;
-  phase: BlockPhase;
+  runId?: string;
   sectionId?: string;
+  phase: BlockPhase;
   data: Record<string, any>;          // Current step values (stepId -> value)
   queryParams?: Record<string, any>;  // Query parameters (for prefill blocks)
+  mode?: 'preview' | 'live'; // Added execution mode
+  aliasMap?: Record<string, string>; // Map of alias -> stepId
+  versionId?: string; // Workflow version ID
 }
 
 /**

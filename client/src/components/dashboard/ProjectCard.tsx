@@ -10,12 +10,13 @@ import type { ApiProject } from "@/lib/vault-api";
 
 interface ProjectCardProps {
   project: ApiProject & { workflowCount?: number };
+  currentUserId?: string;
   onEdit?: (project: ApiProject) => void;
   onArchive?: (id: string) => void;
   onDelete?: (id: string) => void;
 }
 
-export function ProjectCard({ project, onEdit, onArchive, onDelete }: ProjectCardProps) {
+export function ProjectCard({ project, currentUserId, onEdit, onArchive, onDelete }: ProjectCardProps) {
   const actions: EntityAction[] = [];
 
   if (onEdit) {
@@ -54,9 +55,18 @@ export function ProjectCard({ project, onEdit, onArchive, onDelete }: ProjectCar
       actions={actions}
       className="bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200/50 dark:border-blue-800/50"
       renderBadge={(entity) => (
-        <Badge variant={entity.status === "active" ? "default" : "outline"}>
-          {entity.workflowCount ?? 0} workflow{(entity.workflowCount ?? 0) !== 1 ? 's' : ''}
-        </Badge>
+        <div className="flex gap-2">
+          {currentUserId && entity.creatorId !== currentUserId ? (
+            <Badge variant="secondary" className="bg-indigo-100 text-indigo-700 border-indigo-200">
+              Shared
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="opacity-70">Owner</Badge>
+          )}
+          <Badge variant={entity.status === "active" ? "default" : "outline"}>
+            {entity.workflowCount ?? 0} workflow{(entity.workflowCount ?? 0) !== 1 ? 's' : ''}
+          </Badge>
+        </div>
       )}
     />
   );

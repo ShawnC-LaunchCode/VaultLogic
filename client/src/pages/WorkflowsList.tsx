@@ -15,17 +15,20 @@ import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { SkeletonCard } from "@/components/shared/SkeletonCard";
 import { ProjectCard } from "@/components/dashboard/ProjectCard";
 import { Link } from "wouter";
-import { Plus, Edit, Trash2, PenSquare, Wand2, ChevronDown, FolderPlus, Link as LinkIcon } from "lucide-react";
+import { Plus, Edit, Trash2, PenSquare, Wand2, ChevronDown, FolderPlus, Link as LinkIcon, Play, Loader2 } from "lucide-react";
 import { workflowAPI } from "@/lib/vault-api";
+import { useCreateSampleWorkflow } from "@/lib/sample-workflow";
 
 export default function WorkflowsList() {
   const { toast } = useToast();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const queryClient = useQueryClient();
+  const createSampleMutation = useCreateSampleWorkflow();
   const [deletingWorkflowId, setDeletingWorkflowId] = useState<string | null>(null);
   const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
@@ -209,6 +212,7 @@ export default function WorkflowsList() {
                   <ProjectCard
                     key={project.id}
                     project={project}
+                    currentUserId={user?.id}
                     onDelete={(id) => setDeletingProjectId(id)}
                   />
                 ))}
@@ -221,7 +225,12 @@ export default function WorkflowsList() {
                         <CardTitle className="text-lg font-semibold text-foreground line-clamp-2" data-testid={`text-workflow-title-${workflow.id}`}>
                           {workflow.title}
                         </CardTitle>
-                        <StatusBadge status={workflow.status} />
+                        <div className="flex items-center gap-2">
+                          {user?.id && workflow.creatorId !== user.id ? (
+                            <Badge variant="secondary" className="bg-indigo-100 text-indigo-700 border-indigo-200 text-xs px-1.5 h-5">Shared</Badge>
+                          ) : null}
+                          <StatusBadge status={workflow.status} />
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent className="pt-0">
@@ -295,23 +304,39 @@ export default function WorkflowsList() {
               </>
             ) : (
               <div className="col-span-full">
-                <Card className="border-dashed">
+                <Card className="border-dashed bg-muted/40">
                   <CardContent className="flex flex-col items-center justify-center py-16">
-                    <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-violet-500 rounded-full flex items-center justify-center mb-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-violet-500 rounded-full flex items-center justify-center mb-4 shadow-lg shadow-indigo-500/20">
                       <Wand2 className="w-8 h-8 text-white" />
                     </div>
                     <h3 className="text-xl font-semibold text-foreground mb-2" data-testid="text-no-workflows">
-                      Create your first project or workflow
+                      Start your first workflow
                     </h3>
-                    <p className="text-muted-foreground text-center mb-6 max-w-md text-sm">
-                      Build workflows with sections, steps, logic, and blocks. Organize them in projects.
+                    <p className="text-muted-foreground text-center mb-8 max-w-md text-sm leading-relaxed">
+                      VaultLogic helps you build powerful data collection workflows. Create one from scratch or explore a sample to see how it works.
                     </p>
-                    <Link href="/workflows/new">
-                      <Button data-testid="button-create-first-workflow" className="bg-indigo-600 hover:bg-indigo-700">
-                        <Plus className="w-4 h-4 mr-2" />
-                        New Workflow
+                    <div className="flex items-center gap-3">
+                      <Link href="/workflows/new">
+                        <Button data-testid="button-create-first-workflow" className="bg-indigo-600 hover:bg-indigo-700 min-w-[140px]">
+                          <Plus className="w-4 h-4 mr-2" />
+                          New Workflow
+                        </Button>
+                      </Link>
+                      <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">or</span>
+                      <Button
+                        variant="outline"
+                        onClick={() => createSampleMutation.mutate()}
+                        disabled={createSampleMutation.isPending}
+                        className="bg-background min-w-[140px]"
+                      >
+                        {createSampleMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <Play className="w-4 h-4 mr-2 text-emerald-600" />
+                        )}
+                        Explore Sample
                       </Button>
-                    </Link>
+                    </div>
                   </CardContent>
                 </Card>
               </div>

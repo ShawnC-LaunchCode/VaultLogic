@@ -17,9 +17,16 @@ interface FinalDocumentsSectionProps {
   runId: string;
   runToken?: string; // Optional run token for preview mode
   sectionConfig: {
-    screenTitle: string;
-    markdownMessage: string;
-    templates: string[];
+    screenTitle?: string;
+    title?: string;
+    markdownMessage?: string;
+    message?: string;
+    showDocuments?: boolean;
+    redirectUrl?: string;
+    redirectDelaySeconds?: number;
+    customLinks?: Array<{ label: string; url: string; style: 'button' | 'link' }>;
+    brandingColor?: string;
+    templates?: string[];
   };
 }
 
@@ -33,7 +40,19 @@ interface GeneratedDocument {
 }
 
 export function FinalDocumentsSection({ runId, runToken, sectionConfig }: FinalDocumentsSectionProps) {
-  const { screenTitle, markdownMessage } = sectionConfig;
+  const title = sectionConfig.title || sectionConfig.screenTitle || "Your Completed Documents";
+  const message = sectionConfig.message || sectionConfig.markdownMessage || "";
+  const { showDocuments = true, customLinks, brandingColor, redirectUrl, redirectDelaySeconds = 5 } = sectionConfig;
+
+  // Handle Redirect
+  useEffect(() => {
+    if (redirectUrl) {
+      const timer = setTimeout(() => {
+        window.location.href = redirectUrl;
+      }, (redirectDelaySeconds || 5) * 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [redirectUrl, redirectDelaySeconds]);
 
   // Validate runId - don't proceed if it's null/undefined/empty
   const isValidRunId = runId && runId !== 'null' && runId !== 'undefined';
@@ -143,7 +162,12 @@ export function FinalDocumentsSection({ runId, runToken, sectionConfig }: FinalD
     <div className="max-w-3xl mx-auto p-6 space-y-6">
       {/* Screen Title */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold tracking-tight">{screenTitle}</h1>
+        <h1
+          className="text-3xl font-bold tracking-tight"
+          style={brandingColor ? { color: brandingColor } : undefined}
+        >
+          {title}
+        </h1>
       </div>
 
       {/* Markdown Message */}
@@ -159,79 +183,104 @@ export function FinalDocumentsSection({ runId, runToken, sectionConfig }: FinalD
                 return "#";
               }}
             >
-              {DOMPurify.sanitize(markdownMessage, { ALLOWED_TAGS: [] })}
+              {DOMPurify.sanitize(message, { ALLOWED_TAGS: [] })}
             </ReactMarkdown>
           </div>
         </CardContent>
       </Card>
 
       {/* Documents Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            Your Documents
-          </CardTitle>
-          <CardDescription>
-            Generated documents are ready for download
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {error ? (
-            <div className="text-center py-8 text-destructive">
-              <p className="text-sm">Failed to load documents. Please try again.</p>
-              <p className="text-xs text-muted-foreground mt-2">{error instanceof Error ? error.message : 'Unknown error'}</p>
-            </div>
-          ) : documents.length === 0 ? (
-            <div className="text-center py-8 space-y-4">
-              <Loader2 className="w-8 h-8 animate-spin mx-auto text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                Generating your documents...
-              </p>
-              <p className="text-xs text-muted-foreground">
-                This may take a few moments. Your documents will appear below when ready.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {documents.map((doc) => (
-                <div
-                  key={doc.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
-                >
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className="text-2xl">{getFileIcon(doc.mimeType)}</div>
-                    <div className="flex-1">
-                      <div className="font-medium text-sm">{doc.fileName}</div>
-                      {doc.fileSize && (
-                        <div className="text-xs text-muted-foreground">
-                          {formatFileSize(doc.fileSize)}
-                        </div>
-                      )}
-                    </div>
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                  </div>
-                  <Button
-                    size="sm"
-                    asChild
-                    className="ml-4"
+
+      {/* Documents Section */}
+      {showDocuments && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Your Documents
+            </CardTitle>
+            <CardDescription>
+              Generated documents are ready for download
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {error ? (
+              <div className="text-center py-8 text-destructive">
+                <p className="text-sm">Failed to load documents. Please try again.</p>
+                <p className="text-xs text-muted-foreground mt-2">{error instanceof Error ? error.message : 'Unknown error'}</p>
+              </div>
+            ) : documents.length === 0 ? (
+              <div className="text-center py-8 space-y-4">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
+                  Generating your documents...
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  This may take a few moments. Your documents will appear below when ready.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {documents.map((doc) => (
+                  <div
+                    key={doc.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
                   >
-                    <a href={doc.fileUrl} download={doc.fileName} target="_blank" rel="noopener noreferrer">
-                      <Download className="w-4 h-4 mr-2" />
-                      Download
-                    </a>
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="text-2xl">{getFileIcon(doc.mimeType)}</div>
+                      <div className="flex-1">
+                        <div className="font-medium text-sm">{doc.fileName}</div>
+                        {doc.fileSize && (
+                          <div className="text-xs text-muted-foreground">
+                            {formatFileSize(doc.fileSize)}
+                          </div>
+                        )}
+                      </div>
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                    </div>
+                    <Button
+                      size="sm"
+                      asChild
+                      className="ml-4"
+                    >
+                      <a href={doc.fileUrl} download={doc.fileName} target="_blank" rel="noopener noreferrer">
+                        <Download className="w-4 h-4 mr-2" />
+                        Download
+                      </a>
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Custom Links */}
+      {
+        customLinks && customLinks.length > 0 && (
+          <div className="flex flex-col gap-3">
+            {customLinks.map((link, i) => (
+              <Button
+                key={i}
+                variant={link.style === 'button' ? 'default' : 'outline'}
+                className="w-full"
+                asChild
+                style={link.style === 'button' && brandingColor ? { backgroundColor: brandingColor } : undefined}
+              >
+                <a href={link.url} target="_blank" rel="noopener noreferrer">
+                  {link.label}
+                </a>
+              </Button>
+            ))}
+          </div>
+        )
+      }
 
       {/* Additional Info */}
       <div className="text-center text-sm text-muted-foreground">
         <p>Documents are available for download for 30 days</p>
       </div>
-    </div>
+    </div >
   );
 }

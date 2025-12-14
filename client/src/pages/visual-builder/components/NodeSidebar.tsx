@@ -16,6 +16,7 @@ import { Trash2, Plus, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ExpressionEditor } from './ExpressionEditor';
 import { ExpressionToolbar } from './ExpressionToolbar';
+import { FinalBlockEditor } from '@/components/blocks/FinalBlockEditor';
 
 export function NodeSidebar() {
   const { id: workflowId } = useParams<{ id: string }>();
@@ -141,6 +142,15 @@ export function NodeSidebar() {
 
       {selectedNode.type === 'template' && workflowId && (
         <TemplateConfig
+          config={localConfig}
+          onUpdate={handleUpdate}
+          workflowId={workflowId}
+          nodeId={selectedNode.id}
+        />
+      )}
+
+      {selectedNode.type === 'final' && workflowId && (
+        <FinalBlockEditor
           config={localConfig}
           onUpdate={handleUpdate}
           workflowId={workflowId}

@@ -1,133 +1,142 @@
-import { TemplateRepository } from "../repositories/TemplateRepository";
-import { db } from "../db";
-import { surveys, surveyPages, questions, loopGroupSubquestions } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
-import type { SurveyTemplate } from "@shared/schema";
+import { db } from '../db';
+import { workflowBlueprints, workflows, workflowVersions } from '../../shared/schema';
+import { eq, and, sql, desc, or } from 'drizzle-orm';
+import { v4 as uuidv4 } from 'uuid';
 
-export class TemplateService {
-  repo = new TemplateRepository();
+export interface CreateTemplateParams {
+  name: string;
+  description?: string;
+  sourceWorkflowId: string;
+  sourceVersionId?: string; // If not provided, uses current/pinned
+  creatorId: string;
+  tenantId: string;
+  metadata?: Record<string, any>;
+  isPublic?: boolean;
+}
+
+export interface InstantiateTemplateParams {
+  templateId: string;
+  projectId?: string | null; // Optional
+  userId: string;
+  tenantId: string;
+  name?: string; // Optional override
+}
+
+class TemplateService {
 
   /**
-   * Create a template from an existing survey
-   * Serializes the full survey structure (pages, questions, subquestions)
+   * Create a new template (blueprint) from an existing workflow version.
    */
-  async createFromSurvey(
-    surveyId: string,
-    creatorId: string,
-    name: string,
-    description?: string,
-    tags: string[] = []
-  ): Promise<SurveyTemplate> {
-    // Get survey and verify ownership
-    const [survey] = await db
-      .select()
-      .from(surveys)
-      .where(and(eq(surveys.id, surveyId), eq(surveys.creatorId, creatorId)))
-      .limit(1);
+  async createFromWorkflow(params: CreateTemplateParams) {
+    const { name, description, sourceWorkflowId, sourceVersionId, creatorId, tenantId, metadata, isPublic } = params;
 
-    if (!survey) {
-      throw new Error("Survey not found or access denied");
+    // 1. Fetch source workflow version definition
+    let versionId = sourceVersionId;
+    if (!versionId) {
+      const workflow = await db.query.workflows.findFirst({
+        where: eq(workflows.id, sourceWorkflowId),
+        columns: { currentVersionId: true, pinnedVersionId: true }
+      });
+      if (!workflow) throw new Error("Workflow not found");
+      versionId = workflow.currentVersionId || workflow.pinnedVersionId || undefined;
     }
 
-    // Get all pages
-    const pages = await db
-      .select()
-      .from(surveyPages)
-      .where(eq(surveyPages.surveyId, surveyId))
-      .orderBy(surveyPages.order);
+    if (!versionId) throw new Error("No version found for workflow");
 
-    // Get all questions for all pages
-    const pagesWithQuestions = await Promise.all(
-      pages.map(async (page: any) => {
-        const pageQuestions = await db
-          .select()
-          .from(questions)
-          .where(eq(questions.pageId, page.id))
-          .orderBy(questions.order);
+    const sourceVersion = await db.query.workflowVersions.findFirst({
+      where: eq(workflowVersions.id, versionId)
+    });
 
-        // Get subquestions for any loop group questions
-        const questionsWithSubquestions = await Promise.all(
-          pageQuestions.map(async (question: any) => {
-            if (question.type === "loop_group") {
-              const subqs = await db
-                .select()
-                .from(loopGroupSubquestions)
-                .where(eq(loopGroupSubquestions.loopQuestionId, question.id))
-                .orderBy(loopGroupSubquestions.order);
+    if (!sourceVersion) throw new Error("Source version not found");
 
-              return {
-                ...question,
-                subquestions: subqs,
-              };
-            }
-            return question;
-          })
-        );
+    // 2. Create Blueprint
+    const [blueprint] = await db.insert(workflowBlueprints).values({
+      name,
+      description,
+      tenantId,
+      creatorId,
+      sourceWorkflowId,
+      graphJson: sourceVersion.graphJson, // Snapshot!
+      metadata: metadata || {},
+      isPublic: isPublic || false,
+    }).returning();
 
-        return {
-          ...page,
-          questions: questionsWithSubquestions,
-        };
-      })
-    );
-
-    // Build template content
-    const content = {
-      survey: {
-        title: survey.title,
-        description: survey.description,
-      },
-      pages: pagesWithQuestions,
-    };
-
-    // Create template
-    return await this.repo.create(name, content, creatorId, description, false, tags);
+    return blueprint;
   }
 
   /**
-   * List all templates accessible to a user (their own + system templates)
+   * List templates available to a user/tenant.
    */
-  async listAll(creatorId: string): Promise<SurveyTemplate[]> {
-    return await this.repo.findAllAccessible(creatorId);
+  async listTemplates(tenantId: string, userId?: string, includePublic = false) {
+    // Basic permissions: Same tenant OR public
+    // TODO: Team sharing logic if "template_shares" is implemented for blueprints later
+
+    return db.query.workflowBlueprints.findMany({
+      where: or(
+        eq(workflowBlueprints.tenantId, tenantId),
+        includePublic ? eq(workflowBlueprints.isPublic, true) : undefined
+      ),
+      orderBy: [desc(workflowBlueprints.createdAt)],
+      with: {
+        // user: true // If we want creator details
+      }
+    });
   }
 
   /**
-   * List only user's own templates
+   * Instantiate a new workflow from a template.
    */
-  async listUserTemplates(creatorId: string): Promise<SurveyTemplate[]> {
-    return await this.repo.findAllByCreator(creatorId);
-  }
+  async instantiate(params: InstantiateTemplateParams) {
+    const { templateId, projectId, userId, tenantId, name } = params;
 
-  /**
-   * List only system templates
-   */
-  async listSystemTemplates(): Promise<SurveyTemplate[]> {
-    return await this.repo.findSystemTemplates();
-  }
+    // 1. Fetch Template
+    const template = await db.query.workflowBlueprints.findFirst({
+      where: eq(workflowBlueprints.id, templateId)
+    });
 
-  /**
-   * Get a template by ID
-   */
-  async getById(id: string): Promise<SurveyTemplate | undefined> {
-    return await this.repo.findById(id);
-  }
+    if (!template) throw new Error("Template not found");
 
-  /**
-   * Update a template
-   */
-  async update(
-    id: string,
-    creatorId: string,
-    patch: { name?: string; description?: string; content?: any; tags?: string[] }
-  ): Promise<SurveyTemplate | undefined> {
-    return await this.repo.update(id, creatorId, patch);
-  }
+    // Check tenant access (simple check)
+    if (template.tenantId !== tenantId && !template.isPublic) {
+      throw new Error("Access denied to this template");
+    }
 
-  /**
-   * Delete a template
-   */
-  async delete(id: string, creatorId: string): Promise<boolean> {
-    return await this.repo.delete(id, creatorId);
+    // 2. Create Workflow
+    const workflowId = uuidv4();
+    const versionId = uuidv4();
+    const workflowName = name || `${template.name} (Copy)`;
+
+    await db.transaction(async (tx: any) => {
+      // Create Workflow Entry
+      await tx.insert(workflows).values({
+        id: workflowId,
+        projectId,
+        title: workflowName, // Legacy
+        name: workflowName,
+        description: template.description,
+        creatorId: userId,
+        ownerId: userId,
+        status: 'draft',
+        sourceBlueprintId: template.id, // Traceability
+        currentVersionId: versionId // Pre-link version
+      });
+
+      // Create Initial Version from Template snapshot
+      await tx.insert(workflowVersions).values({
+        id: versionId,
+        workflowId: workflowId,
+        versionNumber: 1,
+        isDraft: true,
+        graphJson: template.graphJson, // Restore snapshot
+        createdBy: userId,
+        migrationInfo: {
+          sourceTemplateId: template.id,
+          instantiatedAt: new Date().toISOString()
+        }
+      });
+    });
+
+    return { workflowId, versionId };
   }
 }
 

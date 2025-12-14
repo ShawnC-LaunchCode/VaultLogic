@@ -8,7 +8,9 @@ import {
 } from "../repositories";
 import type { TransformBlock, InsertTransformBlock } from "@shared/schema";
 import type { BlockPhase } from "@shared/types/blocks";
-import { executeCode } from "../utils/sandboxExecutor";
+import { scriptEngine } from "./scripting/ScriptEngine";
+
+
 import { workflowService } from "./WorkflowService";
 import { logger } from "../logger";
 
@@ -212,53 +214,57 @@ export class TransformBlockService {
   async executeBlock(params: {
     block: TransformBlock;
     data: Record<string, unknown>;
+    runId?: string;
   }): Promise<{ ok: boolean; output?: unknown; error?: string; errorDetails?: { message: string; stack?: string; name?: string; line?: number; column?: number } }> {
-    const { block, data } = params;
+    const { block, data, runId } = params;
 
     // Fetch all steps for the workflow to build alias-to-ID mapping
-    // Include virtual steps so transform blocks can reference outputs from other blocks
     const sections = await this.sectionRepo.findByWorkflowId(block.workflowId);
     const sectionIds = sections.map(s => s.id);
-    const steps = await this.stepRepo.findBySectionIds(sectionIds, undefined, true); // includeVirtual=true
+    const steps = await this.stepRepo.findBySectionIds(sectionIds, undefined, true);
 
-    // Create maps for both alias-to-ID and ID lookups
     const aliasToIdMap = new Map<string, string>();
-    const idSet = new Set<string>();
-
     for (const step of steps) {
-      idSet.add(step.id);
-      if (step.alias) {
-        aliasToIdMap.set(step.alias, step.id);
-      }
+      if (step.alias) aliasToIdMap.set(step.alias, step.id);
     }
 
-    // Build input object with only whitelisted keys, resolving aliases to IDs
     const input: Record<string, unknown> = {};
     for (const key of block.inputKeys || []) {
-      let resolvedKey = key;
-      let dataKey = key;
+      const resolvedId = aliasToIdMap.get(key);
+      const dataKey = (resolvedId && resolvedId in data) ? resolvedId : key;
+      const resolvedKey = (resolvedId && resolvedId in data) ? key : key;
 
-      // If key is not directly in data, try to resolve it as an alias
-      if (!(key in data)) {
-        const resolvedId = aliasToIdMap.get(key);
-        if (resolvedId && resolvedId in data) {
-          dataKey = resolvedId;
-          // Keep the original key (alias) in the input object so user code can use it
-          resolvedKey = key;
-        }
-      }
-
-      // Add to input if we found the data
       if (dataKey in data) {
         input[resolvedKey] = data[dataKey];
       }
     }
 
-    // Execute code in sandbox
-    const timeout = block.timeoutMs || 1000;
-    const result = await executeCode(block.language, block.code, input, timeout);
+    const result = await scriptEngine.execute({
+      language: block.language as 'javascript' | 'python',
+      code: block.code,
+      inputKeys: Object.keys(input), // We already filtered input
+      data: input, // Pass prepared input as data
+      context: {
+        workflowId: block.workflowId,
+        runId: runId || 'preview-or-test',
+        phase: 'transform_block',
+        metadata: {
+          blockId: block.id,
+          blockName: block.name
+        }
+      },
+      timeoutMs: block.timeoutMs || 1000
+    });
 
-    return result;
+    if (result.ok) {
+      return { ok: true, output: result.output };
+    } else {
+      return {
+        ok: false,
+        error: result.error,
+        // errorDetails can be parsed if needed, but keeping it simple for now
+      };
+    }
   }
 
   /**

@@ -3,10 +3,21 @@ import type { ApiStep, ApiSection } from '@/lib/vault-api';
 import { PreviewVariableResolver } from './PreviewVariableResolver';
 import { mockIntegration } from './MockIntegrationLayer';
 
+export interface TraceEntry {
+    id: string;
+    stepId?: string;
+    type: 'step' | 'logic' | 'action' | 'error';
+    status: 'executed' | 'skipped' | 'failed';
+    message?: string;
+    details?: any;
+    timestamp: number;
+}
+
 export interface PreviewRunState {
     id: string;
     workflowId: string;
     values: Record<string, any>;
+    trace: TraceEntry[];
     currentSectionIndex: number;
     completed: boolean;
     updatedAt: number;
@@ -55,11 +66,27 @@ export class PreviewEnvironment {
             id: `preview-env-${uuidv4()}`,
             workflowId: config.workflowId,
             values: resolvedValues,
+            trace: [],
             currentSectionIndex: 0,
             completed: false,
             updatedAt: Date.now(),
             mode: 'preview'
         };
+    }
+
+    // --- Tracing ---
+
+    addTraceEntry(entry: Omit<TraceEntry, 'id' | 'timestamp'>) {
+        const newEntry: TraceEntry = {
+            ...entry,
+            id: uuidv4(),
+            timestamp: Date.now()
+        };
+
+        this.state.trace.push(newEntry);
+        this.state.updatedAt = Date.now();
+        this.notify();
+        return newEntry;
     }
 
     // --- State Accessors ---

@@ -10,7 +10,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Download, PlayCircle, FileText } from 'lucide-react';
+
+import { ArrowLeft, Download, PlayCircle, FileText, Share2, Copy } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useState } from 'react';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { JsonViewer } from '@/components/shared/JsonViewer';
 import { TracePanel } from '@/components/runs/TracePanel';
@@ -22,6 +27,8 @@ export default function RunDetails() {
   const [_location, setLocation] = useLocation();
   const { toast } = useToast();
   const runId = params?.id;
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [shareLink, setShareLink] = useState("");
 
   const { data: run, isLoading, error } = useQuery({
     queryKey: ['document-run', runId],
@@ -52,6 +59,30 @@ export default function RunDetails() {
       });
     },
   });
+
+  const shareMutation = useMutation({
+    mutationFn: () => documentRunsAPI.share(runId!),
+    onSuccess: (data) => {
+      const link = `${window.location.origin}/share/${data.shareToken}`;
+      setShareLink(link);
+      setShareDialogOpen(true);
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: 'destructive',
+        title: 'Share failed',
+        description: error.message,
+      });
+    },
+  });
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(shareLink);
+    toast({
+      title: 'Copied!',
+      description: 'Link copied to clipboard.',
+    });
+  };
 
   if (isLoading) {
     return <LoadingState />;
@@ -137,7 +168,18 @@ export default function RunDetails() {
                 </a>
               </Button>
             </>
+
           )}
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => shareMutation.mutate()}
+            disabled={shareMutation.isPending}
+          >
+            <Share2 className="h-4 w-4 mr-2" />
+            Share
+          </Button>
 
           <Button
             size="sm"
@@ -342,6 +384,35 @@ export default function RunDetails() {
           </CardContent>
         </Tabs>
       </Card>
-    </div>
+
+
+      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Share Run</DialogTitle>
+            <DialogDescription>
+              Anyone with this link can view the run completion page and download documents.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center space-x-2">
+            <div className="grid flex-1 gap-2">
+              <Label htmlFor="link" className="sr-only">
+                Link
+              </Label>
+              <Input
+                id="link"
+                defaultValue={shareLink}
+                value={shareLink}
+                readOnly
+              />
+            </div>
+            <Button type="button" size="sm" className="px-3" onClick={handleCopyLink}>
+              <span className="sr-only">Copy</span>
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div >
   );
 }

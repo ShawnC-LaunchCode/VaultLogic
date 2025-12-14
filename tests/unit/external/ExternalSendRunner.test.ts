@@ -24,9 +24,9 @@ vi.mock("../../../server/repositories", () => ({
 vi.mock("../../../server/lib/external/adapters/WebhookAdapter", async (importOriginal) => {
     // const actual = await importOriginal(); // Optional if we need partials
     return {
-        WebhookAdapter: vi.fn().mockImplementation(() => ({
-            send: vi.fn()
-        }))
+        WebhookAdapter: vi.fn().mockImplementation(function () {
+            return { send: vi.fn() };
+        })
     };
 });
 
@@ -76,9 +76,9 @@ describe("ExternalSendRunner", () => {
         // Mock adapter instance behavior
         const mockSend = vi.fn().mockResolvedValue({ success: true, destinationId: "dest-1", statusCode: 200 });
         // @ts-ignore
-        WebhookAdapter.mockImplementation(() => ({
-            send: mockSend
-        }));
+        WebhookAdapter.mockImplementation(function () {
+            return { send: mockSend };
+        });
 
         // Re-instantiate runner to pick up mocked adapter
         runner = new ExternalSendRunner();

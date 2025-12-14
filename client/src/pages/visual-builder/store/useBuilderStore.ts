@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { Node, Edge } from 'reactflow';
 
 export interface BuilderNode extends Node {
-  type: 'question' | 'compute' | 'branch' | 'template';
+  type: 'question' | 'compute' | 'branch' | 'template' | 'final';
   data: {
     label: string;
     config: any;
@@ -43,6 +43,9 @@ export interface BuilderState {
 
   // Export to API format
   exportGraph: () => any;
+
+  // Power User Actions
+  duplicateNode: (nodeId: string) => void;
 }
 
 export const useBuilderStore = create<BuilderState>((set, get) => ({
@@ -99,6 +102,38 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
       edges: state.edges.filter(edge => edge.source !== nodeId && edge.target !== nodeId),
       isDirty: true,
       selectedNodeId: state.selectedNodeId === nodeId ? null : state.selectedNodeId,
+    });
+  },
+
+  duplicateNode: (nodeId) => {
+    const state = get();
+    const nodeToDuplicate = state.nodes.find(n => n.id === nodeId);
+    if (!nodeToDuplicate) return;
+
+    const newId = `node_${Date.now()}`;
+    // Position slightly offset
+    const newPosition = {
+      x: nodeToDuplicate.position.x + 50,
+      y: nodeToDuplicate.position.y + 50,
+    };
+
+    const newNode: BuilderNode = {
+      ...nodeToDuplicate,
+      id: newId,
+      position: newPosition,
+      data: {
+        ...nodeToDuplicate.data,
+        label: `${nodeToDuplicate.data.label} (Copy)`,
+        // Deep copy config to avoid reference issues
+        config: JSON.parse(JSON.stringify(nodeToDuplicate.data.config)),
+      },
+      selected: true,
+    };
+
+    set({
+      nodes: [...state.nodes.map(n => ({ ...n, selected: false })), newNode],
+      isDirty: true,
+      selectedNodeId: newId,
     });
   },
 
@@ -206,6 +241,13 @@ function getDefaultConfig(type: BuilderNode['type']): any {
       return {
         templateId: '',
         bindings: {},
+        condition: '',
+      };
+    case 'final':
+      return {
+        title: 'Completion',
+        message: '### Thank you!\nYour submission has been received.',
+        showDocuments: true,
         condition: '',
       };
     default:

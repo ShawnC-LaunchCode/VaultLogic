@@ -53,6 +53,7 @@ export interface Workflow {
   id: string;
   name: string;
   projectId: string;
+  creatorId: string;
   status: 'draft' | 'published' | 'archived';
   currentVersionId: string | null;
   createdAt: string;
@@ -143,10 +144,10 @@ export function usePublishWorkflow(workflowId: string) {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: () =>
+    mutationFn: (graphJson: any) =>
       fetchAPI<Workflow>(`/api/workflows/${workflowId}/publish`, {
         method: 'POST',
-        body: JSON.stringify({}),
+        body: JSON.stringify({ graphJson }),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workflow', workflowId] });

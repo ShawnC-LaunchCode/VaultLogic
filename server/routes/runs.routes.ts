@@ -595,4 +595,48 @@ export function registerRunRoutes(app: Express): void {
       res.status(status).json({ success: false, error: message });
     }
   });
+
+  /**
+   * POST /api/runs/:runId/share
+   * Generate a shareable link for a run
+   * Accepts creator session OR Bearer runToken
+   */
+  app.post('/api/runs/:runId/share', creatorOrRunTokenAuth, async (req: RunAuthRequest, res) => {
+    try {
+      const { runId } = req.params;
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
+      const runAuth = req.runAuth;
+
+      // Determine auth type
+      const authType = runAuth ? 'runToken' : 'creator';
+      const authContext = runAuth ? { runToken: runAuth.runToken } : {};
+
+      const result = await runService.shareRun(runId, userId, authType, authContext);
+      res.json({ success: true, data: result });
+    } catch (error) {
+      logger.error({ error, runId: req.params.runId }, "Error sharing run");
+      const message = error instanceof Error ? error.message : "Failed to share run";
+      const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
+      res.status(status).json({ success: false, error: message });
+    }
+  });
+
+  /**
+   * GET /api/shared/runs/:token
+   * Get a shared run by token with documents and configuration
+   */
+  app.get('/api/shared/runs/:token', async (req, res) => {
+    try {
+      const { token } = req.params;
+      const result = await runService.getSharedRunDetails(token);
+      res.json({ success: true, data: result });
+    } catch (error) {
+      logger.error({ error, token: req.params.token }, "Error fetching shared run");
+      const message = error instanceof Error ? error.message : "Failed to fetch shared run";
+      const status = message.includes("not found") ? 404 : 400; // 400 for expired
+      res.status(status).json({ success: false, error: message });
+    }
+  });
+
 }

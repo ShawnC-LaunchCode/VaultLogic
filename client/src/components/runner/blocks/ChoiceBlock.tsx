@@ -40,9 +40,10 @@ export interface ChoiceBlockProps {
   value: any;
   onChange: (value: string | string[]) => void;
   readOnly?: boolean;
+  context?: Record<string, any>;
 }
 
-export function ChoiceBlockRenderer({ step, value, onChange, readOnly }: ChoiceBlockProps) {
+export function ChoiceBlockRenderer({ step, value, onChange, readOnly, context }: ChoiceBlockProps) {
   // -------------------------------------------------------------------------
   // Parse configuration
   // -------------------------------------------------------------------------
@@ -52,6 +53,7 @@ export function ChoiceBlockRenderer({ step, value, onChange, readOnly }: ChoiceB
 
   // Legacy radio type
   if (step.type === "radio") {
+    // ... (same as before)
     displayMode = "radio";
     allowMultiple = false;
 
@@ -75,6 +77,7 @@ export function ChoiceBlockRenderer({ step, value, onChange, readOnly }: ChoiceB
 
   // Legacy multiple_choice type
   else if (step.type === "multiple_choice") {
+    // ... (same as before)
     displayMode = "multiple";
     allowMultiple = true;
 
@@ -100,13 +103,39 @@ export function ChoiceBlockRenderer({ step, value, onChange, readOnly }: ChoiceB
     const config = step.config as ChoiceAdvancedConfig;
     displayMode = config?.display || "radio";
     allowMultiple = config?.allowMultiple ?? false;
-    options = config?.options || [];
 
-    // Ensure all options have aliases
-    options = options.map((opt) => ({
-      ...opt,
-      alias: opt.alias || opt.id,
-    }));
+    // Check for dynamic options
+    // @ts-ignore - The type definition might not be updated yet
+    const configOptions = config?.options;
+
+    // @ts-ignore
+    if (configOptions && (configOptions.type === 'dynamic' || !Array.isArray(configOptions))) {
+      // Dynamic Mode
+      // @ts-ignore
+      const { listVariable, labelKey, valueKey } = configOptions;
+
+      if (context && listVariable && Array.isArray(context[listVariable])) {
+        const listData = context[listVariable];
+        options = listData.map((item: any, idx: number) => ({
+          id: item[valueKey] || `opt-${idx}`,
+          label: String(item[labelKey] || item[valueKey] || `Option ${idx}`),
+          alias: String(item[valueKey] || item[labelKey] || `opt-${idx}`)
+        }));
+      } else {
+        console.warn(`[ChoiceBlock] List variable '${listVariable}' not found or not an array.`, { contextKeys: context ? Object.keys(context) : [] });
+        options = [];
+      }
+    } else {
+      // Static Mode
+      options = config?.options || [];
+      // Ensure all options have aliases
+      if (Array.isArray(options)) {
+        options = options.map((opt) => ({
+          ...opt,
+          alias: opt.alias || opt.id,
+        }));
+      }
+    }
   }
 
   // -------------------------------------------------------------------------

@@ -2,16 +2,30 @@ import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Plus, Trash2 } from "lucide-react";
 import { useWorkflowDataSources } from "@/lib/vault-hooks";
 import { dataSourceAPI } from "@/lib/vault-api";
 import { useQuery } from "@tanstack/react-query";
 
+interface QueryFilter {
+    column: string;
+    operator: string;
+    value: string;
+}
+
+interface QuerySort {
+    column: string;
+    direction: "asc" | "desc";
+}
+
 interface QueryConfig {
     dataSourceId?: string;
-    queryId?: string; // If using saved queries
-    // For basic query builder:
+    queryId?: string;
     table?: string;
     outputVariableName?: string;
+    filters?: QueryFilter[];
+    sort?: QuerySort;
 }
 
 interface QueryBlockEditorProps {
@@ -23,15 +37,32 @@ interface QueryBlockEditorProps {
 export function QueryBlockEditor({ workflowId, config, onChange }: QueryBlockEditorProps) {
     const { data: dataSources } = useWorkflowDataSources(workflowId);
 
-    // Fetch tables when dataSourceId is selected
+    // Fetch tables
     const { data: tables } = useQuery({
         queryKey: ["dataSource", config.dataSourceId, "tables"],
         queryFn: () => config.dataSourceId ? dataSourceAPI.getTables(config.dataSourceId) : Promise.resolve([]),
         enabled: !!config.dataSourceId
     });
 
-    const handleChange = (key: keyof QueryConfig, value: string) => {
+    const handleChange = (key: keyof QueryConfig, value: any) => {
         onChange({ ...config, [key]: value });
+    };
+
+    const addFilter = () => {
+        const filters = config.filters || [];
+        handleChange("filters", [...filters, { column: "", operator: "equals", value: "" }]);
+    };
+
+    const removeFilter = (index: number) => {
+        const filters = config.filters || [];
+        handleChange("filters", filters.filter((_, i) => i !== index));
+    };
+
+    const updateFilter = (index: number, field: keyof QueryFilter, value: string) => {
+        const filters = config.filters || [];
+        const newFilters = [...filters];
+        newFilters[index] = { ...newFilters[index], [field]: value };
+        handleChange("filters", newFilters);
     };
 
     return (
@@ -71,16 +102,89 @@ export function QueryBlockEditor({ workflowId, config, onChange }: QueryBlockEdi
                 </Select>
             </div>
 
+            {/* Output Variable */}
             <div className="space-y-2">
-                <Label>Output Variable Name</Label>
-                <Input
-                    value={config.outputVariableName || ""}
-                    onChange={(e) => handleChange("outputVariableName", e.target.value)}
-                    placeholder="e.g. myData"
-                />
+                <Label>Output List Variable</Label>
+                <div className="flex items-center gap-2">
+                    <div className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs font-mono">List&lt;Row&gt;</div>
+                    <Input
+                        value={config.outputVariableName || ""}
+                        onChange={(e) => handleChange("outputVariableName", e.target.value)}
+                        placeholder="e.g. usersList"
+                        className="font-mono"
+                    />
+                </div>
                 <p className="text-xs text-muted-foreground">
-                    This variable will contain the list of records found.
+                    This variable can be used in Dropdowns or Logic (e.g., <code>usersList.length</code>).
                 </p>
+            </div>
+
+            {/* Filters */}
+            <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                    <Label>Filters</Label>
+                    <Button variant="ghost" size="sm" onClick={addFilter} type="button">
+                        <Plus className="w-3 h-3 mr-1" /> Add
+                    </Button>
+                </div>
+
+                {config.filters?.map((filter, idx) => (
+                    <div key={idx} className="flex gap-2 items-center">
+                        <Input
+                            placeholder="Column"
+                            className="h-8 text-xs"
+                            value={filter.column}
+                            onChange={(e) => updateFilter(idx, "column", e.target.value)}
+                        />
+                        <Select value={filter.operator} onValueChange={(v) => updateFilter(idx, "operator", v)}>
+                            <SelectTrigger className="h-8 w-[100px] text-xs">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="equals">=</SelectItem>
+                                <SelectItem value="contains">contains</SelectItem>
+                                <SelectItem value="gt">&gt;</SelectItem>
+                                <SelectItem value="lt">&lt;</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Input
+                            placeholder="Value"
+                            className="h-8 text-xs"
+                            value={filter.value}
+                            onChange={(e) => updateFilter(idx, "value", e.target.value)}
+                        />
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => removeFilter(idx)}>
+                            <Trash2 className="w-3 h-3" />
+                        </Button>
+                    </div>
+                ))}
+                {(!config.filters || config.filters.length === 0) && (
+                    <p className="text-xs text-muted-foreground italic">No filters applied (select all).</p>
+                )}
+            </div>
+
+            {/* Sorting */}
+            <div className="space-y-2">
+                <Label>Sort By</Label>
+                <div className="flex gap-2">
+                    <Input
+                        placeholder="Column Name"
+                        value={config.sort?.column || ""}
+                        onChange={(e) => handleChange("sort", { ...config.sort, column: e.target.value })}
+                    />
+                    <Select
+                        value={config.sort?.direction || "asc"}
+                        onValueChange={(v: "asc" | "desc") => handleChange("sort", { ...config.sort, direction: v })}
+                    >
+                        <SelectTrigger className="w-[100px]">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="asc">ASC</SelectItem>
+                            <SelectItem value="desc">DESC</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
 
             {!config.dataSourceId && (

@@ -47,7 +47,13 @@ import UrlParametersDoc from "@/pages/docs/UrlParametersDoc"; // Documentation
 import BillingDashboard from "@/pages/billing/BillingDashboard";
 import PricingPage from "@/pages/billing/PricingPage";
 import PublicRunner from "@/pages/public/PublicRunner";
+import RunCompletionView from "@/pages/RunCompletionView";
 import OAuthApps from "@/pages/developer/OAuthApps";
+import PortalLogin from "@/pages/portal/PortalLogin";
+import PortalMagicLink from "@/pages/portal/PortalMagicLink";
+import PortalDashboard from "@/pages/portal/PortalDashboard";
+import { CommandPalette } from "@/components/layout/CommandPalette";
+import { ShortcutHelper } from "@/components/layout/ShortcutHelper";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -57,6 +63,14 @@ function Router() {
       <Switch>
         {/* Public Workflow Runner */}
         <Route path="/w/:slug" component={PublicRunner} />
+
+        {/* Public Shared Run View */}
+        <Route path="/share/:token" component={RunCompletionView} />
+
+        {/* Client Portal Routes - Independent Auth */}
+        <Route path="/portal/login" component={PortalLogin} />
+        <Route path="/portal/auth/verify" component={PortalMagicLink} />
+        <Route path="/portal" component={PortalDashboard} />
 
         {/* Workflow runner - available to everyone */}
         <Route path="/run/:id">
@@ -142,7 +156,13 @@ function Router() {
         )}
       </Switch>
       {/* Feedback widget - visible on all authenticated pages */}
-      {!isLoading && isAuthenticated && <FeedbackWidget />}
+      {!isLoading && isAuthenticated && (
+        <>
+          <FeedbackWidget />
+          <CommandPalette />
+          <ShortcutHelper />
+        </>
+      )}
     </>
   );
 }

@@ -508,6 +508,56 @@ export class WorkflowService {
     const baseUrl = process.env.BASE_URL || process.env.VITE_BASE_URL || 'http://localhost:5000';
     return `${baseUrl}/run/${slug}`;
   }
+  /**
+   * Sync workflow graph changes to sections/steps (Legacy Support)
+   * Specifically ensures 'final' nodes are converted to Final Sections for the Runner
+   */
+  async syncWithGraph(workflowId: string, graphJson: any, userId: string): Promise<void> {
+    if (!graphJson || !graphJson.nodes) return;
+
+    // 1. Find 'final' node in graph
+    const finalNode = graphJson.nodes.find((n: any) => n.type === 'final');
+
+    // 2. Manage Final Document Section
+    const existingSections = await this.sectionRepo.findByWorkflowId(workflowId);
+    const finalSection = existingSections.find(s => (s.config as any)?.finalBlock === true);
+
+    if (finalNode) {
+      const sectionConfig = {
+        finalBlock: true,
+        title: finalNode.data?.config?.title || "Completion",
+        screenTitle: finalNode.data?.config?.title || "Completion", // Legacy
+        message: finalNode.data?.config?.message || "",
+        markdownMessage: finalNode.data?.config?.message || "", // Legacy
+        ...finalNode.data?.config
+      };
+
+      if (finalSection) {
+        // Update existing
+        await this.sectionRepo.update(finalSection.id, {
+          title: sectionConfig.screenTitle,
+          config: sectionConfig
+        });
+      } else {
+        // Create new
+        // Determine order: last + 1
+        const maxOrder = existingSections.length > 0 ? Math.max(...existingSections.map(s => s.order)) : 0;
+
+        await this.sectionRepo.create({
+          workflowId,
+          title: sectionConfig.screenTitle,
+          order: maxOrder + 1,
+          config: sectionConfig
+        });
+      }
+    } else {
+      // If final node removed, remove final section? 
+      // For safety, we might keep it or mark it invisible, but deleting is cleaner if we assume graph is truth.
+      if (finalSection) {
+        await this.sectionRepo.delete(finalSection.id);
+      }
+    }
+  }
 }
 
 // Singleton instance

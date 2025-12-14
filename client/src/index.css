@@ -3,104 +3,150 @@
 @tailwind utilities;
 
 :root {
-  --background: hsl(220, 13%, 97%);
-  --foreground: hsl(220, 13%, 9%);
+  /* Base Neutrals - Cooler, calmer */
+  --background: hsl(220, 14%, 96%);
+  --foreground: hsl(220, 10%, 10%);
+  
+  /* Surfaces */
   --card: hsl(0, 0%, 100%);
-  --card-foreground: hsl(220, 13%, 9%);
+  --card-foreground: hsl(220, 10%, 10%);
   --popover: hsl(0, 0%, 100%);
-  --popover-foreground: hsl(220, 13%, 9%);
-  --primary: hsl(221, 83%, 53%);
-  --primary-foreground: hsl(0, 0%, 98%);
-  --secondary: hsl(220, 13%, 95%);
-  --secondary-foreground: hsl(220, 13%, 25%);
-  --muted: hsl(220, 13%, 95%);
-  --muted-foreground: hsl(220, 13%, 45%);
-  --accent: hsl(220, 13%, 91%);
-  --accent-foreground: hsl(220, 13%, 9%);
+  --popover-foreground: hsl(220, 10%, 10%);
+  
+  /* Primary - Slightly more sophisticated blue */
+  --primary: hsl(220, 90%, 56%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  
+  /* Secondary / Muted */
+  --secondary: hsl(220, 14%, 90%);
+  --secondary-foreground: hsl(220, 10%, 20%);
+  --muted: hsl(220, 14%, 93%);
+  --muted-foreground: hsl(220, 10%, 40%);
+  --accent: hsl(220, 14%, 93%);
+  --accent-foreground: hsl(220, 10%, 10%);
+  
+  /* Destructive */
   --destructive: hsl(0, 84%, 60%);
   --destructive-foreground: hsl(0, 0%, 98%);
-  --border: hsl(220, 13%, 91%);
-  --input: hsl(220, 13%, 91%);
-  --ring: hsl(221, 83%, 53%);
-  --success: hsl(142, 76%, 36%);
-  --warning: hsl(38, 92%, 50%);
+
+  /* Border & Input */
+  --border: hsl(220, 13%, 88%);
+  --input: hsl(220, 13%, 88%);
+  
+  /* UI Semantic States */
+  --ring: hsl(220, 90%, 56%);
+  --success: hsl(150, 60%, 34%);
+  --warning: hsl(35, 90%, 50%);
+  
+  /* Block Type Colors (Semantic) */
+  --block-read: hsl(210, 80%, 96%);
+  --block-read-foreground: hsl(210, 80%, 40%);
+  --block-read-border: hsl(210, 80%, 85%);
+
+  --block-write: hsl(150, 60%, 96%);
+  --block-write-foreground: hsl(150, 60%, 34%);
+  --block-write-border: hsl(150, 60%, 85%);
+  
+  --block-logic: hsl(270, 60%, 97%);
+  --block-logic-foreground: hsl(270, 60%, 40%);
+  --block-logic-border: hsl(270, 60%, 85%);
+
+  --block-action: hsl(30, 80%, 96%);
+  --block-action-foreground: hsl(30, 80%, 40%);
+  --block-action-border: hsl(30, 80%, 85%);
+
+  /* Sidebar */
+  --sidebar: hsl(220, 14%, 98%);
+  --sidebar-foreground: hsl(220, 10%, 20%);
+  --sidebar-primary: hsl(220, 90%, 56%);
+  --sidebar-primary-foreground: hsl(0, 0%, 100%);
+  --sidebar-accent: hsl(220, 10%, 92%);
+  --sidebar-accent-foreground: hsl(220, 90%, 56%);
+  --sidebar-border: hsl(220, 13%, 90%);
+  
+  /* Fonts */
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  
+  --radius: 0.5rem;
+  
+  /* Subtler Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+
+  /* Charts */
   --chart-1: hsl(221, 83%, 53%);
   --chart-2: hsl(142, 76%, 36%);
   --chart-3: hsl(38, 92%, 50%);
   --chart-4: hsl(147, 78%, 42%);
   --chart-5: hsl(341, 75%, 51%);
-  --sidebar: hsl(180, 6.6667%, 97.0588%);
-  --sidebar-foreground: hsl(220, 13%, 9%);
-  --sidebar-primary: hsl(221, 83%, 53%);
-  --sidebar-primary-foreground: hsl(0, 0%, 98%);
-  --sidebar-accent: hsl(220, 13%, 91%);
-  --sidebar-accent-foreground: hsl(221, 83%, 53%);
-  --sidebar-border: hsl(220, 13%, 91%);
-  --sidebar-ring: hsl(221, 83%, 53%);
-  --font-sans: 'Inter', sans-serif;
-  --font-serif: Georgia, serif;
-  --font-mono: Menlo, monospace;
-  --radius: 0.5rem;
-  --shadow-2xs: 0px 2px 0px 0px hsl(221, 83%, 53% / 0.00);
-  --shadow-xs: 0px 2px 0px 0px hsl(221, 83%, 53% / 0.00);
-  --shadow-sm: 0px 2px 0px 0px hsl(221, 83%, 53% / 0.00), 0px 1px 2px -1px hsl(221, 83%, 53% / 0.00);
-  --shadow: 0px 2px 0px 0px hsl(221, 83%, 53% / 0.00), 0px 1px 2px -1px hsl(221, 83%, 53% / 0.00);
-  --shadow-md: 0px 2px 0px 0px hsl(221, 83%, 53% / 0.00), 0px 2px 4px -1px hsl(221, 83%, 53% / 0.00);
-  --shadow-lg: 0px 2px 0px 0px hsl(221, 83%, 53% / 0.00), 0px 4px 6px -1px hsl(221, 83%, 53% / 0.00);
-  --shadow-xl: 0px 2px 0px 0px hsl(221, 83%, 53% / 0.00), 0px 8px 10px -1px hsl(221, 83%, 53% / 0.00);
-  --shadow-2xl: 0px 2px 0px 0px hsl(221, 83%, 53% / 0.00);
-  --tracking-normal: 0em;
-  --spacing: 0.25rem;
 }
 
 .dark {
-  --background: hsl(220, 13%, 9%);
-  --foreground: hsl(220, 13%, 97%);
-  --card: hsl(220, 13%, 12%);
-  --card-foreground: hsl(220, 13%, 97%);
-  --popover: hsl(220, 13%, 12%);
-  --popover-foreground: hsl(220, 13%, 97%);
-  --primary: hsl(221, 83%, 53%);
-  --primary-foreground: hsl(0, 0%, 98%);
-  --secondary: hsl(220, 13%, 15%);
-  --secondary-foreground: hsl(220, 13%, 85%);
-  --muted: hsl(220, 13%, 15%);
-  --muted-foreground: hsl(220, 13%, 65%);
-  --accent: hsl(220, 13%, 18%);
-  --accent-foreground: hsl(220, 13%, 97%);
-  --destructive: hsl(0, 84%, 60%);
-  --destructive-foreground: hsl(0, 0%, 98%);
-  --border: hsl(220, 13%, 18%);
-  --input: hsl(220, 13%, 18%);
-  --ring: hsl(221, 83%, 53%);
-  --success: hsl(142, 76%, 36%);
-  --warning: hsl(38, 92%, 50%);
+  /* Base Neutrals */
+  --background: hsl(220, 15%, 10%);
+  --foreground: hsl(220, 10%, 96%);
+  
+  /* Surfaces */
+  --card: hsl(220, 15%, 13%);
+  --card-foreground: hsl(220, 10%, 96%);
+  --popover: hsl(220, 15%, 13%);
+  --popover-foreground: hsl(220, 10%, 96%);
+  
+  --primary: hsl(220, 90%, 60%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  
+  --secondary: hsl(220, 15%, 18%);
+  --secondary-foreground: hsl(220, 10%, 90%);
+  --muted: hsl(220, 15%, 18%);
+  --muted-foreground: hsl(220, 10%, 60%);
+  --accent: hsl(220, 15%, 20%);
+  --accent-foreground: hsl(220, 10%, 96%);
+  
+  --destructive: hsl(0, 62%, 30%);
+  --destructive-foreground: hsl(0, 0%, 96%);
+  
+  --border: hsl(220, 15%, 20%);
+  --input: hsl(220, 15%, 20%);
+  --ring: hsl(220, 90%, 60%);
+  
+  /* Block Colors (Dark) */
+  --block-read: hsl(210, 40%, 18%);
+  --block-read-foreground: hsl(210, 80%, 80%);
+  --block-read-border: hsl(210, 40%, 25%);
+
+  --block-write: hsl(150, 40%, 18%);
+  --block-write-foreground: hsl(150, 60%, 80%);
+  --block-write-border: hsl(150, 40%, 25%);
+
+  --block-logic: hsl(270, 40%, 18%);
+  --block-logic-foreground: hsl(270, 60%, 80%);
+  --block-logic-border: hsl(270, 40%, 25%);
+
+  --block-action: hsl(30, 40%, 18%);
+  --block-action-foreground: hsl(30, 60%, 80%);
+  --block-action-border: hsl(30, 40%, 25%);
+
+  --sidebar: hsl(220, 15%, 11%);
+  --sidebar-foreground: hsl(220, 10%, 90%);
+  --sidebar-primary: hsl(220, 90%, 60%);
+  --sidebar-primary-foreground: hsl(0, 0%, 100%);
+  --sidebar-accent: hsl(220, 15%, 16%);
+  --sidebar-accent-foreground: hsl(220, 90%, 60%);
+  --sidebar-border: hsl(220, 15%, 16%);
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.2);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4);
+
+  /* Charts */
   --chart-1: hsl(221, 83%, 53%);
   --chart-2: hsl(142, 76%, 36%);
   --chart-3: hsl(38, 92%, 50%);
   --chart-4: hsl(147, 78%, 42%);
   --chart-5: hsl(341, 75%, 51%);
-  --sidebar: hsl(220, 13%, 12%);
-  --sidebar-foreground: hsl(220, 13%, 97%);
-  --sidebar-primary: hsl(221, 83%, 53%);
-  --sidebar-primary-foreground: hsl(0, 0%, 98%);
-  --sidebar-accent: hsl(220, 13%, 18%);
-  --sidebar-accent-foreground: hsl(221, 83%, 53%);
-  --sidebar-border: hsl(220, 13%, 18%);
-  --sidebar-ring: hsl(221, 83%, 53%);
-  --font-sans: 'Inter', sans-serif;
-  --font-serif: Georgia, serif;
-  --font-mono: Menlo, monospace;
-  --radius: 0.5rem;
-  --shadow-2xs: 0px 2px 0px 0px hsl(221, 83%, 53% / 0.00);
-  --shadow-xs: 0px 2px 0px 0px hsl(221, 83%, 53% / 0.00);
-  --shadow-sm: 0px 2px 0px 0px hsl(221, 83%, 53% / 0.00), 0px 1px 2px -1px hsl(221, 83%, 53% / 0.00);
-  --shadow: 0px 2px 0px 0px hsl(221, 83%, 53% / 0.00), 0px 1px 2px -1px hsl(221, 83%, 53% / 0.00);
-  --shadow-md: 0px 2px 0px 0px hsl(221, 83%, 53% / 0.00), 0px 2px 4px -1px hsl(221, 83%, 53% / 0.00);
-  --shadow-lg: 0px 2px 0px 0px hsl(221, 83%, 53% / 0.00), 0px 4px 6px -1px hsl(221, 83%, 53% / 0.00);
-  --shadow-xl: 0px 2px 0px 0px hsl(221, 83%, 53% / 0.00), 0px 8px 10px -1px hsl(221, 83%, 53% / 0.00);
-  --shadow-2xl: 0px 2px 0px 0px hsl(221, 83%, 53% / 0.00);
-}
 
 @layer base {
   * {

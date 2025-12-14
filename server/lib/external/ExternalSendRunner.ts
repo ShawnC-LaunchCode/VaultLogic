@@ -1,148 +1,112 @@
-import { getValueByPath } from "@shared/conditionEvaluator";
-import type { ExternalSendBlockConfig, ExternalSendResult, ExternalDestination, PayloadMapping, BlockContext } from "@shared/types/blocks";
-import { createLogger } from "../../logger";
-import { externalDestinations } from "@shared/schema"; // Assuming schema access or repository
-import { externalDestinationsRepository } from "../../repositories"; // Assuming this will be created or used
-import { WebhookAdapter } from "./adapters/WebhookAdapter";
-import { DestinationAdapter } from "./interfaces";
 
-const logger = createLogger({ module: "external-send-runner" });
+import { externalDestinationService } from "../../services/ExternalDestinationService";
+import type { ExternalSendBlockConfig } from "@shared/types/blocks";
+import { logger } from "../../logger";
+
+export interface ExternalSendResult {
+    success: boolean;
+    statusCode?: number;
+    responseBody?: any;
+    error?: string;
+    simulated?: boolean;
+}
 
 export class ExternalSendRunner {
-    private adapters: Record<string, DestinationAdapter> = {};
-
-    constructor() {
-        this.adapters["webhook"] = new WebhookAdapter();
-    }
 
     /**
-     * Execute an external send operation
+     * Execute or simulate an external send
      */
-    async executeSend(
+    async execute(
         config: ExternalSendBlockConfig,
-        context: BlockContext,
-        isPreview: boolean = false
+        contextData: Record<string, any>,
+        tenantId: string,
+        mode: 'preview' | 'live' = 'live'
     ): Promise<ExternalSendResult> {
-        // 1. Fetch Destination Config
-        // TODO: Repository call. For now assuming we have a way to get it.
-        // We'll need `externalDestinationsRepository`. If it doesn't exist, we might need to query `db` directly or add repo.
-        // Let's assume a simple DB lookup or repo method.
-        let destination: ExternalDestination | null = null;
-        try {
-            // Placeholder for repository access
-            destination = await this.getDestination(config.destinationId);
-        } catch (e) {
-            logger.error({ error: e, destinationId: config.destinationId }, "Failed to load destination");
-            return {
-                success: false,
-                destinationId: config.destinationId,
-                error: "Destination lookup failed"
-            };
-        }
 
-        if (!destination) {
-            return {
-                success: false,
-                destinationId: config.destinationId,
-                error: "Destination not found"
-            };
-        }
-
-        logger.info({
-            operation: "external_send_start",
-            type: destination.type,
-            destinationId: destination.id,
-            preview: isPreview
-        }, "Starting external send");
-
-        // 2. Resolve Payload
+        // 1. Resolve Payload
         const payload: Record<string, any> = {};
         for (const mapping of config.payloadMappings) {
-            const val = this.resolveValue(mapping.value, context.data);
-            this.assignNested(payload, mapping.key, val);
-        }
+            const destField = mapping.key;
+            const varName = mapping.value;
 
-        // 3. Resolve Headers
-        const headers: Record<string, string> = {};
-        if (config.headers) {
-            for (const mapping of config.headers) {
-                const val = this.resolveValue(mapping.value, context.data);
-                if (val !== null && val !== undefined) {
-                    headers[mapping.key] = String(val);
-                }
+            // Simple variable resolution (supports 'step_id' or 'data.step_id')
+            // For MVP, assume contextData keys match varName
+            const value = (contextData as Record<string, any>)[varName];
+            if (value !== undefined) {
+                payload[destField] = value;
+            } else {
+                // Resolve simple dot notation if needed or leave undefined
+                // For now, simple logic
             }
         }
 
-        // 4. Preview Safety Rule
-        if (isPreview) {
-            logger.info({
-                operation: "external_send_preview_skipped",
-                destinationType: destination.type,
-                payloadPreview: payload
-            }, "Skipping external send in preview mode");
+        // 2. Fetch Destination Config
+        const destination = await externalDestinationService.getDestination(config.destinationId, tenantId);
+        if (!destination) {
+            return { success: false, error: `Destination not found: ${config.destinationId}` };
+        }
 
+        const destConfig = destination.config as any; // { url, method, headers }
+
+        // 3. Preview Mode: Simulate
+        if (mode === 'preview') {
+            logger.info({
+                msg: "Simulating External Send",
+                destination: destination.name,
+                payload
+            });
             return {
                 success: true,
-                destinationId: config.destinationId,
-                responseSnippet: "Skipped in Preview Mode",
-                statusCode: 200 // Synthetic success
+                simulated: true,
+                responseBody: { message: "Simulated success", payload }
             };
         }
 
-        // 5. Select Adapter & Execute
-        const adapter = this.adapters[destination.type];
-        if (!adapter) {
-            return {
-                success: false,
-                destinationId: config.destinationId,
-                error: `No adapter found for destination type: ${destination.type}`
-            };
-        }
-
+        // 4. Live Mode: Execute
         try {
-            return await adapter.send(destination.config, payload, headers, context);
+            const response = await fetch(destConfig.url, {
+                method: destConfig.method || 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(destConfig.headers || {})
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const responseText = await response.text();
+            let responseBody;
+            try {
+                responseBody = JSON.parse(responseText);
+            } catch (e) {
+                responseBody = responseText;
+            }
+
+            const success = response.ok;
+
+            logger.info({
+                msg: "External Send Completed",
+                destination: destination.name,
+                success,
+                status: response.status
+            });
+
+            return {
+                success,
+                statusCode: response.status,
+                responseBody
+            };
+
         } catch (error) {
-            logger.error({ error, destinationId: destination.id }, "Adapter execution failed");
+            logger.error({
+                msg: "External Send Failed",
+                destination: destination.name,
+                error
+            });
             return {
                 success: false,
-                destinationId: config.destinationId,
-                error: error instanceof Error ? error.message : "Unknown error during send"
+                error: error instanceof Error ? error.message : "Unknown network error"
             };
         }
-    }
-
-    private resolveValue(expression: string, data: Record<string, any>): any {
-        // Simple wrapper around getValueByPath or direct return
-        // Similar to WriteRunner logic
-        if (!expression) return null;
-
-        let path = expression;
-        // Strip curlies if present (simple templating support artifact)
-        if (path.startsWith("{{") && path.endsWith("}}")) {
-            path = path.slice(2, -2).trim();
-        }
-
-        const val = getValueByPath(data, path);
-        if (val !== undefined) return val;
-
-        // Fallback: If looks like var, return null, else return literal
-        if (expression.includes("{{")) return null;
-        return expression;
-    }
-
-    private assignNested(obj: any, keyPath: string, value: any) {
-        const parts = keyPath.split('.');
-        let current = obj;
-        for (let i = 0; i < parts.length - 1; i++) {
-            const part = parts[i];
-            if (!current[part]) current[part] = {};
-            current = current[part];
-        }
-        current[parts[parts.length - 1]] = value;
-    }
-
-    private async getDestination(id: string): Promise<ExternalDestination | null> {
-        return await externalDestinationsRepository.findById(id);
     }
 }
 

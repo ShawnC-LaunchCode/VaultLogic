@@ -4,23 +4,33 @@
  * Wrapper for UnifiedDevPanel to connect store and live data
  */
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useDevPanel } from "@/store/devpanel";
 import { useWorkflowVariablesLive } from "@/hooks/useWorkflowVariablesLive";
 import { UnifiedDevPanel } from "./UnifiedDevPanel";
 import { VariableList } from "./VariableList";
+import { ExecutionTimeline } from "./ExecutionTimeline";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { usePreviewEnvironment } from "@/lib/previewRunner/usePreviewEnvironment";
+import type { PreviewEnvironment } from "@/lib/previewRunner/PreviewEnvironment";
 
 interface DevPanelProps {
   workflowId: string;
   className?: string;
+  previewEnvironment?: PreviewEnvironment | null;
 }
 
-export function DevPanel({ workflowId, className }: DevPanelProps) {
+export function DevPanel({ workflowId, className, previewEnvironment }: DevPanelProps) {
   const { isOpen: openState, setIsOpen } = useDevPanel();
   const isOpen = openState[workflowId] ?? true; // Default to open
+  const [activeTab, setActiveTab] = useState("variables");
 
   // Fetch variables with live sync
   const { data: variables = [], isLoading } = useWorkflowVariablesLive(workflowId);
+
+  // Fetch trace from preview environment if available
+  const previewState = usePreviewEnvironment(previewEnvironment || null);
+  const trace = previewState?.trace || [];
 
   // Initialize panel state if not set
   useEffect(() => {
@@ -36,11 +46,28 @@ export function DevPanel({ workflowId, className }: DevPanelProps) {
       onToggle={() => setIsOpen(workflowId, !isOpen)}
       className={className}
     >
-      <VariableList
-        workflowId={workflowId}
-        variables={variables}
-        isLoading={isLoading}
-      />
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col h-full overflow-hidden">
+        <div className="px-4 py-2 border-b">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="variables">Variables</TabsTrigger>
+            <TabsTrigger value="execution">Execution</TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="variables" className="flex-1 overflow-hidden data-[state=inactive]:hidden mt-0">
+          <VariableList
+            workflowId={workflowId}
+            variables={variables}
+            isLoading={isLoading}
+          />
+        </TabsContent>
+
+        <TabsContent value="execution" className="flex-1 overflow-hidden data-[state=inactive]:hidden mt-0">
+          <ExecutionTimeline
+            trace={trace}
+          />
+        </TabsContent>
+      </Tabs>
     </UnifiedDevPanel>
   );
 }

@@ -34,9 +34,14 @@ export class ScriptEngine {
     try {
       // Build input object with whitelisted keys only
       const input: Record<string, unknown> = {};
+      const { aliasMap } = params;
+
       for (const key of inputKeys) {
-        if (key in data) {
-          input[key] = data[key];
+        // Resolve key to stepId if possible
+        const dataKey = aliasMap?.[key] || key;
+
+        if (dataKey in data) {
+          input[key] = data[dataKey];
         }
       }
 

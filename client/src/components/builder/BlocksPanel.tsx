@@ -3,7 +3,8 @@
  */
 
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Info } from "lucide-react";
+import { Plus, Trash2, Info, Database, Save, Send, Code, Play, CheckCircle, GitBranch, GripVertical, Copy } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useBlocks, useCreateBlock, useDeleteBlock, useUpdateBlock, useWorkflowMode } from "@/lib/vault-hooks";
 import { useWorkflowBuilder } from "@/store/workflow-builder";
 import { Button } from "@/components/ui/button";
@@ -76,6 +77,10 @@ export function BlocksPanel({ workflowId }: { workflowId: string }) {
   );
 }
 
+
+
+// ... existing imports ...
+
 function BlockCard({ block, workflowId, onEdit }: { block: any; workflowId: string; onEdit: (block: any) => void }) {
   const deleteMutation = useDeleteBlock();
   const { toast } = useToast();
@@ -89,36 +94,129 @@ function BlockCard({ block, workflowId, onEdit }: { block: any; workflowId: stri
     }
   };
 
+  const createBlockMutation = useCreateBlock();
+
+  const handleDuplicate = async () => {
+    try {
+      await createBlockMutation.mutateAsync({
+        workflowId,
+        type: block.type,
+        phase: block.phase,
+        sectionId: block.sectionId,
+        enabled: true,
+        // Title handled by default or config
+        config: block.config, // Copy config
+        order: (block.order || 0) + 1
+      });
+      toast({ title: "Success", description: "Block duplicated" });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to duplicate block", variant: "destructive" });
+    }
+  };
+
+  const getBlockStyles = (type: string) => {
+    switch (type) {
+      case 'query': return "bg-block-read border-block-read-border text-block-read-foreground";
+      case 'write': return "bg-block-write border-block-write-border text-block-write-foreground";
+      case 'external_send': return "bg-block-action border-block-action-border text-block-action-foreground";
+      case 'js': return "bg-block-logic border-block-logic-border text-block-logic-foreground";
+      case 'branch': return "bg-amber-50 border-amber-200 text-amber-900"; // Fallback/Specific
+      case 'validate': return "bg-red-50 border-red-200 text-red-900";
+      default: return "bg-card border-border text-card-foreground";
+    }
+  };
+
+  const getBlockIcon = (type: string) => {
+    switch (type) {
+      case 'query': return <Database className="w-4 h-4" />;
+      case 'write': return <Save className="w-4 h-4" />;
+      case 'external_send': return <Send className="w-4 h-4" />;
+      case 'js': return <Code className="w-4 h-4" />;
+      case 'prefill': return <Play className="w-4 h-4" />;
+      case 'validate': return <CheckCircle className="w-4 h-4" />;
+      case 'branch': return <GitBranch className="w-4 h-4" />;
+      default: return <Info className="w-4 h-4" />;
+    }
+  };
+
+  const getBlockLabel = (type: string) => {
+    switch (type) {
+      case 'query': return 'Read Data';
+      case 'write': return 'Save Data';
+      case 'external_send': return 'Send Data';
+      case 'js': return 'JS Transform';
+      case 'prefill': return 'Prefill';
+      case 'validate': return 'Validate';
+      case 'branch': return 'Branch';
+      default: return type;
+    }
+  }
+
+  const styles = getBlockStyles(block.type);
+
   return (
-    <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => onEdit(block)}>
-      <CardContent className="p-3">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <Badge variant="outline" className="text-xs">
-                {block.type}
-              </Badge>
-              <Badge variant="secondary" className="text-xs">
-                {block.phase}
-              </Badge>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Order: {block.order} • {block.enabled ? "Enabled" : "Disabled"}
-            </p>
+    <Card
+      className={cn(
+        "cursor-pointer hover:shadow-md transition-all group border-l-4",
+        styles.replace('bg-', 'hover:bg-opacity-80 ').replace('border-', 'border-l-') // Keep card bg white mostly, but use border logic? 
+        // Actually, let's use the background for the whole card for distinctness as requested "Clear block type indicator"
+      )}
+      onClick={() => onEdit(block)}
+    >
+      <div className={cn("flex items-center gap-3 p-3 text-sm", styles)}>
+        {/* Draggable Handle (Visual only for now) */}
+        <GripVertical className="w-4 h-4 opacity-50 cursor-grab" />
+
+        {/* Icon Box */}
+        <div className="p-2 bg-background/50 rounded-md backdrop-blur-sm border shadow-sm">
+          {getBlockIcon(block.type)}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">{getBlockLabel(block.type)}</span>
+            <Badge variant="outline" className="text-[10px] h-4 px-1 bg-background/30 border-current opacity-70">
+              {block.phase}
+            </Badge>
+            {!block.enabled && (
+              <Badge variant="secondary" className="text-[10px] h-4 px-1">Disabled</Badge>
+            )}
           </div>
+          <div className="text-xs opacity-80 truncate font-mono mt-0.5">
+            Block #{block.order} • ID: {block.id.slice(0, 8)}
+          </div>
+        </div>
+
+        {/* Actions */}
+        {/* Actions */}
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-background/50 rounded-md p-0.5 backdrop-blur-sm">
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6"
+            className="h-7 w-7 hover:bg-background/80"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDuplicate();
+            }}
+            title="Duplicate"
+          >
+            <Copy className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 hover:bg-destructive/20 hover:text-destructive"
             onClick={(e) => {
               e.stopPropagation();
               handleDelete();
             }}
+            title="Delete"
           >
-            <Trash2 className="h-3 w-3" />
+            <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
-      </CardContent>
+      </div>
     </Card>
   );
 }
@@ -236,6 +334,20 @@ function BlockEditor({
                   <SelectItem value="onRunComplete">On Run Complete</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+
+          {/* Inline Help */}
+          <div className="bg-muted/30 p-3 rounded-md border text-xs text-muted-foreground flex gap-2 items-start">
+            <Info className="w-4 h-4 mt-0.5 flex-shrink-0 text-indigo-500" />
+            <div>
+              {formData.type === 'prefill' && "Prefill blocks set default values for questions before the user sees them."}
+              {formData.type === 'validate' && "Validation blocks check answers against rules and can stop the user from proceeding."}
+              {formData.type === 'branch' && "Branch blocks direct the user to different pages based on their answers."}
+              {formData.type === 'js' && "Execute custom JavaScript to transform data or perform complex logic."}
+              {formData.type === 'query' && "Fetch data from external databases or APIs."}
+              {formData.type === 'write' && "Save workflow data to an external database."}
+              {formData.type === 'external_send' && "Send data to webhooks or external services."}
             </div>
           </div>
 

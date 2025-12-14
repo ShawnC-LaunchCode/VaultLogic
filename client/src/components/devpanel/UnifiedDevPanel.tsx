@@ -28,7 +28,7 @@ export function UnifiedDevPanel({
     return (
         <div
             className={cn(
-                "flex h-full border-l bg-background transition-all duration-300",
+                "flex h-full border-l bg-sidebar transition-all duration-300",
                 isOpen ? "w-[360px]" : "w-0",
                 className
             )}
@@ -38,7 +38,7 @@ export function UnifiedDevPanel({
                 <Button
                     size="icon"
                     variant="ghost"
-                    className="absolute -left-8 top-3 h-8 w-8 z-10 bg-background border shadow-sm"
+                    className="absolute -left-8 top-3 h-8 w-8 z-10 bg-sidebar border shadow-sm rounded-l-md rounded-r-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                     onClick={onToggle}
                     title={isOpen ? "Collapse Dev Panel" : "Expand Dev Panel"}
                 >
@@ -54,10 +54,10 @@ export function UnifiedDevPanel({
             {isOpen && (
                 <div className="flex flex-col w-full overflow-hidden">
                     {/* Header */}
-                    <div className="flex items-center justify-between p-3 border-b h-14 bg-muted/20">
+                    <div className="flex items-center justify-between px-4 h-10 border-b bg-sidebar-accent/20">
                         <div className="flex items-center gap-2">
-                            <Code2 className="h-4 w-4 text-primary" />
-                            <h3 className="font-semibold text-sm">Dev Tools</h3>
+                            <Code2 className="h-3.5 w-3.5 text-muted-foreground" />
+                            <h3 className="font-medium text-xs text-muted-foreground uppercase tracking-wider">Dev Tools</h3>
                         </div>
                     </div>
 

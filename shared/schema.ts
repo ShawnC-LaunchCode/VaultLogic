@@ -76,6 +76,9 @@ export const conditionalActionEnum = pgEnum('conditional_action', [
 // Public Access Mode (Platform Expansion)
 export const publicAccessModeEnum = pgEnum('public_access_mode', ['open', 'link_only', 'domain_restricted']);
 
+// Portal Access Mode (For specific runs)
+export const portalAccessModeEnum = pgEnum('portal_access_mode', ['anonymous', 'token', 'portal']);
+
 // ===================================================================
 // ENTERPRISE MULTI-TENANCY (Prompts 21+)
 // ===================================================================
@@ -1372,12 +1375,15 @@ export const workflows = pgTable("workflows", {
   status: workflowStatusEnum("status").default('draft').notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  // Stage 15: Templating
+  sourceBlueprintId: uuid("source_blueprint_id"), // Reference to the template this was created from
 }, (table) => [
   index("workflows_project_idx").on(table.projectId),
   index("workflows_status_idx").on(table.status),
   index("workflows_is_public_idx").on(table.isPublic),
   index("workflows_slug_idx").on(table.slug),
   index("workflows_pinned_version_idx").on(table.pinnedVersionId),
+  index("workflows_source_blueprint_idx").on(table.sourceBlueprintId),
 ]);
 
 // WorkflowVersion table for versioning support
@@ -1415,6 +1421,7 @@ export const workflowSnapshots = pgTable("workflow_snapshots", {
   workflowId: uuid("workflow_id").references(() => workflows.id, { onDelete: 'cascade' }).notNull(),
   name: text("name").notNull(),
   values: jsonb("values").default(sql`'{}'::jsonb`).notNull(),
+  workflowVersionId: uuid("workflow_version_id").references(() => workflowVersions.id, { onDelete: 'set null' }),
   versionHash: text("version_hash"), // Hash of workflow structure at snapshot creation
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -1439,6 +1446,25 @@ export const templates = pgTable("templates", {
 }, (table) => [
   index("templates_project_idx").on(table.projectId),
   index("templates_type_idx").on(table.type),
+]);
+
+// Stage 15: Workflow Blueprints (Full Workflow Templates)
+export const workflowBlueprints = pgTable("workflow_blueprints", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }),
+  creatorId: varchar("creator_id").references(() => users.id).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  graphJson: jsonb("graph_json").notNull(),
+  metadata: jsonb("metadata").default(sql`'{}'::jsonb`),
+  sourceWorkflowId: uuid("source_workflow_id"),
+  isPublic: boolean("is_public").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("workflow_blueprints_tenant_idx").on(table.tenantId),
+  index("workflow_blueprints_creator_idx").on(table.creatorId),
+  index("workflow_blueprints_public_idx").on(table.isPublic),
 ]);
 
 // Stage 21: Workflow Templates mapping (multi-template support per workflow)
@@ -1469,6 +1495,8 @@ export const runs = pgTable("runs", {
   error: text("error"), // Stage 8: Error message if failed
   durationMs: integer("duration_ms"),
   runToken: varchar("run_token").unique(), // Unique token for resuming run / anonymous access
+  shareToken: varchar("share_token").unique(), // Unique token for read-only public access
+  shareTokenExpiresAt: timestamp("share_token_expires_at"), // Expiration for share token
   createdBy: varchar("created_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -1576,14 +1604,14 @@ export const externalDestinationTypeEnum = pgEnum('external_destination_type', [
 // External destinations table
 export const externalDestinations = pgTable("external_destinations", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  workspaceId: uuid("workspace_id").references(() => workspaces.id, { onDelete: 'cascade' }).notNull(),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
   type: externalDestinationTypeEnum("type").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   config: jsonb("config").default(sql`'{}'::jsonb`).notNull(), // credentials, endpoint, metadata
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
-  index("external_destinations_workspace_idx").on(table.workspaceId),
+  index("external_destinations_tenant_idx").on(table.tenantId),
   index("external_destinations_type_idx").on(table.type),
 ]);
 
@@ -1882,11 +1910,18 @@ export const workflowRuns = pgTable("workflow_runs", {
   metadata: jsonb("metadata"), // Run-specific metadata
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  // Portal access fields
+  clientEmail: varchar("client_email"), // Email of the client who accessed the portal
+  portalAccessKey: varchar("portal_access_key"), // Key used to access the portal (if applicable)
+  accessMode: portalAccessModeEnum("access_mode").default('anonymous'), // How this run was accessed
+  shareToken: varchar("share_token").unique(), // Unique token for read-only public access
+  shareTokenExpiresAt: timestamp("share_token_expires_at"), // Expiration for share token
 }, (table) => [
   index("workflow_runs_workflow_idx").on(table.workflowId),
   index("workflow_runs_version_idx").on(table.workflowVersionId),
   index("workflow_runs_completed_idx").on(table.completed),
   index("workflow_runs_run_token_idx").on(table.runToken),
+  index("workflow_runs_share_token_idx").on(table.shareToken),
   index("workflow_runs_current_section_idx").on(table.currentSectionId),
 ]);
 
@@ -2125,9 +2160,9 @@ export const auditEventsRelations = relations(auditEvents, ({ one }) => ({
 }));
 
 export const externalDestinationsRelations = relations(externalDestinations, ({ one }) => ({
-  workspace: one(workspaces, {
-    fields: [externalDestinations.workspaceId],
-    references: [workspaces.id],
+  tenant: one(tenants, {
+    fields: [externalDestinations.tenantId],
+    references: [tenants.id],
   }),
 }));
 
@@ -2622,6 +2657,11 @@ export type CollabUpdate = typeof collabUpdates.$inferSelect;
 export type InsertCollabUpdate = typeof insertCollabUpdateSchema._type;
 export type CollabSnapshot = typeof collabSnapshots.$inferSelect;
 export type InsertCollabSnapshot = typeof insertCollabSnapshotSchema._type;
+
+// External Destinations Types
+export const insertExternalDestinationSchema = createInsertSchema(externalDestinations).omit({ id: true, createdAt: true, updatedAt: true });
+export type ExternalDestination = typeof externalDestinations.$inferSelect;
+export type InsertExternalDestination = typeof insertExternalDestinationSchema._type;
 
 // ===================================================================
 // ANALYTICS & SLIs (Stage 11)
@@ -3368,3 +3408,16 @@ export interface TransformResult {
   diff: TransformDiff;
   explanation: string[];
 }
+
+// Portal Authentication Tokens (Magic Links)
+export const portalTokens = pgTable("portal_tokens", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: varchar("email").notNull(),
+  token: varchar("token").unique().notNull(), // The magic link token
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type PortalToken = InferSelectModel<typeof portalTokens>;
+export type InsertPortalToken = typeof portalTokens.$inferInsert;

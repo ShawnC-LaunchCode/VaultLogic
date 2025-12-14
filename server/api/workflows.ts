@@ -24,6 +24,7 @@ import {
   versionIdParamsSchema,
 } from './validators/workflows';
 import { logger } from '../logger';
+import { workflowService } from '../services/WorkflowService';
 
 const router = Router();
 
@@ -324,6 +325,11 @@ router.patch(
 
         return updated;
       });
+
+      // SYNC GRAPH to Legacy Sections (specifically for Final Block)
+      if (data.graphJson) {
+        await workflowService.syncWithGraph(params.id, data.graphJson, userId);
+      }
 
       res.json(result);
     } catch (error) {

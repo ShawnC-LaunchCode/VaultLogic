@@ -144,12 +144,30 @@ export function SidebarTree({ workflowId }: { workflowId: string }) {
           onClick={() => setShowAiDialog(true)}
         >
           <Sparkles className="w-3 h-3 mr-2" />
-          AI Assistant
+          Edit with AI
         </Button>
       </div>
 
       <ScrollArea className="flex-1">
         <div className="p-2">
+          {sections && sections.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-8 text-center px-4 animate-in fade-in duration-500">
+              <div className="p-3 bg-indigo-50 rounded-full mb-3 ring-4 ring-indigo-50/50">
+                <FileText className="w-5 h-5 text-indigo-600" />
+              </div>
+              <h4 className="font-medium text-sm text-foreground mb-1">Start Building</h4>
+              <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
+                Pages are the main steps of your workflow. Add one to begin.
+              </p>
+              <div className="relative">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-0.5 h-3 bg-indigo-200"></div>
+                <Button onClick={handleCreateSection} size="sm" className="bg-indigo-600 hover:bg-indigo-700 shadow-sm">
+                  <Plus className="w-3.5 h-3.5 mr-1.5" />
+                  Add First Page
+                </Button>
+              </div>
+            </div>
+          )}
           {sections?.map((section) => (
             <SectionItem
               key={section.id}
@@ -238,10 +256,23 @@ function SectionItem({
     <div className="mb-1">
       <div
         className={cn(
-          "flex items-center gap-2 p-2 rounded-md hover:bg-accent cursor-pointer group",
-          isSelected && "bg-accent"
+          "flex items-center gap-2 p-2 rounded-md hover:bg-sidebar-accent/50 cursor-pointer group transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20",
+          isSelected && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
         )}
         onClick={() => selectSection(section.id)}
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            selectSection(section.id);
+          }
+          if (e.key === 'ArrowRight') {
+            if (!isExpanded) onToggle();
+          }
+          if (e.key === 'ArrowLeft') {
+            if (isExpanded) onToggle();
+          }
+        }}
       >
         <Button
           variant="ghost"
@@ -281,7 +312,7 @@ function SectionItem({
       </div>
 
       {isExpanded && steps && steps.length > 0 && (
-        <div className="ml-6 mt-1 space-y-1">
+        <div className="ml-4 pl-2 mt-1 space-y-0.5 border-l border-sidebar-border/50">
           {steps
             // Filter out system steps and questions in final sections
             .filter((step) => {
@@ -307,10 +338,17 @@ function StepItem({ step, sectionId }: { step: any; sectionId: string }) {
   return (
     <div
       className={cn(
-        "flex items-center gap-2 p-2 rounded-md hover:bg-accent cursor-pointer text-sm",
-        isSelected && "bg-accent"
+        "flex items-center gap-2 p-1.5 rounded-md hover:bg-sidebar-accent/50 cursor-pointer text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20",
+        isSelected && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
       )}
       onClick={() => selectStep(step.id)}
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          selectStep(step.id);
+        }
+      }}
     >
       <GripVertical className="h-3 w-3 text-muted-foreground" />
       <FileText className="h-3 w-3 text-muted-foreground" />

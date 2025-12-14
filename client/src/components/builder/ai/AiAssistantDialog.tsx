@@ -1,11 +1,18 @@
-import { useState } from "react";
+
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Sparkles, Loader2 } from "lucide-react";
+import { Sparkles, Loader2, Send, RotateCcw, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
+import { AiDiffView } from "./AiDiffView";
+
+import { applyAiSuggestions } from "@/lib/ai-operations";
+import { useCreateSection, useCreateStep } from "@/lib/vault-hooks";
 
 interface AiAssistantDialogProps {
     workflowId: string;
@@ -13,101 +20,197 @@ interface AiAssistantDialogProps {
     onOpenChange: (open: boolean) => void;
 }
 
+interface Message {
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    suggestions?: any;
+    applied?: boolean;
+}
+
 export function AiAssistantDialog({ workflowId, open, onOpenChange }: AiAssistantDialogProps) {
     const [prompt, setPrompt] = useState("");
+    const [messages, setMessages] = useState<Message[]>([]);
     const { toast } = useToast();
     const queryClient = useQueryClient();
+    const scrollRef = useRef<HTMLDivElement>(null);
 
-    // Mutation to call AI suggestion endpoint (which we implemented in backend Part 3)
+    // Hooks for mutations
+    const createSection = useCreateSection();
+    const createStep = useCreateStep();
+
+    // Scroll to bottom when messages change
+    useEffect(() => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [messages]);
+
+    const handleApply = async (suggestions: any) => {
+        const success = await applyAiSuggestions(workflowId, suggestions, {
+            createSection,
+            createStep
+        });
+
+        if (success) {
+            onOpenChange(false);
+            // Optionally mark message as applied in UI if we kept dialog open
+        }
+    };
+
     const suggestMutation = useMutation({
         mutationFn: async (description: string) => {
-            // POST /api/ai/workflows/:id/suggest
             const res = await apiRequest("POST", `/api/ai/workflows/${workflowId}/suggest`, {
                 description,
             });
             return await res.json();
         },
         onSuccess: (data) => {
-            // The backend 'suggest' endpoint returns suggested changes but DOES NOT apply them automatically 
-            // unless we implemented an "apply" flag or separate endpoint.
-            // Looking at AiWorkflowService, it returns { newSections, newLogicRules, ... }.
-            // We need to APPLY these to the workflow. 
-            // For MVP, we'll try to apply them via client-side mutations or if the backend endpoint supports applying...
-            // Wait, 'suggest' usually just retuns JSON.
-            // We might need a separate 'apply' step.
-            // Or we can manually iterate and call createSection/createStep.
-
-            // FOR NOW: Let's assume we show the suggestions and user approves (or auto-apply).
-            // Given the complex state, auto-applying via a specific "apply suggestions" backend route would be better,
-            // but we don't have that yet.
-            // I'll assume for this task we want to just "Add Block" as per title.
-            // If the AI returns new sections/steps, we should call the API to create them.
-
-            // But wait! Providing a true interactive "Add Block" AI is complex.
-            // Let's implement a simpler "Generate Section" feature first.
-
-            toast({
-                title: "AI Suggestions Generated",
-                description: "Review logic would go here. (Not implemented in this step)",
-            });
-            onOpenChange(false);
+            // Add assistant message with suggestions
+            const newMessage: Message = {
+                id: Date.now().toString(),
+                role: 'assistant',
+                content: "I've generated some suggestions based on your request. Please review the changes below.",
+                suggestions: data
+            };
+            setMessages(prev => [...prev, newMessage]);
         },
         onError: (error: any) => {
-            // Check for Rate Limit specifically
-            const isRateLimit =
-                error?.code === 'RATE_LIMIT' ||
-                (error?.message && (error.message.includes('429') || error.message.includes('Quota exceeded')));
-
-            if (isRateLimit) {
-                toast({
-                    title: "AI Usage Limit Reached",
-                    description: "You've hit the rate limit for the free tier. Please wait a moment before trying again.",
-                    variant: "destructive",
-                });
-            } else {
-                toast({
-                    title: "AI Error",
-                    description: error?.message || "Failed to generate suggestions.",
-                    variant: "destructive",
-                });
-            }
+            toast({
+                title: "AI Error",
+                description: error?.message || "Failed to generate suggestions.",
+                variant: "destructive",
+            });
         },
     });
 
     const handleGenerate = () => {
         if (!prompt.trim()) return;
+
+        // Add user message via optimistic update
+        const userMsg: Message = {
+            id: Date.now().toString(),
+            role: 'user',
+            content: prompt
+        };
+        setMessages(prev => [...prev, userMsg]);
+
         suggestMutation.mutate(prompt);
+        setPrompt("");
     };
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-md" aria-describedby="ai-assistant-desc">
-                <DialogHeader>
+            <DialogContent className="sm:max-w-xl flex flex-col h-[600px] p-0 gap-0">
+                <DialogHeader className="p-6 border-b shrink-0">
                     <DialogTitle className="flex items-center gap-2">
                         <Sparkles className="h-5 w-5 text-indigo-600" />
-                        AI Assistant
+                        Edit Workflow with AI
                     </DialogTitle>
-                    <DialogDescription id="ai-assistant-desc">
-                        Describe what you want to add to your workflow (e.g., "Add a contact info section" or "Add a validation rule for email").
+                    <DialogDescription>
+                        Refine your workflow using natural language. Review changes before applying.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4 py-4">
-                    <Textarea
-                        placeholder="I need a section to collect user feedback..."
-                        value={prompt}
-                        onChange={(e) => setPrompt(e.target.value)}
-                        className="min-h-[100px]"
-                    />
+
+                <ScrollArea className="flex-1 p-6">
+                    <div className="space-y-6">
+                        {messages.length === 0 && (
+                            <div className="text-center text-muted-foreground py-8">
+                                <Sparkles className="w-12 h-12 mx-auto mb-3 text-indigo-100" />
+                                <p>Describe what you want to change.</p>
+                                <p className="text-xs mt-1 opacity-70">"Add a phone number question"</p>
+                                <p className="text-xs opacity-70">"Create a new page for payment info"</p>
+                            </div>
+                        )}
+
+                        {messages.map((msg) => (
+                            <div key={msg.id} className={cn(
+                                "flex gap-3",
+                                msg.role === 'user' ? "flex-row-reverse" : "flex-row"
+                            )}>
+                                <div className={cn(
+                                    "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
+                                    msg.role === 'user' ? "bg-slate-200" : "bg-indigo-100 text-indigo-600"
+                                )}>
+                                    {msg.role === 'user' ? <div className="text-xs font-semibold">You</div> : <Sparkles className="w-4 h-4" />}
+                                </div>
+                                <div className={cn(
+                                    "rounded-lg p-3 text-sm max-w-[80%]",
+                                    msg.role === 'user' ? "bg-slate-100 text-slate-900" : "bg-white border text-slate-900"
+                                )}>
+                                    <p>{msg.content}</p>
+
+                                    {/* Placeholder for Diff View */}
+                                    {msg.suggestions && (
+                                        <div className="mt-3 border rounded-md p-2 bg-slate-50">
+                                            <div className="flex items-center gap-2 text-xs font-medium text-slate-500 mb-2">
+                                                <RotateCcw className="w-3 h-3" />
+                                                Proposed Changes
+                                            </div>
+                                            {/* We will replace this with AiDiffView later */}
+                                            <pre className="text-[10px] overflow-x-auto p-2 bg-white rounded border">
+                                                {JSON.stringify(msg.suggestions, null, 2).slice(0, 200)}...
+                                            </pre>
+
+                                            <div className="flex gap-2 mt-3">
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="h-7 text-xs w-full"
+                                                    onClick={() => {
+                                                        // Reject just hides/removes the message or marks it rejected
+                                                        // For now, simpler to just toast and ignore
+                                                        toast({ title: "Suggestion Rejected", description: "No changes were made." });
+                                                    }}
+                                                >
+                                                    <X className="w-3 h-3 mr-1" /> Reject
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    className="h-7 text-xs w-full bg-indigo-600 hover:bg-indigo-700"
+                                                    onClick={() => handleApply(msg.suggestions)}
+                                                >
+                                                    <Check className="w-3 h-3 mr-1" /> Apply Changes
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                        {suggestMutation.isPending && (
+                            <div className="flex items-center gap-2 text-muted-foreground text-sm ml-11">
+                                <Loader2 className="w-3 h-3 animate-spin" /> Thinking...
+                            </div>
+                        )}
+                        <div ref={scrollRef} />
+                    </div>
+                </ScrollArea>
+
+                <div className="p-4 border-t bg-slate-50 shrink-0">
+                    <div className="flex gap-2">
+                        <Textarea
+                            placeholder="Message AI..."
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleGenerate();
+                                }
+                            }}
+                            className="min-h-[44px] max-h-[120px] resize-none py-3"
+                        />
+                        <Button
+                            onClick={handleGenerate}
+                            disabled={suggestMutation.isPending || !prompt.trim()}
+                            size="icon"
+                            className="h-[44px] w-[44px] shrink-0"
+                        >
+                            <Send className="w-4 h-4" />
+                        </Button>
+                    </div>
                 </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>
-                        Cancel
-                    </Button>
-                    <Button onClick={handleGenerate} disabled={suggestMutation.isPending || !prompt.trim()}>
-                        {suggestMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Generate
-                    </Button>
-                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

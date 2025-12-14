@@ -32,12 +32,10 @@ export function WorkflowSettings({ workflowId }: WorkflowSettingsProps) {
       });
 
       toast({
-        title: "Mode updated",
-        description: `Switched to ${targetMode === "easy" ? "Easy" : "Advanced"} mode. ${
-          targetMode === "advanced"
-            ? "JS blocks and advanced features are now available."
-            : "Advanced features are now hidden."
-        }`,
+        title: targetMode === "easy" ? "Easy Mode Active" : "Advanced Mode Unlocked",
+        description: targetMode === "easy"
+          ? "Simplified interface enabled. Advanced features are hidden."
+          : "You now have access to logic, scripting, and data tools.",
       });
     } catch (error) {
       toast({

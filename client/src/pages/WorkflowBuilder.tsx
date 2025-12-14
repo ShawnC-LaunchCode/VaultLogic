@@ -46,6 +46,7 @@ import { ApiWorkflowVersion } from "@/lib/vault-api";
 import { GitCommit, Sparkles, GitGraph } from "lucide-react";
 import { AIAssistPanel } from "@/components/builder/AIAssistPanel";
 import { LogicInspectorPanel } from "@/components/builder/LogicInspectorPanel";
+import { PreviewRunner } from "@/components/preview/PreviewRunner";
 
 export default function WorkflowBuilder() {
   const { id: workflowId } = useParams<{ id: string }>();
@@ -72,6 +73,7 @@ export default function WorkflowBuilder() {
   const [logicPanelOpen, setLogicPanelOpen] = useState(false);
 
   // ... existing state ...
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [launchingPreview, setLaunchingPreview] = useState(false);
   const searchParams = new URLSearchParams(window.location.search);
   const [activeTab, setActiveTab] = useState<BuilderTab>(
@@ -89,7 +91,7 @@ export default function WorkflowBuilder() {
   const handlePublish = async (notes: string) => {
     if (!workflowId) return;
     try {
-      await publishMutation.mutateAsync({ workflowId, notes });
+      await publishMutation.mutateAsync({ workflowId, graphJson: {}, notes });
       toast({ title: "Workflow Published", description: "New version created successfully." });
     } catch (e) {
       toast({ title: "Publish Failed", variant: "destructive", description: "Could not publish workflow." });
@@ -121,6 +123,15 @@ export default function WorkflowBuilder() {
   // ... Render ...
   if (isLoading || modeLoading) return <div className="h-screen flex items-center justify-center"><Skeleton className="h-12 w-64" /></div>;
   if (!workflow) return <div className="h-screen flex items-center justify-center"><p className="text-muted-foreground">Workflow not found</p></div>;
+
+  if (isPreviewMode) {
+    return (
+      <PreviewRunner
+        workflowId={workflowId!}
+        onExit={() => setIsPreviewMode(false)}
+      />
+    );
+  }
 
   return (
     <div className="h-screen flex flex-col bg-background">
@@ -178,7 +189,7 @@ export default function WorkflowBuilder() {
               />
             </div>
 
-            <Button variant="outline" size="sm" onClick={() => navigate(`/workflows/${workflowId}/preview`)} disabled={launchingPreview}>
+            <Button variant="outline" size="sm" onClick={() => setIsPreviewMode(true)} disabled={launchingPreview}>
               <Eye className="w-4 h-4 mr-2" /> Preview
             </Button>
           </div>

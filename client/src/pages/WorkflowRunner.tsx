@@ -131,7 +131,7 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
         // Convert URL params to initialValues object
         for (const [key, value] of urlParams.entries()) {
           // Skip non-step parameters (like 'ref', 'source', etc.)
-          if (!['ref', 'source', 'utm_source', 'utm_medium', 'utm_campaign'].includes(key)) {
+          if (!['ref', 'source', 'utm_source', 'utm_medium', 'utm_campaign', 'token', 'resume'].includes(key)) {
             // Try to parse as JSON for complex values
             try {
               initialValues[key] = JSON.parse(value);
@@ -140,6 +140,14 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
               initialValues[key] = value;
             }
           }
+        }
+
+        // Check for resume token in URL
+        const tokenFromUrl = urlParams.get('token');
+        if (tokenFromUrl && runId && isUUID(runId)) {
+          // If token provided, save it and trust it for this run
+          localStorage.setItem(`run_token_${runId}`, tokenFromUrl);
+          localStorage.setItem('active_run_token', tokenFromUrl);
         }
 
         if (isUUID(runId)) {
@@ -228,6 +236,7 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
       }
     }
 
+
     initialize();
   }, [runId, toast, previewEnvironment]);
 
@@ -267,6 +276,13 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
   const [formValues, setFormValues] = useState<Record<string, any>>({});
   const [errors, setErrors] = useState<string[]>([]);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
+
+  // Sync section index from preview environment (if changed externally, e.g. by Random Fill)
+  useEffect(() => {
+    if (previewState && previewState.currentSectionIndex !== currentSectionIndex) {
+      setCurrentSectionIndex(previewState.currentSectionIndex);
+    }
+  }, [previewState?.currentSectionIndex, currentSectionIndex, previewState]);
 
   // Use preview values in preview mode, form values in production mode
   const effectiveValues = mode === 'preview'
@@ -352,8 +368,19 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
       if (rId && wId && vId) {
         analytics.pageView(rId, wId, vId, currentSection.id, mode === 'preview');
       }
+
+      // Trace Logging (Preview Mode)
+      if (mode === 'preview' && previewEnvironment) {
+        previewEnvironment.addTraceEntry({
+          type: 'step',
+          status: 'executed',
+          message: `Entered Page: ${currentSection.title || 'Untitled Page'}`,
+          stepId: currentSection.id,
+          details: { sectionId: currentSection.id }
+        });
+      }
     }
-  }, [currentSectionIndex, mode, actualRunId, workflowId, run?.versionId, sections?.[currentSectionIndex]?.id, visibleSections?.[currentSectionIndex]?.id]);
+  }, [currentSectionIndex, mode, actualRunId, workflowId, run?.versionId, sections, visibleSections, previewEnvironment]);
 
   // Show initializing state
   if (isInitializing) {
@@ -413,24 +440,37 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
       return;
     }
 
-    // Prepare validation schemas for the current section
     const currentSectionSteps = allSteps.filter(
       (step: any) => step.sectionId === currentSection.id &&
         !step.isVirtual &&
         step.type !== 'final_documents'
     );
 
+    let visibleSectionSteps: any[] = [];
+
     try {
       const stepSchemas: Record<string, ValidationSchema> = {};
 
-      const visibleSectionSteps = currentSectionSteps.filter((step: any) => {
+      visibleSectionSteps = currentSectionSteps.filter((step: any) => {
         if (!step.visibleIf) return true;
         try {
           const aliasResolver = (variableName: string): string | undefined => {
             const s = allSteps.find((as: any) => as.alias === variableName);
             return s?.id;
           };
-          return evaluateConditionExpression(step.visibleIf, effectiveValues, aliasResolver);
+          const isVisible = evaluateConditionExpression(step.visibleIf, effectiveValues, aliasResolver);
+
+          // Log skipped steps in preview mode
+          if (!isVisible && mode === 'preview' && previewEnvironment) {
+            previewEnvironment.addTraceEntry({
+              type: 'logic',
+              status: 'skipped',
+              message: `Skipped Step: ${step.title || step.id}`,
+              details: { reason: 'Condition evaluated to false', condition: step.visibleIf }
+            });
+          }
+          return isVisible;
+
         } catch (e) {
           console.error("Error evaluating visibility for validation", e);
           return true; // Fail safe to visible (validate it)
@@ -475,6 +515,14 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
       }
     } catch (e) {
       console.error("Validation error", e);
+      if (mode === 'preview' && previewEnvironment) {
+        previewEnvironment.addTraceEntry({
+          type: 'error',
+          status: 'failed',
+          message: 'Validation Exception',
+          details: { error: e }
+        });
+      }
       toast({ title: "System Error", description: "Validation failed to execute", variant: "destructive" });
       return;
     }
@@ -482,8 +530,21 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
     if (mode === 'preview') {
       // Handle Preview Environment
       if (previewEnvironment) {
+        // Log successful validation
+        previewEnvironment.addTraceEntry({
+          type: 'logic',
+          status: 'executed',
+          message: 'Page Validation Passed',
+          details: { stepsValidated: visibleSectionSteps?.length }
+        });
+
         if (isLastSection) {
           previewEnvironment.completeRun();
+          previewEnvironment.addTraceEntry({
+            type: 'step',
+            status: 'executed',
+            message: 'Workflow Completed',
+          });
           toast({ title: "Preview Complete!", description: "Preview workflow completed successfully" });
           if (onPreviewComplete) onPreviewComplete();
           return;
@@ -636,17 +697,23 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container max-w-3xl mx-auto p-8">
+    <div className="min-h-screen bg-background flex flex-col">
+      {mode === 'preview' && (
+        <div className="bg-primary/10 border-b border-primary/20 p-2 text-center text-xs font-medium text-primary flex items-center justify-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+          Preview Mode - Simulating End User Experience
+        </div>
+      )}
+      <div className="container max-w-2xl mx-auto p-4 md:p-8 flex-1">
         {/* Progress Bar */}
-        <div className="mb-8">
+        <div className="mb-8 mt-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">
+            <span className="text-sm font-medium text-muted-foreground">
               Step {currentSectionIndex + 1} of {visibleSections.length}
             </span>
-            <span className="text-sm text-muted-foreground">{Math.round(progress)}%</span>
+            <span className="text-sm text-muted-foreground font-mono">{Math.round(progress)}%</span>
           </div>
-          <Progress value={progress} />
+          <Progress value={progress} className="h-1" />
         </div>
 
         {/* Section */}
@@ -828,8 +895,9 @@ function SectionSteps({
           key={step.id}
           step={step}
           value={values[step.id]}
-          error={errors?.[step.id]?.[0]} // Pass first error message
           onChange={(v) => onChange(step.id, v)}
+          error={errors?.[step.id]?.[0]} // Pass first error message
+          context={values}
         />
       ))}
     </>
@@ -842,7 +910,7 @@ function SectionSteps({
  * Now uses the new comprehensive BlockRenderer system that supports
  * all block types with proper validation and nested data handling.
  */
-function StepField({ step, value, onChange, error }: { step: any; value: any; onChange: (value: any) => void; error?: string }) {
+function StepField({ step, value, onChange, error, context }: { step: any; value: any; onChange: (value: any) => void; error?: string; context: Record<string, any> }) {
   return (
     <BlockRenderer
       step={step}
@@ -852,6 +920,7 @@ function StepField({ step, value, onChange, error }: { step: any; value: any; on
       readOnly={false}
       error={error}
       showValidation={!!error}
+      context={context}
     />
   );
 }

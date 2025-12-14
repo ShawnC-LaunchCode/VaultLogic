@@ -13,12 +13,21 @@ import { workflowService } from "./WorkflowService";
 import { logicService, type NavigationResult } from "./LogicService";
 import { blockRunner } from "./BlockRunner";
 import { evaluateRules, validateRequiredSteps, getEffectiveRequiredSteps } from "@shared/workflowLogic";
-import { runJsIsolatedVm } from "../utils/sandboxExecutor";
+// import { runJsIsolatedVm } from "../utils/sandboxExecutor"; // DEPRECATED: Replaced by ScriptEngine
+import { scriptEngine } from "./scripting/ScriptEngine";
 import { isJsQuestionConfig, type JsQuestionConfig } from "@shared/types/steps";
 import { randomUUID } from "crypto";
 import { captureRunLifecycle } from "./metrics";
 import { logger } from "../logger";
 import { documentGenerationService } from "./DocumentGenerationService";
+import { runAuthResolver, RunAuthResolver } from "./runs/RunAuthResolver";
+import { runExecutionCoordinator, RunExecutionCoordinator } from "./runs/RunExecutionCoordinator";
+import { runPersistenceWriter, RunPersistenceWriter } from "./runs/RunPersistenceWriter";
+import { db } from "../db";
+import { workflowVersions } from "@shared/schema";
+import { eq } from "drizzle-orm";
+import { analyticsService } from "./analytics/AnalyticsService";
+import { aggregationService } from "./analytics/AggregationService";
 
 /**
  * Service layer for workflow run-related business logic
@@ -34,6 +43,9 @@ export class RunService {
   private docsRepo: typeof runGeneratedDocumentsRepository;
   private workflowSvc: typeof workflowService;
   private logicSvc: typeof logicService;
+  private authResolver: RunAuthResolver;
+  private executionCoordinator: RunExecutionCoordinator;
+  private persistenceWriter: RunPersistenceWriter;
 
   constructor(
     runRepo?: typeof workflowRunRepository,
@@ -45,7 +57,10 @@ export class RunService {
     projectRepo?: typeof projectRepository,
     docsRepo?: typeof runGeneratedDocumentsRepository,
     workflowSvc?: typeof workflowService,
-    logicSvc?: typeof logicService
+    logicSvc?: typeof logicService,
+    authResolver?: RunAuthResolver,
+    executionCoordinator?: RunExecutionCoordinator,
+    persistenceWriter?: RunPersistenceWriter
   ) {
     this.runRepo = runRepo || workflowRunRepository;
     this.valueRepo = valueRepo || stepValueRepository;
@@ -57,6 +72,31 @@ export class RunService {
     this.docsRepo = docsRepo || runGeneratedDocumentsRepository;
     this.workflowSvc = workflowSvc || workflowService;
     this.logicSvc = logicSvc || logicService;
+
+    // Initialize sub-services with injected dependencies to ensure tests using mocks work correctly
+    this.authResolver = authResolver || new RunAuthResolver(
+      this.runRepo,
+      this.workflowRepo,
+      this.projectRepo,
+      this.workflowSvc
+    );
+
+
+
+    this.persistenceWriter = persistenceWriter || new RunPersistenceWriter(
+      this.runRepo,
+      this.valueRepo,
+      this.stepRepo,
+      this.sectionRepo
+    );
+
+    this.executionCoordinator = executionCoordinator || new RunExecutionCoordinator(
+      this.persistenceWriter,
+      this.logicSvc,
+      this.stepRepo,
+      this.sectionRepo,
+      this.workflowRepo
+    );
   }
 
   /**
@@ -103,26 +143,16 @@ export class RunService {
     // Get all steps for these sections
     const allSteps = await this.stepRepo.findBySectionIds(sectionIds);
 
-    // Create a map of alias -> stepId for quick lookup
-    const aliasToStepId = new Map<string, string>();
-    for (const step of allSteps) {
-      if (step.alias) {
-        aliasToStepId.set(step.alias, step.id);
-      }
-    }
+    const valuesToSave: Array<{ stepId: string; value: any }> = [];
 
     // Populate step values
     for (const step of allSteps) {
-      // Skip virtual steps (they are set by transform blocks)
-      if (step.isVirtual) {
-        continue;
-      }
+      if (step.isVirtual) continue;
 
       let valueToSet: any = undefined;
 
       // First priority: initialValues (by alias or stepId)
       if (initialValues) {
-        // Check if initialValues has this step's alias or ID
         if (step.alias && initialValues[step.alias] !== undefined) {
           valueToSet = initialValues[step.alias];
         } else if (initialValues[step.id] !== undefined) {
@@ -135,14 +165,17 @@ export class RunService {
         valueToSet = step.defaultValue;
       }
 
-      // Only upsert if we have a value
+      // Add to list if we have a value
       if (valueToSet !== undefined) {
-        await this.valueRepo.upsert({
-          runId,
+        valuesToSave.push({
           stepId: step.id,
           value: valueToSet,
         });
       }
+    }
+
+    if (valuesToSave.length > 0) {
+      await this.persistenceWriter.bulkSaveValues(runId, valuesToSave, workflowId);
     }
   }
 
@@ -152,6 +185,7 @@ export class RunService {
    * @param idOrSlug - Workflow UUID or slug
    * @param initialValues - Optional key/value pairs to pre-populate step values (key can be alias or stepId)
    */
+
   async createRun(
     idOrSlug: string,
     userId: string | undefined,
@@ -160,66 +194,52 @@ export class RunService {
     options?: {
       snapshotId?: string;
       randomize?: boolean;
+      clientEmail?: string;
+      accessMode?: 'anonymous' | 'token' | 'portal';
     }
   ): Promise<WorkflowRun> {
-    let workflow;
-
-    if (userId) {
-      // Authenticated: verify ownership/access
-      workflow = await this.workflowSvc.verifyAccess(idOrSlug, userId);
-    } else {
-      // Anonymous: verify public access
-      // Try to find by ID first (if UUID provided)
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
-
-      if (isUuid) {
-        workflow = await this.workflowRepo.findById(idOrSlug);
-      } else {
-        workflow = await this.workflowRepo.findByPublicLink(idOrSlug);
-      }
-
-      if (!workflow) {
-        throw new Error('Workflow not found');
-      }
-
-      // Verify workflow is active and public
-      if (workflow.status !== 'active') {
-        throw new Error('Workflow is not active');
-      }
-      if (!workflow.isPublic) {
-        throw new Error('Workflow is not public');
-      }
-    }
-
-    const workflowId = workflow.id; // Use the actual UUID
+    const workflow = await this.authResolver.verifyCreateAccess(idOrSlug, userId);
+    const workflowId = workflow.id;
 
     // Resolve the version to use for this run
     let targetVersionId = workflow.pinnedVersionId || workflow.currentVersionId;
-
-    // If no version specified on workflow, try to find latest published
     if (!targetVersionId) {
-      // Lazy load to avoid circular dependency if any? 
-      // Actually we can just query database directly or use VersionService if imported.
-      // For now, let's assume we can query workflowVersions table via db if we imported it?
-      // But RunService uses repositories. 
-      // Let's assume workflow.currentVersionId IS the pointer to latest published/active.
-      // If it's missing, it implies no version is published?
-      // Just fallback to null for now if strict mode isn't enforced yet.
       logger.warn({ workflowId }, "No current or pinned version found for workflow, run might be unstable");
     }
 
     // Generate a unique token for this run
     const runToken = randomUUID();
-    const startTime = Date.now();
 
     // Load snapshot values if snapshotId provided
     let snapshotValueMap: Record<string, { value: any; stepId: string; stepUpdatedAt: string }> | undefined;
     if (options?.snapshotId) {
-      const { snapshotService } = await import('./snapshotService');
+      const { snapshotService } = await import('./SnapshotService');
       const snapshot = await snapshotService.getSnapshotById(options.snapshotId);
       if (!snapshot) {
         throw new Error(`Snapshot not found: ${options.snapshotId}`);
       }
+
+      // Check Snapshot Compatibility (Stage 400 Safety Signal)
+      const compatibility = await snapshotService.validateSnapshot(options.snapshotId);
+      if (!compatibility.valid) {
+        if (compatibility.severity === 'hard_breaking') {
+          logger.error({
+            workflowId,
+            snapshotId: options.snapshotId,
+            reasons: compatibility.reasons
+          }, "Prevented run creation from incompatible snapshot (Hard Breaking)");
+          throw new Error(`Snapshot is incompatible with current workflow: ${compatibility.reasons.join(", ")}`);
+        } else if (compatibility.severity === 'soft_breaking') {
+          logger.warn({
+            workflowId,
+            snapshotId: options.snapshotId,
+            reasons: compatibility.reasons
+          }, "Run created from snapshot with missing fields (Soft Breaking)");
+          // Proceed, but maybe we should notify frontend? 
+          // For now, just logging is sufficient for "Safety Signal".
+        }
+      }
+
       const snapshotValues = await snapshotService.getSnapshotValues(options.snapshotId);
       initialValues = { ...initialValues, ...snapshotValues };
       snapshotValueMap = snapshot.values as any;
@@ -228,11 +248,9 @@ export class RunService {
     // Generate random values if randomize is true
     if (options?.randomize) {
       const { createAIServiceFromEnv } = await import('./AIService');
-
       // Get all steps for the workflow
       const allSteps = await this.stepRepo.findByWorkflowIdWithAliases(workflowId);
       const visibleSteps = allSteps.filter(s => !s.isVirtual);
-
       // Build step data for AI
       const stepData = visibleSteps.map(step => ({
         key: step.alias || step.id,
@@ -247,33 +265,36 @@ export class RunService {
       // Call AI service to generate random values
       const aiService = createAIServiceFromEnv();
       const randomValues = await aiService.suggestValues(stepData, 'full');
-
       initialValues = { ...initialValues, ...randomValues };
     }
 
     // Create the run
-    const run = await this.runRepo.create({
+    const run = await this.persistenceWriter.createRun({
       ...data,
-      workflowId, // Always use UUID here
-      workflowVersionId: targetVersionId || undefined, // Link run to specific version
+      workflowId,
+      workflowVersionId: targetVersionId || undefined,
       runToken,
+
       createdBy: userId || null,
       completed: false,
+      clientEmail: options?.clientEmail,
+      accessMode: options?.accessMode || 'anonymous'
     });
 
-    // Populate initial values (from URL params, snapshot, or random data)
+    // Populate initial values
     await this.populateInitialValues(run.id, workflowId, initialValues);
 
     // Determine start section with auto-advance logic
     if (options?.snapshotId || options?.randomize) {
       const startSectionId = await this.determineStartSection(run.id, workflowId, snapshotValueMap);
-      await this.runRepo.update(run.id, {
+      await this.persistenceWriter.updateRun(run.id, {
         currentSectionId: startSectionId,
       });
     }
 
     // Capture run_started metric (Stage 11)
     const context = await this.getWorkflowContext(workflowId);
+    console.log(`[RunService] workflowId: ${workflowId}, context:`, context);
     if (context) {
       await captureRunLifecycle.started({
         tenantId: context.tenantId,
@@ -282,31 +303,38 @@ export class RunService {
         runId: run.id,
         createdBy: userId || 'anon',
       });
+
+      // Stage 15: Workflow Analytics (New System)
+      await analyticsService.recordEvent({
+        runId: run.id,
+        workflowId,
+        versionId: targetVersionId || 'draft',
+        type: 'run.start',
+        timestamp: new Date().toISOString(),
+        isPreview: false, // RunService manages live runs
+        payload: {
+          accessMode: options?.accessMode || 'anonymous'
+        }
+      });
     }
 
     // Execute onRunStart blocks (transform + generic)
     try {
-      // Get existing step values for this run
-      const values = await this.valueRepo.findByRunId(run.id);
-      const dataMap = values.reduce((acc, v) => {
-        acc[v.stepId] = v.value;
-        return acc;
-      }, {} as Record<string, any>);
+      const values = await this.persistenceWriter.getRunValues(run.id);
 
       const blockResult = await blockRunner.runPhase({
         workflowId,
         runId: run.id,
         phase: "onRunStart",
-        data: dataMap,
+        data: values,
+        versionId: targetVersionId || 'draft',
       });
 
-      // If blocks produced errors, log them but don't fail run creation
       if (!blockResult.success && blockResult.errors) {
         logger.warn({ runId: run.id, errors: blockResult.errors }, `onRunStart block errors for run ${run.id}`);
       }
     } catch (error) {
       logger.error({ runId: run.id, error }, `Failed to execute onRunStart blocks for run ${run.id}`);
-      // Don't fail run creation if blocks fail
     }
 
     return run;
@@ -319,23 +347,16 @@ export class RunService {
    * - User owns the workflow (for viewing all runs)
    * - Workflow is public and user is viewing their own anonymous run
    */
+  /**
+   * Get run by ID with auth check
+   */
   async getRun(runId: string, userId: string): Promise<WorkflowRun> {
-    const run = await this.runRepo.findById(runId);
-    if (!run) {
+    const { run, access } = await this.authResolver.resolveRun(runId, userId);
+
+    // Access check logic: 
+    if (!run || access === 'none') {
       throw new Error("Run not found");
     }
-
-    // Check if user created this specific run
-    const createdByUser = run.createdBy === `creator:${userId}` || run.createdBy === userId;
-
-    if (createdByUser) {
-      // User created this run, allow access
-      return run;
-    }
-
-    // Otherwise, verify ownership of the workflow
-    // This allows workflow owners to view all runs
-    await this.workflowSvc.verifyAccess(run.workflowId, userId);
 
     return run;
   }
@@ -346,11 +367,7 @@ export class RunService {
   async getRunWithValues(runId: string, userId: string) {
     const run = await this.getRun(runId, userId);
     const values = await this.valueRepo.findByRunId(runId);
-
-    return {
-      ...run,
-      values,
-    };
+    return { ...run, values };
   }
 
   /**
@@ -359,16 +376,31 @@ export class RunService {
    */
   async getRunWithValuesNoAuth(runId: string) {
     const run = await this.runRepo.findById(runId);
-    if (!run) {
-      throw new Error("Run not found");
-    }
+    if (!run) throw new Error("Run not found");
 
-    const values = await this.valueRepo.findByRunId(runId);
+    const values = await this.persistenceWriter.getRunValues(runId);
+    // values is Record<string, any>. Need to map to array of StepValue format if needed by caller?
+    // Wait, caller expects { ...run, values: StepValue[] } usually?
+    // RunService returned `values` from `valueRepo.findByRunId`.
+    // My `persistenceWriter.getRunValues` returns Record<stepId, value>.
+    // Legacy `getRunWithValues` returned `StepValue[]`.
+    // I need to fetch StepValue[].
 
-    return {
-      ...run,
-      values,
-    };
+    // Since persistenceWriter is new, maybe I should expose `findByRunId` on it too?
+    // Or just use runRepo or valueRepo here if just reading?
+    // PersistenceWriter should ideally handle all "StepValue" access.
+    // Let's use valueRepo for now for backward compatibility of return type.
+    const rawValues = await this.valueRepo.findByRunId(runId);
+    return { ...run, values: rawValues };
+  }
+
+  /**
+   * Get run by Portal Access Key (Saved Link)
+   */
+  async getRunByPortalAccessKey(key: string): Promise<WorkflowRun> {
+    const run = await this.runRepo.findByPortalAccessKey(key);
+    if (!run) throw new Error("Run not found");
+    return run;
   }
 
   /**
@@ -379,20 +411,13 @@ export class RunService {
     userId: string,
     data: InsertStepValue
   ): Promise<void> {
-    const run = await this.getRun(runId, userId);
+    const { run, access } = await this.authResolver.resolveRun(runId, userId);
+    if (!run || access === 'none') throw new Error("Run not found");
 
-    // Verify step belongs to the workflow
-    const step = await this.stepRepo.findById(data.stepId);
-    if (!step) {
-      throw new Error("Step not found");
-    }
+    // Check if run is completed? 
+    if (run.completed) throw new Error("Run is already completed");
 
-    const section = await this.sectionRepo.findById(step.sectionId);
-    if (!section || section.workflowId !== run.workflowId) {
-      throw new Error("Step does not belong to this workflow");
-    }
-
-    await this.valueRepo.upsert(data);
+    await this.persistenceWriter.saveStepValue(runId, data.stepId, data.value, run.workflowId);
   }
 
   /**
@@ -425,20 +450,18 @@ export class RunService {
   /**
    * Bulk upsert step values
    */
+  /**
+   * Bulk upsert step values
+   */
   async bulkUpsertValues(
     runId: string,
     userId: string,
     values: Array<{ stepId: string; value: any }>
   ): Promise<void> {
-    const run = await this.getRun(runId, userId);
+    const { run, access } = await this.authResolver.resolveRun(runId, userId);
+    if (!run || access === 'none') throw new Error("Run not found");
 
-    for (const { stepId, value } of values) {
-      await this.upsertStepValue(runId, userId, {
-        runId,
-        stepId,
-        value,
-      });
-    }
+    await this.persistenceWriter.bulkSaveValues(runId, values, run.workflowId);
   }
 
   /**
@@ -448,26 +471,10 @@ export class RunService {
     runId: string,
     values: Array<{ stepId: string; value: any }>
   ): Promise<void> {
-    // Verify run exists
     const run = await this.runRepo.findById(runId);
-    if (!run) {
-      throw new Error("Run not found");
-    }
+    if (!run) throw new Error("Run not found");
 
-    // Get workflow to validate steps belong to it
-    const workflow = await this.workflowRepo.findById(run.workflowId);
-    if (!workflow) {
-      throw new Error("Workflow not found");
-    }
-
-    // Bulk upsert all values
-    for (const { stepId, value } of values) {
-      await this.upsertStepValueNoAuth(runId, {
-        runId,
-        stepId,
-        value,
-      });
-    }
+    await this.persistenceWriter.bulkSaveValues(runId, values, run.workflowId);
   }
 
   /**
@@ -479,94 +486,7 @@ export class RunService {
    * @param dataMap - Current data map (stepId -> value)
    * @returns Object with success flag and any errors
    */
-  private async executeJsQuestions(
-    runId: string,
-    sectionId: string,
-    dataMap: Record<string, any>
-  ): Promise<{ success: boolean; errors?: string[] }> {
-    const errors: string[] = [];
 
-    // Find all js_question steps in this section
-    const allSteps = await this.stepRepo.findBySectionId(sectionId);
-    const jsQuestions = allSteps.filter(step => step.type === 'js_question');
-
-    for (const step of jsQuestions) {
-      // Skip if no options or invalid config
-      if (!step.options || !isJsQuestionConfig(step.options)) {
-        continue;
-      }
-
-      const config = step.options as JsQuestionConfig;
-
-      // Build input object with only whitelisted keys
-      const input: Record<string, any> = {};
-      for (const key of config.inputKeys) {
-        // Validate key is a safe identifier (alphanumeric, underscore, no special chars)
-        if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(key)) {
-          errors.push(`JS Question "${step.title}": Invalid input key "${key}" (must be a valid identifier)`);
-          continue;
-        }
-
-        // Try to find step by alias or ID
-        const inputStep = allSteps.find(s => s.alias === key || s.id === key);
-        if (inputStep && dataMap[inputStep.id] !== undefined) {
-          input[key] = dataMap[inputStep.id];
-        }
-      }
-
-      try {
-        // Execute the code
-        const result = await runJsIsolatedVm(
-          config.code,
-          input,
-          config.timeoutMs || 1000
-        );
-
-        if (!result.ok) {
-          // Format detailed error message
-          let detailedError = result.error || "Unknown error";
-          if (result.errorDetails) {
-            const details = result.errorDetails;
-            const parts = [detailedError];
-
-            if (details.line !== undefined) {
-              parts.push(`at line ${details.line}${details.column !== undefined ? `, column ${details.column}` : ''}`);
-            }
-
-            if (details.stack) {
-              // Include relevant parts of the stack trace
-              parts.push('\nStack trace:');
-              parts.push(details.stack.slice(0, 1000)); // Include up to 1000 chars of stack
-            }
-
-            detailedError = parts.join('\n');
-          }
-
-          errors.push(`JS Question "${step.title}" failed:\n${detailedError}`);
-          continue;
-        }
-
-        // Store the output using the step's own ID as the key in dataMap
-        // This allows the output to be referenced by the step's alias in blocks
-        await this.valueRepo.upsert({
-          runId,
-          stepId: step.id,
-          value: result.output ?? null,
-        });
-
-        // Update dataMap for subsequent operations
-        dataMap[step.id] = result.output;
-
-      } catch (error: any) {
-        errors.push(`JS Question "${step.title}" execution error: ${error.message}`);
-      }
-    }
-
-    return {
-      success: errors.length === 0,
-      errors: errors.length > 0 ? errors : undefined,
-    };
-  }
 
   /**
    * Submit section values with validation
@@ -578,50 +498,21 @@ export class RunService {
     userId: string,
     values: Array<{ stepId: string; value: any }>
   ): Promise<{ success: boolean; errors?: string[] }> {
-    const run = await this.getRun(runId, userId);
-
-    if (run.completed) {
-      throw new Error("Run is already completed");
+    const { run, access } = await this.authResolver.resolveRun(runId, userId);
+    if (!run || access === 'none') {
+      const createAccess = await this.authResolver.resolveRun(runId, undefined);
+      // If anon access is allowed and user is undefined? 
+      // But here userId is string.
+      throw new Error("Run not found");
     }
 
-    // Save all values first
-    for (const { stepId, value } of values) {
-      await this.upsertStepValue(runId, userId, {
-        runId,
-        stepId,
-        value,
-      });
-    }
+    if (run.completed) throw new Error("Run is already completed");
 
-    // Get all step values for this run
-    const allValues = await this.valueRepo.findByRunId(runId);
-    const dataMap = allValues.reduce((acc, v) => {
-      acc[v.stepId] = v.value;
-      return acc;
-    }, {} as Record<string, any>);
-
-    // Execute JS questions for this section
-    const jsResult = await this.executeJsQuestions(runId, sectionId, dataMap);
-    if (!jsResult.success) {
-      return {
-        success: false,
-        errors: jsResult.errors,
-      };
-    }
-
-    // Execute onSectionSubmit blocks (transform + validate)
-    const blockResult = await blockRunner.runPhase({
-      workflowId: run.workflowId,
-      runId: run.id,
-      phase: "onSectionSubmit",
+    return await this.executionCoordinator.submitSection(
+      { runId, workflowId: run.workflowId, userId, mode: 'live' },
       sectionId,
-      data: dataMap,
-    });
-
-    return {
-      success: blockResult.success,
-      errors: blockResult.errors,
-    };
+      values
+    );
   }
 
   /**
@@ -634,52 +525,14 @@ export class RunService {
     values: Array<{ stepId: string; value: any }>
   ): Promise<{ success: boolean; errors?: string[] }> {
     const run = await this.runRepo.findById(runId);
-    if (!run) {
-      throw new Error("Run not found");
-    }
+    if (!run) throw new Error("Run not found");
+    if (run.completed) throw new Error("Run is already completed");
 
-    if (run.completed) {
-      throw new Error("Run is already completed");
-    }
-
-    // Save all values first
-    for (const { stepId, value } of values) {
-      await this.upsertStepValueNoAuth(runId, {
-        runId,
-        stepId,
-        value,
-      });
-    }
-
-    // Get all step values for this run
-    const allValues = await this.valueRepo.findByRunId(runId);
-    const dataMap = allValues.reduce((acc, v) => {
-      acc[v.stepId] = v.value;
-      return acc;
-    }, {} as Record<string, any>);
-
-    // Execute JS questions for this section
-    const jsResult = await this.executeJsQuestions(runId, sectionId, dataMap);
-    if (!jsResult.success) {
-      return {
-        success: false,
-        errors: jsResult.errors,
-      };
-    }
-
-    // Execute onSectionSubmit blocks (transform + validate)
-    const blockResult = await blockRunner.runPhase({
-      workflowId: run.workflowId,
-      runId: run.id,
-      phase: "onSectionSubmit",
+    return await this.executionCoordinator.submitSection(
+      { runId, workflowId: run.workflowId, mode: 'live' }, // No userId
       sectionId,
-      data: dataMap,
-    });
-
-    return {
-      success: blockResult.success,
-      errors: blockResult.errors,
-    };
+      values
+    );
   }
 
   /**
@@ -691,66 +544,16 @@ export class RunService {
    * @returns Navigation result with next section info
    */
   async next(runId: string, userId: string): Promise<NavigationResult> {
-    const run = await this.getRun(runId, userId);
-
-    if (run.completed) {
-      throw new Error("Run is already completed");
+    const { run, access } = await this.authResolver.resolveRun(runId, userId);
+    if (!run || access === 'none') {
+      throw new Error("Run not found");
     }
+    if (run.completed) throw new Error("Run is already completed");
 
-    // Get all step values for this run
-    const allValues = await this.valueRepo.findByRunId(runId);
-    const dataMap = allValues.reduce((acc, v) => {
-      acc[v.stepId] = v.value;
-      return acc;
-    }, {} as Record<string, any>);
-
-    // Execute JS questions for the current section (if any)
-    if (run.currentSectionId) {
-      await this.executeJsQuestions(runId, run.currentSectionId, dataMap);
-      // Note: We ignore errors here as next() shouldn't fail on JS question errors
-      // The errors would have been caught during submitSection
-    }
-
-    // Execute onNext blocks (transform + branch)
-    const blockResult = await blockRunner.runPhase({
-      workflowId: run.workflowId,
-      runId: run.id,
-      phase: "onNext",
-      sectionId: run.currentSectionId ?? undefined,
-      data: dataMap,
-    });
-
-    // If transform blocks produced a nextSectionId, use it
-    // Otherwise, evaluate navigation using LogicService
-    let navigation: NavigationResult;
-
-    if (blockResult.nextSectionId) {
-      // Branch block decided the next section
-      navigation = {
-        nextSectionId: blockResult.nextSectionId,
-        currentProgress: 0, // Will be calculated if needed
-        visibleSections: [],
-        visibleSteps: [],
-        requiredSteps: [],
-      };
-    } else {
-      // Use logic service to determine navigation
-      navigation = await this.logicSvc.evaluateNavigation(
-        run.workflowId,
-        runId,
-        run.currentSectionId ?? null
-      );
-    }
-
-    // Update run with next section and progress
-    if (navigation.nextSectionId !== run.currentSectionId) {
-      await this.runRepo.update(runId, {
-        currentSectionId: navigation.nextSectionId,
-        progress: navigation.currentProgress,
-      });
-    }
-
-    return navigation;
+    return await this.executionCoordinator.next(
+      { runId, workflowId: run.workflowId, userId, mode: 'live' },
+      run.currentSectionId
+    );
   }
 
   /**
@@ -759,66 +562,13 @@ export class RunService {
    */
   async nextNoAuth(runId: string): Promise<NavigationResult> {
     const run = await this.runRepo.findById(runId);
-    if (!run) {
-      throw new Error("Run not found");
-    }
+    if (!run) throw new Error("Run not found");
+    if (run.completed) throw new Error("Run is already completed");
 
-    if (run.completed) {
-      throw new Error("Run is already completed");
-    }
-
-    // Get all step values for this run
-    const allValues = await this.valueRepo.findByRunId(runId);
-    const dataMap = allValues.reduce((acc, v) => {
-      acc[v.stepId] = v.value;
-      return acc;
-    }, {} as Record<string, any>);
-
-    // Execute JS questions for the current section (if any)
-    if (run.currentSectionId) {
-      await this.executeJsQuestions(runId, run.currentSectionId, dataMap);
-    }
-
-    // Execute onNext blocks (transform + branch)
-    const blockResult = await blockRunner.runPhase({
-      workflowId: run.workflowId,
-      runId: run.id,
-      phase: "onNext",
-      sectionId: run.currentSectionId ?? undefined,
-      data: dataMap,
-    });
-
-    // If transform blocks produced a nextSectionId, use it
-    // Otherwise, evaluate navigation using LogicService
-    let navigation: NavigationResult;
-
-    if (blockResult.nextSectionId) {
-      // Branch block decided the next section
-      navigation = {
-        nextSectionId: blockResult.nextSectionId,
-        currentProgress: 0,
-        visibleSections: [],
-        visibleSteps: [],
-        requiredSteps: [],
-      };
-    } else {
-      // Use logic service to determine navigation
-      navigation = await this.logicSvc.evaluateNavigation(
-        run.workflowId,
-        runId,
-        run.currentSectionId ?? null
-      );
-    }
-
-    // Update run with next section and progress
-    if (navigation.nextSectionId !== run.currentSectionId) {
-      await this.runRepo.update(runId, {
-        currentSectionId: navigation.nextSectionId,
-        progress: navigation.currentProgress,
-      });
-    }
-
-    return navigation;
+    return await this.executionCoordinator.next(
+      { runId, workflowId: run.workflowId, mode: 'live' },
+      run.currentSectionId
+    );
   }
 
   /**
@@ -856,6 +606,7 @@ export class RunService {
         runId: run.id,
         phase: "onRunComplete",
         data: dataMap,
+        versionId: run.workflowVersionId || 'draft',
       });
 
       // If blocks produced validation errors, reject completion
@@ -871,6 +622,19 @@ export class RunService {
             runId: run.id,
             durationMs: Date.now() - startTime,
             errorType: 'validation_error',
+          });
+
+          // Stage 15: Workflow Analytics (New System)
+          await analyticsService.recordEvent({
+            runId: run.id,
+            workflowId: run.workflowId,
+            versionId: run.workflowVersionId || 'draft',
+            type: 'validation.error',
+            timestamp: new Date().toISOString(),
+            isPreview: false,
+            payload: {
+              errors: blockResult.errors
+            }
           });
         }
 
@@ -893,6 +657,20 @@ export class RunService {
             runId: run.id,
             durationMs: Date.now() - startTime,
             errorType: 'missing_required_steps',
+          });
+
+          // Stage 15: Workflow Analytics (New System)
+          await analyticsService.recordEvent({
+            runId: run.id,
+            workflowId: run.workflowId,
+            versionId: run.workflowVersionId || 'draft',
+            type: 'validation.error', // Treat missing steps as validation error
+            timestamp: new Date().toISOString(),
+            isPreview: false,
+            payload: {
+              errorType: 'missing_required_steps',
+              details: errorMsg
+            }
           });
         }
 
@@ -923,6 +701,26 @@ export class RunService {
           runId: run.id,
           durationMs: Date.now() - startTime,
           stepCount: allValues.length,
+        });
+
+        // Stage 15: Workflow Analytics (New System)
+        await analyticsService.recordEvent({
+          runId: run.id,
+          workflowId: run.workflowId,
+          versionId: run.workflowVersionId || 'draft',
+          type: 'workflow.complete',
+          timestamp: new Date().toISOString(),
+          isPreview: false,
+          payload: {
+            durationMs: Date.now() - startTime,
+            stepCount: allValues.length
+          }
+        });
+
+        // Trigger Aggregation
+        // Fire and forget - don't block response
+        aggregationService.aggregateRun(run.id).catch(err => {
+          logger.error({ error: err, runId: run.id }, "Failed to aggregate run metrics");
         });
       }
 
@@ -978,6 +776,7 @@ export class RunService {
       runId: run.id,
       phase: "onRunComplete",
       data: dataMap,
+      versionId: run.workflowVersionId || 'draft',
     });
 
     // If blocks produced validation errors, reject completion
@@ -1058,6 +857,19 @@ export class RunService {
         runId: run.id,
         createdBy: 'anon',
       });
+
+      // Stage 15: Workflow Analytics (New System)
+      await analyticsService.recordEvent({
+        runId: run.id,
+        workflowId: workflow.id,
+        versionId: 'draft', // Anonymous runs on public/legacy often lack version tracking, defaulting to draft or need to fetch current version
+        type: 'run.start',
+        timestamp: new Date().toISOString(),
+        isPreview: false,
+        payload: {
+          accessMode: 'anonymous'
+        }
+      });
     }
 
     // Execute onRunStart blocks (transform + generic)
@@ -1074,6 +886,7 @@ export class RunService {
         runId: run.id,
         phase: 'onRunStart',
         data: dataMap,
+        versionId: 'draft', // Anonymous runs usually draft or untracked version
       });
 
       // Save outputs from onRunStart blocks (transform block outputs)
@@ -1296,7 +1109,100 @@ export class RunService {
     // All sections complete - return the last section (or first if none)
     return sortedSections[sortedSections.length - 1]?.id || sortedSections[0].id;
   }
+
+  /**
+   * Generate a share token for a completed run
+   */
+  async shareRun(runId: string, userId: string | undefined, authType: 'creator' | 'runToken', authContext: any): Promise<{ shareToken: string; expiresAt: Date | null }> {
+    // Check auth
+    if (authType === 'creator') {
+      if (!userId) throw new Error("Unauthorized");
+      const { run, access } = await this.authResolver.resolveRun(runId, userId);
+      if (!run || access === 'none') throw new Error("Run not found or access denied");
+    } else {
+      // RunToken
+      const run = await this.runRepo.findById(runId);
+      if (!run) throw new Error("Run not found");
+      if (run.runToken !== authContext.runToken) throw new Error("Access denied");
+    }
+
+    const shareToken = randomUUID();
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30); // 30 days default expiration
+
+    await this.runRepo.update(runId, {
+      shareToken,
+      shareTokenExpiresAt: expiresAt
+    });
+
+    return { shareToken, expiresAt };
+  }
+
+  /**
+   * Get public run execution by share token
+   */
+  async getRunByShareToken(token: string): Promise<WorkflowRun> {
+    const run = await this.runRepo.findByShareToken(token);
+    if (!run) throw new Error("Run not found or invalid token");
+
+    if (run.shareTokenExpiresAt && new Date() > run.shareTokenExpiresAt) {
+      throw new Error("Share link expired");
+    }
+    return run;
+  }
+
+  /**
+   * Get shared run details including final block config
+   */
+  async getSharedRunDetails(token: string) {
+    // 1. Get run by token (validates expiration)
+    const run = await this.getRunByShareToken(token);
+    const workflow = await this.workflowRepo.findById(run.workflowId);
+    const accessSettings = (workflow as any)?.accessSettings || { allow_portal: false, allow_resume: true, allow_redownload: true };
+
+    // 2. Get documents
+    const documents = await this.docsRepo.findByRunId(run.id);
+
+    // 3. Get Final Block Config
+    let finalBlockConfig: any = null;
+
+    if (run.workflowVersionId) {
+      // Fetch version graph
+      const [version] = await db
+        .select()
+        .from(workflowVersions)
+        .where(eq(workflowVersions.id, run.workflowVersionId))
+        .limit(1);
+
+      if (version && version.graphJson) {
+        const graph = version.graphJson as any;
+        // Search for 'final' node
+        // Graph structure: { nodes: [], edges: [] }
+        if (graph.nodes && Array.isArray(graph.nodes)) {
+          const finalNode = graph.nodes.find((n: any) => n.type === 'final');
+          if (finalNode && finalNode.data && finalNode.data.config) {
+            finalBlockConfig = finalNode.data.config;
+          }
+        }
+      }
+    } else {
+      // Draft run - fetch from steps table
+      // We look for a step of type 'final' in the current workflow definition
+      const allSteps = await this.stepRepo.findByWorkflowIdWithAliases(run.workflowId);
+      const finalStep = allSteps.find(s => s.type === 'final');
+
+      if (finalStep && finalStep.options) {
+        finalBlockConfig = finalStep.options;
+      }
+    }
+
+    return {
+      run: { ...run, accessSettings },
+      documents,
+      finalBlockConfig
+    };
+  }
 }
 
-// Singleton instance
+
 export const runService = new RunService();

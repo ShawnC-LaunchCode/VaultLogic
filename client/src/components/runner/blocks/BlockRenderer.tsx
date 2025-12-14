@@ -57,6 +57,9 @@ export interface BlockRendererProps {
 
   /** Show validation state */
   showValidation?: boolean;
+
+  /** Full context for resolving variables (e.g. dynamic lists) */
+  context?: Record<string, any>;
 }
 
 // ============================================================================
@@ -126,7 +129,7 @@ export function BlockRenderer(props: BlockRendererProps) {
       case "radio":
       case "multiple_choice":
       case "choice":
-        return <ChoiceBlockRenderer step={step} value={value} onChange={onChange} readOnly={readOnly} />;
+        return <ChoiceBlockRenderer step={step} value={value} onChange={onChange} readOnly={readOnly} context={props.context} />;
 
       // Complex blocks
       case "address":

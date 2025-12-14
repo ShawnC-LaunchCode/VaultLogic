@@ -115,56 +115,143 @@ export function OptionsEditor({ options, onChange, className }: OptionsEditorPro
     }
   };
 
+  // Dynamic Options State
+  const [mode, setMode] = useState<'static' | 'dynamic'>(
+    (options as any)?.type === 'dynamic' ? 'dynamic' : 'static'
+  );
+
+  // Sync mode when options prop changes
+  useEffect(() => {
+    setMode((options as any)?.type === 'dynamic' ? 'dynamic' : 'static');
+  }, [options]);
+
+  const handleModeChange = (newMode: 'static' | 'dynamic') => {
+    setMode(newMode);
+    if (newMode === 'static') {
+      onChange(localOptions); // Restore static options
+    } else {
+      // Emit dynamic config
+      // @ts-ignore
+      onChange({ type: 'dynamic', listVariable: '', labelKey: '', valueKey: '' });
+    }
+  };
+
+  const handleDynamicChange = (key: string, value: string) => {
+    // @ts-ignore
+    const currentConfig = (options as any)?.type === 'dynamic' ? options : { type: 'dynamic', listVariable: '', labelKey: '', valueKey: '' };
+    // @ts-ignore
+    onChange({ ...currentConfig, [key]: value });
+  };
+
+  const isDynamic = (options as any)?.type === 'dynamic';
+
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn("space-y-4", className)}>
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-muted-foreground">Options</span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleAddOption}
-          className="h-7 text-xs"
-        >
-          <Plus className="w-3 h-3 mr-1" />
-          Add
-        </Button>
+        <span className="text-sm font-medium text-muted-foreground">Options Source</span>
+        <div className="flex bg-muted rounded-md p-0.5">
+          <button
+            onClick={() => handleModeChange('static')}
+            className={cn("text-xs px-2 py-1 rounded-sm transition-colors", mode === 'static' ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}
+          >
+            Static
+          </button>
+          <button
+            onClick={() => handleModeChange('dynamic')}
+            className={cn("text-xs px-2 py-1 rounded-sm transition-colors", mode === 'dynamic' ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}
+          >
+            Dynamic
+          </button>
+        </div>
       </div>
 
-      {localOptions.length === 0 ? (
-        <p className="text-xs text-muted-foreground py-2">
-          No options yet. Click "Add" to create one.
-        </p>
+      {mode === 'static' ? (
+        <>
+          <div className="flex justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleAddOption}
+              className="h-7 text-xs"
+            >
+              <Plus className="w-3 h-3 mr-1" />
+              Add Option
+            </Button>
+          </div>
+
+          {localOptions.length === 0 ? (
+            <p className="text-xs text-muted-foreground py-2 text-center border dashed border-border rounded">
+              No options defined.
+            </p>
+          ) : (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={localOptions.map((o) => o.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-2">
+                  <div className="grid grid-cols-[24px_1fr_1fr_24px] gap-2 px-1.5 mb-1">
+                    <span />
+                    <span className="text-[10px] text-muted-foreground pl-1">Display Label</span>
+                    <span className="text-[10px] text-muted-foreground pl-1">Saved Value</span>
+                    <span />
+                  </div>
+                  {localOptions.map((option, index) => (
+                    <OptionItem
+                      key={option.id}
+                      id={option.id}
+                      data={option}
+                      index={index}
+                      onUpdate={handleUpdateOption}
+                      onBlur={handleBlur}
+                      onRemove={() => handleRemoveOption(index)}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          )}
+        </>
       ) : (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext
-            items={localOptions.map((o) => o.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            <div className="space-y-2">
-              <div className="grid grid-cols-[24px_1fr_1fr_24px] gap-2 px-1.5 mb-1">
-                <span />
-                <span className="text-[10px] text-muted-foreground pl-1">Display Value</span>
-                <span className="text-[10px] text-muted-foreground pl-1">Saved Value</span>
-                <span />
-              </div>
-              {localOptions.map((option, index) => (
-                <OptionItem
-                  key={option.id}
-                  id={option.id}
-                  data={option}
-                  index={index}
-                  onUpdate={handleUpdateOption}
-                  onBlur={handleBlur}
-                  onRemove={() => handleRemoveOption(index)}
-                />
-              ))}
+        <div className="space-y-3 p-3 border rounded-md bg-muted/20">
+          <div className="space-y-1.5">
+            <span className="text-xs font-medium">List Variable</span>
+            <Input
+              placeholder="e.g. usersList"
+              className="h-8 font-mono text-xs"
+              // @ts-ignore
+              value={(options as any)?.listVariable || ''}
+              onChange={(e) => handleDynamicChange('listVariable', e.target.value)}
+            />
+            <p className="text-[10px] text-muted-foreground">The variable name output by a Read Data block.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1.5">
+              <span className="text-xs font-medium">Label Column</span>
+              <Input
+                placeholder="e.g. full_name"
+                className="h-8 text-xs"
+                // @ts-ignore
+                value={(options as any)?.labelKey || ''}
+                onChange={(e) => handleDynamicChange('labelKey', e.target.value)}
+              />
             </div>
-          </SortableContext>
-        </DndContext>
+            <div className="space-y-1.5">
+              <span className="text-xs font-medium">Value Column</span>
+              <Input
+                placeholder="e.g. id"
+                className="h-8 text-xs"
+                // @ts-ignore
+                value={(options as any)?.valueKey || ''}
+                onChange={(e) => handleDynamicChange('valueKey', e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

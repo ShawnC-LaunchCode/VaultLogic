@@ -43,7 +43,7 @@ export function DiffViewer({ workflowId, version1, version2, isOpen, onClose }: 
         if (!version1 || !version2) return;
         setLoading(true);
         try {
-            const result = await versionAPI.diff(workflowId, version1.id, version2.id);
+            const result = await versionAPI.diff(version1.id, version2.id);
             setDiff(result);
         } catch (error) {
             toast({

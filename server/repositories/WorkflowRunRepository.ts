@@ -68,6 +68,19 @@ export class WorkflowRunRepository extends BaseRepository<
   }
 
   /**
+   * Find run by share token (read-only link)
+   */
+  async findByShareToken(token: string, tx?: DbTransaction): Promise<WorkflowRun | null> {
+    const database = this.getDb(tx);
+    const [run] = await database
+      .select()
+      .from(workflowRuns)
+      .where(eq(workflowRuns.shareToken, token))
+      .limit(1);
+    return run || null;
+  }
+
+  /**
    * Mark run as complete
    */
   async markComplete(runId: string, tx?: DbTransaction): Promise<WorkflowRun> {
@@ -82,6 +95,19 @@ export class WorkflowRunRepository extends BaseRepository<
       .where(eq(workflowRuns.id, runId))
       .returning();
     return updated;
+  }
+
+  /**
+   * Find run by portal access key
+   */
+  async findByPortalAccessKey(key: string, tx?: DbTransaction): Promise<WorkflowRun | null> {
+    const database = this.getDb(tx);
+    const [run] = await database
+      .select()
+      .from(workflowRuns)
+      .where(eq(workflowRuns.portalAccessKey, key))
+      .limit(1);
+    return run || null;
   }
 }
 

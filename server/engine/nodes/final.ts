@@ -5,7 +5,7 @@ import { finalBlockRenderer, createTemplateResolver, FinalBlockRenderRequest } f
 import { db } from '../../db';
 import * as schema from '@shared/schema';
 import { eq } from 'drizzle-orm';
-import { FinalBlockConfig } from '@shared/types/stepConfigs';
+import type { FinalBlockConfig } from '@shared/types/stepConfigs';
 
 /**
  * Final Block Executor
@@ -22,6 +22,8 @@ export interface FinalBlockInput {
     runId?: string;
     workflowVersionId?: string;
 }
+
+export type { FinalBlockConfig };
 
 export interface FinalBlockOutput {
     status: 'executed' | 'skipped' | 'error';

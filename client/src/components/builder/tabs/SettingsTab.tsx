@@ -55,6 +55,13 @@ export function SettingsTab({ workflowId }: SettingsTabProps) {
   const [shareableLink, setShareableLink] = useState("");
   const [linkCopied, setLinkCopied] = useState(false);
 
+
+
+  // Access Settings
+  const [allowPortal, setAllowPortal] = useState(false);
+  const [allowResume, setAllowResume] = useState(true);
+  const [allowRedownload, setAllowRedownload] = useState(true);
+
   // Sync state with loaded workflow data
   useEffect(() => {
     if (workflow) {
@@ -77,6 +84,13 @@ export function SettingsTab({ workflowId }: SettingsTabProps) {
         const baseUrl = window.location.origin; // Or use env var
         setShareableLink(`${baseUrl}/run/${workflow.publicLink}`);
       }
+
+      // Access Settings
+      if (workflow.accessSettings) {
+        setAllowPortal(workflow.accessSettings.allow_portal ?? false);
+        setAllowResume(workflow.accessSettings.allow_resume ?? true);
+        setAllowRedownload(workflow.accessSettings.allow_redownload ?? true);
+      }
     }
   }, [workflow]);
 
@@ -93,8 +107,14 @@ export function SettingsTab({ workflowId }: SettingsTabProps) {
       title: name,
       description,
       slug: slug || undefined,
+
       // status: isPublic ? 'active' : 'draft', // Careful changing status here?
       // Other fields handled by mutation...
+      accessSettings: {
+        allow_portal: allowPortal,
+        allow_resume: allowResume,
+        allow_redownload: allowRedownload
+      }
     }, {
       onSuccess: (updated: ApiWorkflow) => {
         toast({
@@ -437,8 +457,69 @@ export function SettingsTab({ workflowId }: SettingsTabProps) {
               )}
             </CardContent>
           </Card>
+
+
+          {/* Client Access Settings */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <LinkIcon className="w-5 h-5" />
+                <CardTitle>Client Access & Portal</CardTitle>
+              </div>
+              <CardDescription>
+                Configure how clients can access their results and history
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="allow-portal">Enable Client Portal Access</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Allow clients to sign in via email to view past runs and documents
+                  </p>
+                </div>
+                <Switch
+                  id="allow-portal"
+                  checked={allowPortal}
+                  onCheckedChange={setAllowPortal}
+                />
+              </div>
+
+              <Separator />
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="allow-resume">Allow Resuming</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Allow clients to resume incomplete or outdated workflows from the portal
+                  </p>
+                </div>
+                <Switch
+                  id="allow-resume"
+                  checked={allowResume}
+                  onCheckedChange={setAllowResume}
+                />
+              </div>
+
+              <Separator />
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="allow-redownload">Allow Re-downloading</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Allow clients to access generated documents after completion
+                  </p>
+                </div>
+                <Switch
+                  id="allow-redownload"
+                  checked={allowRedownload}
+                  onCheckedChange={setAllowRedownload}
+                />
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </BuilderLayoutContent>
-    </BuilderLayout>
+    </BuilderLayout >
   );
 }

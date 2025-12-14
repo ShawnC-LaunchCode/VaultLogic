@@ -1,0 +1,52 @@
+
+> vault-logic@1.0.0 check
+> tsc
+
+client/src/components/builder/versioning/DiffViewer.tsx(46,75): error TS2554: Expected 2 arguments, but got 3.
+client/src/components/builder/versioning/DiffViewer.tsx(47,21): error TS2345: Argument of type 'ApiVersionDiff' is not assignable to parameter of type 'SetStateAction<DiffResult | null>'.
+  Type 'ApiVersionDiff' is missing the following properties from type 'DiffResult': sections, steps
+client/src/components/builder/versioning/DiffViewer.tsx(74,47): error TS2339: Property 'versionNumber' does not exist on type 'ApiWorkflowVersion'.
+client/src/components/builder/versioning/DiffViewer.tsx(74,77): error TS2339: Property 'versionNumber' does not exist on type 'ApiWorkflowVersion'.
+client/src/components/builder/versioning/VersionHistoryPanel.tsx(60,73): error TS2339: Property 'versionNumber' does not exist on type 'ApiWorkflowVersion'.
+client/src/components/builder/versioning/VersionHistoryPanel.tsx(62,34): error TS2339: Property 'restore' does not exist on type '{ list: (workflowId: string) => Promise<ApiWorkflowVersion[]>; publish: (workflowId: string, data: { graphJson: any; notes?: string | undefined; force?: boolean | undefined; }) => Promise<...>; rollback: (workflowId: string, toVersionId: string, notes?: string | undefined) => Promise<...>; diff: (versionId: string, ...'.
+client/src/components/builder/versioning/VersionHistoryPanel.tsx(63,94): error TS2339: Property 'versionNumber' does not exist on type 'ApiWorkflowVersion'.
+client/src/components/builder/versioning/VersionHistoryPanel.tsx(98,73): error TS2339: Property 'isDraft' does not exist on type 'ApiWorkflowVersion'.
+client/src/components/builder/versioning/VersionHistoryPanel.tsx(99,62): error TS2339: Property 'isDraft' does not exist on type 'ApiWorkflowVersion'.
+client/src/components/builder/versioning/VersionHistoryPanel.tsx(99,94): error TS2339: Property 'versionNumber' does not exist on type 'ApiWorkflowVersion'.
+client/src/components/builder/versioning/VersionHistoryPanel.tsx(106,59): error TS2339: Property 'isDraft' does not exist on type 'ApiWorkflowVersion'.
+client/src/components/templates/TemplateBrowserDialog.tsx(77,46): error TS18048: 't.tags' is possibly 'undefined'.
+client/src/components/templates/TemplateBrowserDialog.tsx(187,54): error TS18048: 'template.tags.length' is possibly 'undefined'.
+client/src/components/templates/TemplateBrowserDialog.tsx(189,62): error TS18048: 'template.tags' is possibly 'undefined'.
+client/src/components/templates/TemplateBrowserDialog.tsx(190,62): error TS18048: 'template.tags' is possibly 'undefined'.
+client/src/components/templates/TemplateBrowserDialog.tsx(190,95): error TS18048: 'template.tags' is possibly 'undefined'.
+client/src/lib/vault-hooks.ts(287,38): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type '{ graphJson: any; notes?: string | undefined; force?: boolean | undefined; }'.
+  Type 'undefined' is not assignable to type '{ graphJson: any; notes?: string | undefined; force?: boolean | undefined; }'.
+client/src/lib/vault-hooks.ts(299,18): error TS2339: Property 'restore' does not exist on type '{ list: (workflowId: string) => Promise<ApiWorkflowVersion[]>; publish: (workflowId: string, data: { graphJson: any; notes?: string | undefined; force?: boolean | undefined; }) => Promise<...>; rollback: (workflowId: string, toVersionId: string, notes?: string | undefined) => Promise<...>; diff: (versionId: string, ...'.
+client/src/pages/VisualWorkflowBuilder.tsx(52,10): error TS2451: Cannot redeclare block-scoped variable 'showSaveTemplateDialog'.
+client/src/pages/VisualWorkflowBuilder.tsx(52,34): error TS2451: Cannot redeclare block-scoped variable 'setShowSaveTemplateDialog'.
+client/src/pages/VisualWorkflowBuilder.tsx(53,10): error TS2451: Cannot redeclare block-scoped variable 'showSaveTemplateDialog'.
+client/src/pages/VisualWorkflowBuilder.tsx(53,34): error TS2451: Cannot redeclare block-scoped variable 'setShowSaveTemplateDialog'.
+client/src/pages/WorkflowBuilder.tsx(87,56): error TS2339: Property 'isDraft' does not exist on type 'ApiWorkflowVersion'.
+client/src/pages/WorkflowBuilder.tsx(87,82): error TS2339: Property 'versionNumber' does not exist on type 'ApiWorkflowVersion'.
+client/src/pages/WorkflowBuilder.tsx(87,100): error TS2339: Property 'versionNumber' does not exist on type 'ApiWorkflowVersion'.
+client/src/pages/WorkflowBuilder.tsx(89,69): error TS2339: Property 'versionNumber' does not exist on type 'ApiWorkflowVersion'.
+client/src/pages/WorkflowBuilder.tsx(106,52): error TS2339: Property 'isDraft' does not exist on type 'ApiWorkflowVersion'.
+server/repositories/WorkflowRunRepository.ts(78,30): error TS2339: Property 'shareToken' does not exist on type 'PgTableWithColumns<{ name: "workflow_runs"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "workflow_runs"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; ... 7 more ...; generated: undefined; }, {}, {}>; ... 13 more ...; accessMode: PgColumn<...>; };...'.
+server/routes/blueprint.routes.ts(33,13): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+server/routes/blueprint.routes.ts(59,13): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+server/routes/finalBlock.routes.ts(24,10): error TS2724: '"../services/RunService.js"' has no exported member named 'runService'. Did you mean 'RunService'?
+server/routes/index.ts(168,3): error TS2552: Cannot find name 'registerBlueprintRoutes'. Did you mean 'registerRunRoutes'?
+server/routes/intake.routes.ts(3,10): error TS2724: '"../services/RunService"' has no exported member named 'runService'. Did you mean 'RunService'?
+server/routes/runs.routes.ts(4,10): error TS2724: '"../services/RunService"' has no exported member named 'runService'. Did you mean 'RunService'?
+server/services/IntakeService.ts(4,10): error TS2724: '"./RunService"' has no exported member named 'runService'. Did you mean 'RunService'?
+server/services/runs/RunPersistenceWriter.ts(24,42): error TS2345: Argument of type 'Partial<{ id: string; createdAt: Date | null; updatedAt: Date | null; progress: number | null; metadata: unknown; workflowId: string; runToken: string; createdBy: string | null; currentSectionId: string | null; ... 5 more ...; accessMode: "token" | ... 2 more ... | null; }>' is not assignable to parameter of type 'Partial<{ workflowId: string; runToken: string; progress?: number | null | undefined; metadata?: Json | undefined; createdBy?: string | null | undefined; currentSectionId?: string | null | undefined; ... 5 more ...; accessMode?: "token" | ... 3 more ... | undefined; }>'.
+  Types of property 'metadata' are incompatible.
+    Type 'unknown' is not assignable to type 'Json | undefined'.
+server/services/RunService.ts(283,7): error TS1117: An object literal cannot have multiple properties with the same name.
+server/services/RunService.ts(406,36): error TS2339: Property 'findByPortalAccessKey' does not exist on type 'WorkflowRunRepository'.
+server/services/RunService.ts(1139,7): error TS2353: Object literal may only specify known properties, and 'shareToken' does not exist in type 'Partial<{ workflowId: string; runToken: string; progress?: number | null | undefined; metadata?: Json | undefined; createdBy?: string | null | undefined; currentSectionId?: string | null | undefined; ... 5 more ...; accessMode?: "token" | ... 3 more ... | undefined; }>'.
+server/services/RunService.ts(1153,13): error TS2339: Property 'shareTokenExpiresAt' does not exist on type '{ id: string; createdAt: Date | null; updatedAt: Date | null; progress: number | null; metadata: unknown; workflowId: string; runToken: string; createdBy: string | null; currentSectionId: string | null; ... 5 more ...; accessMode: "token" | ... 2 more ... | null; }'.
+server/services/RunService.ts(1153,53): error TS2339: Property 'shareTokenExpiresAt' does not exist on type '{ id: string; createdAt: Date | null; updatedAt: Date | null; progress: number | null; metadata: unknown; workflowId: string; runToken: string; createdBy: string | null; currentSectionId: string | null; ... 5 more ...; accessMode: "token" | ... 2 more ... | null; }'.
+server/services/RunService.ts(1166,38): error TS2339: Property 'accessSettings' does not exist on type '{ id: string; name: string | null; createdAt: Date | null; updatedAt: Date | null; title: string; slug: string | null; description: string | null; status: "draft" | "archived" | "active"; ... 10 more ...; sourceBlueprintId: string | null; }'.

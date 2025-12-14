@@ -73,8 +73,15 @@ export function VariablePalette({ workflowId, onInsert }: VariablePaletteProps) 
                   className="flex items-center gap-2 p-2 rounded-md hover:bg-accent group"
                 >
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm truncate">
-                      {variable.alias || variable.key}
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="font-medium text-sm truncate">
+                        {variable.alias || variable.key}
+                      </span>
+                      {variable.type && (
+                        <Badge variant="outline" className="text-[10px] h-4 px-1 py-0 uppercase">
+                          {variable.type.replace('_', ' ')}
+                        </Badge>
+                      )}
                     </div>
                     {variable.alias && (
                       <div className="font-mono text-xs text-muted-foreground truncate">

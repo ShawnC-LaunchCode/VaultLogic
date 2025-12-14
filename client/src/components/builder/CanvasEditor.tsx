@@ -3,7 +3,7 @@
  */
 
 import { useWorkflowBuilder } from "@/store/workflow-builder";
-import { useSections, useSteps, useUpdateSection, useUpdateStep } from "@/lib/vault-hooks";
+import { useSections, useSteps, useUpdateSection, useUpdateStep, useCreateStep } from "@/lib/vault-hooks";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -60,7 +60,7 @@ function SectionCanvas({ section, workflowId }: { section: any; workflowId: stri
   };
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
+    <div className="p-8 max-w-4xl mx-auto space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>{UI_LABELS.PAGE_SETTINGS}</CardTitle>
@@ -73,7 +73,7 @@ function SectionCanvas({ section, workflowId }: { section: any; workflowId: stri
               id="section-title"
               value={section.title}
               onChange={(e) => handleUpdate("title", e.target.value)}
-              onBlur={() => {}}
+              onBlur={() => { }}
             />
           </div>
 
@@ -89,7 +89,56 @@ function SectionCanvas({ section, workflowId }: { section: any; workflowId: stri
           </div>
         </CardContent>
       </Card>
+
+      <StepEmptyState sectionId={section.id} />
     </div>
+  );
+}
+
+function StepEmptyState({ sectionId }: { sectionId: string }) {
+  const { data: steps } = useSteps(sectionId);
+  const createStepMutation = useCreateStep();
+
+  // Only show if no steps
+  if (!steps || steps.length > 0) return null;
+
+  const handleQuickAdd = async (type: string, title: string) => {
+    await createStepMutation.mutateAsync({
+      sectionId,
+      type: type as any,
+      title,
+      description: null,
+      required: false,
+      alias: null,
+      options: type === 'yes_no' ? null : null,
+      order: 0,
+      config: {},
+    });
+  };
+
+  return (
+    <Card className="border-dashed bg-muted/30">
+      <CardContent className="py-12 flex flex-col items-center text-center">
+        <div className="p-3 bg-background rounded-full mb-4 shadow-sm">
+          <Workflow className="w-6 h-6 text-muted-foreground" />
+        </div>
+        <h3 className="font-semibold text-lg mb-1">Add your first question</h3>
+        <p className="text-muted-foreground text-sm mb-6 max-w-sm">
+          This page is empty. Choose a question type to get started.
+        </p>
+        <div className="flex flex-wrap gap-3 justify-center">
+          <Button variant="outline" onClick={() => handleQuickAdd("short_text", "Client Name")}>
+            Short Text
+          </Button>
+          <Button variant="outline" onClick={() => handleQuickAdd("yes_no", "Confirmation")}>
+            Yes / No
+          </Button>
+          <Button variant="outline" onClick={() => handleQuickAdd("single_choice", "Select Option")}>
+            Choice
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -116,6 +165,7 @@ function StepCanvas({ step, sectionId }: { step: any; sectionId: string }) {
               id="step-title"
               value={step.title}
               onChange={(e) => handleUpdate("title", e.target.value)}
+              autoFocus
             />
           </div>
 

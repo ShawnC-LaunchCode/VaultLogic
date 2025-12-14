@@ -26,17 +26,20 @@ interface ToolbarProps {
   workflowId: string;
   workflowStatus: 'draft' | 'published' | 'archived';
   onRunPreview: () => void;
+  readOnly?: boolean;
+  selectedVersion?: string;
+  onVersionChange?: (version: string) => void;
 }
 
-export function Toolbar({ workflowId, workflowStatus, onRunPreview }: ToolbarProps) {
-  const { addNode, isDirty, isSaving, saveError } = useBuilderStore();
+export function Toolbar({ workflowId, workflowStatus, onRunPreview, readOnly = false, selectedVersion = 'current', onVersionChange }: ToolbarProps) {
+  const { addNode, isDirty, isSaving, saveError, nodes, edges } = useBuilderStore();
   const publishWorkflow = usePublishWorkflow(workflowId);
   const { data: versionsData } = useWorkflowVersions(workflowId);
 
   const versions = versionsData?.data || [];
-  const [selectedVersion, setSelectedVersion] = useState<string>('current');
+  // Removed local selectedVersion state to use prop
 
-  const handleAddNode = (type: 'question' | 'compute' | 'branch' | 'template') => {
+  const handleAddNode = (type: 'question' | 'compute' | 'branch' | 'template' | 'final') => {
     // Add node at center of canvas
     const position = {
       x: Math.random() * 400 + 100,
@@ -52,7 +55,7 @@ export function Toolbar({ workflowId, workflowStatus, onRunPreview }: ToolbarPro
     }
 
     if (confirm('Are you sure you want to publish this workflow? This will create a new immutable version.')) {
-      await publishWorkflow.mutateAsync();
+      await publishWorkflow.mutateAsync({ nodes, edges });
     }
   };
 
@@ -62,7 +65,7 @@ export function Toolbar({ workflowId, workflowStatus, onRunPreview }: ToolbarPro
       <div className="flex items-center gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="default" size="sm">
+            <Button variant="default" size="sm" disabled={readOnly}>
               <Plus className="w-4 h-4 mr-2" />
               Add Node
             </Button>
@@ -97,6 +100,14 @@ export function Toolbar({ workflowId, workflowStatus, onRunPreview }: ToolbarPro
                 <span className="font-medium">Template</span>
                 <span className="text-xs text-muted-foreground">
                   Generate documents from templates
+                </span>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleAddNode('final')}>
+              <div className="flex flex-col gap-1">
+                <span className="font-medium">Final Page</span>
+                <span className="text-xs text-muted-foreground">
+                  Completion screen & cleanup
                 </span>
               </div>
             </DropdownMenuItem>
@@ -136,7 +147,7 @@ export function Toolbar({ workflowId, workflowStatus, onRunPreview }: ToolbarPro
       <div className="flex items-center gap-2">
         {/* Version selector */}
         {versions.length > 0 && (
-          <Select value={selectedVersion} onValueChange={setSelectedVersion}>
+          <Select value={selectedVersion} onValueChange={(v) => onVersionChange?.(v)}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Select version" />
             </SelectTrigger>
@@ -168,7 +179,7 @@ export function Toolbar({ workflowId, workflowStatus, onRunPreview }: ToolbarPro
           variant="default"
           size="sm"
           onClick={handlePublish}
-          disabled={workflowStatus === 'published' || isDirty || isSaving}
+          disabled={workflowStatus === 'published' || isDirty || isSaving || readOnly}
         >
           <Save className="w-4 h-4 mr-2" />
           Publish

@@ -318,6 +318,7 @@ export interface ExecuteScriptParams {
   helpers?: Record<string, any>;
   timeoutMs?: number;
   consoleEnabled?: boolean;
+  aliasMap?: Record<string, string>; // Map of alias -> stepId
 }
 
 export interface ValidateScriptParams {

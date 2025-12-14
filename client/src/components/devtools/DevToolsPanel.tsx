@@ -6,6 +6,7 @@ import { RuntimeVariableList } from "@/components/devpanel/RuntimeVariableList";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ApiWorkflowVariable } from "@/lib/vault-api";
 import { JsonViewer } from "./JsonViewer";
+import { ExecutionTimeline } from "@/components/devpanel/ExecutionTimeline";
 
 interface DevToolsPanelProps {
     env: PreviewEnvironment | null;
@@ -136,8 +137,9 @@ export function DevToolsPanel({ env, isOpen, onClose }: DevToolsPanelProps) {
             >
                 <Tabs defaultValue="variables" className="h-full flex flex-col">
                     <div className="px-3 py-2 border-b">
-                        <TabsList className="w-full grid grid-cols-2">
+                        <TabsList className="w-full grid grid-cols-3">
                             <TabsTrigger value="variables">Variables</TabsTrigger>
+                            <TabsTrigger value="execution">Execution</TabsTrigger>
                             <TabsTrigger value="json">JSON</TabsTrigger>
                         </TabsList>
                     </div>
@@ -147,6 +149,12 @@ export function DevToolsPanel({ env, isOpen, onClose }: DevToolsPanelProps) {
                             workflowId={state.workflowId}
                             variables={variables}
                             values={state.values}
+                        />
+                    </TabsContent>
+
+                    <TabsContent value="execution" className="flex-1 mt-0 overflow-hidden">
+                        <ExecutionTimeline
+                            trace={state.trace || []}
                         />
                     </TabsContent>
 

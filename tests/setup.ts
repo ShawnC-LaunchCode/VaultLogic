@@ -123,6 +123,9 @@ async function ensureDbFunctionsWithRetry(retries = 3) {
 // Helper to ensure DB functions exist
 async function ensureDbFunctions() {
   // FORCE RECREATE function to ensure correct signature (7 args)
+  // Drop first to allow parameter name changes
+  await db.execute('DROP FUNCTION IF EXISTS public.datavault_get_next_autonumber(uuid,uuid,uuid,text,integer,text,text);');
+
   await db.execute(`
         CREATE OR REPLACE FUNCTION public.datavault_get_next_autonumber(
           p_tenant_id UUID,
@@ -212,6 +215,7 @@ async function ensureDbFunctions() {
 
   // Legacy name support if needed (alias)
   // Renamed p_tenant_id to p_table_id to match usage semantics (though types are same)
+  await db.execute('DROP FUNCTION IF EXISTS public.datavault_get_next_auto_number(uuid,uuid,integer);');
   await db.execute(`
         CREATE OR REPLACE FUNCTION public.datavault_get_next_auto_number(
           p_table_id UUID,

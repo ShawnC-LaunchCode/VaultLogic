@@ -73,11 +73,9 @@ export async function renderDocx(options: RenderOptions): Promise<RenderResult> 
       ...formatters,
     };
 
-    // Set data and render
-    doc.setData(templateData);
-
+    // Render with data
     try {
-      doc.render();
+      doc.render(templateData);
     } catch (error: any) {
       if (error.properties && error.properties.errors) {
         console.error('Docxtemplater MultiError:', JSON.stringify(error.properties.errors, null, 2));

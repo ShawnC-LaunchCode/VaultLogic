@@ -63,6 +63,28 @@ export default {
           border: "var(--sidebar-border)",
           ring: "var(--sidebar-ring)",
         },
+        block: {
+          read: {
+            DEFAULT: "var(--block-read)",
+            foreground: "var(--block-read-foreground)",
+            border: "var(--block-read-border)",
+          },
+          write: {
+            DEFAULT: "var(--block-write)",
+            foreground: "var(--block-write-foreground)",
+            border: "var(--block-write-border)",
+          },
+          logic: {
+            DEFAULT: "var(--block-logic)",
+            foreground: "var(--block-logic-foreground)",
+            border: "var(--block-logic-border)",
+          },
+          action: {
+            DEFAULT: "var(--block-action)",
+            foreground: "var(--block-action-foreground)",
+            border: "var(--block-action-border)",
+          },
+        },
       },
       fontFamily: {
         sans: ["var(--font-sans)", "Inter", "sans-serif"],

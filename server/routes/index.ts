@@ -30,6 +30,7 @@ import { registerWorkflowAnalyticsRoutes } from "./workflowAnalytics.routes";
 import { registerIntakeRoutes } from "./intake.routes";
 import { registerVersionRoutes } from "./versions.routes";
 import { registerBrandingRoutes } from "./branding.routes";
+import { registerBlueprintRoutes } from "./blueprint.routes";
 import { registerEmailTemplateRoutes } from "./emailTemplates.routes";
 import { registerCollectionsRoutes } from "./collections.routes";
 import { registerTemplateAnalysisRoutes } from "./templateAnalysis.routes";
@@ -59,6 +60,7 @@ import aiTransformRouter from "./api.ai.transform.routes";
 import { registerDebugRoutes } from "./debug.routes";
 import { placesRouter } from "./places.routes";
 import { registerPreviewRoutes } from "./preview.routes";
+import portalRouter from "./portal.routes";
 
 /**
  * Register all modular routes
@@ -159,4 +161,10 @@ export function registerAllRoutes(app: Express): void {
   app.use("/api/enterprise/admin", enterpriseAdminRouter);
   registerBillingRoutes(app);
   registerPreviewRoutes(app);
+
+  // Client Portal
+  app.use("/api/portal", portalRouter);
+
+  // Workflow Blueprints (FE-15)
+  registerBlueprintRoutes(app);
 }

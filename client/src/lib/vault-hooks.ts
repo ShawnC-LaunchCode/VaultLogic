@@ -283,8 +283,8 @@ export function useVersions(workflowId: string | undefined) {
 export function usePublishWorkflow() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ workflowId, notes }: { workflowId: string; notes?: string }) =>
-      versionAPI.publish(workflowId, notes),
+    mutationFn: ({ workflowId, graphJson, notes }: { workflowId: string; graphJson: any; notes?: string }) =>
+      versionAPI.publish(workflowId, { graphJson, notes }),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.versions(variables.workflowId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.workflow(variables.workflowId) });

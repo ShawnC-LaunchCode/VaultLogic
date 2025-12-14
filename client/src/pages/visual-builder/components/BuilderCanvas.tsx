@@ -17,7 +17,11 @@ import 'reactflow/dist/style.css';
 import { useBuilderStore } from '../store/useBuilderStore';
 import { nodeTypes } from './NodeCard';
 
-export function BuilderCanvas() {
+interface BuilderCanvasProps {
+  readOnly?: boolean;
+}
+
+export function BuilderCanvas({ readOnly = false }: BuilderCanvasProps) {
   const {
     nodes,
     edges,
@@ -77,7 +81,11 @@ export function BuilderCanvas() {
         onPaneClick={handlePaneClick}
         nodeTypes={nodeTypes}
         fitView
-        className="bg-gray-50 dark:bg-gray-900"
+        nodesDraggable={!readOnly}
+        nodesConnectable={!readOnly}
+        elementsSelectable={!readOnly}
+        proOptions={{ hideAttribution: true }}
+        className={`bg-gray-50 dark:bg-gray-900 ${readOnly ? 'pointer-events-none' : ''} [&_.react-flow__node]:pointer-events-auto`}
       >
         <Background
           variant={BackgroundVariant.Dots}
@@ -88,7 +96,7 @@ export function BuilderCanvas() {
         <Controls className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700" />
         <MiniMap
           className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
-          nodeColor={(node) => {
+          nodeColor={(node: any) => {
             const colors = {
               question: '#3b82f6',
               compute: '#f59e0b',

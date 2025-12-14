@@ -31,6 +31,7 @@ import { queryRunner } from "../lib/queries/QueryRunner";
 import type { QueryBlockConfig, WriteBlockConfig, ExternalSendBlockConfig } from "@shared/types/blocks";
 import { writeRunner } from "../lib/writes/WriteRunner";
 import { externalSendRunner } from "../lib/external/ExternalSendRunner";
+import { analyticsService } from "./analytics/AnalyticsService";
 
 // Security: limit regex pattern size to prevent ReDoS
 const MAX_REGEX_PATTERN_LENGTH = 100;
@@ -218,47 +219,132 @@ export class BlockRunner {
   /**
    * Execute a single block
    */
+  /**
+   * Execute a single block
+   */
   private async executeBlock(block: Block, context: BlockContext): Promise<BlockResult> {
-    switch (block.type) {
-      case "prefill":
-        return this.executePrefillBlock(block.config as PrefillConfig, context);
-
-      case "validate":
-        return this.executeValidateBlock(block.config as ValidateConfig, context);
-
-      case "branch":
-        return this.executeBranchBlock(block.config as BranchConfig, context);
-
-      case "create_record":
-        return await this.executeCreateRecordBlock(block.config as CreateRecordConfig, context);
-
-      case "update_record":
-        return await this.executeUpdateRecordBlock(block.config as UpdateRecordConfig, context);
-
-      case "find_record":
-        return await this.executeFindRecordBlock(block.config as FindRecordConfig, context);
-
-      case "delete_record":
-        return await this.executeDeleteRecordBlock(block.config as DeleteRecordConfig, context);
-
-      case "query":
-        return await this.executeQueryBlock(block, context);
-
-      case "write":
-        // Resolve tenantId needed for write operations
-        const tenantId = await this.resolveTenantId(context.workflowId);
-        if (!tenantId) {
-          return { success: false, errors: ["Tenant ID resolution failed"] };
+    // Stage 15: Analytics - Block Start
+    if (context.runId) {
+      // accessMode logic? BlockContext doesn't have accessMode usually, but we can assume 'unknown' or payload it.
+      // Actually we just want block events here.
+      await analyticsService.recordEvent({
+        runId: context.runId,
+        workflowId: context.workflowId,
+        versionId: context.versionId || 'draft',
+        type: 'block.start',
+        blockId: block.id,
+        // pageId? context.sectionId is roughly pageId
+        pageId: context.sectionId,
+        timestamp: new Date().toISOString(),
+        isPreview: context.mode === 'preview',
+        payload: {
+          blockType: block.type
         }
-        return this.executeWriteBlock(block.config as WriteBlockConfig, context, tenantId);
-
-      case "external_send":
-        return this.executeExternalSendBlock(block.config as ExternalSendBlockConfig, context);
-
-      default:
-        logger.warn(`Unknown block type: ${(block as any).type}`);
-        return { success: true };
+      });
     }
+
+    let result: BlockResult;
+
+    try {
+      switch (block.type) {
+        case "prefill":
+          result = this.executePrefillBlock(block.config as PrefillConfig, context);
+          break;
+
+        case "validate":
+          result = this.executeValidateBlock(block.config as ValidateConfig, context);
+          break;
+
+        case "branch":
+          result = this.executeBranchBlock(block.config as BranchConfig, context);
+          break;
+
+        case "create_record":
+          result = await this.executeCreateRecordBlock(block.config as CreateRecordConfig, context);
+          break;
+
+        case "update_record":
+          result = await this.executeUpdateRecordBlock(block.config as UpdateRecordConfig, context);
+          break;
+
+        case "find_record":
+          result = await this.executeFindRecordBlock(block.config as FindRecordConfig, context);
+          break;
+
+        case "delete_record":
+          result = await this.executeDeleteRecordBlock(block.config as DeleteRecordConfig, context);
+          break;
+
+        case "query":
+          result = await this.executeQueryBlock(block, context);
+          break;
+
+        case "write":
+          // Resolve tenantId needed for write operations
+          const tenantId = await this.resolveTenantId(context.workflowId);
+          if (!tenantId) {
+            result = { success: false, errors: ["Tenant ID resolution failed"] };
+          } else {
+            result = await this.executeWriteBlock(block.config as WriteBlockConfig, context, tenantId);
+          }
+          break;
+
+        case "external_send":
+          result = await this.executeExternalSendBlock(block.config as ExternalSendBlockConfig, context);
+          break;
+
+        default:
+          logger.warn(`Unknown block type: ${(block as any).type}`);
+          result = { success: true };
+          break;
+      }
+    } catch (error) {
+      // Catch unexpected errors during block execution
+      const errorMsg = error instanceof Error ? error.message : "unknown error";
+
+      if (context.runId) {
+        await analyticsService.recordEvent({
+          runId: context.runId,
+          workflowId: context.workflowId,
+          versionId: context.versionId || 'draft',
+          type: 'block.error',
+          blockId: block.id,
+          pageId: context.sectionId,
+          timestamp: new Date().toISOString(),
+          isPreview: context.mode === 'preview',
+          payload: {
+            error: errorMsg,
+            blockType: block.type
+          }
+        });
+      }
+      throw error;
+    }
+
+    // Stage 15: Analytics - Block End (Complete or Validated Error)
+    if (context.runId) {
+      const eventType = result.success ? 'block.complete' : 'validation.error'; // Generic blocks usually return validation errors as non-success
+      // However, 'create_record' errors are runtime errors.
+      // Let's distinguish?
+      // For now, if !success, it's an error.
+
+      await analyticsService.recordEvent({
+        runId: context.runId,
+        workflowId: context.workflowId,
+        versionId: context.versionId || 'draft',
+        type: eventType,
+        blockId: block.id,
+        pageId: context.sectionId,
+        timestamp: new Date().toISOString(),
+        isPreview: context.mode === 'preview',
+        payload: {
+          blockType: block.type,
+          errors: result.errors
+        }
+      });
+    }
+
+    return result;
   }
 
   /**
@@ -568,8 +654,13 @@ export class BlockRunner {
 
       // Build record data from fieldMap
       const recordData: Record<string, any> = {};
+      const { aliasMap } = context;
+
       for (const [fieldSlug, stepAlias] of Object.entries(config.fieldMap)) {
-        const value = context.data[stepAlias];
+        // Resolve stepAlias to stepId if possible
+        const dataKey = aliasMap?.[stepAlias] || stepAlias;
+        const value = context.data[dataKey];
+
         if (value !== undefined && value !== null) {
           recordData[fieldSlug] = value;
         }
@@ -620,7 +711,10 @@ export class BlockRunner {
         };
       }
 
-      const recordId = context.data[config.recordIdKey];
+      const { aliasMap } = context;
+      const recordIdKey = aliasMap?.[config.recordIdKey] || config.recordIdKey;
+      const recordId = context.data[recordIdKey];
+
       if (!recordId) {
         return {
           success: false,
@@ -631,7 +725,10 @@ export class BlockRunner {
       // Build update data from fieldMap
       const updateData: Record<string, any> = {};
       for (const [fieldSlug, stepAlias] of Object.entries(config.fieldMap)) {
-        const value = context.data[stepAlias];
+        // Resolve stepAlias to stepId if possible
+        const dataKey = aliasMap?.[stepAlias] || stepAlias;
+        const value = context.data[dataKey];
+
         if (value !== undefined && value !== null) {
           updateData[fieldSlug] = value;
         }
@@ -725,7 +822,10 @@ export class BlockRunner {
         };
       }
 
-      const recordId = context.data[config.recordIdKey];
+      const { aliasMap } = context;
+      const recordIdKey = aliasMap?.[config.recordIdKey] || config.recordIdKey;
+      const recordId = context.data[recordIdKey];
+
       if (!recordId) {
         return {
           success: false,
@@ -898,12 +998,14 @@ export class BlockRunner {
   /**
    * Execute external send block
    */
+  /**
+   * Execute external send block
+   */
   private async executeExternalSendBlock(
     config: ExternalSendBlockConfig,
     context: BlockContext
   ): Promise<BlockResult> {
     try {
-      // Check runCondition
       if (config.runCondition) {
         const shouldRun = this.evaluateCondition(config.runCondition, context.data);
         if (!shouldRun) {
@@ -911,23 +1013,28 @@ export class BlockRunner {
         }
       }
 
-      const isPreview = false; // TODO: Resolve from context if available
-
-      const result = await externalSendRunner.executeSend(config, context, isPreview);
-
-      if (!result.success) {
-        return {
-          success: false,
-          errors: [`External send failed: ${result.error || "Unknown error"}`]
-        };
+      const tenantId = await this.getTenantIdFromWorkflow(context.workflowId);
+      if (!tenantId) {
+        return { success: false, errors: ["Failed to resolve tenantId from workflow"] };
       }
 
-      return { success: true };
+      const result = await externalSendRunner.execute(
+        config,
+        context.data,
+        tenantId,
+        context.mode || 'live'
+      );
+
+      return {
+        success: result.success,
+        errors: result.error ? [result.error] : undefined,
+        data: result.responseBody ? { [config.destinationId]: result.responseBody } : undefined
+      };
     } catch (error) {
-      logger.error({ error, config }, "External send block failed");
+      logger.error({ error, config }, "Error executing external_send block");
       return {
         success: false,
-        errors: [`External send failed: ${error instanceof Error ? error.message : "unknown error"}`]
+        errors: [`Failed to send external request: ${error instanceof Error ? error.message : "unknown error"}`]
       };
     }
   }

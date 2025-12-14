@@ -115,36 +115,47 @@ export function DataSourcesTab({ workflowId, onConfigureCollections }: DataSourc
                 return (
                   <Card key={source.id} className={linked ? "border-primary" : ""}>
                     <CardHeader className="pb-3">
-                      <div className="flex justify-between items-start">
+                      <div className="flex justify-between items-center">
                         <div className="flex items-center gap-3">
-                          <div className="p-2 bg-primary/10 rounded-lg">
-                            <Icon className="w-5 h-5 text-primary" />
+                          <div className={`p-2 rounded-lg ${source.type === 'native' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
+                            <Icon className="w-5 h-5" />
                           </div>
                           <div>
-                            <CardTitle className="text-base">{source.name}</CardTitle>
-                            <Badge variant="outline" className="mt-1 text-xs">{source.type}</Badge>
+                            <div className="flex items-center gap-2">
+                              <CardTitle className="text-base">{source.name}</CardTitle>
+                              {linked && <Badge variant="secondary" className="bg-primary/10 text-primary text-xs">Active</Badge>}
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge variant="outline" className="text-xs font-normal">
+                                {source.type === 'native' ? 'Native Table' : 'External API'}
+                              </Badge>
+                              {/* Capability Badges */}
+                              <div className="flex gap-1">
+                                <span className="text-[10px] px-1.5 py-0.5 bg-green-100 text-green-700 rounded-full font-medium border border-green-200">Read</span>
+                                <span className="text-[10px] px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium border border-blue-200">Write</span>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                        {linked && <Badge className="bg-primary/20 text-primary hover:bg-primary/20">Linked</Badge>}
                       </div>
                     </CardHeader>
                     <CardContent className="pb-3">
-                      <CardDescription>{source.description || "No description provided."}</CardDescription>
-                      <div className="mt-2 text-xs text-muted-foreground">
-                        {/* Stats (mocked for now) */}
-                        ID: <code className="bg-muted px-1 rounded">{source.id.slice(0, 8)}...</code>
+                      <CardDescription className="line-clamp-2">{source.description || "No description provided."}</CardDescription>
+                      <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+                        <code>ID: {source.id.slice(0, 8)}...</code>
+                        {source.type === 'native' && <span>PostgreSQL</span>}
                       </div>
                     </CardContent>
                     <CardFooter className="pt-0 flex gap-2">
                       {linked ? (
                         <Button variant="outline" size="sm" onClick={() => handleUnlink(source.id)}
-                          disabled={unlinkMutation.isPending}>
-                          <Unlink2 className="w-4 h-4 mr-2" /> Unlink
+                          disabled={unlinkMutation.isPending} className="w-full">
+                          <Unlink2 className="w-4 h-4 mr-2" /> Disconnect
                         </Button>
                       ) : (
                         <Button variant="default" size="sm" onClick={() => handleLink(source.id)}
-                          disabled={linkMutation.isPending}>
-                          <Link2 className="w-4 h-4 mr-2" /> Link to Workflow
+                          disabled={linkMutation.isPending} className="w-full">
+                          <Link2 className="w-4 h-4 mr-2" /> Connect
                         </Button>
                       )}
                       <Button variant="ghost" size="sm" onClick={() => handleConfigure(source.id)}>

@@ -210,7 +210,12 @@ export async function runGraph(input: RunGraphInput): Promise<RunGraphOutput> {
 
           if (nodeOutput.status === 'executed' && 'varName' in nodeOutput && nodeOutput.varName) {
             outputsDelta[nodeOutput.varName] = nodeOutput.varValue;
-            // ... (lineage generation) ...
+            variableLineage[nodeOutput.varName] = {
+              variableName: nodeOutput.varName,
+              sourceType: mapNodeToSourceType(node.type),
+              createdByBlockId: nodeId,
+              createdAtStep: stepIndex
+            };
           }
 
           // Track cost metrics
@@ -242,7 +247,16 @@ export async function runGraph(input: RunGraphInput): Promise<RunGraphOutput> {
           };
           executionSteps.push(executionStep);
 
-          // ... (trace logic) ...
+          // Legacy Trace population (required for tests)
+          trace.push({
+            nodeId,
+            type: node.type,
+            status: nodeOutput.status as any,
+            outputsDelta: outputsDelta,
+            sideEffects: 'sideEffects' in nodeOutput ? nodeOutput.sideEffects : undefined,
+            error: 'error' in nodeOutput ? nodeOutput.error : undefined,
+            timestamp: new Date()
+          });
 
           // STOP EXECUTION if Final Block is reached
           if (node.type === 'final' && nodeOutput.status === 'executed') {

@@ -2,7 +2,7 @@ import { db } from "../db";
 import { workflowVersions, workflows, auditEvents } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { computeChecksum, verifyChecksum } from "../utils/checksum";
-import { computeVersionDiff, type VersionDiff } from "../utils/diff";
+import { workflowDiffService } from "./diff/WorkflowDiffService";
 import { createLogger } from "../logger";
 import type { WorkflowVersion } from "@shared/schema";
 import { aclService } from "./AclService";
@@ -78,9 +78,25 @@ export class VersionService {
     };
 
     // Basic validation checks
-    if (!graphJson || !graphJson.nodes) {
+    if (!graphJson) {
       result.valid = false;
-      result.errors.push("Invalid graph structure: missing nodes");
+      result.errors.push("Invalid graph structure: empty");
+      return result;
+    }
+
+    if (graphJson.pages) {
+      // Validation for Pages/Blocks structure
+      if (!Array.isArray(graphJson.pages)) {
+        result.valid = false;
+        result.errors.push("Invalid graph structure: pages must be an array");
+      }
+      return result; // Skip node/edge checks for now
+    }
+
+    // Legacy node/edge validation
+    if (!graphJson.nodes) {
+      result.valid = false;
+      result.errors.push("Invalid graph structure: missing nodes or pages");
       return result;
     }
 
@@ -172,6 +188,7 @@ export class VersionService {
     return false;
   }
 
+
   /**
    * Publish a new version
    * Creates an immutable snapshot with checksum
@@ -193,6 +210,20 @@ export class VersionService {
     // Compute checksum
     const checksum = computeChecksum({ graphJson });
 
+    // Compute diff against latest version for changelog
+    let changelog: any = null;
+    // Fetch the LATEST version for this workflow.
+    const [latestVersion] = await db
+      .select()
+      .from(workflowVersions)
+      .where(eq(workflowVersions.workflowId, workflowId))
+      .orderBy(desc(workflowVersions.createdAt))
+      .limit(1);
+
+    if (latestVersion) {
+      changelog = workflowDiffService.diff(latestVersion.graphJson as any, graphJson);
+    }
+
     // Create new version
     const [newVersion] = await db
       .insert(workflowVersions)
@@ -204,6 +235,7 @@ export class VersionService {
         publishedAt: new Date(),
         notes,
         checksum,
+        changelog,
       })
       .returning();
 
@@ -227,6 +259,7 @@ export class VersionService {
         checksum,
         validationWarnings: validation.warnings,
         forced: force,
+        changelog // include in audit too
       },
     });
 
@@ -339,7 +372,7 @@ export class VersionService {
   /**
    * Compute diff between two versions
    */
-  async diffVersions(versionId1: string, versionId2: string): Promise<VersionDiff> {
+  async diffVersions(versionId1: string, versionId2: string): Promise<any> {
     const version1 = await this.getVersion(versionId1);
     const version2 = await this.getVersion(versionId2);
 
@@ -347,16 +380,7 @@ export class VersionService {
       throw new Error("One or both versions not found");
     }
 
-    return computeVersionDiff(
-      {
-        graphJson: version1.graphJson,
-        checksum: version1.checksum,
-      },
-      {
-        graphJson: version2.graphJson,
-        checksum: version2.checksum,
-      }
-    );
+    return workflowDiffService.diff(version1.graphJson as any, version2.graphJson as any);
   }
 
   /**

@@ -201,6 +201,11 @@ export interface ApiWorkflow {
   updatedAt: string;
   modeOverride?: 'easy' | 'advanced' | null;
   intakeConfig?: any;
+  accessSettings?: {
+    allow_portal: boolean;
+    allow_resume: boolean;
+    allow_redownload: boolean;
+  };
 }
 
 export const workflowAPI = {
@@ -245,11 +250,27 @@ export interface ApiWorkflowVersion {
   id: string;
   workflowId: string;
   versionNumber: number;
-  isDraft: boolean;
-  notes?: string;
-  createdAt: string;
-  publishedAt?: string;
+  graphJson: any;
+  definition: any;
+  notes: string | null;
   createdBy: string;
+  createdAt: string;
+  isPublished: boolean;
+  isDraft: boolean;
+  publishedAt: string | null;
+  pinned: boolean; // Computed field
+}
+
+export interface ApiVersionDiff {
+  sections: any[];
+  steps: any[];
+  summary: {
+    sectionsAdded: number;
+    sectionsRemoved: number;
+    stepsAdded: number;
+    stepsRemoved: number;
+    stepsModified: number;
+  };
 }
 
 export const versionAPI = {
@@ -260,19 +281,29 @@ export const versionAPI = {
     return response.data || [];
   },
 
-  publish: (workflowId: string, notes?: string) =>
-    fetchAPI<ApiWorkflowVersion>(`/api/workflows/${workflowId}/publish`, {
+  publish: (workflowId: string, data: { graphJson: any; notes?: string; force?: boolean }) =>
+    fetchAPI<{ success: boolean; data: ApiWorkflowVersion }>(`/api/workflows/${workflowId}/publish`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }).then(res => res.data),
+
+  rollback: (workflowId: string, toVersionId: string, notes?: string) =>
+    fetchAPI<{ success: boolean; message: string }>(`/api/workflows/${workflowId}/rollback`, {
       method: "POST",
-      body: JSON.stringify({ notes }),
+      body: JSON.stringify({ toVersionId, notes }),
     }),
+
+  diff: (versionId: string, otherVersionId: string) =>
+    fetchAPI<{ success: boolean; data: ApiVersionDiff }>(`/api/workflowVersions/${versionId}/diff/${otherVersionId}`).then(res => res.data),
 
   restore: (workflowId: string, versionId: string) =>
-    fetchAPI<void>(`/api/workflows/${workflowId}/versions/${versionId}/restore`, {
+    fetchAPI<{ success: boolean; message: string }>(`/api/workflows/${workflowId}/rollback`, {
       method: "POST",
+      body: JSON.stringify({ toVersionId: versionId }),
     }),
 
-  diff: (workflowId: string, versionId1: string, versionId2: string) =>
-    fetchAPI<any>(`/api/workflows/${workflowId}/diff?v1=${versionId1}&v2=${versionId2}`),
+  export: (workflowId: string) =>
+    fetchAPI<any>(`/api/workflows/${workflowId}/export`),
 };
 
 // ============================================================================
@@ -641,11 +672,17 @@ export const runAPI = {
     });
   },
 
+  list: (workflowId: string) =>
+    fetchAPI<ApiRun[]>(`/api/workflows/${workflowId}/runs`),
+
   get: (id: string) =>
     fetchAPI<{ success: boolean; data: ApiRun }>(`/api/runs/${id}`).then(res => res.data),
 
   getWithValues: (id: string) =>
     fetchAPI<{ success: boolean; data: ApiRun & { values: ApiStepValue[] } }>(`/api/runs/${id}/values`).then(res => res.data),
+
+  getDocuments: (id: string) =>
+    fetchAPI<{ success: boolean; documents: any[] }>(`/api/runs/${id}/documents`).then(res => res.documents),
 
   upsertValue: (runId: string, stepId: string, value: any) =>
     fetchAPI<{ message: string }>(`/api/runs/${runId}/values`, {
@@ -670,8 +707,6 @@ export const runAPI = {
       method: "PUT",
     }).then(res => res.data),
 
-  list: (workflowId: string) =>
-    fetchAPI<ApiRun[]>(`/api/workflows/${workflowId}/runs`),
 };
 
 // ============================================================================
@@ -855,6 +890,14 @@ export const documentRunsAPI = {
     const queryParams = new URLSearchParams({ runA, runB });
     return fetchAPI<CompareRunsResponse>(`/runs/compare?${queryParams.toString()}`);
   },
+
+  /**
+   * Share a run (generate public link)
+   */
+  share: (id: string) =>
+    fetchAPI<{ success: boolean; data: { shareToken: string; expiresAt: string } }>(`/api/runs/${id}/share`, {
+      method: "POST",
+    }).then(res => res.data),
 };
 
 // ============================================================================
@@ -1312,4 +1355,216 @@ export const aiAPI = {
       method: "POST",
       body: JSON.stringify({ steps, mode }),
     }).then(res => res.data),
+};
+
+// ============================================================================
+// Templates
+// ============================================================================
+
+export interface ApiTemplate {
+  id: string;
+  creatorId: string;
+  name: string;
+  description: string | null;
+  content: any; // JSON
+  tags: string[];
+  isPublic: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const templateAPI = {
+  list: () =>
+    fetchAPI<ApiTemplate[]>(`/api/templates`),
+
+  get: (id: string) =>
+    fetchAPI<ApiTemplate>(`/api/templates/${id}`),
+
+  createFromWorkflow: (workflowId: string, name: string, description?: string, tags?: string[]) =>
+    fetchAPI<ApiTemplate>(`/api/templates/from-survey/${workflowId}`, {
+      method: 'POST',
+      body: JSON.stringify({ name, description, tags }),
+    }),
+
+  insertIntoWorkflow: (templateId: string, workflowId: string) =>
+    fetchAPI<{ success: boolean; insertedPages: number; insertedBlocks: number }>(`/api/templates/${templateId}/insert/${workflowId}`, {
+      method: 'POST',
+    }),
+
+  update: (id: string, data: Partial<ApiTemplate>) =>
+    fetchAPI<ApiTemplate>(`/api/templates/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+
+  delete: (id: string) =>
+    fetchAPI<void>(`/api/templates/${id}`, {
+      method: 'DELETE',
+    }),
+};
+
+
+
+// ============================================================================
+// Blueprints (Workflow Templates) FE-15
+// ============================================================================
+
+export interface ApiBlueprint {
+  id: string;
+  name: string;
+  description: string | null;
+  creatorId: string;
+  isPublic: boolean;
+  metadata?: any;
+  createdAt: string;
+  updatedAt: string;
+  tags?: string[]; // Derived from metadata potentially
+}
+
+export const blueprintAPI = {
+  list: (activeOnly?: boolean) => fetchAPI<{ data: ApiBlueprint[] }>('/api/blueprints').then(res => res.data),
+
+  create: (data: { name: string; description?: string; sourceWorkflowId: string; isPublic?: boolean; metadata?: any }) =>
+    fetchAPI<{ data: ApiBlueprint }>('/api/blueprints', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }).then(res => res.data),
+
+  instantiate: (id: string, data: { projectId: string; name?: string }) =>
+    fetchAPI<{ data: { workflowId: string; versionId: string } }>(`/api/blueprints/${id}/instantiate`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }).then(res => res.data),
+};
+
+// ============================================================================
+// Exports
+// ============================================================================
+
+export const workflowExportAPI = {
+  // Triggers browser download
+  downloadExport: async (workflowId: string, format: 'json' | 'csv') => {
+    // We use window.open or a hidden link for file downloads to handle the stream/headers correctly
+    // But if we want to use fetch to verify auth first:
+    const token = await localStorage.getItem('auth_token'); // Or however auth is handled
+    const url = `/api/workflows/${workflowId}/export?format=${format}`;
+
+    // For simple implementation, constructing URL with valid session cookie or token is easiest.
+    // Assuming hybridAuth uses cookies or headers.
+    // If using fetchAPI (which wraps fetch with headers):
+    const response = await fetch(url, {
+      headers: {
+        // ... auth headers if needed, though fetchAPI usually handles this.
+        // If we use fetchAPI, we get JSON/text back.
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) throw new Error('Export failed');
+
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = `workflow-${workflowId}.${format}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+};
+
+// ============================================================================
+// Workflow Analytics (Stage 15: FE-16 Usage Insights)
+// ============================================================================
+
+export interface ApiAnalyticsHealth {
+  totalRuns: number;
+  completedRuns: number;
+  completionRate: number;
+  avgTimeMs: number;
+  errorRate: number;
+}
+
+export interface ApiDropoffStep {
+  stepId: string;
+  stepTitle: string;
+  views: number;
+  dropoffs: number;
+  dropoffRate: number;
+}
+
+export interface ApiBlockHeatmap {
+  [blockId: string]: {
+    executions: number;
+    errors: number;
+    avgDurationMs: number;
+  };
+}
+
+export interface ApiBranchingNode {
+  id: string;
+  type: string;
+  label: string;
+  stats: {
+    visits: number;
+    exits: number;
+  };
+}
+
+export interface ApiBranchingEdge {
+  id: string;
+  source: string;
+  target: string;
+  label?: string;
+  count: number;
+  percentage: number;
+}
+
+export interface ApiBranchingGraph {
+  nodes: ApiBranchingNode[];
+  edges: ApiBranchingEdge[];
+}
+
+export interface ApiTimelineEvent {
+  id: string;
+  type: string;
+  timestamp: string;
+  blockId?: string;
+  payload?: any;
+}
+
+export const analyticsAPI = {
+  getHealth: (workflowId: string, versionId?: string, window: '1d' | '7d' | '30d' = '30d') => {
+    const params = new URLSearchParams();
+    if (versionId) params.append("versionId", versionId);
+    if (window) params.append("window", window);
+    return fetchAPI<{ success: boolean; data: ApiAnalyticsHealth }>(
+      `/api/workflow-analytics/${workflowId}/health?${params.toString()}`
+    ).then((res) => res.data);
+  },
+
+  getDropoff: (workflowId: string, versionId: string) => {
+    return fetchAPI<{ success: boolean; data: ApiDropoffStep[] }>(
+      `/api/workflow-analytics/${workflowId}/dropoff?versionId=${versionId}`
+    ).then((res) => res.data);
+  },
+
+  getHeatmap: (workflowId: string, versionId: string) => {
+    return fetchAPI<{ success: boolean; data: ApiBlockHeatmap }>(
+      `/api/workflow-analytics/${workflowId}/heatmap?versionId=${versionId}`
+    ).then((res) => res.data);
+  },
+
+  getBranching: (workflowId: string, versionId: string) => {
+    return fetchAPI<{ success: boolean; data: ApiBranchingGraph }>(
+      `/api/workflow-analytics/${workflowId}/branching?versionId=${versionId}`
+    ).then((res) => res.data);
+  },
+
+  getRunTimeline: (runId: string) => {
+    return fetchAPI<{ success: boolean; data: ApiTimelineEvent[] }>(
+      `/api/workflow-analytics/run/${runId}/timeline`
+    ).then((res) => res.data);
+  },
 };

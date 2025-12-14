@@ -6,7 +6,7 @@ import { memo } from 'react';
 import { Handle, Position, type NodeProps } from 'reactflow';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Calculator, GitBranch, FileText, AlertCircle } from 'lucide-react';
+import { MessageSquare, Calculator, GitBranch, FileText, AlertCircle, CheckCircle2 } from 'lucide-react';
 import type { BuilderNode } from '../store/useBuilderStore';
 
 // Node type colors
@@ -35,6 +35,12 @@ const NODE_COLORS = {
     text: 'text-green-700 dark:text-green-300',
     badge: 'bg-green-500',
   },
+  final: {
+    bg: 'bg-slate-50 dark:bg-slate-950',
+    border: 'border-slate-300 dark:border-slate-700',
+    text: 'text-slate-700 dark:text-slate-300',
+    badge: 'bg-slate-500',
+  },
 };
 
 // Node type icons
@@ -43,6 +49,7 @@ const NODE_ICONS = {
   compute: Calculator,
   branch: GitBranch,
   template: FileText,
+  final: CheckCircle2,
 };
 
 export const NodeCard = memo(({ data, selected }: NodeProps<BuilderNode['data']>) => {
