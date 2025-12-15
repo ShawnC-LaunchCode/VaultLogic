@@ -8,7 +8,7 @@ COPY package*.json ./
 # Install python/make/g++ for potential native module builds usually needed by bcrypt or similar
 RUN apk add --no-cache python3 make g++
 
-RUN npm ci --ignore-scripts
+RUN npm ci
 
 COPY . .
 
