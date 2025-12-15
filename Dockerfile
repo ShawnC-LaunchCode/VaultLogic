@@ -1,12 +1,12 @@
 # Build Stage
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 
 WORKDIR /app
 
 # Install dependencies needed for build
 COPY package*.json ./
-# Install python/make/g++ for potential native module builds usually needed by bcrypt or similar
-RUN apk add --no-cache python3 make g++
+# Install python/make/g++ for potential native module builds (bcrypt, isolated-vm)
+RUN apt-get update && apt-get install -y python3 make g++
 
 RUN npm ci
 
@@ -18,12 +18,12 @@ RUN npm run build
 RUN npm prune --production
 
 # Production Stage
-FROM node:20-alpine
+FROM node:20-slim
 
 WORKDIR /app
 
 # Install minimal runtime deps if needed
-RUN apk add --no-cache dumb-init
+RUN apt-get update && apt-get install -y dumb-init
 
 ENV NODE_ENV=production
 ENV PORT=5000

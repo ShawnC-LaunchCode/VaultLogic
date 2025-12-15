@@ -118,49 +118,55 @@ app.use((req, res, next) => {
 
 
 (async () => {
-    // Ensure database is initialized before starting server
-    const { dbInitPromise } = await import("./db.js");
-    await dbInitPromise;
+    try {
+        // Ensure database is initialized before starting server
+        const { dbInitPromise } = await import("./db.js");
+        await dbInitPromise;
 
-    // Initialize routes and collaboration server
-    console.log('[DEBUG] Registering routes...');
-    const server = await registerRoutes(app);
-    console.log('[DEBUG] Routes registered. Server created.');
+        // Initialize routes and collaboration server
+        console.log('[DEBUG] Registering routes...');
+        const server = await registerRoutes(app);
+        console.log('[DEBUG] Routes registered. Server created.');
 
-    // Register centralized error handler middleware (must be after all routes)
-    app.use(errorHandler);
+        // Register centralized error handler middleware (must be after all routes)
+        app.use(errorHandler);
 
-    // importantly only setup vite in development and test modes and after
-    // setting up all the other routes so the catch-all route
-    // doesn't interfere with the other routes
-    if (app.get("env") === "development" || app.get("env") === "test") {
-        // Dynamic import vite only in development/test to avoid bundling it
-        try {
-            logger.info("Loading Vite for development...");
-            const { setupVite } = await import("./vite.js");
-            logger.info("Vite module loaded, calling setupVite...");
-            await setupVite(app, server);
-            logger.info("Vite setup complete");
-        } catch (error) {
-            logger.error({ error, message: error instanceof Error ? error.message : String(error), stack: error instanceof Error ? error.stack : undefined }, "Failed to load vite (this is expected in production)");
-            // Fallback to static serving if vite module is not available
+        // importantly only setup vite in development and test modes and after
+        // setting up all the other routes so the catch-all route
+        // doesn't interfere with the other routes
+        if (app.get("env") === "development" || app.get("env") === "test") {
+            // Dynamic import vite only in development/test to avoid bundling it
+            try {
+                logger.info("Loading Vite for development...");
+                const { setupVite } = await import("./vite.js");
+                logger.info("Vite module loaded, calling setupVite...");
+                await setupVite(app, server);
+                logger.info("Vite setup complete");
+            } catch (error) {
+                logger.error({ error, message: error instanceof Error ? error.message : String(error), stack: error instanceof Error ? error.stack : undefined }, "Failed to load vite (this is expected in production)");
+                // Fallback to static serving if vite module is not available
+                serveStatic(app);
+            }
+        } else {
             serveStatic(app);
         }
-    } else {
-        serveStatic(app);
-    }
 
-    // ALWAYS serve the app on the port specified in the environment variable PORT
-    // Other ports are firewalled. Default to 5000 if not specified.
-    // this serves both the API and the client.
-    // It is the only port that is not firewalled.
-    const port = parseInt(process.env.PORT || '5000', 10);
-    server.listen({
-        port,
-        host: "0.0.0.0", // Bind to all network interfaces for Railway/Docker
-    }, () => {
-        log(`serving on port ${port}`);
-    });
+        // ALWAYS serve the app on the port specified in the environment variable PORT
+        // Other ports are firewalled. Default to 5000 if not specified.
+        // this serves both the API and the client.
+        // It is the only port that is not firewalled.
+        const port = parseInt(process.env.PORT || '5000', 10);
+        server.listen({
+            port,
+            host: "0.0.0.0", // Bind to all network interfaces for Railway/Docker
+        }, () => {
+            log(`serving on port ${port}`);
+        });
+    } catch (error) {
+        console.error("FATAL: Failed to start server:", error);
+        logger.fatal({ error }, "FATAL: Failed to start server");
+        process.exit(1);
+    }
 })();
 
 // Export app for testing purposes
