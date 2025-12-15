@@ -164,17 +164,29 @@ export type ColumnMapping = {
 };
 
 /**
+ * Match Strategy for Upsert
+ * Determines how to find existing rows
+ */
+export type MatchStrategy = {
+  type: "primary_key" | "column_match";
+  columnId?: string;     // Required when type = "column_match"
+  columnValue?: string;  // Variable reference for the match value
+};
+
+/**
  * Write Block Configuration
- * Writes data to a native table
+ * Writes data to a native table with upsert support
  */
 export type WriteBlockConfig = {
   dataSourceId: string;
   tableId: string;
-  mode: "create" | "update";
-  primaryKeyColumnId?: string;        // Required for update mode
-  primaryKeyValue?: string;           // Required for update mode
+  mode: "create" | "update" | "upsert";
+  matchStrategy?: MatchStrategy;      // Required for update and upsert modes
+  primaryKeyColumnId?: string;        // Deprecated - use matchStrategy instead
+  primaryKeyValue?: string;           // Deprecated - use matchStrategy instead
   columnMappings: ColumnMapping[];
   runCondition?: WhenCondition;
+  outputKey?: string;                 // Step alias to store the row ID
 };
 
 /**
@@ -185,7 +197,9 @@ export interface WriteResult {
   tableId: string;
   rowId?: string;
   writtenColumnIds: string[];
-  operation: "create" | "update";
+  operation: "create" | "update" | "upsert";
+  writtenData?: Record<string, any>; // For debugging/logs
+  error?: string;
 }
 
 /**
@@ -239,6 +253,153 @@ export interface ExternalSendResult {
 }
 
 /**
+ * Filter operators for ReadTable block
+ */
+export type ReadTableOperator =
+  | "equals"
+  | "not_equals"
+  | "contains"
+  | "starts_with"
+  | "ends_with"
+  | "greater_than"
+  | "less_than"
+  | "is_empty"
+  | "is_not_empty"
+  | "in";
+
+/**
+ * Filter condition for ReadTable block
+ */
+export type ReadTableFilter = {
+  columnId: string;              // Column UUID to filter on
+  operator: ReadTableOperator;   // Comparison operator
+  value?: any;                   // Filter value (can be static or variable reference)
+};
+
+/**
+ * Sort configuration for ReadTable block
+ */
+export type ReadTableSort = {
+  columnId: string;              // Column UUID to sort by
+  direction: "asc" | "desc";     // Sort direction
+};
+
+/**
+ * Read Table Block Configuration
+ * Reads data from a DataVault table and outputs a List
+ */
+export type ReadTableConfig = {
+  dataSourceId: string;          // Database/data source ID
+  tableId: string;               // Table ID to read from
+  filters?: ReadTableFilter[];   // Optional filter conditions (Easy: 0-1, Advanced: multiple)
+  sort?: ReadTableSort;          // Optional sort configuration
+  limit?: number;                // Row limit (default: 100, Easy: hidden, Advanced: configurable)
+  outputKey: string;             // Variable name to store the result list
+  runCondition?: WhenCondition;  // Optional condition to run this block
+};
+
+/**
+ * Read Table Execution Result
+ */
+export interface ReadTableResult {
+  success: boolean;
+  tableId: string;
+  rows: Array<Record<string, any>>; // Array of row objects (columnId -> value)
+  count: number;                    // Number of rows returned
+  columns?: Array<{                 // Column metadata for reference
+    id: string;
+    name: string;
+    type: string;
+  }>;
+  error?: string;
+}
+
+/**
+ * Standardized List Variable Structure
+ * Consistent shape for all list outputs across the platform
+ */
+export interface ListVariable {
+  metadata: {
+    source: 'read_table' | 'query' | 'list_tools'; // Where this list came from
+    sourceId?: string;                              // ID of source table/query/block
+    tableName?: string;                             // Human-readable table name
+    queryName?: string;                             // Human-readable query name
+    queryParams?: Record<string, any>;              // Original query parameters
+    filteredBy?: string[];                          // Column IDs used in filters
+    sortedBy?: { columnId: string; direction: 'asc' | 'desc' }; // Sort configuration
+  };
+  rows: Array<{
+    id: string;                                     // Row ID
+    [columnId: string]: any;                        // Column data (columnId -> value)
+  }>;
+  count: number;                                    // Number of rows in this list
+  columns: Array<{                                  // Column metadata
+    id: string;                                     // Column UUID
+    name: string;                                   // Display name
+    type: string;                                   // Column type
+  }>;
+}
+
+/**
+ * List Tools Operations
+ */
+export type ListToolsOperation =
+  | "filter"      // Filter rows by column condition
+  | "sort"        // Sort rows by column
+  | "limit"       // Limit number of rows
+  | "select";     // Select specific columns or derive values
+
+/**
+ * List Tools Filter Configuration
+ */
+export type ListToolsFilter = {
+  columnId: string;              // Column to filter on
+  operator: ReadTableOperator;   // Comparison operator
+  value?: any;                   // Filter value (can be static or variable reference)
+};
+
+/**
+ * List Tools Sort Configuration
+ */
+export type ListToolsSort = {
+  columnId: string;              // Column to sort by
+  direction: "asc" | "desc";     // Sort direction
+};
+
+/**
+ * List Tools Select Configuration
+ */
+export type ListToolsSelect = {
+  mode: "count" | "column" | "row"; // What to select
+  columnId?: string;                // For mode=column: which column to extract
+  rowIndex?: number;                // For mode=row: which row index (0-based)
+};
+
+/**
+ * List Tools Block Configuration
+ * Transforms lists with various operations
+ */
+export type ListToolsConfig = {
+  inputKey: string;                  // Variable name of input list
+  operation: ListToolsOperation;     // Operation to perform
+  filter?: ListToolsFilter;          // For operation=filter
+  sort?: ListToolsSort;              // For operation=sort
+  limit?: number;                    // For operation=limit
+  select?: ListToolsSelect;          // For operation=select
+  outputKey: string;                 // Variable name for output
+  runCondition?: WhenCondition;      // Optional condition
+};
+
+/**
+ * List Tools Execution Result
+ */
+export interface ListToolsResult {
+  success: boolean;
+  outputValue: any;                  // Could be ListVariable, number, array, or single value
+  error?: string;
+}
+
+/**
  * Discriminated union of block kinds
  * Each block type has its own config shape
  */
@@ -251,8 +412,10 @@ export type BlockKind =
   | { type: "find_record"; phase: BlockPhase; config: FindRecordConfig; sectionId?: string | null }
   | { type: "delete_record"; phase: BlockPhase; config: DeleteRecordConfig; sectionId?: string | null }
   | { type: "query"; phase: BlockPhase; config: QueryBlockConfig; sectionId?: string | null }
+  | { type: "read_table"; phase: BlockPhase; config: ReadTableConfig; sectionId?: string | null }
   | { type: "write"; phase: BlockPhase; config: WriteBlockConfig; sectionId?: string | null }
-  | { type: "external_send"; phase: BlockPhase; config: ExternalSendBlockConfig; sectionId?: string | null };
+  | { type: "external_send"; phase: BlockPhase; config: ExternalSendBlockConfig; sectionId?: string | null }
+  | { type: "list_tools"; phase: BlockPhase; config: ListToolsConfig; sectionId?: string | null };
 
 /**
  * Block execution context

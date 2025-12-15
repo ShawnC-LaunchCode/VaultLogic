@@ -94,6 +94,102 @@ export function TemplatesTab({ workflowId }: TemplatesTabProps) {
     return { missing, matched, total: templateVars.length };
   };
 
+  // Handle template upload
+  const handleUpload = async () => {
+    if (!selectedFile || !templateKey || !workflowProjectId) {
+      toast({
+        title: "Missing information",
+        description: "Please select a file and provide a display name.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+      formData.append("name", templateKey);
+
+      await axios.post(`/api/projects/${workflowProjectId}/templates`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      toast({
+        title: "Template uploaded",
+        description: `${templateKey} has been uploaded successfully.`,
+      });
+
+      setUploadDialogOpen(false);
+      setSelectedFile(null);
+      setTemplateKey("");
+      fetchTemplates();
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      toast({
+        title: "Upload failed",
+        description: error.response?.data?.message || "Failed to upload template",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Handle template test
+  const handleTest = async (templateId: string) => {
+    try {
+      toast({
+        title: "Testing template",
+        description: "Generating test document...",
+      });
+
+      const response = await axios.post(`/api/templates/${templateId}/test`, {
+        workflowId,
+      });
+
+      if (response.data?.url) {
+        window.open(response.data.url, "_blank");
+        toast({
+          title: "Test successful",
+          description: "Test document generated and opened.",
+        });
+      }
+    } catch (error: any) {
+      console.error("Test error:", error);
+      toast({
+        title: "Test failed",
+        description: error.response?.data?.message || "Failed to test template",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handle template deletion
+  const handleDelete = async (templateId: string, templateName: string) => {
+    if (!confirm(`Are you sure you want to delete "${templateName}"?`)) {
+      return;
+    }
+
+    try {
+      await axios.delete(`/api/templates/${templateId}`);
+
+      toast({
+        title: "Template deleted",
+        description: `${templateName} has been deleted.`,
+      });
+
+      fetchTemplates();
+    } catch (error: any) {
+      console.error("Delete error:", error);
+      toast({
+        title: "Delete failed",
+        description: error.response?.data?.message || "Failed to delete template",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <BuilderLayout>
       <BuilderLayoutHeader>

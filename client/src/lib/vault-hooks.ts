@@ -6,6 +6,9 @@ import { useQuery, useQueries, useMutation, useQueryClient, type UseQueryOptions
 import { projectAPI, workflowAPI, versionAPI, snapshotAPI, variableAPI, sectionAPI, stepAPI, blockAPI, transformBlockAPI, runAPI, accountAPI, workflowModeAPI, collectionsAPI, dataSourceAPI, templateAPI, type ApiProject, type ApiProjectWithWorkflows, type ApiWorkflow, type ApiSnapshot, type ApiWorkflowVariable, type ApiSection, type ApiStep, type ApiBlock, type ApiTransformBlock, type ApiRun, type AccountPreferences, type WorkflowModeResponse, type ApiCollection, type ApiCollectionWithStats, type ApiCollectionField, type ApiCollectionRecord, type ApiCollectionWithFields, type ApiDataSource } from "./vault-api";
 import { DevPanelBus } from "./devpanelBus";
 
+// Re-export types for convenience
+export type { ApiStep, ApiSection, ApiProject, ApiWorkflow, ApiBlock, ApiTransformBlock, ApiRun } from "./vault-api";
+
 // ============================================================================
 // Query Keys
 // ============================================================================

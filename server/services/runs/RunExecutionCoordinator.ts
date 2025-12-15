@@ -5,6 +5,8 @@ import { runPersistenceWriter } from "./RunPersistenceWriter";
 import { workflowRepository, stepRepository, sectionRepository } from "../../repositories";
 import { isJsQuestionConfig, type JsQuestionConfig } from "@shared/types/steps";
 import { logger } from "../../logger";
+import { intakeQuestionVisibilityService } from "../IntakeQuestionVisibilityService";
+import { validatePage } from "../../workflows/validation";
 
 export interface ExecutionContext {
     workflowId: string;
@@ -101,13 +103,40 @@ export class RunExecutionCoordinator {
         const dataMap = await this.persistence.getRunValues(runId);
         const aliasMap = await this.getAliasMap(workflowId);
 
-        // 3. Execute JS Questions
+        // 3. Validate required fields (respecting visibility)
+        const steps = await this.stepRepo.findBySectionId(sectionId);
+        const visibility = await intakeQuestionVisibilityService.evaluatePageQuestions(
+            sectionId,
+            runId,
+            dataMap
+        );
+
+        const validationResult = validatePage(
+            steps,
+            dataMap,
+            visibility.visibleQuestions
+        );
+
+        if (!validationResult.valid) {
+            // Format errors for user-friendly display
+            const errorMessages = validationResult.errors.map(err => {
+                const step = steps.find(s => s.id === err.fieldId);
+                const fieldName = step?.title || 'Field';
+                // Take first error message for each field
+                return `${fieldName}: ${err.errors[0]}`;
+            });
+
+            logger.warn({ runId, sectionId, errors: errorMessages }, "Section validation failed");
+            return { success: false, errors: errorMessages };
+        }
+
+        // 4. Execute JS Questions
         const jsResult = await this.executeJsQuestions(runId, sectionId, dataMap, context, aliasMap);
         if (!jsResult.success) {
             return { success: false, errors: jsResult.errors };
         }
 
-        // 4. Execute onSectionSubmit blocks
+        // 5. Execute onSectionSubmit blocks
         const blockResult = await blockRunner.runPhase({
             workflowId,
             runId,

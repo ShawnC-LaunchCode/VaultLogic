@@ -317,13 +317,31 @@ export function QuestionCard({
     updateStepMutation.mutate(updates);
   };
 
-  const handleOptionsChange = (options: OptionItemData[]) => {
-    setLocalOptions(options);
-    updateStepMutation.mutate({
-      id: step.id,
-      sectionId,
-      options: { options },
-    });
+  const handleOptionsChange = (options: OptionItemData[] | import("@/../../shared/types/stepConfigs").DynamicOptionsConfig) => {
+    // Handle both legacy array format and new DynamicOptionsConfig
+    if (Array.isArray(options)) {
+      // Legacy format
+      setLocalOptions(options);
+      updateStepMutation.mutate({
+        id: step.id,
+        sectionId,
+        options: { options },
+      });
+    } else {
+      // New DynamicOptionsConfig format
+      // For radio/multiple_choice (easy mode), we only support static options
+      if (options.type === 'static') {
+        setLocalOptions(options.options);
+        updateStepMutation.mutate({
+          id: step.id,
+          sectionId,
+          options: { options: options.options },
+        });
+      } else {
+        // Dynamic options not supported in easy mode - ignore
+        console.warn('[QuestionCard] Dynamic options not supported for legacy radio/multiple_choice types');
+      }
+    }
   };
 
   const handleJsConfigChange = (config: JSQuestionConfig) => {
@@ -441,13 +459,40 @@ export function QuestionCard({
               </Button>
             </div>
 
+            {/* Visual Pills (collapsed view) - Now beside icon */}
+            {!isExpanded && step.visibleIf && (
+              <div className="mt-2">
+                <Badge variant="outline" className="text-[9px] h-4 px-1.5 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-amber-500/20 font-medium">
+                  Conditional
+                </Badge>
+              </div>
+            )}
+
             {/* Content */}
-            <div className="flex-1 min-w-0 space-y-3">
-              {/* Header Row - Title and Delete */}
-              <div className="flex items-start gap-2">
+            <div className="flex-1 min-w-0 space-y-2">
+              {/* Header Row - Badges (required/conditional) above question */}
+              {(localRequired || step.visibleIf) && (
+                <div className="flex items-center gap-1.5">
+                  {localRequired && (
+                    <Badge variant="destructive" className="text-[9px] h-4 px-1.5 font-medium">
+                      Required
+                    </Badge>
+                  )}
+                  {step.visibleIf && (
+                    <Badge variant="outline" className="text-[9px] h-4 px-1.5 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-amber-500/20 font-medium">
+                      Conditional
+                    </Badge>
+                  )}
+                </div>
+              )}
+
+              {/* Title and Delete Row */}
+              <div className="flex items-center gap-2">
                 <div className="flex-1">
                   <div className="relative flex-1">
                     <Input
+                      id={`question-title-${step.id}`}
+                      name={`question-title-${step.id}`}
                       ref={titleInputRef}
                       value={step.title}
                       onChange={(e) => handleTitleChange(e.target.value)}
@@ -458,6 +503,7 @@ export function QuestionCard({
                         }
                       }}
                       placeholder="Question text"
+                      aria-label="Question text"
                       className={cn(
                         "font-medium text-sm transition-all duration-300",
                         step.title
@@ -484,7 +530,21 @@ export function QuestionCard({
                     )}
                   </div>
                 </div>
+
+
+                {/* Delete Button */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
+                  onClick={handleDelete}
+                  tabIndex={0}
+                  aria-label={`Delete question ${step.title}`}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
+
 
               {/* Intake Badge (Collapsed View) */}
               {!isExpanded && isLinkedToIntake && (
@@ -508,7 +568,7 @@ export function QuestionCard({
                     mode === 'easy' && !step.alias && "bg-amber-50/50 border border-amber-200/50"
                   )}>
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs font-medium text-foreground">
+                      <Label htmlFor={`alias-${step.id}`} className="text-xs font-medium text-foreground">
                         {mode === 'easy' ? "Save answer as" : "Variable (alias)"}
                       </Label>
                       {mode === 'advanced' && (
@@ -518,6 +578,8 @@ export function QuestionCard({
                       )}
                     </div>
                     <Input
+                      id={`alias-${step.id}`}
+                      name={`alias-${step.id}`}
                       value={step.alias || ""}
                       onChange={(e) => handleAliasChange(e.target.value)}
                       placeholder={mode === 'easy' ? "e.g. clientName or client.name" : "e.g., user_email, phone_number"}
@@ -561,10 +623,12 @@ export function QuestionCard({
 
                     {/* Description / Help Text */}
                     <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">
+                      <Label htmlFor={`description-${step.id}`} className="text-xs text-muted-foreground">
                         Description / Help Text (optional)
                       </Label>
                       <AutoExpandTextarea
+                        id={`description-${step.id}`}
+                        name={`description-${step.id}`}
                         value={step.description || ""}
                         onChange={(e) => handleDescriptionChange(e.target.value)}
                         placeholder="Add instructions for the user..."
@@ -579,6 +643,7 @@ export function QuestionCard({
                       <OptionsEditor
                         options={localOptions}
                         onChange={handleOptionsChange}
+                        elementId={step.id}
                       />
                     )}
 
@@ -587,7 +652,7 @@ export function QuestionCard({
                       <div className="space-y-1.5 pt-2 border-t border-dashed">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <Label className="text-xs text-muted-foreground">
+                            <Label htmlFor={`default-val-${step.id}`} className="text-xs text-muted-foreground">
                               Default Value {mode === 'easy' && !upstreamWorkflowId && '(Advanced)'}
                             </Label>
                             {isLinkedToIntake && (
@@ -635,7 +700,7 @@ export function QuestionCard({
                                       }
                                     }}
                                   >
-                                    <SelectTrigger className="h-9">
+                                    <SelectTrigger id={`default-val-${step.id}`} className="h-9">
                                       <SelectValue placeholder="No default" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -646,6 +711,8 @@ export function QuestionCard({
                                   </Select>
                                 ) : (
                                   <Input
+                                    id={`default-val-${step.id}`}
+                                    name={`default-val-${step.id}`}
                                     value={
                                       step.defaultValue === null || step.defaultValue === undefined || typeof step.defaultValue === 'object'
                                         ? ""
@@ -660,11 +727,12 @@ export function QuestionCard({
 
                               <TabsContent value="intake" className="mt-2 text-primary-foreground">
                                 <div className="space-y-1">
+                                  <Label htmlFor={`default-val-intake-${step.id}`} className="sr-only">Select Intake Variable</Label>
                                   <Select
                                     value={isLinkedToIntake && step.defaultValue?.variable ? step.defaultValue.variable : "none"}
                                     onValueChange={handleIntakeLinkChange}
                                   >
-                                    <SelectTrigger className="h-9 w-full bg-emerald-50/50 border-emerald-200 text-emerald-900 focus:ring-emerald-500">
+                                    <SelectTrigger id={`default-val-intake-${step.id}`} className="h-9 w-full bg-emerald-50/50 border-emerald-200 text-emerald-900 focus:ring-emerald-500">
                                       <SelectValue placeholder="Select intake variable..." />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -682,6 +750,7 @@ export function QuestionCard({
                                   {isLinkedToIntake && (
                                     <p className="text-[10px] text-emerald-600 pl-1">
                                       This field will pre-fill from <strong>{upstreamWorkflow?.title}</strong> data.
+                                      <span className="sr-only">Input linked to intake variable.</span>
                                     </p>
                                   )}
                                 </div>
@@ -707,7 +776,7 @@ export function QuestionCard({
                                 }
                               }}
                             >
-                              <SelectTrigger className="h-9">
+                              <SelectTrigger id={`default-val-${step.id}`} className="h-9">
                                 <SelectValue placeholder="No default" />
                               </SelectTrigger>
                               <SelectContent>
@@ -718,6 +787,8 @@ export function QuestionCard({
                             </Select>
                           ) : (
                             <Input
+                              id={`default-val-${step.id}`}
+                              name={`default-val-${step.id}`}
                               value={
                                 step.defaultValue === null || step.defaultValue === undefined
                                   ? ""
@@ -739,6 +810,8 @@ export function QuestionCard({
                       <JSQuestionEditor
                         config={localJsConfig}
                         onChange={handleJsConfigChange}
+                        elementId={step.id}
+                        workflowId={workflowId}
                       />
                     )}
 
@@ -786,20 +859,9 @@ export function QuestionCard({
             </div>
           </div>
 
-          {/* Delete Button - Positioned Absolute for Tab Order (After inputs) */}
-          <div className="absolute top-3 right-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-destructive hover:bg-destructive/10"
-              onClick={handleDelete}
-              tabIndex={0}
-            >
-              <Trash2 className="h-3 w-3" />
-            </Button>
-          </div>
+
         </CardContent>
       </Card>
-    </div>
+    </div >
   );
 }

@@ -84,6 +84,8 @@ export function BuilderCanvas({ readOnly = false }: BuilderCanvasProps) {
         nodesDraggable={!readOnly}
         nodesConnectable={!readOnly}
         elementsSelectable={!readOnly}
+        panOnScroll={true}
+        zoomOnScroll={false}
         proOptions={{ hideAttribution: true }}
         className={`bg-gray-50 dark:bg-gray-900 ${readOnly ? 'pointer-events-none' : ''} [&_.react-flow__node]:pointer-events-auto`}
       >

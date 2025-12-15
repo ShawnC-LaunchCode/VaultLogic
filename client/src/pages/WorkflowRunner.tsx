@@ -115,7 +115,6 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
     // In preview mode, set runId if provided (for document generation)
     if (previewEnvironment) {
       if (runId) {
-        console.log('[WorkflowRunner] Preview mode with runId:', runId);
         setActualRunId(runId);
       }
       setIsInitializing(false);
@@ -268,9 +267,13 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
   const { data: fetchedSections } = useSections(workflowId, {
     enabled: mode !== 'preview', // Only fetch if NOT in preview mode
   });
-  const sections = mode === 'preview'
-    ? previewEnvironment?.getSections()
-    : fetchedSections;
+
+  // Memoize sections to prevent infinite re-renders from getSections() returning new array each time
+  const sections = useMemo(() => {
+    return mode === 'preview'
+      ? previewEnvironment?.getSections()
+      : fetchedSections;
+  }, [mode, previewEnvironment, fetchedSections]);
 
   // Fetch logic rules for visibility evaluation
   const { data: logicRules } = useQuery<LogicRule[]>({
@@ -298,10 +301,12 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
     }
   }, [previewState?.currentSectionIndex, currentSectionIndex, previewState]);
 
-  // Use preview values in preview mode, form values in production mode
-  const effectiveValues = mode === 'preview'
-    ? (previewState?.values || {})
-    : formValues;
+  // Use preview values in preview mode, form values in production mode - memoized to prevent re-render loops
+  const effectiveValues = useMemo(() => {
+    return mode === 'preview'
+      ? (previewState?.values || {})
+      : formValues;
+  }, [mode, previewState?.values, formValues]);
 
   const submitMutation = useSubmitSection();
   const nextMutation = useNext();
@@ -536,8 +541,8 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
         Object.values(validationResult.blockErrors).forEach(errs => newErrors.push(...errs));
         setErrors(newErrors);
         toast({
-          title: "Validation Error",
-          description: "Please check the highlighted fields.",
+          title: "Please complete all required fields",
+          description: "Some information is still needed before continuing.",
           variant: "destructive"
         });
 
@@ -560,7 +565,7 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
           details: { error: e }
         });
       }
-      toast({ title: "System Error", description: "Validation failed to execute", variant: "destructive" });
+      toast({ title: "Unable to continue", description: "Something went wrong. Please try again.", variant: "destructive" });
       return;
     }
 
@@ -594,8 +599,6 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
         // This ensures document generation has access to the actual form values
         if (actualRunId && nextSection && (nextSection.config as any)?.finalBlock === true) {
           try {
-            console.log('[WorkflowRunner] Navigating to Final Documents section - saving preview values to database');
-
             // Get all values from preview environment
             const allValues = previewEnvironment.getValues();
 
@@ -604,12 +607,6 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
               stepId,
               value
             }));
-
-            console.log('[WorkflowRunner] Saving preview values:', {
-              runId: actualRunId,
-              valueCount: valuesToSave.length,
-              values: valuesToSave
-            });
 
             // Get run token for authentication
             const runToken = localStorage.getItem(`run_token_${actualRunId}`);
@@ -628,8 +625,6 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
             if (!response.ok) {
               throw new Error('Failed to save preview values to database');
             }
-
-            console.log('[WorkflowRunner] Preview values saved successfully to database');
           } catch (error) {
             console.error('[WorkflowRunner] Failed to save preview values:', error);
             toast({
@@ -662,15 +657,6 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
       .filter((stepId) => currentSectionStepIds.has(stepId))
       .map((stepId) => ({ stepId, value: formValues[stepId] }));
 
-    console.log('[WorkflowRunner] Submitting section:', {
-      runId: actualRunId,
-      sectionId: currentSection.id,
-      values: sectionValues,
-      valuesCount: sectionValues.length,
-      valuesIsArray: Array.isArray(sectionValues),
-      allStepsCount: allSteps.length
-    });
-
     try {
       // Submit section with validation
       const result = await submitMutation.mutateAsync({
@@ -681,7 +667,7 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
 
       if (!result.success && result.errors) {
         setErrors(result.errors);
-        toast({ title: "Validation Error", description: result.errors[0], variant: "destructive" });
+        toast({ title: "Please complete all required fields", description: result.errors[0], variant: "destructive" });
         return;
       }
 
@@ -703,35 +689,20 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
        */
 
       // Otherwise, navigate to next section
-
-      // Otherwise, navigate to next section
       const nextResult = await nextMutation.mutateAsync({
         runId: actualRunId!,
         currentSectionId: currentSection.id,
       });
 
-      console.log('[WorkflowRunner] Next result:', {
-        nextSectionId: nextResult.nextSectionId,
-        currentSectionIndex,
-        visibleSectionsCount: visibleSections.length,
-        visibleSectionIds: visibleSections.map(s => s.id),
-        allSectionsCount: sections?.length || 0,
-      });
-
       // Find next section index in visibleSections (not all sections)
       if (nextResult.nextSectionId) {
         const nextIndex = visibleSections.findIndex((s) => s.id === nextResult.nextSectionId);
-        console.log('[WorkflowRunner] Found next section at index:', nextIndex);
         if (nextIndex >= 0) {
           setCurrentSectionIndex(nextIndex);
-          console.log('[WorkflowRunner] Set currentSectionIndex to:', nextIndex);
-        } else {
-          console.warn('[WorkflowRunner] Next section not found in visibleSections!', nextResult.nextSectionId);
         }
       } else {
         // Default: next in sequence
         const newIndex = Math.min(currentSectionIndex + 1, visibleSections.length - 1);
-        console.log('[WorkflowRunner] No nextSectionId, advancing to:', newIndex);
         setCurrentSectionIndex(newIndex);
       }
     } catch (error) {
@@ -739,32 +710,34 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
       const errorMessage = error instanceof Error ? error.message : "Failed to proceed";
       toast({ title: "Error", description: errorMessage, variant: "destructive" });
     }
-    const handleFinalSubmit = async () => {
-      if (!actualRunId) return;
-      try {
-        await completeMutation.mutateAsync(actualRunId);
-        toast({ title: "Success", description: "Workflow submitted successfully" });
-        // After completion, the backend status updates.
-        // The component will re-render.
-        // We need to ensure we show the Final/Intake screen.
-        // Usually `useRunWithValues` or `useWorkflow` data update triggers UI change?
-        // Or we rely on `isFinalDocumentsSection` logic (which depends on runner state?).
+  }; // Close handleNext
 
-        // Actually, `isFinalDocumentsSection` logic usually checks if run is completed?
-        // Or if we are past the last step?
-        // Let's force a refetch or rely on mutation success.
-      } catch (error) {
-        toast({ title: "Error", description: "Failed to submit workflow", variant: "destructive" });
-      }
-    };
+  const handleFinalSubmit = async () => {
+    if (!actualRunId) return;
+    try {
+      await completeMutation.mutateAsync(actualRunId);
+      toast({ title: "Success", description: "Workflow submitted successfully" });
+      // After completion, the backend status updates.
+      // The component will re-render.
+      // We need to ensure we show the Final/Intake screen.
+      // Usually `useRunWithValues` or `useWorkflow` data update triggers UI change?
+      // Or we rely on `isFinalDocumentsSection` logic (which depends on runner state?).
 
-    const handlePrev = () => {
-      if (showReview) {
-        setShowReview(false);
-        return;
-      }
-      setCurrentSectionIndex((prev) => Math.max(prev - 1, 0));
-    };
+      // Actually, `isFinalDocumentsSection` logic usually checks if run is completed?
+      // Or if we are past the last step?
+      // Let's force a refetch or rely on mutation success.
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to submit workflow", variant: "destructive" });
+    }
+  };
+
+  const handlePrev = () => {
+    if (showReview) {
+      setShowReview(false);
+      return;
+    }
+    setCurrentSectionIndex((prev) => Math.max(prev - 1, 0));
+  };
 
     // Determine if we are at the end (Review or Completion)
     const isReviewStep = currentSectionIndex === visibleSections.length;
@@ -790,141 +763,153 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
     // ... this requires deeper logic change in handleNext.
     // For now, let's just wrap the EXISTING content in the new Layout.
 
-    return (
-      <ClientRunnerLayout
-        title={showReview ? "Review & Confirm" : (currentSection?.title || workflow?.title)}
-        progress={progress}
-        currentStep={showReview ? visibleSections.length : currentSectionIndex}
-        totalSteps={visibleSections.length}
-      >
-        {/* Section Content */}
-        {isFinalDocumentsSection && workflow?.intakeConfig?.isIntake ? (
-          <IntakeAssignmentSection
-            workflow={workflow}
-            runValues={effectiveValues}
-          />
-        ) : isFinalDocumentsSection ? (
-          actualRunId ? (
-            <FinalDocumentsSection
-              runId={actualRunId!}
-              runToken={runToken || undefined}
-              sectionConfig={(currentSection.config as any) || {
-                screenTitle: "Your Completed Documents",
-                markdownMessage: "# Thank You!\n\nYour documents are ready for download below.",
-                templates: []
-              }}
-            />
-          ) : (
-            <Card>
-              <CardHeader>
-                <CardTitle>Initializing Document Generation...</CardTitle>
-                <CardDescription>Please wait while we prepare your documents</CardDescription>
-              </CardHeader>
-              <CardContent className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-              </CardContent>
-            </Card>
-          )
-        ) : showReview ? (
-          <>
-            <ReviewSection
-              sections={visibleSections}
-              allSteps={allSteps || []}
-              values={effectiveValues}
-              visibleSectionIds={visibleSections.map(s => s.id)}
-              onEditSection={(index) => {
-                setShowReview(false);
-                setCurrentSectionIndex(index);
-              }}
-            />
-            <div className="flex items-center justify-between pt-6 border-t border-slate-100 mt-8">
-              <Button
-                variant="ghost"
-                onClick={() => setShowReview(false)}
-                className="text-slate-500 hover:text-slate-900"
-              >
-                <ChevronLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
-              <Button
-                onClick={handleFinalSubmit}
-                disabled={completeMutation.isPending}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-[140px]"
-              >
-                Confirm & Submit <Check className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-          </>
-        ) : (
-          <div className="space-y-6">
-            {currentSection.description && (
-              <p className="text-slate-600 mb-6">{currentSection.description}</p>
-            )}
+    // Safety check
+    if (!currentSection) {
+      console.error('[WR] No current section!', { visibleSections: visibleSections.length, currentSectionIndex });
+      return <div className="min-h-screen flex items-center justify-center"><p>Error: No section found</p></div>;
+    }
 
-            <SectionSteps
-              key={currentSection.id}
-              sectionId={currentSection.id}
-              steps={allSteps?.filter((s: ApiStep) => s.sectionId === currentSection.id)}
-              values={effectiveValues}
-              logicRules={logicRules || []}
-              errors={fieldErrors}
-              intakeData={intakeData}
-              onChange={(stepId, value) => {
-                if (mode === 'preview') {
-                  if (previewEnvironment) {
-                    previewEnvironment.setValue(stepId, value);
-                  }
-                } else {
-                  setFormValues((prev) => ({ ...prev, [stepId]: value }));
-                }
-                if (fieldErrors[stepId]) {
-                  const newFieldErrors = { ...fieldErrors };
-                  delete newFieldErrors[stepId];
-                  setFieldErrors(newFieldErrors);
-                }
-              }}
-            />
+    try {
 
-            {errors.length > 0 && (
-              <div className="p-4 bg-red-50 text-red-700 border border-red-100 rounded-md text-sm">
-                {errors.map((error, i) => (
-                  <div key={i}>{error}</div>
-                ))}
+      return (
+        <ClientRunnerLayout
+          title={showReview ? "Review & Confirm" : (currentSection?.title || workflow?.title)}
+          progress={progress}
+          currentStep={showReview ? visibleSections.length : currentSectionIndex}
+          totalSteps={visibleSections.length}
+        >
+          {/* Section Content */}
+          {isFinalDocumentsSection && workflow?.intakeConfig?.isIntake ? (
+            <IntakeAssignmentSection
+              workflow={workflow}
+              runValues={effectiveValues}
+            />
+          ) : isFinalDocumentsSection ? (
+            actualRunId ? (
+              <FinalDocumentsSection
+                runId={actualRunId!}
+                runToken={runToken || undefined}
+                sectionConfig={(currentSection.config as any) || {
+                  screenTitle: "Your Completed Documents",
+                  markdownMessage: "# Thank You!\n\nYour documents are ready for download below.",
+                  templates: []
+                }}
+              />
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Initializing Document Generation...</CardTitle>
+                  <CardDescription>Please wait while we prepare your documents</CardDescription>
+                </CardHeader>
+                <CardContent className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                </CardContent>
+              </Card>
+            )
+          ) : showReview ? (
+            <>
+              <ReviewSection
+                sections={visibleSections}
+                allSteps={allSteps || []}
+                values={effectiveValues}
+                visibleSectionIds={visibleSections.map(s => s.id)}
+                onEditSection={(index) => {
+                  setShowReview(false);
+                  setCurrentSectionIndex(index);
+                }}
+              />
+              <div className="flex items-center justify-between pt-6 border-t border-slate-100 mt-8">
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowReview(false)}
+                  className="text-slate-500 hover:text-slate-900"
+                >
+                  <ChevronLeft className="w-4 h-4 mr-2" />
+                  Back
+                </Button>
+                <Button
+                  onClick={handleFinalSubmit}
+                  disabled={completeMutation.isPending}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-[140px]"
+                >
+                  Confirm & Submit <Check className="w-4 h-4 ml-2" />
+                </Button>
               </div>
-            )}
+            </>
+          ) : (
+            <div className="space-y-6">
+              {currentSection.description && (
+                <p className="text-slate-600 mb-6">{currentSection.description}</p>
+              )}
 
-            {/* Navigation */}
-            <div className="flex items-center justify-between pt-6 border-t border-slate-100 mt-8">
-              <Button
-                variant="ghost"
-                onClick={handlePrev}
-                disabled={currentSectionIndex === 0}
-                className="text-slate-500 hover:text-slate-900"
-              >
-                <ChevronLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
+              <SectionSteps
+                key={currentSection.id}
+                sectionId={currentSection.id}
+                steps={allSteps?.filter((s: ApiStep) => s.sectionId === currentSection.id)}
+                values={effectiveValues}
+                logicRules={logicRules || []}
+                errors={fieldErrors}
+                intakeData={intakeData}
+                onChange={(stepId, value) => {
+                  if (mode === 'preview') {
+                    if (previewEnvironment) {
+                      previewEnvironment.setValue(stepId, value);
+                    }
+                  } else {
+                    setFormValues((prev) => ({ ...prev, [stepId]: value }));
+                  }
+                  if (fieldErrors[stepId]) {
+                    const newFieldErrors = { ...fieldErrors };
+                    delete newFieldErrors[stepId];
+                    setFieldErrors(newFieldErrors);
+                  }
+                }}
+              />
 
-              <Button
-                onClick={handleNext}
-                disabled={submitMutation.isPending || nextMutation.isPending || completeMutation.isPending}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-[120px]"
-              >
-                {isLastSection ? (
-                  <>
-                    Complete <Check className="w-4 h-4 ml-2" />
-                  </>
-                ) : (
-                  <>
-                    Next Step <ChevronRight className="w-4 h-4 ml-2" />
-                  </>
-                )}
-              </Button>
+              {errors.length > 0 && (
+                <div className="p-4 bg-red-50 text-red-700 border border-red-100 rounded-md text-sm">
+                  {errors.map((error, i) => (
+                    <div key={i}>{error}</div>
+                  ))}
+                </div>
+              )}
+
+              {/* Navigation */}
+              <div className="flex items-center justify-between pt-6 border-t border-slate-100 mt-8">
+                <Button
+                  variant="ghost"
+                  onClick={handlePrev}
+                  disabled={currentSectionIndex === 0}
+                  className="text-slate-500 hover:text-slate-900"
+                >
+                  <ChevronLeft className="w-4 h-4 mr-2" />
+                  Back
+                </Button>
+
+                <Button
+                  onClick={handleNext}
+                  disabled={submitMutation.isPending || nextMutation.isPending || completeMutation.isPending}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-[120px]"
+                >
+                  {isLastSection ? (
+                    <>
+                      Complete <Check className="w-4 h-4 ml-2" />
+                    </>
+                  ) : (
+                    <>
+                      Next Step <ChevronRight className="w-4 h-4 ml-2" />
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
-          </div>
-        )}
-      </ClientRunnerLayout>
-    );
+          )}
+        </ClientRunnerLayout>
+      );
+    } catch (error) {
+      console.error('[WR] Render error:', error);
+      return <div className="min-h-screen flex items-center justify-center"><p>Error rendering workflow: {String(error)}</p></div>;
+    }
   }
 
   function SectionSteps({
@@ -963,17 +948,7 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
         isVirtual: step.isVirtual || false,
         repeaterConfig: step.repeaterConfig || null,
       }));
-    }, [sourceSteps]); // Depend on sourceSteps, not rawSteps
-
-    // Debug logs
-    /*
-    console.log('[WorkflowRunner:SectionSteps] Rendering:', {
-      sectionId,
-      stepsCount: steps.length,
-      firstStepId: steps[0]?.id,
-      valuesCount: Object.keys(values).length
-    });
-    */
+    }, [sourceSteps]);
 
     // Use visibility hook to evaluate which steps should be shown
     const { isStepVisible } = useWorkflowVisibility(logicRules, steps as any, values);
@@ -1019,7 +994,6 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
       </>
     )
   }
-}
 
 /**
  * StepField - Thin wrapper around BlockRenderer

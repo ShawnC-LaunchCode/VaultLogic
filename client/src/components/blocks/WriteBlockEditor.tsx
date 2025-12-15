@@ -9,17 +9,25 @@ import { dataSourceAPI } from "@/lib/vault-api";
 import { useQuery } from "@tanstack/react-query";
 
 interface ColumnMapping {
-    columnId: string; // or name
-    value: string; // variable alias
+    columnId: string; // UUID for durable identifier
+    value: string; // variable alias or expression
+}
+
+interface MatchStrategy {
+    type: "primary_key" | "column_match";
+    columnId?: string;
+    columnValue?: string;
 }
 
 interface WriteConfig {
     dataSourceId?: string;
     tableId?: string;
-    mode: "create" | "update";
-    primaryKeyColumnId?: string;
-    primaryKeyValue?: string;
+    mode: "create" | "update" | "upsert";
+    matchStrategy?: MatchStrategy;
+    primaryKeyColumnId?: string; // Deprecated
+    primaryKeyValue?: string; // Deprecated
     columnMappings: ColumnMapping[];
+    outputKey?: string;
 }
 
 interface WriteBlockEditorProps {
@@ -81,7 +89,7 @@ export function WriteBlockEditor({ workflowId, config, onChange }: WriteBlockEdi
                 <div className="space-y-2">
                     <Label>Mode</Label>
                     <Select
-                        value={config.mode || "create"}
+                        value={config.mode || "upsert"}
                         onValueChange={(val: any) => updateConfig({ mode: val })}
                     >
                         <SelectTrigger>
@@ -90,6 +98,7 @@ export function WriteBlockEditor({ workflowId, config, onChange }: WriteBlockEdi
                         <SelectContent>
                             <SelectItem value="create">Create New</SelectItem>
                             <SelectItem value="update">Update Existing</SelectItem>
+                            <SelectItem value="upsert">Upsert (Create or Update)</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -113,14 +122,65 @@ export function WriteBlockEditor({ workflowId, config, onChange }: WriteBlockEdi
                 </Select>
             </div>
 
-            {config.mode === "update" && (
-                <div className="p-3 bg-muted rounded-md space-y-2">
-                    <Label>Row to Update (Primary Key)</Label>
-                    <Input
-                        placeholder="Record ID or Variable (e.g. {{step.id}})"
-                        value={config.primaryKeyValue || ""}
-                        onChange={(e) => updateConfig({ primaryKeyValue: e.target.value })}
-                    />
+            {(config.mode === "update" || config.mode === "upsert") && (
+                <div className="p-3 bg-muted rounded-md space-y-3">
+                    <div className="space-y-2">
+                        <Label>Match Strategy</Label>
+                        <Select
+                            value={config.matchStrategy?.type || "column_match"}
+                            onValueChange={(val: any) => updateConfig({
+                                matchStrategy: {
+                                    type: val,
+                                    columnId: config.matchStrategy?.columnId,
+                                    columnValue: config.matchStrategy?.columnValue
+                                }
+                            })}
+                        >
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="column_match">Match by Column</SelectItem>
+                                <SelectItem value="primary_key">Match by Primary Key</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Match Column</Label>
+                        <Input
+                            placeholder="Column UUID (e.g. col_abc123)"
+                            value={config.matchStrategy?.columnId || ""}
+                            onChange={(e) => updateConfig({
+                                matchStrategy: {
+                                    ...config.matchStrategy,
+                                    type: config.matchStrategy?.type || "column_match",
+                                    columnId: e.target.value
+                                } as MatchStrategy
+                            })}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                            The column UUID to match against (must be unique identifier)
+                        </p>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Match Value</Label>
+                        <Input
+                            placeholder="Variable or expression (e.g. client_id)"
+                            value={config.matchStrategy?.columnValue || ""}
+                            onChange={(e) => updateConfig({
+                                matchStrategy: {
+                                    ...config.matchStrategy,
+                                    type: config.matchStrategy?.type || "column_match",
+                                    columnValue: e.target.value
+                                } as MatchStrategy
+                            })}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                            Workflow variable containing the value to match (e.g. step.client_id)
+                        </p>
+                    </div>
                 </div>
             )}
 
@@ -137,7 +197,7 @@ export function WriteBlockEditor({ workflowId, config, onChange }: WriteBlockEdi
                     {config.columnMappings?.map((mapping, idx) => (
                         <div key={idx} className="flex gap-2 items-center">
                             <Input
-                                placeholder="Column Name"
+                                placeholder="Column UUID"
                                 value={mapping.columnId}
                                 onChange={(e) => updateMapping(idx, "columnId", e.target.value)}
                                 className="flex-1"
@@ -160,14 +220,31 @@ export function WriteBlockEditor({ workflowId, config, onChange }: WriteBlockEdi
                 </div>
             </div>
 
+            <div className="space-y-2">
+                <Label>Output Variable (Optional)</Label>
+                <Input
+                    placeholder="Variable name to store row ID (e.g. new_row_id)"
+                    value={config.outputKey || ""}
+                    onChange={(e) => updateConfig({ outputKey: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">
+                    After writing, the row ID will be stored in this variable for use in later steps
+                </p>
+            </div>
+
             {(!config.dataSourceId || !config.tableId) && (
                 <div className="p-2 border border-yellow-200 bg-yellow-50 text-yellow-800 text-xs rounded">
-                    Please select a data source and table.
+                    ⚠ Please select a data source and table.
                 </div>
             )}
-            {config.mode === 'update' && !config.primaryKeyValue && (
+            {(config.mode === 'update' || config.mode === 'upsert') && (!config.matchStrategy?.columnId || !config.matchStrategy?.columnValue) && (
                 <div className="p-2 border border-yellow-200 bg-yellow-50 text-yellow-800 text-xs rounded">
-                    Update mode requires a Row ID to update.
+                    ⚠ {config.mode === 'update' ? 'Update' : 'Upsert'} mode requires a match column and value.
+                </div>
+            )}
+            {config.columnMappings?.length === 0 && (
+                <div className="p-2 border border-yellow-200 bg-yellow-50 text-yellow-800 text-xs rounded">
+                    ⚠ Add at least one column mapping to write data.
                 </div>
             )}
         </div>

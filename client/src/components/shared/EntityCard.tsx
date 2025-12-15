@@ -14,6 +14,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { LucideIcon } from "lucide-react";
 import { ReactNode } from "react";
 
@@ -80,9 +86,18 @@ export function EntityCard({
               <Icon className="w-5 h-5" />
             </div>
             <div className="flex-1 min-w-0">
-              <CardTitle className="text-lg truncate">
-                {entity.title}
-              </CardTitle>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <CardTitle className="text-lg truncate">
+                      {entity.title}
+                    </CardTitle>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{entity.title}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               {entity.description !== undefined && (
                 <CardDescription className="mt-1 line-clamp-2">
                   {entity.description || "No description"}

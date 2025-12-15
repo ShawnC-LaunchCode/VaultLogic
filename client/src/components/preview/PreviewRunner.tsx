@@ -10,6 +10,7 @@ import { generateAIRandomValues, generateAIRandomValuesForSteps } from "@/lib/ra
 import { Loader2 } from "lucide-react";
 import { ApiStep } from "@/lib/vault-api";
 import { evaluateConditionExpression } from "@shared/conditionEvaluator";
+import { IntakeProvider } from "@/components/builder/IntakeContext";
 
 interface PreviewRunnerProps {
     workflowId: string;
@@ -82,9 +83,8 @@ export function PreviewRunner({ workflowId, onExit }: PreviewRunnerProps) {
     // Init Environment
     useEffect(() => {
         if (workflow && allSteps && workflow.sections) {
-            if (env && env.getState().workflowId === workflow.id && !snapshotId) {
-                return; // Keep existing env if just re-rendering, UNLESS loading snapshot
-            }
+            // Always recreate env when workflow/steps change to pick up schema updates (e.g., required status)
+            // This fixes the bug where toggling required doesn't update in preview until reload
 
             let initialValues = {};
             if (snapshotId && snapshotValues) {
@@ -95,9 +95,12 @@ export function PreviewRunner({ workflowId, onExit }: PreviewRunnerProps) {
                     if (step) stepIdValues[step.id] = value;
                 }
                 initialValues = stepIdValues;
+            } else if (env) {
+                // Preserve existing values when re-creating env (except when loading snapshot)
+                initialValues = env.getValues();
             }
 
-            // Recreate env when snapshot loads or first load
+            // Recreate env to pick up latest workflow definition changes
             const newEnv = new PreviewEnvironment({
                 workflowId: workflow.id,
                 sections: workflow.sections,
@@ -176,7 +179,7 @@ export function PreviewRunner({ workflowId, onExit }: PreviewRunnerProps) {
     }
 
     return (
-        <div className="h-full flex flex-col bg-background">
+        <div className="h-screen w-screen fixed inset-0 z-50 flex flex-col bg-background">
             <DevToolbar
                 workflowId={workflowId}
                 onExit={onExit}
@@ -191,10 +194,13 @@ export function PreviewRunner({ workflowId, onExit }: PreviewRunnerProps) {
 
             <div className="flex-1 flex overflow-hidden relative">
                 <div className="flex-1 overflow-auto">
-                    <WorkflowRunner
-                        runId={previewRunId || undefined}
-                        previewEnvironment={env}
-                    />
+                    <IntakeProvider workflowId={workflow.id}>
+                        <WorkflowRunner
+                            key={`preview-${env.getState().id}`}
+                            runId={previewRunId || undefined}
+                            previewEnvironment={env}
+                        />
+                    </IntakeProvider>
                 </div>
 
                 <DevToolsPanel

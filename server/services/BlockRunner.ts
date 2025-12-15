@@ -21,6 +21,11 @@ import type {
   AssertExpression,
   ComparisonOperator,
   AssertionOperator,
+  ReadTableConfig,
+  ReadTableFilter,
+  ReadTableOperator,
+  ListToolsConfig,
+  ListVariable,
 } from "@shared/types/blocks";
 import { getValueByPath } from "@shared/conditionEvaluator";
 import type { LifecycleHookPhase } from "@shared/types/scripting";
@@ -285,12 +290,26 @@ export class BlockRunner {
           if (!tenantId) {
             result = { success: false, errors: ["Tenant ID resolution failed"] };
           } else {
-            result = await this.executeWriteBlock(block.config as WriteBlockConfig, context, tenantId);
+            result = await this.executeWriteBlock(block.config as WriteBlockConfig, context, tenantId, block);
           }
           break;
 
         case "external_send":
           result = await this.executeExternalSendBlock(block.config as ExternalSendBlockConfig, context);
+          break;
+
+        case "read_table":
+          // Resolve tenantId needed for read operations
+          const readTenantId = await this.resolveTenantId(context.workflowId);
+          if (!readTenantId) {
+            result = { success: false, errors: ["Tenant ID resolution failed"] };
+          } else {
+            result = await this.executeReadTableBlock(block.config as ReadTableConfig, context, readTenantId, block);
+          }
+          break;
+
+        case "list_tools":
+          result = await this.executeListToolsBlock(block.config as ListToolsConfig, context, block);
           break;
 
         default:
@@ -955,7 +974,8 @@ export class BlockRunner {
   private async executeWriteBlock(
     config: WriteBlockConfig,
     context: BlockContext,
-    tenantId: string
+    tenantId: string,
+    block: Block
   ): Promise<BlockResult> {
     try {
       // Check runCondition
@@ -967,23 +987,50 @@ export class BlockRunner {
         }
       }
 
-      const tenantId = await this.getTenantIdFromWorkflow(context.workflowId);
-      if (!tenantId) {
-        return { success: false, errors: ["Tenant ID not found"] };
-      }
-
-      // Determine if preview mode via context or generally?
-      // BlockContext doesn't list `isPreview` explicitly but typically context.data might have metadata 
-      // or we check environment. 
-      // For now, let's assume `false` unless we find a flag. 
-      // TODO: Add `isPreview` to BlockContext in broader refactor if needed.
-      const isPreview = false;
+      // Determine if preview mode
+      const isPreview = context.mode === 'preview';
 
       const result = await writeRunner.executeWrite(config, context, tenantId, isPreview);
 
+      if (!result.success) {
+        return {
+          success: false,
+          errors: [result.error || "Write operation failed"]
+        };
+      }
+
+      // Persist output to virtual step if configured
+      const updates: Record<string, any> = {};
+      if (config.outputKey && result.rowId) {
+        updates[config.outputKey] = result.rowId;
+      }
+
+      // Also persist to virtual step if block has virtualStepId
+      if (context.runId && block.virtualStepId && result.rowId) {
+        try {
+          await stepValueRepository.upsert({
+            runId: context.runId,
+            stepId: block.virtualStepId,
+            value: {
+              rowId: result.rowId,
+              tableId: result.tableId,
+              operation: result.operation,
+              writtenData: result.writtenData
+            }
+          });
+          logger.debug({
+            blockId: block.id,
+            virtualStepId: block.virtualStepId,
+            rowId: result.rowId
+          }, "Persisted write block output to virtual step");
+        } catch (error) {
+          logger.error({ error, blockId: block.id }, "Failed to persist write block output");
+        }
+      }
+
       return {
-        success: result.success,
-        // We could log result info or store it in run logs
+        success: true,
+        data: updates
       };
 
     } catch (error) {
@@ -1036,6 +1083,562 @@ export class BlockRunner {
         success: false,
         errors: [`Failed to send external request: ${error instanceof Error ? error.message : "unknown error"}`]
       };
+    }
+  }
+
+  /**
+   * Execute read table block
+   * Reads data from a DataVault table and outputs a List
+   */
+  private async executeReadTableBlock(
+    config: ReadTableConfig,
+    context: BlockContext,
+    tenantId: string,
+    block: Block
+  ): Promise<BlockResult> {
+    try {
+      // Check runCondition
+      if (config.runCondition) {
+        const shouldRun = this.evaluateCondition(config.runCondition, context.data);
+        if (!shouldRun) {
+          logger.info({ phase: context.phase }, "Skipping read_table block due to condition");
+          return { success: true };
+        }
+      }
+
+      // Import services dynamically to avoid circular dependencies
+      const { datavaultTablesService } = await import('./DatavaultTablesService');
+      const { datavaultRowsService } = await import('./DatavaultRowsService');
+      const { datavaultColumnsRepository } = await import('../repositories');
+
+      // Verify table exists and user has access
+      const table = await datavaultTablesService.tablesRepo.findById(config.tableId);
+      if (!table) {
+        return {
+          success: false,
+          errors: [`Table not found: ${config.tableId}`]
+        };
+      }
+
+      if (table.tenantId !== tenantId) {
+        return {
+          success: false,
+          errors: ["Access denied - table belongs to different tenant"]
+        };
+      }
+
+      // Get table columns for metadata
+      const columns = await datavaultColumnsRepository.findByTableId(config.tableId);
+      const columnMap = new Map(columns.map(c => [c.id, c]));
+
+      // Build filter conditions
+      let filterConditions: any[] = [];
+      if (config.filters && config.filters.length > 0) {
+        filterConditions = config.filters.map(filter => {
+          const column = columnMap.get(filter.columnId);
+          if (!column) {
+            logger.warn({ columnId: filter.columnId }, "Filter references unknown column");
+            return null;
+          }
+
+          // Resolve value from context data if it's a variable reference
+          let resolvedValue = filter.value;
+          if (typeof filter.value === 'string' && filter.value.startsWith('{{') && filter.value.endsWith('}}')) {
+            const variableName = filter.value.slice(2, -2).trim();
+            const dataKey = context.aliasMap?.[variableName] || variableName;
+            resolvedValue = context.data[dataKey];
+          }
+
+          return {
+            columnId: filter.columnId,
+            column,
+            operator: filter.operator,
+            value: resolvedValue
+          };
+        }).filter(Boolean);
+      }
+
+      // Query rows with filters
+      const limit = config.limit || 100;
+      const rows = await this.queryTableRows({
+        tableId: config.tableId,
+        tenantId,
+        filters: filterConditions,
+        sort: config.sort,
+        limit,
+        columns: columnMap
+      });
+
+      // Build standardized list variable result
+      const listVariable = {
+        metadata: {
+          source: 'read_table' as const,
+          sourceId: config.tableId,
+          tableName: table.name,
+          queryParams: {
+            filters: config.filters,
+            sort: config.sort,
+            limit: config.limit
+          },
+          filteredBy: config.filters?.map(f => f.columnId),
+          sortedBy: config.sort
+        },
+        rows: rows.map(row => {
+          // Convert internal row structure to column name-accessible object
+          const rowData: Record<string, any> = { id: row.id };
+          for (const col of columns) {
+            rowData[col.id] = row.data?.[col.id] ?? null;
+          }
+          return rowData;
+        }),
+        count: rows.length,
+        columns: columns.map(c => ({
+          id: c.id,
+          name: c.name,
+          type: c.type
+        }))
+      };
+
+      // Persist to virtual step if runId is present
+      if (context.runId && block.virtualStepId) {
+        try {
+          await stepValueRepository.upsert({
+            runId: context.runId,
+            stepId: block.virtualStepId,
+            value: listVariable,
+          });
+          logger.debug({
+            blockId: block.id,
+            virtualStepId: block.virtualStepId,
+            rowCount: listVariable.count
+          }, "Persisted read_table block output");
+        } catch (error) {
+          logger.error({ error, blockId: block.id }, "Failed to persist read_table block output");
+        }
+      }
+
+      return {
+        success: true,
+        data: {
+          [config.outputKey]: listVariable
+        }
+      };
+
+    } catch (error) {
+      logger.error({ error, config }, "Read table block failed");
+      return {
+        success: false,
+        errors: [`Read table failed: ${error instanceof Error ? error.message : 'unknown error'}`]
+      };
+    }
+  }
+
+  /**
+   * Query table rows with filters and sorting
+   * Internal helper method for read_table block
+   */
+  private async queryTableRows(params: {
+    tableId: string;
+    tenantId: string;
+    filters: Array<{
+      columnId: string;
+      column: any;
+      operator: ReadTableOperator;
+      value: any;
+    }>;
+    sort?: { columnId: string; direction: "asc" | "desc" };
+    limit: number;
+    columns: Map<string, any>;
+  }): Promise<any[]> {
+    const { datavaultRows } = await import('@shared/schema');
+    const { and, eq, like, sql, desc, asc } = await import('drizzle-orm');
+
+    // Build WHERE conditions
+    const whereConditions = [eq(datavaultRows.tableId, params.tableId)];
+
+    for (const filter of params.filters) {
+      const columnPath = `data->>'${filter.columnId}'`;
+
+      switch (filter.operator) {
+        case 'equals':
+          if (filter.value !== null && filter.value !== undefined) {
+            whereConditions.push(sql`${sql.raw(columnPath)} = ${filter.value}`);
+          }
+          break;
+
+        case 'not_equals':
+          if (filter.value !== null && filter.value !== undefined) {
+            whereConditions.push(sql`${sql.raw(columnPath)} != ${filter.value}`);
+          }
+          break;
+
+        case 'contains':
+          if (filter.value) {
+            whereConditions.push(sql`${sql.raw(columnPath)} LIKE ${'%' + filter.value + '%'}`);
+          }
+          break;
+
+        case 'starts_with':
+          if (filter.value) {
+            whereConditions.push(sql`${sql.raw(columnPath)} LIKE ${filter.value + '%'}`);
+          }
+          break;
+
+        case 'ends_with':
+          if (filter.value) {
+            whereConditions.push(sql`${sql.raw(columnPath)} LIKE ${'%' + filter.value}`);
+          }
+          break;
+
+        case 'greater_than':
+          if (filter.column.type === 'number') {
+            whereConditions.push(sql`(${sql.raw(columnPath)})::numeric > ${filter.value}`);
+          } else if (filter.column.type === 'date' || filter.column.type === 'datetime') {
+            whereConditions.push(sql`${sql.raw(columnPath)} > ${filter.value}`);
+          }
+          break;
+
+        case 'less_than':
+          if (filter.column.type === 'number') {
+            whereConditions.push(sql`(${sql.raw(columnPath)})::numeric < ${filter.value}`);
+          } else if (filter.column.type === 'date' || filter.column.type === 'datetime') {
+            whereConditions.push(sql`${sql.raw(columnPath)} < ${filter.value}`);
+          }
+          break;
+
+        case 'is_empty':
+          whereConditions.push(sql`(${sql.raw(columnPath)} IS NULL OR ${sql.raw(columnPath)} = '')`);
+          break;
+
+        case 'is_not_empty':
+          whereConditions.push(sql`(${sql.raw(columnPath)} IS NOT NULL AND ${sql.raw(columnPath)} != '')`);
+          break;
+
+        case 'in':
+          if (Array.isArray(filter.value) && filter.value.length > 0) {
+            const placeholders = filter.value.map(v => `'${v}'`).join(',');
+            whereConditions.push(sql`${sql.raw(columnPath)} IN (${sql.raw(placeholders)})`);
+          }
+          break;
+      }
+    }
+
+    // Build query
+    let query = db
+      .select()
+      .from(datavaultRows)
+      .where(and(...whereConditions))
+      .limit(params.limit);
+
+    // Add sorting
+    if (params.sort) {
+      const sortColumn = params.columns.get(params.sort.columnId);
+      if (sortColumn) {
+        const columnPath = `data->>'${params.sort.columnId}'`;
+        if (params.sort.direction === 'asc') {
+          query = query.orderBy(sql`${sql.raw(columnPath)} ASC`);
+        } else {
+          query = query.orderBy(sql`${sql.raw(columnPath)} DESC`);
+        }
+      }
+    }
+
+    const rows = await query;
+    return rows;
+  }
+
+  /**
+   * Execute list tools block
+   * Transforms a list variable with various operations (filter, sort, limit, select)
+   */
+  private async executeListToolsBlock(
+    config: ListToolsConfig,
+    context: BlockContext,
+    block: Block
+  ): Promise<BlockResult> {
+    try {
+      // Check runCondition
+      if (config.runCondition) {
+        const shouldRun = this.evaluateCondition(config.runCondition, context.data);
+        if (!shouldRun) {
+          logger.info({ phase: context.phase }, "Skipping list_tools block due to condition");
+          return { success: true };
+        }
+      }
+
+      // Resolve input list from context data
+      const inputKey = context.aliasMap?.[config.inputKey] || config.inputKey;
+      const inputList = context.data[inputKey] as ListVariable | undefined;
+
+      if (!inputList) {
+        return {
+          success: false,
+          errors: [`Input list not found: ${config.inputKey}`]
+        };
+      }
+
+      // Validate input is a list variable
+      if (!inputList.rows || !Array.isArray(inputList.rows) || !inputList.columns) {
+        return {
+          success: false,
+          errors: [`Input variable "${config.inputKey}" is not a valid list`]
+        };
+      }
+
+      let outputValue: any;
+
+      // Execute operation
+      switch (config.operation) {
+        case "filter":
+          if (!config.filter) {
+            return { success: false, errors: ["Filter configuration is required for filter operation"] };
+          }
+          outputValue = await this.executeListFilter(inputList, config.filter, context);
+          break;
+
+        case "sort":
+          if (!config.sort) {
+            return { success: false, errors: ["Sort configuration is required for sort operation"] };
+          }
+          outputValue = this.executeListSort(inputList, config.sort);
+          break;
+
+        case "limit":
+          if (!config.limit) {
+            return { success: false, errors: ["Limit value is required for limit operation"] };
+          }
+          outputValue = this.executeListLimit(inputList, config.limit);
+          break;
+
+        case "select":
+          if (!config.select) {
+            return { success: false, errors: ["Select configuration is required for select operation"] };
+          }
+          outputValue = this.executeListSelect(inputList, config.select);
+          break;
+
+        default:
+          return {
+            success: false,
+            errors: [`Unknown list tools operation: ${config.operation}`]
+          };
+      }
+
+      // Persist to virtual step if runId is present
+      if (context.runId && block.virtualStepId) {
+        try {
+          await stepValueRepository.upsert({
+            runId: context.runId,
+            stepId: block.virtualStepId,
+            value: outputValue,
+          });
+          logger.debug({
+            blockId: block.id,
+            virtualStepId: block.virtualStepId,
+            operation: config.operation
+          }, "Persisted list_tools block output");
+        } catch (error) {
+          logger.error({ error, blockId: block.id }, "Failed to persist list_tools block output");
+        }
+      }
+
+      return {
+        success: true,
+        data: {
+          [config.outputKey]: outputValue
+        }
+      };
+
+    } catch (error) {
+      logger.error({ error, config }, "List tools block failed");
+      return {
+        success: false,
+        errors: [`List tools operation failed: ${error instanceof Error ? error.message : 'unknown error'}`]
+      };
+    }
+  }
+
+  /**
+   * Execute list filter operation
+   * Filters rows based on a column condition
+   */
+  private async executeListFilter(
+    inputList: ListVariable,
+    filter: { columnId: string; operator: ReadTableOperator; value?: any },
+    context: BlockContext
+  ): Promise<ListVariable> {
+    // Resolve filter value from context if it's a variable reference
+    let resolvedValue = filter.value;
+    if (typeof filter.value === 'string' && filter.value.startsWith('{{') && filter.value.endsWith('}}')) {
+      const variableName = filter.value.slice(2, -2).trim();
+      const dataKey = context.aliasMap?.[variableName] || variableName;
+      resolvedValue = context.data[dataKey];
+    }
+
+    // Filter rows
+    const filteredRows = inputList.rows.filter(row => {
+      const columnValue = row[filter.columnId];
+      return this.evaluateListFilterCondition(columnValue, filter.operator, resolvedValue);
+    });
+
+    // Build new list variable
+    return {
+      metadata: {
+        ...inputList.metadata,
+        source: 'list_tools' as const,
+        filteredBy: [...(inputList.metadata.filteredBy || []), filter.columnId]
+      },
+      rows: filteredRows,
+      count: filteredRows.length,
+      columns: inputList.columns
+    };
+  }
+
+  /**
+   * Evaluate a single filter condition for list filtering
+   */
+  private evaluateListFilterCondition(
+    actualValue: any,
+    operator: ReadTableOperator,
+    expectedValue: any
+  ): boolean {
+    switch (operator) {
+      case "equals":
+        return this.isEqual(actualValue, expectedValue);
+
+      case "not_equals":
+        return !this.isEqual(actualValue, expectedValue);
+
+      case "contains":
+        return this.contains(actualValue, expectedValue);
+
+      case "starts_with":
+        if (typeof actualValue === "string" && typeof expectedValue === "string") {
+          return actualValue.toLowerCase().startsWith(expectedValue.toLowerCase());
+        }
+        return false;
+
+      case "ends_with":
+        if (typeof actualValue === "string" && typeof expectedValue === "string") {
+          return actualValue.toLowerCase().endsWith(expectedValue.toLowerCase());
+        }
+        return false;
+
+      case "greater_than":
+        return this.compareNumeric(actualValue, expectedValue) > 0;
+
+      case "less_than":
+        return this.compareNumeric(actualValue, expectedValue) < 0;
+
+      case "is_empty":
+        return this.isEmpty(actualValue);
+
+      case "is_not_empty":
+        return !this.isEmpty(actualValue);
+
+      case "in":
+        if (Array.isArray(expectedValue)) {
+          return expectedValue.some(v => this.isEqual(actualValue, v));
+        }
+        return false;
+
+      default:
+        logger.warn(`Unknown list filter operator: ${operator}`);
+        return false;
+    }
+  }
+
+  /**
+   * Execute list sort operation
+   * Sorts rows by a column
+   */
+  private executeListSort(
+    inputList: ListVariable,
+    sort: { columnId: string; direction: "asc" | "desc" }
+  ): ListVariable {
+    const sortedRows = [...inputList.rows].sort((a, b) => {
+      const aVal = a[sort.columnId];
+      const bVal = b[sort.columnId];
+
+      // Handle null/undefined
+      if (aVal == null && bVal == null) return 0;
+      if (aVal == null) return sort.direction === "asc" ? 1 : -1;
+      if (bVal == null) return sort.direction === "asc" ? -1 : 1;
+
+      // Type-specific comparison
+      if (typeof aVal === "number" && typeof bVal === "number") {
+        return sort.direction === "asc" ? aVal - bVal : bVal - aVal;
+      }
+
+      // String comparison
+      const aStr = String(aVal).toLowerCase();
+      const bStr = String(bVal).toLowerCase();
+      const comparison = aStr.localeCompare(bStr);
+      return sort.direction === "asc" ? comparison : -comparison;
+    });
+
+    return {
+      metadata: {
+        ...inputList.metadata,
+        source: 'list_tools' as const,
+        sortedBy: sort
+      },
+      rows: sortedRows,
+      count: sortedRows.length,
+      columns: inputList.columns
+    };
+  }
+
+  /**
+   * Execute list limit operation
+   * Limits the number of rows
+   */
+  private executeListLimit(
+    inputList: ListVariable,
+    limit: number
+  ): ListVariable {
+    const limitedRows = inputList.rows.slice(0, limit);
+
+    return {
+      metadata: {
+        ...inputList.metadata,
+        source: 'list_tools' as const
+      },
+      rows: limitedRows,
+      count: limitedRows.length,
+      columns: inputList.columns
+    };
+  }
+
+  /**
+   * Execute list select operation
+   * Selects count, specific column values, or a specific row
+   */
+  private executeListSelect(
+    inputList: ListVariable,
+    select: { mode: "count" | "column" | "row"; columnId?: string; rowIndex?: number }
+  ): any {
+    switch (select.mode) {
+      case "count":
+        return inputList.count;
+
+      case "column":
+        if (!select.columnId) {
+          throw new Error("columnId is required for column select mode");
+        }
+        return inputList.rows.map(row => row[select.columnId!]);
+
+      case "row":
+        if (select.rowIndex === undefined || select.rowIndex === null) {
+          throw new Error("rowIndex is required for row select mode");
+        }
+        if (select.rowIndex < 0 || select.rowIndex >= inputList.rows.length) {
+          return null; // Out of bounds
+        }
+        return inputList.rows[select.rowIndex];
+
+      default:
+        throw new Error(`Unknown select mode: ${select.mode}`);
     }
   }
 }

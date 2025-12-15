@@ -4,7 +4,7 @@
  */
 
 import { useParams, useLocation } from "wouter";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Settings, Play, Eye, EyeOff, ChevronDown, ArrowLeft, Database } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useWorkflow, useSections, useCreateRun, useWorkflowMode, useSetWorkflowMode, queryKeys } from "@/lib/vault-hooks";
@@ -49,7 +49,7 @@ import { VersionBadge } from "@/components/builder/versioning/VersionBadge";
 import { VersionHistoryPanel } from "@/components/builder/versioning/VersionHistoryPanel";
 import { DiffViewer } from "@/components/builder/versioning/DiffViewer";
 import { PublishWorkflowDialog } from "@/components/builder/versioning/PublishWorkflowDialog";
-import { ApiWorkflowVersion } from "@/lib/vault-api";
+import { ApiWorkflowVersion, authAPI } from "@/lib/vault-api";
 import { GitCommit, Sparkles, GitGraph } from "lucide-react";
 import { AIAssistPanel } from "@/components/builder/AIAssistPanel";
 import { LogicInspectorPanel } from "@/components/builder/LogicInspectorPanel";
@@ -60,7 +60,7 @@ export default function WorkflowBuilder() {
   // ... existing hooks ...
   const [location, navigate] = useLocation();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const { data: workflow, isLoading } = useWorkflow(workflowId);
   const { data: sections } = useSections(workflowId);
   const { data: workflowMode, isLoading: modeLoading } = useWorkflowMode(workflowId);
@@ -79,6 +79,21 @@ export default function WorkflowBuilder() {
   const [diffTargetVersion, setDiffTargetVersion] = useState<ApiWorkflowVersion | null>(null);
   const [aiPanelOpen, setAiPanelOpen] = useState(false);
   const [logicPanelOpen, setLogicPanelOpen] = useState(false);
+  const [collabToken, setCollabToken] = useState<string | null>(null);
+
+  // Fetch collaboration token
+  useEffect(() => {
+    const fetchToken = async () => {
+      try {
+        const { token } = await authAPI.getToken();
+        setCollabToken(token);
+      } catch (error) {
+        // Fallback to session (will fail on newer server, but keeps old behavior if something is weird)
+        setCollabToken("session");
+      }
+    };
+    fetchToken();
+  }, []);
 
   // ... existing state ...
   const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -136,6 +151,15 @@ export default function WorkflowBuilder() {
   // Actually, I should try to preserve them. The 'TargetContent' for the replace must be careful.
   // I will use a larger block replacement strategy.
 
+  // Memoize collaborative user to prevent WebSocket reconnects
+  // This MUST be before any early returns to comply with Rules of Hooks
+  const collabUser = useMemo(() => ({
+    id: user?.id ? String(user.id) : `anon-${Math.random().toString(36).substr(2, 5)}`,
+    name: user?.firstName || 'Guest User',
+    color: '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0'),
+    email: user?.email
+  }), [user?.id, user?.firstName, user?.email]);
+
   // ... Render ...
   if (isLoading || modeLoading) return <div className="h-screen flex items-center justify-center"><Skeleton className="h-12 w-64" /></div>;
   if (!workflow) return <div className="h-screen flex items-center justify-center"><p className="text-muted-foreground">Workflow not found</p></div>;
@@ -149,18 +173,17 @@ export default function WorkflowBuilder() {
     );
   }
 
+  // Only enable collaboration when we have the token AND the user is loaded with a tenantId
+  // This prevents the "default-tenant" race condition
+  const isCollabReady = !!collabToken && !authLoading && !!user?.tenantId;
+
   return (
     <CollaborationProvider config={{
       workflowId: workflowId!,
-      tenantId: "default-tenant", // In real app, get from user context
-      token: "session", // Backend handles cookie auth
-      enabled: true,
-      user: {
-        id: user?.id ? String(user.id) : `anon-${Math.random().toString(36).substr(2, 5)}`,
-        name: user?.firstName || 'Guest User',
-        color: '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0'), // Random color
-        email: user?.email
-      }
+      tenantId: user?.tenantId || "",
+      token: collabToken || "",
+      enabled: isCollabReady,
+      user: collabUser
     }}>
       <IntakeProvider workflowId={workflowId!}>
         <CollabSync mode={mode} />
@@ -237,6 +260,9 @@ export default function WorkflowBuilder() {
                   />
                 </div>
 
+                <Button variant="outline" size="sm" onClick={() => navigate(`/workflows/${workflowId}/visual-builder`)} className="mr-2">
+                  <GitGraph className="w-4 h-4 mr-2" /> Visual Builder
+                </Button>
                 <Button variant="outline" size="sm" onClick={() => setIsPreviewMode(true)} disabled={launchingPreview}>
                   <Eye className="w-4 h-4 mr-2" /> Preview
                 </Button>
@@ -254,7 +280,7 @@ export default function WorkflowBuilder() {
 
 
           {/* Content */}
-          <div className="flex-1 overflow-hidden relative">
+          <div className="flex-1 flex flex-col overflow-hidden relative">
             {activeTab === "sections" && (
               <SectionsTab
                 workflowId={workflowId!}

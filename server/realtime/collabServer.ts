@@ -68,20 +68,33 @@ const metrics = {
 /**
  * Initialize WebSocket collaboration server
  */
+/**
+ * Initialize WebSocket collaboration server
+ */
 export function initCollabServer(server: HTTPServer): void {
   logger.info('Initializing WebSocket collaboration server');
 
   // Initialize Redis for multi-instance support
   initRedis();
 
-  // Create WebSocket server
+  // Create standalone WebSocket server on port 5001
+  // This avoids conflicts with Vite's HMR on the main port (5000)
+  const WS_PORT = parseInt(process.env.WS_PORT || '5001', 10);
+
   wss = new WebSocketServer({
-    server,
-    path: '/collab',
+    port: WS_PORT,
     clientTracking: true,
+    path: '/collab'
   });
 
+  logger.info(`WebSocket collaboration server listening on port ${WS_PORT} path /collab`);
+
   wss.on('connection', handleConnection);
+
+  wss.on('error', (err) => {
+    logger.error({ err }, 'WebSocket Server Error');
+    console.error('[DEBUG] WebSocket Server Error:', err);
+  });
 
   // Start cleanup interval for inactive users
   cleanupInterval = setInterval(() => {
@@ -192,7 +205,7 @@ function setupWebSocketHandlers(
   });
 
   // Handle connection close
-  ws.on('close', () => {
+  ws.on('close', (code, reason) => {
     handleDisconnection(connection, room);
   });
 
@@ -212,20 +225,24 @@ async function handleMessage(
 ): Promise<void> {
   metrics.totalMessages++;
 
-  const decoder = decoding.createDecoder(message);
-  const messageType = decoding.readVarUint(decoder);
+  try {
+    const decoder = decoding.createDecoder(message);
+    const messageType = decoding.readVarUint(decoder);
 
-  switch (messageType) {
-    case MESSAGE_SYNC:
-      await handleSyncMessage(connection, room, decoder);
-      break;
+    switch (messageType) {
+      case MESSAGE_SYNC:
+        await handleSyncMessage(connection, room, decoder);
+        break;
 
-    case MESSAGE_AWARENESS:
-      handleAwarenessMessage(connection, room, decoder);
-      break;
+      case MESSAGE_AWARENESS:
+        handleAwarenessMessage(connection, room, decoder);
+        break;
 
-    default:
-      logger.warn({ messageType }, 'Unknown message type');
+      default:
+        logger.warn({ messageType }, 'Unknown message type');
+    }
+  } catch (error: any) {
+    logger.error({ error, userId: connection.user.userId, roomName: room.name }, 'Failed to decode message');
   }
 }
 
@@ -237,42 +254,20 @@ async function handleSyncMessage(
   room: Room,
   decoder: decoding.Decoder
 ): Promise<void> {
-  const syncMessageType = syncProtocol.readSyncMessage(decoder, encoding.createEncoder(), room.doc, connection);
+  // Use a fresh encoder to capture any response (e.g. Sync Step 2)
+  const encoder = encoding.createEncoder();
+  encoding.writeVarUint(encoder, MESSAGE_SYNC);
 
-  // If this is an update, persist it and broadcast
-  if (syncMessageType === syncProtocol.messageYjsSyncStep2) {
-    const update = decoding.readVarUint8Array(decoder);
+  // readSyncMessage will:
+  // 1. Read the message type.
+  // 2. If Step 1: Write Sync Step 2 to the encoder.
+  // 3. If Step 2 or Update: Read the update and apply it to room.doc using 'connection' as origin.
+  //    This triggers doc.on('update'), where we handle persistence and broadcasting.
+  syncProtocol.readSyncMessage(decoder, encoder, room.doc, connection);
 
-    // Check if user has permission to mutate
-    if (!canMutate(connection.user)) {
-      logger.warn(
-        {
-          userId: connection.user.userId,
-          role: connection.user.role,
-        },
-        'User attempted to mutate document without permission'
-      );
-      return;
-    }
-
-    metrics.totalUpdates++;
-
-    // Apply update to document
-    Y.applyUpdate(room.doc, update, connection);
-
-    // Persist update to database
-    try {
-      const docId = await getDocIdForRoom(room.name, connection.user.tenantId);
-      await saveUpdate(docId, update);
-
-      // Publish to Redis for other instances
-      await publishUpdate(room.name, update);
-    } catch (error) {
-      logger.error({ error }, 'Failed to persist update');
-    }
-
-    // Broadcast to other connections in room
-    broadcastUpdate(room, update, connection.ws);
+  // If the protocol generated a response (e.g. Step 2), send it back
+  if (encoding.length(encoder) > 1) { // > 1 because we wrote message type
+    connection.ws.send(encoding.toUint8Array(encoder));
   }
 }
 
@@ -416,9 +411,41 @@ async function getOrCreateRoom(roomName: string, tenantId: string): Promise<Room
 
   // Subscribe to Redis for multi-instance sync
   const unsubscribeRedis = subscribeToRoom(roomName, (update) => {
-    Y.applyUpdate(doc, update);
-    // Broadcast to all local connections
-    broadcastUpdate(room!, update, null as any);
+    Y.applyUpdate(doc, update, 'remote');
+  });
+
+  // Handle document updates (from clients or remote)
+  doc.on('update', async (update: Uint8Array, origin: any) => {
+    // 1. Update from Remote (Redis) -> Broadcast to local clients
+    if (origin === 'remote') {
+      broadcastUpdate(room!, update, null as any);
+      return;
+    }
+
+    // 2. Update from Client Connection -> Persist & Broadcast
+    if (origin && typeof origin === 'object' && origin.user) {
+      const connection = origin as CollabConnection;
+
+      // Check permissions (Soft enforcement: prevents propagation)
+      if (!canMutate(connection.user)) {
+        logger.warn({ userId: connection.user.userId }, 'User attempted to mutate without permission');
+        return;
+      }
+
+      metrics.totalUpdates++;
+
+      // Persist to DB & Publish to Redis
+      try {
+        const docId = await getDocIdForRoom(roomName, connection.user.tenantId);
+        await saveUpdate(docId, update);
+        await publishUpdate(roomName, update);
+      } catch (error) {
+        logger.error({ error }, 'Failed to persist update');
+      }
+
+      // Broadcast to other clients in the room
+      broadcastUpdate(room!, update, connection.ws);
+    }
   });
 
   // Create room

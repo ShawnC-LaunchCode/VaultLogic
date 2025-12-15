@@ -23,7 +23,7 @@ import { RequiredToggle } from "./common/RequiredToggle";
 import { SectionHeader } from "./common/EditorField";
 import { useUpdateStep } from "@/lib/vault-hooks";
 import { useToast } from "@/hooks/use-toast";
-import type { ChoiceAdvancedConfig, ChoiceOption, LegacyMultipleChoiceConfig, LegacyRadioConfig } from "@/../../shared/types/stepConfigs";
+import type { ChoiceAdvancedConfig, ChoiceOption, LegacyMultipleChoiceConfig, LegacyRadioConfig, DynamicOptionsConfig } from "@/../../shared/types/stepConfigs";
 
 interface ChoiceCardEditorProps {
   stepId: string;
@@ -50,10 +50,30 @@ export function ChoiceCardEditor({ stepId, sectionId, step }: ChoiceCardEditorPr
   const parseConfig = () => {
     if (isAdvancedMode) {
       const config = step.config as ChoiceAdvancedConfig | undefined;
+
+      // Handle dynamic options config
+      let options: ChoiceOption[] = [];
+      const rawOptions = config?.options;
+
+      if (rawOptions && typeof rawOptions === 'object' && 'type' in rawOptions) {
+        // This is a DynamicOptionsConfig - extract static options if present
+        const dynConfig = rawOptions as DynamicOptionsConfig;
+        if (dynConfig.type === 'static') {
+          options = dynConfig.options || [];
+        } else {
+          // For 'list' or 'table_column', we can't edit inline - leave empty
+          // User should use QuestionCard's OptionsEditor for dynamic sources
+          options = [];
+        }
+      } else if (Array.isArray(rawOptions)) {
+        // Legacy static array
+        options = rawOptions;
+      }
+
       return {
         display: config?.display || "radio",
         allowMultiple: config?.allowMultiple || false,
-        options: config?.options || [],
+        options,
       };
     } else {
       // Easy mode - convert legacy format
@@ -134,7 +154,7 @@ export function ChoiceCardEditor({ stepId, sectionId, step }: ChoiceCardEditorPr
       const configToSave: ChoiceAdvancedConfig = {
         display: newConfig.display as "radio" | "dropdown" | "multiple",
         allowMultiple: newConfig.allowMultiple,
-        options: newConfig.options,
+        options: { type: 'static', options: newConfig.options } as DynamicOptionsConfig,
       };
       updateStepMutation.mutate({ id: stepId, sectionId, config: configToSave });
     } else {

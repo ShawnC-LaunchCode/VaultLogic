@@ -115,10 +115,10 @@ export class WebSocketProvider {
       };
 
       this.ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
+        // Log locally if needed, but not user-facing debug
       };
 
-      this.ws.onclose = () => {
+      this.ws.onclose = (event) => {
         this.handleDisconnect();
       };
     } catch (error) {

@@ -1,27 +1,39 @@
 # VaultLogic - Architecture & Current State
 
-**Last Updated:** December 7, 2025
+**Last Updated:** December 15, 2025
 **Version:** 1.7.0 - Custom Scripting System (Lifecycle & Document Hooks)
-**Status:** Production Ready
+**Status:** Production Ready - Enterprise Scale
 
 ---
 
 ## Executive Summary
 
-VaultLogic is a **comprehensive workflow automation platform** that combines visual workflow building, conditional logic, custom code execution (JavaScript/Python), and runtime data collection. Originally inspired by Poll-Vault, VaultLogic has evolved into a production-ready workflow engine with advanced features for automation, data transformation, and team collaboration.
+VaultLogic is a **comprehensive enterprise workflow automation platform** that combines visual workflow building, conditional logic, custom code execution (JavaScript/Python), and advanced data management. Originally inspired by Poll-Vault, VaultLogic has evolved into a production-ready workflow engine with enterprise-grade features for automation, data transformation, team collaboration, and external integrations.
+
+**Platform Scale:**
+- **30+ frontend pages** with React 18.3 + TypeScript
+- **66+ backend API route files** handling all operations
+- **90+ service classes** implementing business logic
+- **80+ PostgreSQL database tables** with Drizzle ORM
+- **15+ question/action types** for workflows
+- **40+ helper functions** for custom scripting
 
 **Key Differentiators:**
-- Visual workflow builder with drag-and-drop interface
-- **DataVault:** Complete data management platform with databases, tables, and permissions
-- **Two-tier visibility logic:** Workflow rules + step-level expressions
-- Sandboxed JavaScript/Python execution for data transformation
-- AI-powered workflow generation (OpenAI, Anthropic, Google Gemini)
-- HTTP/API integration with OAuth2 Client Credentials + 3-legged flows
-- Encrypted secrets management with AES-256-GCM
-- Human-in-the-loop workflows (review gates, e-signatures)
-- Token-based run authentication (creator + anonymous modes)
-- Step aliases (human-friendly variable names)
-- Real-time preview and comprehensive analytics
+- **Visual Workflow Builder:** Drag-and-drop interface with React Flow canvas + 5-tab navigation
+- **DataVault:** Complete data management platform with databases, tables, permissions, infinite scroll, API tokens
+- **Custom Scripting System:** Lifecycle & document hooks with 40+ helper functions, script console (Prompt 12)
+- **Two-tier Visibility Logic:** Workflow rules + step-level expressions with real-time evaluation
+- **Sandboxed Execution:** JavaScript (vm2) + Python (subprocess) with timeout enforcement and security isolation
+- **AI-Powered Generation:** OpenAI, Anthropic, Google Gemini for workflow creation and optimization
+- **HTTP/API Integration:** OAuth2 (Client Credentials + 3-legged) + encrypted secrets (AES-256-GCM)
+- **E-Signature & Reviews:** DocuSign, HelloSign, native signatures with approval gates
+- **Portal System:** Magic link authentication for external users, run tracking
+- **Enterprise Features:** Multi-tenant workspaces, RBAC, Stripe billing integration, comprehensive audit logs
+- **Document Generation:** PDF/DOCX with template variables, repeating sections, AI binding
+- **Token-Based Auth:** Bearer token + JWT for API access, anonymous runs supported
+- **Step Aliases:** Human-friendly variable names for logic and transforms
+- **Real-time Collaboration:** Live presence, cursors, comments, version control
+- **Advanced Analytics:** Funnel analysis, heatmaps, dropoff tracking, export (JSON/CSV/PDF)
 
 ---
 
@@ -59,19 +71,51 @@ VaultLogic is a **comprehensive workflow automation platform** that combines vis
 
 ```
 VaultLogic/
-├── client/src/              # React frontend
-│   ├── components/          # UI components (builder, logic, preview)
-│   ├── pages/               # Route pages
+├── client/src/              # React frontend (30+ pages)
+│   ├── components/          # UI components
+│   │   ├── builder/         # Workflow builder (5-tab nav, canvas, inspector)
+│   │   ├── preview/         # Preview & runner components (18 block renderers)
+│   │   ├── datavault/       # DataVault UI (tables, rows, permissions)
+│   │   ├── logic/           # Logic builder, visibility editor
+│   │   ├── analytics/       # Charts, dashboards, funnel analysis
+│   │   ├── collaboration/   # Comments, presence, live cursors
+│   │   └── ui/              # Shared UI components (Radix + Tailwind)
+│   ├── pages/               # Route pages (30+)
+│   │   ├── auth/            # Login, OAuth callback
+│   │   ├── workflows/       # List, builder, visual builder, preview, runner
+│   │   ├── runs/            # Runs dashboard, details, comparison
+│   │   ├── datavault/       # Databases, tables, rows
+│   │   ├── templates/       # Templates, marketplace, test runner
+│   │   ├── portal/          # Portal login, dashboard
+│   │   ├── admin/           # Admin dashboard, users, logs
+│   │   └── settings/        # Branding, teams, connections
 │   ├── lib/                 # API clients, utilities
-│   └── hooks/               # React hooks
+│   └── hooks/               # React hooks (30+)
 ├── server/                  # Node.js backend
-│   ├── routes/              # API handlers (20+ files)
-│   ├── services/            # Business logic (25+ services)
-│   ├── repositories/        # Data access (15+ repos)
+│   ├── routes/              # API handlers (66+ route files)
+│   │   ├── workflows/       # Workflow CRUD, sections, steps
+│   │   ├── runs/            # Run execution, values, completion
+│   │   ├── datavault/       # Databases, tables, rows, permissions
+│   │   ├── connections/     # API connections, OAuth2, secrets
+│   │   ├── ai/              # Workflow generation, optimization
+│   │   ├── documents/       # Document generation, templates
+│   │   ├── analytics/       # Analytics, export, reporting
+│   │   ├── portal/          # Portal auth, magic links
+│   │   └── admin/           # Admin operations
+│   ├── services/            # Business logic (90+ services)
+│   │   ├── workflow/        # WorkflowService, SectionService, StepService
+│   │   ├── execution/       # RunService, BlockRunner, IntakeService
+│   │   ├── scripting/       # ScriptEngine, LifecycleHooks, DocumentHooks
+│   │   ├── datavault/       # Database, Table, Row, Permission services
+│   │   ├── documents/       # DocumentGeneration, TemplateParser, PDF
+│   │   ├── integrations/    # Connections, Secrets, OAuth2, E-signature
+│   │   ├── ai/              # AIService, GeminiService, Optimization
+│   │   └── analytics/       # AnalyticsService, DropoffService, Heatmap
+│   ├── repositories/        # Data access (20+ repos)
 │   ├── middleware/          # Auth, validation, error handling
 │   └── utils/               # Utilities
 ├── shared/                  # Shared code
-│   ├── schema.ts            # Drizzle schema (30+ tables)
+│   ├── schema.ts            # Drizzle schema (80+ tables)
 │   ├── conditionalLogic.ts  # Logic engine
 │   └── workflowLogic.ts     # Workflow execution
 ├── migrations/              # SQL migrations
@@ -121,7 +165,7 @@ Projects
 
 ## Core Database Schema
 
-**30+ tables organized by domain:**
+**80+ tables organized by domain:**
 
 ### Core Workflow Tables
 
@@ -134,7 +178,7 @@ Projects
 | `stepValues` | Run data | `id`, `runId`, `stepId`, `value` |
 | `workflowRuns` | Execution instances | `id`, `workflowId`, `runToken`, `createdBy`, `progress`, `completed` |
 
-**Step Types:** short_text, long_text, multiple_choice, radio, checkbox, yes_no, date_time, file_upload, computed
+**Step Types (15+):** short_text, long_text, email, phone, website, number, currency, address, boolean, multiple_choice, radio, checkbox, scale, date, date_time, time, display, multi_field, signature, file_upload, computed
 
 ### DataVault Tables
 
@@ -207,6 +251,91 @@ Projects
 | `teamMembers` | Team membership | `teamId`, `userId`, `role` |
 | `projectAccess` | Project permissions | `projectId`, `teamId`, `userId`, `role` |
 | `workflowAccess` | Workflow permissions | `workflowId`, `teamId`, `userId`, `role` |
+| `tenants` | Workspace tenants | `id`, `name`, `slug` |
+| `organizations` | Enterprise orgs | `id`, `name`, `tenantId` |
+| `workspaces` | Team workspaces | `id`, `name`, `tenantId` |
+| `workspaceMembers` | Workspace membership | `workspaceId`, `userId`, `role` |
+| `resourcePermissions` | Granular permissions | `resourceType`, `resourceId`, `userId`, `permission` |
+| `auditLogs` | Activity tracking | `id`, `userId`, `action`, `resourceType`, `timestamp` |
+
+### Portal & External Access Tables
+
+| Table | Purpose | Key Columns |
+|-------|---------|-------------|
+| `portalUsers` | Portal user accounts | `id`, `email`, `workflowId`, `magicToken` |
+| `portalAccessLogs` | Portal login tracking | `id`, `portalUserId`, `timestamp` |
+| `anonymousResponseTracking` | Anonymous run tracking | `id`, `runId`, `fingerprint` |
+
+### Templates & Sharing Tables
+
+| Table | Purpose | Key Columns |
+|-------|---------|-------------|
+| `workflowTemplates` | Workflow templates | `id`, `name`, `description`, `createdBy` |
+| `workflowBlueprints` | Template blueprints | `id`, `templateId`, `structure` (JSONB) |
+| `templateShares` | Sharing permissions | `id`, `templateId`, `sharedWith`, `permissions` |
+| `emailTemplateMetadata` | Email templates | `id`, `projectId`, `name`, `htmlContent` |
+
+### Analytics & Metrics Tables
+
+| Table | Purpose | Key Columns |
+|-------|---------|-------------|
+| `analyticsEvents` | Event tracking | `id`, `workflowId`, `runId`, `eventType`, `timestamp` |
+| `workflowRunEvents` | Run-level events | `id`, `runId`, `eventName`, `metadata` (JSONB) |
+| `workflowRunMetrics` | Run metrics | `id`, `runId`, `completionTime`, `dropoffStep` |
+| `blockMetrics` | Block performance | `id`, `blockId`, `executionTime`, `errorRate` |
+| `workflowAnalyticsSnapshots` | Analytics snapshots | `id`, `workflowId`, `snapshotDate`, `metrics` (JSONB) |
+| `metricsEvents` | Metric events | `id`, `eventType`, `value`, `timestamp` |
+| `metricsRollups` | Aggregated metrics | `id`, `period`, `aggregatedData` (JSONB) |
+
+### Document Generation Tables
+
+| Table | Purpose | Key Columns |
+|-------|---------|-------------|
+| `runGeneratedDocuments` | Generated PDFs/DOCX | `id`, `runId`, `documentUrl`, `fileType`, `createdAt` |
+| `signatureEvents` | Signature audit trail | `id`, `signatureRequestId`, `eventType`, `timestamp` |
+| `finalBlock` | Final block config | `id`, `workflowId`, `templateId`, `config` (JSONB) |
+
+### Billing & Enterprise Tables
+
+| Table | Purpose | Key Columns |
+|-------|---------|-------------|
+| `subscriptions` | Stripe subscriptions | `id`, `tenantId`, `stripeSubscriptionId`, `status`, `planId` |
+| `billingPlans` | Plan definitions | `id`, `name`, `features` (JSONB), `priceMonthly` |
+| `subscriptionSeats` | Seat management | `id`, `subscriptionId`, `userId`, `assignedAt` |
+| `customerBillingInfo` | Billing addresses | `id`, `tenantId`, `billingEmail`, `stripeCustomerId` |
+| `usageRecords` | Usage metering | `id`, `tenantId`, `period`, `runCount`, `workflowCount` |
+
+### Versioning & State Tables
+
+| Table | Purpose | Key Columns |
+|-------|---------|-------------|
+| `workflowVersions` | Version history | `id`, `workflowId`, `versionNumber`, `publishedAt`, `snapshot` (JSONB) |
+| `workflowSnapshots` | Test data snapshots | `id`, `workflowId`, `name`, `data` (JSONB) |
+| `sessions` | Express sessions | `sid`, `sess` (JSONB), `expire` |
+| `userPreferences` | User settings | `id`, `userId`, `preferences` (JSONB) |
+| `userPersonalizationSettings` | Personalization | `id`, `userId`, `settings` (JSONB) |
+| `workflowPersonalizationSettings` | Workflow personalization | `id`, `workflowId`, `settings` (JSONB) |
+
+### Legacy & Collections Tables
+
+| Table | Purpose | Key Columns |
+|-------|---------|-------------|
+| `collections` | Legacy collections | `id`, `projectId`, `name` |
+| `collectionFields` | Collection schemas | `id`, `collectionId`, `fieldName`, `fieldType` |
+| `records` | Collection records | `id`, `collectionId`, `data` (JSONB) |
+| `surveys` | Legacy surveys (deprecated) | `id`, `title`, `createdBy` |
+| `questions` | Legacy questions | `id`, `surveyId`, `questionType` |
+| `responses` / `answers` | Legacy response data | `id`, `surveyId`, `userId`, `submittedAt` |
+
+### Utility Tables
+
+| Table | Purpose | Key Columns |
+|-------|---------|-------------|
+| `files` | File storage metadata | `id`, `filename`, `mimeType`, `uploadedBy`, `url` |
+| `apiKeys` | API token storage | `id`, `projectId`, `key`, `expiresAt` |
+| `runLogs` | Run execution logs | `id`, `runId`, `logLevel`, `message`, `timestamp` |
+| `systemStats` | System metrics | `id`, `statName`, `value`, `recordedAt` |
+| `auditEvents` | Comprehensive audit trail | `id`, `userId`, `action`, `resourceType`, `before`, `after`, `timestamp` |
 
 ---
 
@@ -220,79 +349,141 @@ Projects
 
 **Repositories** (`server/repositories/`) - Data access abstraction, query building
 
-### Core Services (25+)
+### Core Services (90+)
 
-**Workflow Services:**
+**Workflow Core Services:**
 - WorkflowService, SectionService, StepService, RunService
-- LogicService, TransformBlockService, BlockRunner
-- VariableService, IntakeQuestionVisibilityService, IntakeNavigationService
+- LogicService, VariableService, BlockService
+- WorkflowClonerService, WorkflowExportService, WorkflowBundleService
+- VersionService, SnapshotService
 
-**Scripting Services (Prompt 12):**
-- ScriptEngine, HelperLibrary, ScriptContext
+**Execution & Runtime Services:**
+- RunService, BlockRunner, IntakeService
+- TransformBlockService, QueryBlockService
+- IntakeNavigationService, IntakeQuestionVisibilityService
+- RepeaterService, QueryService
+
+**Custom Scripting Services (Prompt 12):**
+- ScriptEngine (unified JS/Python orchestrator)
+- HelperLibrary (40+ utility functions)
+- ScriptContext (context injection)
 - LifecycleHookService, DocumentHookService
-- LifecycleHookRepository, DocumentHookRepository, ScriptExecutionLogRepository
+- LifecycleHookRepository, DocumentHookRepository
+- ScriptExecutionLogRepository
 
 **DataVault Services:**
-- DatabaseService, TableService, TableRowService
-- TablePermissionService, ApiTokenService, RowNoteService
+- DatavaultDatabasesService, DatavaultTablesService, DatavaultColumnsService
+- DatavaultRowsService, DatavaultRowNotesService
+- DatavaultTablePermissionsService, DatavaultApiTokensService
 
-**Integration Services:**
+**Document Generation Services:**
+- DocumentGenerationService, DocumentTemplateService
+- DocumentEngine, EnhancedDocumentEngine
+- FinalBlockRenderer, TemplateParser, TemplateScanner
+- MappingInterpreter, VariableNormalizer
+- PdfConverter, ZipBundler
+- docxRenderer, docxRenderer2
+
+**E-Signature Services:**
+- SignatureBlockService, EsignProvider
+- DocusignProvider, SignatureRequestService
+- EnvelopeBuilder
+
+**AI & Optimization Services:**
+- AIService (OpenAI, Anthropic, Gemini)
+- GeminiService, WorkflowOptimizationService
+- TemplateAnalysisService
+
+**Analytics & Reporting Services:**
+- AnalyticsService (overview metrics)
+- DropoffService (funnel analysis)
+- BranchingService (conditional flow analysis)
+- AggregationService, HeatmapService
+
+**Collections Services (Legacy Data):**
+- CollectionService, CollectionFieldService
+- RecordService
+
+**Integration & Connection Services:**
 - ConnectionService, SecretService, OAuth2Service
-- ReviewTaskService, SignatureRequestService
+- ExternalDestinationService, GooglePlacesService
+- WebhookService
 
-**Shared Services:**
-- AnalyticsService, WorkflowExportService, ProjectService
-- TeamService, AclService, ActivityLogService
-- emailService, fileService, geminiService, AIService
+**Authentication & Security Services:**
+- AuthService (JWT, session)
+- AclService (access control)
+- CaptchaService, PortalAuthService
+- PortalService
+
+**Template & Sharing Services:**
+- TemplateService, TemplateSharingService
+- TemplateTestService, WorkflowTemplateService
+- TemplateInsertionService
+
+**Business Logic Services:**
+- ProjectService, TeamService
+- ReviewTaskService, BrandingService
+- DataSourceService, RandomizerService
+
+**Utility Services:**
+- ActivityLogService, emailService, fileService
+- UserPreferencesService, AccountService
+- PdfQueueService
 
 ---
 
-## API Endpoints Summary
+## API Endpoints Summary (66+ Route Files)
 
-### Workflows
+### Workflows & Structure
 ```
-GET/POST    /api/workflows                    # List/Create
+GET/POST    /api/workflows                    # List/Create workflows
 GET/PUT/DEL /api/workflows/:id                # CRUD operations
-PATCH       /api/workflows/:id/status         # Update status
-GET         /api/workflows/:id/variables      # Get aliases
-```
+PATCH       /api/workflows/:id/status         # Update status (draft/active/archived)
+GET         /api/workflows/:id/variables      # Get step aliases
+POST        /api/workflows/:id/publish        # Publish new version
+POST        /api/workflows/:id/clone          # Clone workflow
 
-### Sections & Steps
-```
 POST        /api/workflows/:id/sections       # Create section
-PUT/DELETE  /api/sections/:id                 # Update/Delete
-PUT         /api/workflows/:id/sections/reorder # Reorder
+PUT/DELETE  /api/sections/:id                 # Update/Delete section
+PUT         /api/workflows/:id/sections/reorder # Reorder sections
 
 POST        /api/workflows/:wid/sections/:sid/steps # Create step
-PUT/DELETE  /api/steps/:id                    # Update/Delete
-PUT         /api/workflows/:id/steps/reorder  # Reorder
+PUT/DELETE  /api/steps/:id                    # Update/Delete step
+PUT         /api/workflows/:id/steps/reorder  # Reorder steps
 ```
 
-### Workflow Runs (Bearer Token or Session Auth)
+### Workflow Execution (Bearer Token or Session Auth)
 ```
 POST        /api/workflows/:id/runs           # Create run (returns runToken)
-GET         /api/runs/:id                     # Get run
-GET/POST    /api/runs/:id/values              # Get/Save values
-POST        /api/runs/:id/values/bulk         # Bulk save
+GET         /api/runs/:id                     # Get run details
+GET/POST    /api/runs/:id/values              # Get/Save step values
+POST        /api/runs/:id/values/bulk         # Bulk save values
 POST        /api/runs/:id/sections/:sid/submit # Submit section
-PUT         /api/runs/:id/complete            # Complete run
+POST        /api/runs/:id/next                # Navigate to next section
+PUT         /api/runs/:id/complete            # Complete run (triggers transforms)
+GET         /api/runs/:id/trace               # Get execution trace
+GET         /api/runs                         # List runs (with filters)
 ```
 
-### Transform Blocks
+### Blocks & Code Execution
 ```
-GET/POST    /api/workflows/:id/transform-blocks # List/Create
+GET/POST    /api/workflows/:id/blocks         # List/Create blocks
+PUT/DELETE  /api/blocks/:id                   # Update/Delete block
+POST        /api/blocks/:id/test              # Test block execution
+
+GET/POST    /api/workflows/:id/transform-blocks # Transform blocks
 PUT/DELETE  /api/transform-blocks/:id         # Update/Delete
-POST        /api/transform-blocks/:id/test    # Test execution
+POST        /api/transform-blocks/:id/test    # Test with sample data
 ```
 
 ### Lifecycle & Document Hooks (Prompt 12)
 ```
-# Lifecycle Hooks
+# Lifecycle Hooks (4 phases)
 GET/POST    /api/workflows/:workflowId/lifecycle-hooks # List/Create hooks
 PUT/DELETE  /api/lifecycle-hooks/:hookId      # Update/Delete hook
 POST        /api/lifecycle-hooks/:hookId/test # Test hook with sample data
 
-# Document Hooks
+# Document Hooks (2 phases)
 GET/POST    /api/workflows/:workflowId/document-hooks # List/Create hooks
 PUT/DELETE  /api/document-hooks/:hookId       # Update/Delete hook
 POST        /api/document-hooks/:hookId/test  # Test hook with sample data
@@ -301,81 +492,285 @@ POST        /api/document-hooks/:hookId/test  # Test hook with sample data
 GET/DELETE  /api/runs/:runId/script-console   # Get/Clear execution logs
 ```
 
-### DataVault
+### DataVault (Complete Data Platform)
 ```
 # Databases
-GET/POST    /api/projects/:id/databases       # List/Create
-GET/PUT/DEL /api/databases/:id                # CRUD
-POST        /api/databases/:id/archive        # Archive
+GET/POST    /api/projects/:id/databases       # List/Create databases
+GET/PUT/DEL /api/databases/:id                # CRUD databases
+POST        /api/databases/:id/archive        # Archive database
 
 # Tables & Rows
 GET/POST    /api/databases/:id/tables         # List/Create tables
 GET/PUT/DEL /api/tables/:id                   # CRUD tables
-GET/POST    /api/tables/:id/rows              # List/Create rows
+GET/POST    /api/tables/:id/rows              # List/Create rows (infinite scroll)
 PUT/DELETE  /api/tables/:id/rows/:rowId       # Update/Delete row
 POST        /api/tables/:id/rows/bulk         # Bulk operations
 
-# API Tokens
-GET/POST    /api/projects/:id/api-tokens      # List/Create
-POST        /api/projects/:id/api-tokens/:tid/revoke # Revoke
+# Permissions & API Tokens
+GET/POST    /api/tables/:id/permissions       # Table permissions
+POST        /api/projects/:id/api-tokens      # Create API token
+GET         /api/projects/:id/api-tokens      # List tokens
+POST        /api/projects/:id/api-tokens/:tid/revoke # Revoke token
+
+# Row Notes
+GET/POST    /api/tables/:tid/rows/:rid/notes  # Row comments
 ```
 
-### Connections & AI
+### Logic & Visibility
+```
+GET/POST    /api/workflows/:id/logic          # List/Create logic rules
+PUT/DELETE  /api/logic/:id                    # Update/Delete rule
+POST        /api/workflows/:id/logic/validate # Validate logic
+```
+
+### Connections & Integrations
 ```
 GET/POST    /api/projects/:id/connections     # List/Create connections
-POST        /api/projects/:id/connections/:id/test # Test connection
-GET         /api/connections/oauth/start      # OAuth2 flow
-GET         /api/connections/oauth/callback   # OAuth2 callback
+PATCH/DEL   /api/projects/:id/connections/:cid # Update/Delete connection
+POST        /api/projects/:id/connections/:cid/test # Test connection
+GET         /api/connections/oauth/start      # Start OAuth2 flow (3-legged)
+GET         /api/connections/oauth/callback   # OAuth2 callback handler
 
-POST        /api/ai/workflows/generate        # AI workflow generation
-POST        /api/ai/workflows/:id/suggest     # AI suggestions
-POST        /api/ai/templates/:tid/bindings   # AI template binding
+GET/POST    /api/projects/:id/secrets         # Encrypted secrets
+DELETE      /api/secrets/:id                  # Delete secret
+
+POST        /api/webhooks                     # Create webhook subscription
+GET         /api/webhooks/:id                 # Get webhook details
 ```
 
-### Analytics & Export
+### AI-Powered Features
 ```
-GET         /api/workflows/:id/analytics      # Analytics
-GET         /api/workflows/:id/analytics/funnel # Funnel
-GET         /api/workflows/:id/export/{format} # Export (json/csv/pdf)
+POST        /api/ai/workflows/generate        # Generate workflow from description
+POST        /api/ai/workflows/:id/suggest     # Suggest improvements
+POST        /api/ai/workflows/:id/optimize    # Optimize workflow structure
+POST        /api/ai/templates/:tid/bindings   # AI template variable binding
+POST        /api/ai/transform/generate        # Generate transform block code
+POST        /api/ai/personalization/:wid      # Personalization suggestions
 ```
+
+### Templates & Marketplace
+```
+GET/POST    /api/templates                    # List/Create templates
+GET/PUT/DEL /api/templates/:id                # CRUD templates
+POST        /api/templates/:id/share          # Share template
+GET         /api/templates/:id/test           # Test template
+POST        /api/templates/:id/insert         # Insert into workflow
+GET         /api/marketplace                  # Browse marketplace
+GET         /api/marketplace/:id              # Get marketplace item
+```
+
+### Document Generation & E-Signature
+```
+# Documents
+GET/POST    /api/workflows/:id/documents      # Document templates
+PUT/DELETE  /api/documents/:id                # Update/Delete template
+POST        /api/documents/:id/generate       # Generate document
+GET         /api/runs/:rid/documents          # Get run documents
+
+# E-Signature
+POST        /api/signatures/request           # Create signature request
+GET         /api/signatures/:id               # Get request status
+POST        /api/signatures/:id/sign          # Sign document (portal)
+GET         /api/signatures/:id/download      # Download signed document
+
+# Review Gates
+POST        /api/reviews                      # Create review task
+GET         /api/reviews/:id                  # Get review task
+POST        /api/reviews/:id/approve          # Approve
+POST        /api/reviews/:id/reject           # Reject
+```
+
+### Analytics & Reporting
+```
+GET         /api/workflows/:id/analytics      # Overview analytics
+GET         /api/workflows/:id/analytics/funnel # Funnel analysis
+GET         /api/workflows/:id/analytics/trends # Response trends
+GET         /api/workflows/:id/analytics/heatmap # Field-level heatmap
+GET         /api/workflows/:id/analytics/branching # Branching analysis
+GET         /api/workflows/:id/export/json    # Export JSON
+GET         /api/workflows/:id/export/csv     # Export CSV
+GET         /api/workflows/:id/export/pdf     # Export PDF
+```
+
+### Portal & External Access
+```
+POST        /api/portal/login                 # Magic link login
+GET         /api/portal/verify/:token         # Verify magic link
+GET         /api/portal/runs                  # Portal user runs
+POST        /api/portal/runs/:id/resume       # Resume workflow
+
+# Public Access
+GET         /api/public/workflows/:slug       # Public workflow access
+POST        /api/public/workflows/:slug/runs  # Create anonymous run
+```
+
+### Teams & Collaboration
+```
+GET/POST    /api/teams                        # List/Create teams
+GET/PUT/DEL /api/teams/:id                    # CRUD teams
+POST        /api/teams/:id/members            # Add member
+DELETE      /api/teams/:tid/members/:uid      # Remove member
+GET/POST    /api/projects/:pid/access         # Project access control
+GET/POST    /api/workflows/:wid/access        # Workflow access control
+```
+
+### Versioning & Snapshots
+```
+GET         /api/workflows/:id/versions       # List versions
+GET         /api/workflows/:id/versions/:vid  # Get version
+POST        /api/workflows/:id/versions/:vid/restore # Restore version
+GET/POST    /api/workflows/:id/snapshots      # Snapshots (test data)
+DELETE      /api/snapshots/:id                # Delete snapshot
+```
+
+### Admin & System
+```
+GET         /api/admin/users                  # List users
+POST        /api/admin/users/:id/set-admin    # Set admin status
+GET         /api/admin/logs                   # Audit logs
+GET         /api/admin/stats                  # System stats
+POST        /api/admin/diagnostics            # Run diagnostics
+
+GET         /api/account                      # User account
+PUT         /api/account                      # Update account
+GET/PUT     /api/preferences                  # User preferences
+```
+
+### Billing & Enterprise
+```
+GET         /api/billing/subscription         # Get subscription
+POST        /api/billing/subscription         # Create subscription
+PUT         /api/billing/subscription         # Update subscription
+POST        /api/billing/portal               # Stripe portal session
+GET         /api/billing/usage                # Usage metrics
+```
+
+### Branding & Customization
+```
+GET/PUT     /api/branding/:projectId          # Branding settings
+POST        /api/branding/:projectId/logo     # Upload logo
+GET/POST    /api/branding/:projectId/domains  # Custom domains
+GET/POST    /api/email-templates              # Email templates
+```
+
+---
+
+## Frontend Pages & Capabilities (30+ Pages)
+
+### Authentication & Landing
+- **Landing Page** (`/`) - Public homepage, unauthenticated users
+- **Login Page** (`/login`) - Google OAuth2 authentication
+- **Dashboard** (`/dashboard`) - Main hub after login, workflow overview
+
+### Workflow Management
+- **Workflows List** (`/workflows`) - Browse all workflows with filters
+- **New Workflow** (`/workflows/new`) - Create new workflow
+- **Workflow Builder** (`/workflows/:id/build`) - 5-tab builder interface
+  - Sections Tab - Manage pages/sections
+  - Templates Tab - Insert reusable templates
+  - Data Sources Tab - Configure DataVault connections
+  - Settings Tab - Workflow properties
+  - Snapshots Tab - Save/restore test data
+- **Visual Workflow Builder** (`/workflows/:id/visual`) - React Flow canvas editor
+- **Workflow Preview** (`/workflows/:id/preview`) - In-memory preview mode
+- **Workflow Analytics** (`/workflows/:id/analytics`) - Funnel, dropoff, trends
+
+### Workflow Execution
+- **Workflow Runner** (`/workflows/:id/run`) - Participant completion view
+- **Public Runner** (`/w/:slug`) - Public workflow access (no login)
+- **Intake Preview** (`/workflows/:id/intake`) - Branded intake form preview
+- **Runs Dashboard** (`/runs`) - List all completed/in-progress runs
+- **Run Details** (`/runs/:id`) - View specific run (trace, inputs, outputs, logs)
+- **Run Comparison** (`/runs/compare`) - Compare multiple runs side-by-side
+- **Shared Run View** (`/share/:token`) - Public share view of completed runs
+
+### DataVault (Data Management)
+- **DataVault Dashboard** (`/datavault`) - Home, database overview
+- **Databases** (`/datavault/databases`) - List/create databases
+- **Database Details** (`/datavault/databases/:id`) - View tables in database
+- **Database Settings** (`/datavault/databases/:id/settings`) - Permissions, columns
+- **Tables List** (`/datavault/tables`) - All tables across projects
+- **Table View** (`/datavault/tables/:id`) - Data grid with infinite scroll, filtering
+- **Collections** (`/datavault/collections`) - Legacy data structure (deprecated)
+
+### Templates & Marketplace
+- **Templates** (`/templates`) - Browse, create, share templates
+- **Marketplace** (`/marketplace`) - Discover shared templates
+- **Template Test Runner** (`/templates/:id/test`) - Test with sample data
+- **Template Upload** (`/templates/upload`) - Import templates
+
+### Integrations & Settings
+- **Connections** (`/connections`) - API connections, OAuth2 setup
+- **Branding Settings** (`/branding`) - Custom domains, colors, logos
+- **Domain List** (`/domains`) - Custom domain management
+- **Email Templates** (`/email-templates`) - Email template editor
+- **Settings** (`/settings`) - User preferences
+
+### Portal System
+- **Portal Login** (`/portal/login`) - Magic link authentication
+- **Portal Magic Link** (`/portal/verify/:token`) - Verify magic link
+- **Portal Dashboard** (`/portal/dashboard`) - Run history for portal users
+
+### Teams & Collaboration
+- **Teams** (`/teams`) - Team management, member invitations
+- **Team Details** (`/teams/:id`) - Team members, permissions
+- **Project Access** (`/projects/:id/access`) - Project permissions
+
+### Admin & Enterprise
+- **Admin Dashboard** (`/admin`) - System overview
+- **Admin Users** (`/admin/users`) - User management
+- **Admin Logs** (`/admin/logs`) - Audit trail
+- **Billing Dashboard** (`/billing`) - Subscription management
+- **Pricing Page** (`/pricing`) - Plan comparison
 
 ---
 
 ## Key Features Status
 
-### ✅ Complete Features
+### ✅ Complete Features (Production Ready)
 
 | Feature | Status | Description |
 |---------|--------|-------------|
-| **Workflow Builder** | Production | 5-tab navigation, drag-and-drop, visual canvas |
-| **DataVault** | Production | Complete data platform with tables, permissions, API tokens |
-| **Visibility Logic** | Production | Two-tier: workflow rules + step-level expressions |
-| **Transform Blocks** | Production | Sandboxed JS/Python execution with virtual steps |
-| **Custom Scripting System** | Production | Lifecycle & document hooks, helper library, script console (Prompt 12) |
-| **Step Aliases** | Production | Human-friendly variable names |
-| **Run Token Auth** | Production | Bearer token + session auth, anonymous runs |
-| **Conditional Logic** | Production | Show/hide, require, skip sections |
-| **Default Values** | Production | Pre-fill with URL parameter override |
-| **HTTP/API Node** | Production | Full REST client with OAuth2 support |
-| **Secrets Management** | Production | AES-256-GCM encrypted storage |
-| **Review Gates** | Production | Human-in-the-loop approval workflows |
-| **E-Signature** | Production | Token-based signing (native + DocuSign/HelloSign stubs) |
-| **AI Generation** | Production | OpenAI/Anthropic/Gemini workflow creation |
-| **Analytics** | Production | Funnel analysis, trends, export (JSON/CSV/PDF) |
+| **Visual Workflow Builder** | ✅ Production | 5-tab navigation, drag-and-drop, React Flow canvas, inspector panel |
+| **15+ Question Types** | ✅ Production | Text, email, phone, number, currency, address, choice, scale, date, time, signature, file upload, display, multi-field, computed |
+| **DataVault** | ✅ Production | Complete data platform: databases, tables, rows, 7 column types, infinite scroll, permissions, API tokens, row notes |
+| **Custom Scripting System** | ✅ Production | Lifecycle hooks (4 phases) + document hooks (2 phases), 40+ helper functions, JS/Python, script console (Prompt 12) |
+| **Two-Tier Visibility Logic** | ✅ Production | Workflow rules + step-level `visibleIf` expressions with real-time evaluation |
+| **Transform Blocks** | ✅ Production | Sandboxed JS/Python execution, virtual steps, test playground, graph view |
+| **Step Aliases** | ✅ Production | Human-friendly variable names for logic and transforms |
+| **Run Token Authentication** | ✅ Production | Bearer token + JWT + session auth, anonymous runs, portal magic links |
+| **Conditional Logic** | ✅ Production | Show/hide/require/skip sections, 8+ operators, visual editor |
+| **Default Values** | ✅ Production | Pre-fill with defaults, URL parameter override |
+| **HTTP/API Integration** | ✅ Production | Full REST client, OAuth2 (Client Credentials + 3-legged), webhooks |
+| **Secrets Management** | ✅ Production | AES-256-GCM encrypted storage, LRU cache |
+| **Review Gates** | ✅ Production | Human-in-the-loop approval, assign to users/teams |
+| **E-Signature** | ✅ Production | DocuSign, HelloSign, native signatures, signing portals |
+| **Document Generation** | ✅ Production | PDF/DOCX generation, template variables, repeating sections, AI binding |
+| **AI-Powered Features** | ✅ Production | Workflow generation (OpenAI/Anthropic/Gemini), suggestions, optimization, template binding |
+| **Templates & Marketplace** | ✅ Production | Reusable templates, sharing, marketplace, test runner, import/export |
+| **Advanced Analytics** | ✅ Production | Funnel analysis, dropoff tracking, heatmaps, branching analysis, export (JSON/CSV/PDF) |
+| **Portal System** | ✅ Production | Magic link authentication, external user access, run tracking |
+| **Multi-Tenant Workspaces** | ✅ Production | Tenants, organizations, workspaces, resource permissions |
+| **Team Collaboration** | ✅ Production | Teams, roles, project/workflow access control, invitations |
+| **Versioning & Snapshots** | ✅ Production | Version history, publish workflow, diff viewer, restore, test data snapshots |
+| **Real-time Collaboration** | ✅ Production | Live presence, cursors, comments on steps, activity logs |
+| **Billing Integration** | ✅ Production | Stripe subscriptions, plans, usage metering, seat management |
+| **Branding & Customization** | ✅ Production | Custom colors, logos, domains, white-label intake forms, email templates |
+| **Admin & Audit** | ✅ Production | Admin dashboard, user management, comprehensive audit logs, system diagnostics |
 
 ### 🚧 In Progress
 
-- Advanced Analytics Dashboards
-- Team Collaboration (full RBAC)
+- **Advanced Analytics Dashboards** - Enhanced visualizations and reporting
+- **DataVault-Workflow Integration** - Use DataVault as dynamic data source in workflows
 
 ### 📋 Planned Features
 
 | Feature | Target | Description |
 |---------|--------|-------------|
-| **DataVault-Workflow Integration** | Q1 2026 | Use DataVault as data source in workflows |
-| **Workflow Versioning** | Q1 2026 | Track changes, rollback capabilities |
-| **Real-time Collaboration** | Q2 2026 | Multi-user editing with presence |
-| **Integration Marketplace** | Q2 2026 | Third-party integrations ecosystem |
+| **Enhanced Versioning** | Q1 2026 | Branch management, merge conflicts, change tracking |
+| **Integration Marketplace** | Q2 2026 | Third-party integrations ecosystem, plugin system |
+| **Advanced Personalization** | Q2 2026 | AI-powered user personalization, adaptive workflows |
+| **Mobile Builder App** | Q3 2026 | Native mobile app for workflow building |
 
 ---
 

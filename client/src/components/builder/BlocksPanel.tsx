@@ -22,6 +22,8 @@ import { JSBlockEditor } from "@/components/blocks/JSBlockEditor";
 import { QueryBlockEditor } from "@/components/blocks/QueryBlockEditor";
 import { WriteBlockEditor } from "@/components/blocks/WriteBlockEditor";
 import { ExternalSendBlockEditor } from "@/components/blocks/ExternalSendBlockEditor";
+import { ReadTableBlockEditor } from "@/components/blocks/ReadTableBlockEditor";
+import { ListToolsBlockEditor } from "@/components/blocks/ListToolsBlockEditor";
 
 // Combine regular blocks and transform blocks for display
 type UniversalBlock = {
@@ -82,8 +84,8 @@ export function BlocksPanel({ workflowId }: { workflowId: string }) {
 
     // Tab filter
     if (activeTab === "all") return true;
-    if (activeTab === "logic") return ['branch', 'validate', 'transform', 'js'].includes(block.type) || block.type === 'transform';
-    if (activeTab === "data") return ['prefill', 'query', 'write'].includes(block.type);
+    if (activeTab === "logic") return ['branch', 'validate', 'transform', 'js', 'list_tools'].includes(block.type) || block.type === 'transform';
+    if (activeTab === "data") return ['prefill', 'query', 'read_table', 'write'].includes(block.type);
     if (activeTab === "output") return ['external_send'].includes(block.type);
     return true;
   });
@@ -105,10 +107,21 @@ export function BlocksPanel({ workflowId }: { workflowId: string }) {
         <div className="space-y-2">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="w-full grid grid-cols-4">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="logic">Logic</TabsTrigger>
-              <TabsTrigger value="data">Data</TabsTrigger>
-              <TabsTrigger value="output">Output</TabsTrigger>
+              <TabsTrigger value="all" className="text-xs">
+                All
+              </TabsTrigger>
+              <TabsTrigger value="data" className="text-xs flex items-center gap-1">
+                <Database className="w-3 h-3" />
+                Data
+              </TabsTrigger>
+              <TabsTrigger value="logic" className="text-xs flex items-center gap-1">
+                <Code className="w-3 h-3" />
+                Logic
+              </TabsTrigger>
+              <TabsTrigger value="output" className="text-xs flex items-center gap-1">
+                <Send className="w-3 h-3" />
+                Output
+              </TabsTrigger>
             </TabsList>
           </Tabs>
 
@@ -121,6 +134,15 @@ export function BlocksPanel({ workflowId }: { workflowId: string }) {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+
+          {/* Category Description */}
+          {activeTab !== "all" && !searchQuery && (
+            <div className="px-2 py-1.5 bg-muted/50 rounded-md text-[10px] text-muted-foreground">
+              {activeTab === "data" && "Read from databases, tables, and lists"}
+              {activeTab === "logic" && "Transform data, conditions, and computed values"}
+              {activeTab === "output" && "Send data to external systems"}
+            </div>
+          )}
         </div>
       </div>
 
@@ -177,6 +199,8 @@ function UniversalBlockCard({ block, workflowId, onEdit }: { block: UniversalBlo
     if (type === 'transform') return "bg-block-logic border-block-logic-border text-block-logic-foreground";
     switch (displayType) {
       case 'query': return "bg-block-read border-block-read-border text-block-read-foreground";
+      case 'read_table': return "bg-block-read border-block-read-border text-block-read-foreground";
+      case 'list_tools': return "bg-block-logic border-block-logic-border text-block-logic-foreground";
       case 'write': return "bg-block-write border-block-write-border text-block-write-foreground";
       case 'external_send': return "bg-block-action border-block-action-border text-block-action-foreground";
       case 'js': return "bg-block-logic border-block-logic-border text-block-logic-foreground";
@@ -190,6 +214,8 @@ function UniversalBlockCard({ block, workflowId, onEdit }: { block: UniversalBlo
     if (type === 'transform') return <Code className="w-4 h-4" />;
     switch (displayType) {
       case 'query': return <Database className="w-4 h-4" />;
+      case 'read_table': return <Database className="w-4 h-4" />;
+      case 'list_tools': return <Layers className="w-4 h-4" />;
       case 'write': return <Save className="w-4 h-4" />;
       case 'external_send': return <Send className="w-4 h-4" />;
       case 'js': return <Code className="w-4 h-4" />;
@@ -260,6 +286,8 @@ function UniversalBlockCard({ block, workflowId, onEdit }: { block: UniversalBlo
 function getBlockLabel(type: string) {
   switch (type) {
     case 'query': return 'Read Data';
+    case 'read_table': return 'Read from Table';
+    case 'list_tools': return 'List Tools';
     case 'write': return 'Save Data';
     case 'external_send': return 'Send Data';
     case 'js': return 'JS Transform';
@@ -439,6 +467,8 @@ function BlockEditor({
                       <SelectItem value="validate">Validate</SelectItem>
                       <SelectItem value="branch">Branch</SelectItem>
                       {availableBlockTypes.includes('query') && <SelectItem value="query">Query Data</SelectItem>}
+                      {availableBlockTypes.includes('read_table') && <SelectItem value="read_table">Read from Table</SelectItem>}
+                      {availableBlockTypes.includes('list_tools') && <SelectItem value="list_tools">List Tools</SelectItem>}
                       {availableBlockTypes.includes('write') && <SelectItem value="write">Save Data</SelectItem>}
                       {availableBlockTypes.includes('external_send') && <SelectItem value="external_send">Send Data</SelectItem>}
                     </SelectContent>
@@ -516,6 +546,10 @@ function BlockEditor({
                   {/* Render specific editors based on type */}
                   {formData.type === 'query' ? (
                     <QueryBlockEditor workflowId={workflowId} config={formData.config} onChange={(c) => setFormData({ ...formData, config: c })} />
+                  ) : formData.type === 'read_table' ? (
+                    <ReadTableBlockEditor workflowId={workflowId} config={formData.config} onChange={(c) => setFormData({ ...formData, config: c })} mode={mode} />
+                  ) : formData.type === 'list_tools' ? (
+                    <ListToolsBlockEditor workflowId={workflowId} config={formData.config} onChange={(c) => setFormData({ ...formData, config: c })} mode={mode} />
                   ) : formData.type === 'write' ? (
                     <WriteBlockEditor workflowId={workflowId} config={formData.config} onChange={(c) => setFormData({ ...formData, config: c })} />
                   ) : formData.type === 'external_send' ? (

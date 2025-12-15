@@ -225,6 +225,9 @@ export default function VisualWorkflowBuilder() {
               Back
             </Button>
             <h1 className="text-xl font-semibold">{workflow.name}</h1>
+            <Button variant="outline" size="sm" onClick={() => navigate(`/workflows/${workflowId}/builder`)}>
+              Standard Builder
+            </Button>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => setShowHistoryDialog(true)}>

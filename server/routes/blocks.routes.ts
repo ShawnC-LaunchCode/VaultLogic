@@ -2,6 +2,9 @@ import type { Express, Request, Response } from "express";
 import { hybridAuth, type AuthRequest } from '../middleware/auth';
 import { blockService } from "../services/BlockService";
 import { blockRepository } from "../repositories/BlockRepository";
+import { queryBlockService } from "../services/QueryBlockService";
+import { readTableBlockService } from "../services/ReadTableBlockService";
+import { listToolsBlockService } from "../services/ListToolsBlockService";
 import { z } from "zod";
 import { createLogger } from "../logger";
 import type { BlockPhase } from "@shared/types/blocks";
@@ -36,7 +39,34 @@ export function registerBlockRoutes(app: Express): void {
         });
       }
 
-      const block = await blockService.createBlock(workflowId, userId, blockData);
+      // Route to specialized service for query, read_table, and list_tools blocks (they need virtual steps)
+      let block;
+      if (blockData.type === 'query') {
+        block = await queryBlockService.createBlock(workflowId, userId, {
+          name: blockData.name || 'Query Block',
+          sectionId: blockData.sectionId,
+          config: blockData.config,
+          phase: blockData.phase,
+        });
+      } else if (blockData.type === 'read_table') {
+        block = await readTableBlockService.createBlock(workflowId, userId, {
+          name: blockData.name || 'Read Table Block',
+          sectionId: blockData.sectionId,
+          config: blockData.config,
+          phase: blockData.phase,
+        });
+      } else if (blockData.type === 'list_tools') {
+        block = await listToolsBlockService.createBlock(workflowId, userId, {
+          name: blockData.name || 'List Tools Block',
+          sectionId: blockData.sectionId,
+          config: blockData.config,
+          phase: blockData.phase,
+        });
+      } else {
+        // Generic block creation for other block types
+        block = await blockService.createBlock(workflowId, userId, blockData);
+      }
+
       res.status(201).json({ success: true, data: block });
     } catch (error) {
       logger.error({ error }, "Error creating block");
@@ -116,7 +146,30 @@ export function registerBlockRoutes(app: Express): void {
       // Apply auto-revert
       await autoRevertToDraft(req, res, () => {});
 
-      const updatedBlock = await blockService.updateBlock(blockId, userId, updates);
+      // Route to specialized service for query, read_table, and list_tools blocks
+      let updatedBlock;
+      if (block.type === 'query') {
+        updatedBlock = await queryBlockService.updateBlock(blockId, userId, {
+          name: updates.name,
+          config: updates.config,
+          enabled: updates.enabled,
+        });
+      } else if (block.type === 'read_table') {
+        updatedBlock = await readTableBlockService.updateBlock(blockId, userId, {
+          name: updates.name,
+          config: updates.config,
+          enabled: updates.enabled,
+        });
+      } else if (block.type === 'list_tools') {
+        updatedBlock = await listToolsBlockService.updateBlock(blockId, userId, {
+          name: updates.name,
+          config: updates.config,
+          enabled: updates.enabled,
+        });
+      } else {
+        updatedBlock = await blockService.updateBlock(blockId, userId, updates);
+      }
+
       res.json({ success: true, data: updatedBlock });
     } catch (error) {
       logger.error({ error }, "Error updating block");

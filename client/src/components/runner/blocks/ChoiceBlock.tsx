@@ -6,12 +6,17 @@
  * Handles:
  * - radio (legacy simple list)
  * - multiple_choice (legacy simple list)
- * - choice (advanced with full ChoiceOption objects)
+ * - choice (advanced with full ChoiceOption objects or dynamic sources)
  *
  * Display modes:
  * - radio: Radio buttons (single choice)
  * - dropdown: Select menu (single choice)
  * - multiple: Checkboxes (multi-select)
+ *
+ * Option Sources:
+ * - Static: Predefined options
+ * - List: From a ListVariable (Read Table / List Tools blocks)
+ * - Table Column: Direct table column read (convenience path)
  *
  * Value Storage Rules:
  * - Single choice (radio/dropdown): Store option.alias (string)
@@ -21,7 +26,7 @@
  * Storage: string OR string[] (based on allowMultiple)
  */
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -33,7 +38,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { Step } from "@/types";
-import type { ChoiceAdvancedConfig, ChoiceOption } from "@/../../shared/types/stepConfigs";
+import type { ChoiceAdvancedConfig, ChoiceOption, DynamicOptionsConfig } from "@/../../shared/types/stepConfigs";
 
 export interface ChoiceBlockProps {
   step: Step;
@@ -49,99 +54,210 @@ export function ChoiceBlockRenderer({ step, value, onChange, readOnly, context }
   // -------------------------------------------------------------------------
   let displayMode: "radio" | "dropdown" | "multiple" = "radio";
   let allowMultiple = false;
-  let options: ChoiceOption[] = [];
+  const [options, setOptions] = useState<ChoiceOption[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Legacy radio type
-  if (step.type === "radio") {
-    // ... (same as before)
-    displayMode = "radio";
-    allowMultiple = false;
+  // -------------------------------------------------------------------------
+  // Extract options from step config
+  // -------------------------------------------------------------------------
+  useEffect(() => {
+    async function loadOptions() {
+      setLoading(true);
+      setError(null);
 
-    const legacyOptions = (step.config as any)?.options || (step.options as any)?.options || [];
+      try {
+        // Legacy radio type
+        if (step.type === "radio") {
+          displayMode = "radio";
+          allowMultiple = false;
 
-    // Handle both string[] and {id,label}[] formats
-    if (Array.isArray(legacyOptions)) {
-      options = legacyOptions.map((opt: any, idx: number) => {
-        if (typeof opt === "string") {
-          return { id: opt, label: opt, alias: opt };
-        } else {
-          return {
-            id: opt.id || `opt${idx}`,
-            label: opt.label || opt,
-            alias: opt.alias || opt.id || opt.label || `opt${idx}`,
-          };
+          const legacyOptions = (step.config as any)?.options || (step.options as any)?.options || [];
+
+          // Handle both string[] and {id,label}[] formats
+          if (Array.isArray(legacyOptions)) {
+            const opts = legacyOptions.map((opt: any, idx: number) => {
+              if (typeof opt === "string") {
+                return { id: opt, label: opt, alias: opt };
+              } else {
+                return {
+                  id: opt.id || `opt${idx}`,
+                  label: opt.label || opt,
+                  alias: opt.alias || opt.id || opt.label || `opt${idx}`,
+                };
+              }
+            });
+            setOptions(opts);
+          }
         }
-      });
-    }
-  }
 
-  // Legacy multiple_choice type
-  else if (step.type === "multiple_choice") {
-    // ... (same as before)
-    displayMode = "multiple";
-    allowMultiple = true;
+        // Legacy multiple_choice type
+        else if (step.type === "multiple_choice") {
+          displayMode = "multiple";
+          allowMultiple = true;
 
-    const legacyOptions = (step.config as any)?.options || (step.options as any)?.options || [];
+          const legacyOptions = (step.config as any)?.options || (step.options as any)?.options || [];
 
-    if (Array.isArray(legacyOptions)) {
-      options = legacyOptions.map((opt: any, idx: number) => {
-        if (typeof opt === "string") {
-          return { id: opt, label: opt, alias: opt };
-        } else {
-          return {
-            id: opt.id || `opt${idx}`,
-            label: opt.label || opt,
-            alias: opt.alias || opt.id || opt.label || `opt${idx}`,
-          };
+          if (Array.isArray(legacyOptions)) {
+            const opts = legacyOptions.map((opt: any, idx: number) => {
+              if (typeof opt === "string") {
+                return { id: opt, label: opt, alias: opt };
+              } else {
+                return {
+                  id: opt.id || `opt${idx}`,
+                  label: opt.label || opt,
+                  alias: opt.alias || opt.id || opt.label || `opt${idx}`,
+                };
+              }
+            });
+            setOptions(opts);
+          }
         }
-      });
-    }
-  }
 
-  // Advanced choice type
-  else if (step.type === "choice") {
+        // Advanced choice type
+        else if (step.type === "choice") {
+          const config = step.config as ChoiceAdvancedConfig;
+          displayMode = config?.display || "radio";
+          allowMultiple = config?.allowMultiple ?? false;
+
+          const configOptions = config?.options;
+
+          // Determine if dynamic
+          const isDynamic = configOptions && typeof configOptions === 'object' && 'type' in configOptions;
+
+          if (isDynamic) {
+            const dynamicConfig = configOptions as DynamicOptionsConfig;
+
+            // Static options
+            if (dynamicConfig.type === 'static') {
+              const opts = dynamicConfig.options || [];
+              setOptions(opts.map(opt => ({
+                ...opt,
+                alias: opt.alias || opt.id,
+              })));
+            }
+
+            // From List Variable
+            else if (dynamicConfig.type === 'list') {
+              const { listVariable, labelColumnId, valueColumnId } = dynamicConfig;
+
+              if (context && listVariable && context[listVariable]) {
+                const listData = context[listVariable];
+
+                // Handle ListVariable structure
+                if (listData.rows && Array.isArray(listData.rows)) {
+                  const opts = listData.rows.map((row: any, idx: number) => ({
+                    id: row[valueColumnId] || row.id || `opt-${idx}`,
+                    label: String(row[labelColumnId] || row[valueColumnId] || `Option ${idx}`),
+                    alias: String(row[valueColumnId] || row[labelColumnId] || `opt-${idx}`)
+                  }));
+                  setOptions(opts);
+                } else if (Array.isArray(listData)) {
+                  // Fallback: plain array
+                  const opts = listData.map((item: any, idx: number) => ({
+                    id: item[valueColumnId] || `opt-${idx}`,
+                    label: String(item[labelColumnId] || item[valueColumnId] || `Option ${idx}`),
+                    alias: String(item[valueColumnId] || item[labelColumnId] || `opt-${idx}`)
+                  }));
+                  setOptions(opts);
+                } else {
+                  console.warn(`[ChoiceBlock] List variable '${listVariable}' is not in expected format.`);
+                  setOptions([]);
+                }
+              } else {
+                console.warn(`[ChoiceBlock] List variable '${listVariable}' not found in context.`, {
+                  contextKeys: context ? Object.keys(context) : []
+                });
+                setOptions([]);
+              }
+            }
+
+            // From Table Column (convenience path)
+            else if (dynamicConfig.type === 'table_column') {
+              const { dataSourceId, tableId, columnId, labelColumnId, limit = 100 } = dynamicConfig;
+
+              // Fetch table rows
+              try {
+                const response = await fetch(
+                  `/api/tables/${tableId}/rows?limit=${limit}`,
+                  {
+                    credentials: 'include',
+                  }
+                );
+
+                if (!response.ok) {
+                  throw new Error(`Failed to fetch table data: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                const rows = data.rows || [];
+
+                const labelCol = labelColumnId || columnId;
+
+                const opts = rows.map((row: any, idx: number) => ({
+                  id: row.data[columnId] || `opt-${idx}`,
+                  label: String(row.data[labelCol] || row.data[columnId] || `Option ${idx}`),
+                  alias: String(row.data[columnId] || `opt-${idx}`)
+                }));
+
+                setOptions(opts);
+              } catch (err: any) {
+                console.error('[ChoiceBlock] Error loading table column:', err);
+                setError(err.message || 'Failed to load options from table');
+                setOptions([]);
+              }
+            }
+          } else {
+            // Legacy: static array
+            const opts = (configOptions as ChoiceOption[]) || [];
+            setOptions(opts.map(opt => ({
+              ...opt,
+              alias: opt.alias || opt.id,
+            })));
+          }
+        }
+      } catch (err: any) {
+        console.error('[ChoiceBlock] Error loading options:', err);
+        setError(err.message || 'Failed to load options');
+        setOptions([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadOptions();
+  }, [step, context]);
+
+  // Get display mode from config
+  if (step.type === "choice") {
     const config = step.config as ChoiceAdvancedConfig;
     displayMode = config?.display || "radio";
     allowMultiple = config?.allowMultiple ?? false;
-
-    // Check for dynamic options
-    // @ts-ignore - The type definition might not be updated yet
-    const configOptions = config?.options;
-
-    // @ts-ignore
-    if (configOptions && (configOptions.type === 'dynamic' || !Array.isArray(configOptions))) {
-      // Dynamic Mode
-      // @ts-ignore
-      const { listVariable, labelKey, valueKey } = configOptions;
-
-      if (context && listVariable && Array.isArray(context[listVariable])) {
-        const listData = context[listVariable];
-        options = listData.map((item: any, idx: number) => ({
-          id: item[valueKey] || `opt-${idx}`,
-          label: String(item[labelKey] || item[valueKey] || `Option ${idx}`),
-          alias: String(item[valueKey] || item[labelKey] || `opt-${idx}`)
-        }));
-      } else {
-        console.warn(`[ChoiceBlock] List variable '${listVariable}' not found or not an array.`, { contextKeys: context ? Object.keys(context) : [] });
-        options = [];
-      }
-    } else {
-      // Static Mode
-      options = config?.options || [];
-      // Ensure all options have aliases
-      if (Array.isArray(options)) {
-        options = options.map((opt) => ({
-          ...opt,
-          alias: opt.alias || opt.id,
-        }));
-      }
-    }
   }
 
   // -------------------------------------------------------------------------
   // Value handling
   // -------------------------------------------------------------------------
   const currentValue = value || (allowMultiple ? [] : "");
+
+  // -------------------------------------------------------------------------
+  // Loading & Error States
+  // -------------------------------------------------------------------------
+  if (loading) {
+    return <div className="text-sm text-muted-foreground animate-pulse">Loading options...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="text-sm text-destructive border border-destructive/20 bg-destructive/5 rounded p-2">
+        Error: {error}
+      </div>
+    );
+  }
+
+  if (options.length === 0) {
+    return <div className="text-sm text-muted-foreground">No options available</div>;
+  }
 
   // -------------------------------------------------------------------------
   // Render: Radio Buttons

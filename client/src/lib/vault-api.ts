@@ -377,6 +377,14 @@ export const variableAPI = {
 };
 
 // ============================================================================
+// Auth
+// ============================================================================
+
+export const authAPI = {
+  getToken: () => fetchAPI<{ token: string; expiresIn: string }>("/api/auth/token"),
+};
+
+// ============================================================================
 // Sections
 // ============================================================================
 
@@ -520,7 +528,7 @@ export const stepAPI = {
 // Blocks
 // ============================================================================
 
-export type BlockType = "prefill" | "validate" | "branch" | "js" | "query" | "write" | "external_send";
+export type BlockType = "prefill" | "validate" | "branch" | "js" | "query" | "read_table" | "list_tools" | "write" | "external_send";
 export type BlockPhase = "onRunStart" | "onSectionEnter" | "onSectionSubmit" | "onNext" | "onRunComplete";
 
 export interface ApiBlock {

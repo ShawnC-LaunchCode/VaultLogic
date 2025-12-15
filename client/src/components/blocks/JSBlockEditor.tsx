@@ -12,6 +12,7 @@ import { VariablePalette } from "@/components/builder/pages/VariablePalette";
 import { useWorkflowVariables, useWorkflowMode } from "@/lib/vault-hooks";
 import { cn } from "@/lib/utils";
 import { DevPanelBus } from "@/lib/devpanelBus";
+import { HelperLibraryDocs } from "@/components/builder/HelperLibraryDocs";
 
 interface JSBlockEditorProps {
   block: any;
@@ -524,9 +525,12 @@ export const JSBlockEditor: React.FC<JSBlockEditorProps> = ({ block, onChange, w
                 <li>Access variables via <code className="bg-background px-1 py-0.5 rounded">input.variableName</code></li>
                 <li>Return an object with your transformed data</li>
                 <li>Tests use realistic mock data based on variable types</li>
-                <li>Configure custom test data for precise testing scenarios</li>
+                <li>Use <code className="bg-background px-1 py-0.5 rounded">helpers</code> object for 40+ utility functions</li>
               </ul>
             </div>
+
+            {/* Helper Library Documentation */}
+            <HelperLibraryDocs />
           </div>
         </CardContent>
       </Card>

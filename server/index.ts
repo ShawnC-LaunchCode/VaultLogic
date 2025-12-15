@@ -122,7 +122,10 @@ app.use((req, res, next) => {
     const { dbInitPromise } = await import("./db.js");
     await dbInitPromise;
 
+    // Initialize routes and collaboration server
+    console.log('[DEBUG] Registering routes...');
     const server = await registerRoutes(app);
+    console.log('[DEBUG] Routes registered. Server created.');
 
     // Register centralized error handler middleware (must be after all routes)
     app.use(errorHandler);

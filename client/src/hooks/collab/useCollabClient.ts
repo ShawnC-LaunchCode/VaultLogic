@@ -97,7 +97,8 @@ export function useCollabClient(
 
     // Get WebSocket URL
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/collab`;
+    // Use port 5001 for dedicated WebSocket server
+    const wsUrl = `${protocol}//${window.location.hostname}:5001/collab`;
 
     // Create WebSocket provider
     const provider = new WebSocketProvider(wsUrl, roomKey, doc, {
@@ -118,14 +119,12 @@ export function useCollabClient(
     }
 
     // Initialize meta map
-    if (!(doc as any).has('yMeta')) {
-      doc.getMap('yMeta');
-    }
+    // Initialize meta map
+    doc.getMap('yMeta');
 
     // Initialize comments map
-    if (!(doc as any).has('yComments')) {
-      doc.getMap('yComments');
-    }
+    // Initialize comments map
+    doc.getMap('yComments');
 
     // Set local user state
     provider.awareness.setLocalStateField('user', {
@@ -192,10 +191,18 @@ export function useCollabClient(
     // Observe awareness changes (other users)
     const handleAwarenessChange = () => {
       const states = Array.from(awarenessRef.current!.getStates().values());
-      const users = states
-        .filter((state: any) => state.user)
-        .map((state: any) => state.user);
+      const usersMap = new Map();
 
+      states.forEach((state: any) => {
+        if (state.user) {
+          // If user already exists, we could check timestamps to keep latest, 
+          // but for now simple dedupe by ID is sufficient.
+          // We overwriting ensures we have *a* version of the user.
+          usersMap.set(state.user.id || state.user.userId, state.user);
+        }
+      });
+
+      const users = Array.from(usersMap.values());
       setState((prev) => ({ ...prev, users }));
     };
 
@@ -209,7 +216,9 @@ export function useCollabClient(
       provider.destroy();
       doc.destroy();
     };
-  }, [enabled, workflowId, tenantId, token, roomKey, onNodesChange, onEdgesChange, user.id, user.name, user.color]);
+    // Only depend on core connection parameters - callbacks are set up once
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, workflowId, tenantId, token]);
 
   // Update nodes in Yjs document
   const updateNodes = useCallback((nodes: Node[]) => {

@@ -3,8 +3,8 @@
  */
 
 import { useState } from "react";
-import { Plus, GripVertical, ChevronDown, ChevronRight, FileText, Blocks, Code, FileCheck, Sparkles, Database, Save, Send, GitBranch, Play, CheckCircle, Info, Lock } from "lucide-react";
-import { useSections, useSteps, useCreateSection, useCreateStep, useReorderSections, useReorderSteps, useWorkflowMode, useBlocks, useTransformBlocks, useWorkflow } from "@/lib/vault-hooks";
+import { Plus, GripVertical, ChevronDown, ChevronRight, FileText, Blocks, Code, FileCheck, Sparkles, Database, Save, Send, GitBranch, Play, CheckCircle, Info, Lock, Zap } from "lucide-react";
+import { useSections, useSteps, useCreateSection, useCreateStep, useReorderSections, useReorderSteps, useWorkflowMode, useBlocks, useTransformBlocks, useWorkflow, useCreateBlock } from "@/lib/vault-hooks";
 import { useWorkflowBuilder } from "@/store/workflow-builder";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -21,6 +21,7 @@ import { LogicIndicator } from "@/components/logic";
 import { BlocksPanel } from "./BlocksPanel";
 import { DocumentStatusPanel } from "./sidebar/DocumentStatusPanel";
 import { AiAssistantDialog } from "./ai/AiAssistantDialog";
+import { AddSnipDialog } from "./AddSnipDialog";
 import {
   DndContext,
   closestCenter,
@@ -52,6 +53,7 @@ export function SidebarTree({ workflowId }: { workflowId: string }) {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const [showBlocksDialog, setShowBlocksDialog] = useState(false);
   const [showAiDialog, setShowAiDialog] = useState(false);
+  const [showSnipDialog, setShowSnipDialog] = useState(false);
 
   // Group blocks by section
   const blocksBySection = (blocks || []).reduce((acc: Record<string, any[]>, block: any) => {
@@ -158,6 +160,17 @@ export function SidebarTree({ workflowId }: { workflowId: string }) {
           <Sparkles className="w-3 h-3 mr-2" />
           Edit with AI
         </Button>
+
+        {/* Add Snip Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full border-dashed border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+          onClick={() => setShowSnipDialog(true)}
+        >
+          <Plus className="w-3 h-3 mr-2" />
+          Add Snip
+        </Button>
       </div>
 
       {mode === 'easy' && workflow?.projectId && (
@@ -213,6 +226,12 @@ export function SidebarTree({ workflowId }: { workflowId: string }) {
         open={showAiDialog}
         onOpenChange={setShowAiDialog}
       />
+
+      <AddSnipDialog
+        workflowId={workflowId}
+        open={showSnipDialog}
+        onOpenChange={setShowSnipDialog}
+      />
     </div>
   );
 }
@@ -234,12 +253,16 @@ function SectionItem({
 }) {
   const { data: steps } = useSteps(section.id);
   const createStepMutation = useCreateStep();
+  const createBlockMutation = useCreateBlock();
   const { selection, selectSection } = useWorkflowBuilder();
 
   const isSelected = selection?.type === "section" && selection.id === section.id;
 
   // Check if this is a Final Documents section
   const isFinalSection = (section.config as any)?.finalBlock === true;
+
+  // Don't show page-level required pill based on questions - only show if page is conditional
+  const isPageConditional = !!section.visibleIf;
 
   const handleCreateStep = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -260,6 +283,33 @@ function SectionItem({
       options: null,
       order,
       config: {},
+    });
+    if (!isExpanded) onToggle();
+  };
+
+  const handleCreateLogicBlock = async (type: "write" | "query" | "validate") => {
+    const order = blocks?.length || 0;
+    const config = type === "write" ? {
+      dataSourceId: "",
+      tableId: "",
+      mode: "upsert",
+      columnMappings: [],
+      matchStrategy: { type: "column_match" }
+    } : type === "query" ? {
+      queryId: "",
+      outputVariableName: ""
+    } : {
+      rules: []
+    };
+
+    await createBlockMutation.mutateAsync({
+      workflowId,
+      type,
+      phase: "onSectionSubmit",
+      sectionId: section.id,
+      config,
+      enabled: true,
+      order
     });
     if (!isExpanded) onToggle();
   };
@@ -316,21 +366,61 @@ function SectionItem({
             Final
           </Badge>
         )}
-        <LogicIndicator
-          visibleIf={section.visibleIf}
-          variant="icon"
-          size="sm"
-          elementType="section"
-        />
+        {isPageConditional && (
+          <Badge variant="outline" className="text-[9px] h-4 px-1.5 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-amber-500/20 font-medium">
+            Conditional
+          </Badge>
+        )}
         {!isFinalSection && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6 opacity-0 group-hover:opacity-100"
-            onClick={handleCreateStep}
-          >
-            <Plus className="h-3 w-3" />
-          </Button>
+          <div className="flex gap-1 opacity-0 group-hover:opacity-100">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={handleCreateStep}
+              title="Add Question"
+            >
+              <Plus className="h-3 w-3" />
+            </Button>
+            {mode === 'easy' && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    title="Add Logic"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Zap className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={(e) => {
+                    e.stopPropagation();
+                    handleCreateLogicBlock("write");
+                  }}>
+                    <Save className="w-3 h-3 mr-2" />
+                    Write to Table
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={(e) => {
+                    e.stopPropagation();
+                    handleCreateLogicBlock("query");
+                  }}>
+                    <Database className="w-3 h-3 mr-2" />
+                    Query Data
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={(e) => {
+                    e.stopPropagation();
+                    handleCreateLogicBlock("validate");
+                  }}>
+                    <CheckCircle className="w-3 h-3 mr-2" />
+                    Validate Data
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         )}
       </div>
 
@@ -375,7 +465,7 @@ function StepItem({ step, sectionId }: { step: any; sectionId: string }) {
   return (
     <div
       className={cn(
-        "flex items-center gap-2 p-1.5 rounded-md hover:bg-sidebar-accent/50 cursor-pointer text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20",
+        "flex items-start gap-2 py-1.5 px-1.5 rounded-md hover:bg-sidebar-accent/50 cursor-pointer text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20",
         isSelected && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
       )}
       onClick={() => selectStep(step.id)}
@@ -387,21 +477,32 @@ function StepItem({ step, sectionId }: { step: any; sectionId: string }) {
         }
       }}
     >
-      <GripVertical className="h-3 w-3 text-muted-foreground" />
-      <FileText className="h-3 w-3 text-muted-foreground" />
-      <span className="flex-1 truncate">{step.title}</span>
-      <LogicIndicator
-        visibleIf={step.visibleIf}
-        variant="icon"
-        size="sm"
-        elementType="question"
-      />
-      {step.alias && (
-        <Badge variant="secondary" className="text-xs font-mono px-1.5 py-0">
-          {step.alias}
+      <GripVertical className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
+
+      {/* Required pill before question */}
+      {step.required && (
+        <Badge variant="destructive" className="text-[8px] h-3.5 px-1 font-medium shrink-0 mt-0.5">
+          Req
         </Badge>
       )}
-      {step.required && <span className="text-xs text-destructive">*</span>}
+
+      <FileText className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
+
+      {/* Question title and alias stacked */}
+      <div className="flex-1 min-w-0">
+        <div className="truncate text-xs leading-tight">{step.title || "(Untitled)"}</div>
+        {step.alias && (
+          <div className="text-[10px] text-muted-foreground/70 font-mono ml-2 truncate leading-tight mt-0.5">
+            {step.alias}
+          </div>
+        )}
+      </div>
+
+      {step.visibleIf && (
+        <Badge variant="outline" className="text-[8px] h-3.5 px-1 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-amber-500/20 font-medium shrink-0 mt-0.5">
+          Cond
+        </Badge>
+      )}
     </div>
   );
 }

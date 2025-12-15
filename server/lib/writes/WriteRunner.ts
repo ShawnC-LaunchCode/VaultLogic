@@ -27,18 +27,42 @@ export class WriteRunner {
             // This happens BEFORE preview check so we validate logic even in preview
             const mappedValues = this.resolveValues(config.columnMappings, context.data);
 
-            // 2. Resolve Primary Key (if update mode)
-            let primaryKeyValue: any = undefined;
-            if (config.mode === "update") {
-                if (!config.primaryKeyColumnId) throw new Error("Primary Key Column ID is required for update mode");
-                // Resolve PK value (simple variable or expression supported by logic engine?)
-                // The spec says "primaryKeyValue" is a WorkflowVariableRef (string). 
-                // We can reuse resolveValues logic or getValueByPath directly if it's just a path.
-                // Assuming simple path or static for now, or use same resolver.
-                primaryKeyValue = this.resolveSingleValue(config.primaryKeyValue, context.data);
+            // 2. Resolve match strategy (for update and upsert modes)
+            let matchColumnId: string | undefined;
+            let matchValue: any = undefined;
 
-                if (primaryKeyValue === undefined || primaryKeyValue === null) {
-                    throw new Error("Resolved Primary Key value is null/undefined");
+            if (config.mode === "update" || config.mode === "upsert") {
+                // Support new matchStrategy or legacy primaryKey fields
+                if (config.matchStrategy) {
+                    if (config.matchStrategy.type === "column_match") {
+                        if (!config.matchStrategy.columnId) {
+                            throw new Error("Match strategy column_match requires columnId");
+                        }
+                        matchColumnId = config.matchStrategy.columnId;
+                        matchValue = this.resolveSingleValue(config.matchStrategy.columnValue, context.data);
+                    } else if (config.matchStrategy.type === "primary_key") {
+                        // For primary_key type, we need to determine the actual PK column
+                        // This would require fetching table metadata
+                        // For now, assume matchStrategy.columnId is provided
+                        if (!config.matchStrategy.columnId) {
+                            throw new Error("Match strategy primary_key requires columnId");
+                        }
+                        matchColumnId = config.matchStrategy.columnId;
+                        matchValue = this.resolveSingleValue(config.matchStrategy.columnValue, context.data);
+                    }
+                } else if (config.primaryKeyColumnId && config.primaryKeyValue) {
+                    // Legacy support
+                    matchColumnId = config.primaryKeyColumnId;
+                    matchValue = this.resolveSingleValue(config.primaryKeyValue, context.data);
+                } else {
+                    throw new Error(`${config.mode} mode requires matchStrategy or primaryKeyColumnId/primaryKeyValue`);
+                }
+
+                if (matchValue === undefined || matchValue === null) {
+                    if (config.mode === "update") {
+                        throw new Error("Match value is null/undefined for update mode");
+                    }
+                    // For upsert, null match value means create new
                 }
             }
 
@@ -47,7 +71,8 @@ export class WriteRunner {
                 logger.info({
                     operation: "write_preview_simulated",
                     values: mappedValues,
-                    primaryKey: primaryKeyValue
+                    matchColumnId,
+                    matchValue
                 }, "Simulating write in preview mode");
 
                 return {
@@ -55,16 +80,26 @@ export class WriteRunner {
                     tableId: config.tableId,
                     rowId: "preview-simulated-id",
                     writtenColumnIds: Object.keys(mappedValues),
-                    operation: config.mode
+                    operation: config.mode,
+                    writtenData: mappedValues
                 };
             }
 
             // 4. Execute Real Write
             let resultRowId: string;
+            let actualOperation: "create" | "update" | "upsert" = config.mode;
+
             if (config.mode === "create") {
                 resultRowId = await this.executeCreate(config.tableId, mappedValues, tenantId);
+            } else if (config.mode === "update") {
+                resultRowId = await this.executeUpdate(config.tableId, matchColumnId!, matchValue, mappedValues, tenantId);
+            } else if (config.mode === "upsert") {
+                // Upsert: try to find existing row, update if found, create if not
+                const result = await this.executeUpsert(config.tableId, matchColumnId!, matchValue, mappedValues, tenantId);
+                resultRowId = result.rowId;
+                actualOperation = result.operation as "create" | "update" | "upsert";
             } else {
-                resultRowId = await this.executeUpdate(config.tableId, config.primaryKeyColumnId!, primaryKeyValue, mappedValues, tenantId);
+                throw new Error(`Unknown write mode: ${config.mode}`);
             }
 
             return {
@@ -72,13 +107,19 @@ export class WriteRunner {
                 tableId: config.tableId,
                 rowId: resultRowId,
                 writtenColumnIds: Object.keys(mappedValues),
-                operation: config.mode
+                operation: actualOperation,
+                writtenData: mappedValues
             };
 
         } catch (error) {
             logger.error({ error, config }, "Write execution failed");
-            throw error; // Let BlockRunner handle the error response structure? Or return success: false here?
-            // BlockRunner usually catches and formats errors.
+            return {
+                success: false,
+                tableId: config.tableId,
+                writtenColumnIds: [],
+                operation: config.mode,
+                error: error instanceof Error ? error.message : "Unknown error"
+            };
         }
     }
 
@@ -198,6 +239,44 @@ export class WriteRunner {
         tenantId: string
     ): Promise<string | null> {
         return await datavaultRowsRepository.findRowByColumnValue(tableId, columnId, value, tenantId);
+    }
+
+    /**
+     * Execute Upsert Operation
+     * Try to find existing row by match column, update if found, create if not
+     */
+    private async executeUpsert(
+        tableId: string,
+        matchColumnId: string,
+        matchValue: any,
+        values: Record<string, any>,
+        tenantId: string
+    ): Promise<{ rowId: string; operation: "create" | "update" }> {
+        // If matchValue is null/undefined, create new row
+        if (matchValue === undefined || matchValue === null) {
+            logger.info({ tableId, matchColumnId }, "Upsert: match value is null, creating new row");
+            const rowId = await this.executeCreate(tableId, values, tenantId);
+            return { rowId, operation: "create" };
+        }
+
+        // Try to find existing row
+        const existingRowId = await this.findRowIdByColumnValue(tableId, matchColumnId, matchValue, tenantId);
+
+        if (existingRowId) {
+            // Row exists, update it
+            logger.info({ tableId, matchColumnId, matchValue, existingRowId }, "Upsert: found existing row, updating");
+            const valueList = Object.entries(values).map(([columnId, value]) => ({
+                columnId,
+                value
+            }));
+            await datavaultRowsRepository.updateRowValues(existingRowId, valueList);
+            return { rowId: existingRowId, operation: "update" };
+        } else {
+            // Row doesn't exist, create new
+            logger.info({ tableId, matchColumnId, matchValue }, "Upsert: row not found, creating new");
+            const rowId = await this.executeCreate(tableId, values, tenantId);
+            return { rowId, operation: "create" };
+        }
     }
 }
 

@@ -2,11 +2,19 @@
 
 [![CI](https://github.com/ShawnC-LaunchCode/VaultLogic/workflows/CI/badge.svg)](https://github.com/ShawnC-LaunchCode/VaultLogic/actions/workflows/ci.yml)
 
-**Workflow Builder and Automation Logic Engine**
+**Enterprise Workflow Automation Platform**
 
-VaultLogic is a comprehensive workflow builder and survey platform built with modern web technologies. Create, distribute, and analyze surveys and workflows with advanced features like conditional logic, multi-page workflows, and detailed analytics.
+VaultLogic is a comprehensive enterprise workflow automation platform built with modern web technologies. Create, distribute, and analyze workflows with advanced features like conditional logic, custom scripting, data management, AI-powered generation, and detailed analytics.
 
-Originally inspired by Poll-Vault, rebuilt for next-generation workflow automation.
+**Platform Scale:**
+- 30+ frontend pages with React 18.3 + TypeScript
+- 66+ backend API route files
+- 90+ service classes
+- 80+ PostgreSQL database tables
+- 15+ question/action types
+- 40+ helper functions for scripting
+
+Originally inspired by Poll-Vault, evolved into next-generation workflow automation with enterprise-grade features.
 
 ---
 
@@ -200,24 +208,97 @@ Routes → Services → Repositories → Database
 
 ## ⚙️ Key Features
 
-- 🔀 **Workflow Builder** — Visually create logic-driven workflows with drag-and-drop interface
-- 🗄️ **DataVault** — Complete data management platform with databases, tables, and permissions 🆕
-- 📄 **Sections & Steps** — Structure user journeys as pages and questions
-- ⚡ **Conditional Logic** — Two-tier visibility system: workflow rules + step-level expressions 🆕
-- 🧮 **Workflow Runs** — Capture user data and track execution progress
-- 🔧 **Transform Blocks** — Execute custom JavaScript/Python code for data transformation with sandboxed execution
-- 🏷️ **Step Aliases** — Human-friendly variable names for steps (e.g., `firstName`, `age`)
-- 📝 **Default Values** — Pre-fill steps with defaults, overridable via URL parameters 🆕
-- 🔑 **Token Authentication** — Bearer token support for anonymous and authenticated runs + JWT improvements 🆕
-- 🧰 **Data Export** — JSON/CSV outputs for reporting or integration
-- 🧱 **Drizzle ORM Schema** — Strongly typed PostgreSQL models with migrations
-- 🧑‍💻 **Developer Friendly** — TypeScript end-to-end, modular services, comprehensive tests
-- 📊 **Advanced Analytics** — Completion rates, drop-off analysis, engagement metrics, time tracking
-- 📧 **Email Distribution** — SendGrid integration for invitations and notifications
-- 🤖 **AI-Powered** — Google Gemini, OpenAI, Anthropic integration for workflow generation
-- 🔐 **Secure Auth** — Google OAuth2 with session management + JWT token authentication
-- 📤 **File Uploads** — Support for file upload questions with Multer
-- 🔌 **API Tokens** — External data access via token-based authentication 🆕
+### Core Workflow Features
+- 🔀 **Visual Workflow Builder** — Drag-and-drop interface with 5-tab navigation, React Flow canvas, inspector panel
+- 📋 **15+ Question Types** — Text, email, phone, number, currency, address, boolean, choice, scale, date, time, signature, file upload, display, multi-field, computed
+- 📄 **Sections & Steps** — Multi-page workflows with dynamic navigation and progress tracking
+- ⚡ **Two-Tier Visibility Logic** — Workflow rules + step-level `visibleIf` expressions with real-time evaluation 🆕
+- 🏷️ **Step Aliases** — Human-friendly variable names (e.g., `firstName`, `totalCost`)
+- 📝 **Default Values** — Pre-fill with defaults, overridable via URL parameters 🆕
+
+### Data Management (DataVault)
+- 🗄️ **DataVault Platform** — Complete data management: databases, tables, rows, permissions, API tokens 🆕
+- 📊 **7 Column Types** — Text, number, date, boolean, select, multiselect, autonumber
+- ♾️ **Infinite Scroll** — High-performance data grids with advanced filtering
+- 🔒 **Row-Level Permissions** — Granular access control for tables
+- 💬 **Row Notes** — Collaborative comments on data rows
+- 🔌 **External API Access** — Generate API tokens for external integrations
+
+### Custom Scripting & Automation
+- 🎯 **Custom Scripting System** — Lifecycle hooks (4 phases) + document hooks (2 phases) 🆕
+- 🛠️ **40+ Helper Functions** — Date, string, number, array, object, math, HTTP, console utilities 🆕
+- 🔧 **Transform Blocks** — Sandboxed JS/Python execution with virtual steps, test playground
+- 📟 **Script Console** — View execution logs with console output and performance metrics 🆕
+- 🔁 **Mutation Mode** — Transform workflow data between execution phases 🆕
+
+### Logic & Conditional Flow
+- 🎛️ **Conditional Logic** — Show/hide/require/skip sections with 8+ operators
+- 🌳 **Branching Analysis** — Track conditional paths and user flows
+- 👁️ **Visual Logic Editor** — Build complex logic with drag-and-drop interface
+
+### Integrations & Connections
+- 🌐 **HTTP/API Integration** — Full REST client with OAuth2 (Client Credentials + 3-legged)
+- 🔐 **Secrets Management** — AES-256-GCM encrypted storage with LRU cache
+- 🔗 **Webhooks** — Send data to external URLs on workflow events
+- 🔌 **4 Connection Types** — API key, bearer token, OAuth2 client credentials, OAuth2 3-leg
+
+### Document Generation & E-Signature
+- 📄 **Document Generation** — PDF/DOCX with template variables, repeating sections
+- ✍️ **E-Signature** — DocuSign, HelloSign, native signatures with signing portals
+- 🤖 **AI Template Binding** — Automatic variable-to-field mapping with AI
+- ✅ **Review Gates** — Human-in-the-loop approval workflows
+
+### AI-Powered Features
+- 🤖 **AI Workflow Generation** — Generate workflows from natural language (OpenAI, Anthropic, Gemini)
+- 💡 **AI Suggestions** — Workflow optimization and improvement recommendations
+- 🧠 **AI Transform Blocks** — Auto-generate JavaScript/Python code
+- 🎯 **Smart Variable Binding** — Semantic matching for template variables
+
+### Templates & Marketplace
+- 📦 **Reusable Templates** — Create and share workflow templates
+- 🏪 **Template Marketplace** — Browse community templates
+- 🧪 **Template Test Runner** — Test templates with sample data
+- 📤 **Import/Export** — Share templates across projects
+
+### Analytics & Reporting
+- 📊 **Advanced Analytics** — Funnel analysis, dropoff tracking, completion rates
+- 🔥 **Heatmaps** — Field-level engagement visualization
+- 📈 **Trend Analysis** — Response patterns over time
+- 📤 **Export** — JSON, CSV, PDF export formats
+
+### Authentication & Access Control
+- 🔑 **Multi-Auth System** — Google OAuth2, JWT tokens, session auth, magic links
+- 🎫 **Run Token Auth** — Bearer token for anonymous and authenticated runs
+- 🚪 **Portal System** — Magic link authentication for external users 🆕
+- 👥 **Multi-Tenant** — Workspaces, organizations, tenants with resource permissions
+
+### Team Collaboration
+- 👥 **Teams** — Team management with roles and invitations
+- 🔒 **RBAC** — Project and workflow access control
+- 👁️ **Real-time Presence** — See who's editing with live cursors
+- 💬 **Comments** — Inline comments on workflow steps
+- 📝 **Activity Logs** — Comprehensive audit trail
+
+### Versioning & History
+- 📚 **Version Control** — Publish workflow versions with history
+- 🔄 **Diff Viewer** — Compare versions side-by-side
+- ⏪ **Restore** — Rollback to previous versions
+- 📸 **Snapshots** — Save/restore test data for workflows
+
+### Enterprise Features
+- 💳 **Billing Integration** — Stripe subscriptions, plans, usage metering, seat management
+- 🎨 **Branding** — Custom colors, logos, domains, white-label intake forms
+- 📧 **Email Templates** — Custom email designs with branding
+- 👔 **Admin Dashboard** — User management, system stats, audit logs
+- 📊 **Usage Tracking** — Monitor runs, workflows, and resource consumption
+
+### Developer Experience
+- 🧱 **Drizzle ORM** — Strongly typed PostgreSQL models (80+ tables)
+- 🧑‍💻 **TypeScript** — End-to-end type safety
+- 🧪 **Comprehensive Testing** — Unit, integration, E2E with Vitest + Playwright
+- 🔧 **3-Tier Architecture** — Routes → Services → Repositories
+- 📚 **90+ Services** — Modular business logic layer
+- 🛠️ **66+ API Routes** — RESTful API with Zod validation
 
 ---
 
@@ -337,18 +418,52 @@ For legacy survey endpoints (Poll-Vault), use `/api/surveys/*` paths. See CLAUDE
 
 ### Database Schema
 
-The database uses **Drizzle ORM** with 17 main tables:
+The database uses **Drizzle ORM** with **80+ PostgreSQL tables** organized by domain:
 
-- `users`, `sessions`, `user_preferences` — Authentication & user data
-- `surveys`, `survey_pages`, `questions` — Workflow structure
-- `conditional_rules`, `loop_group_subquestions` — Logic engine
-- `responses`, `answers`, `analytics_events` — Run execution data
-- `recipients`, `global_recipients`, `recipient_groups` — Distribution
-- `files`, `survey_templates`, `system_stats` — Supporting features
+**Core Workflow Tables (6):**
+- `projects`, `workflows`, `sections`, `steps`, `workflowRuns`, `stepValues`
 
-**Supported Question Types:**
-- `short_text`, `long_text`, `multiple_choice`, `radio`, `yes_no`, `checkbox`
-- `date_time`, `file_upload`, `loop_group` (repeating sections), `computed` (virtual steps)
+**DataVault Tables (6):**
+- `databases`, `tables`, `table_rows`, `table_permissions`, `api_tokens`, `row_notes`
+
+**Logic & Automation Tables (4):**
+- `logicRules`, `transformBlocks`, `transformBlockRuns`, `blocks`
+
+**Custom Scripting Tables (3):**
+- `lifecycle_hooks`, `document_hooks`, `script_execution_log`
+
+**Integration Tables (4):**
+- `connections`, `secrets`, `review_tasks`, `signature_requests`
+
+**Team & Multi-Tenancy (10):**
+- `teams`, `teamMembers`, `projectAccess`, `workflowAccess`, `tenants`, `organizations`, `workspaces`, `workspaceMembers`, `resourcePermissions`, `auditLogs`
+
+**Portal & External Access (3):**
+- `portalUsers`, `portalAccessLogs`, `anonymousResponseTracking`
+
+**Templates & Sharing (4):**
+- `workflowTemplates`, `workflowBlueprints`, `templateShares`, `emailTemplateMetadata`
+
+**Analytics & Metrics (7):**
+- `analyticsEvents`, `workflowRunEvents`, `workflowRunMetrics`, `blockMetrics`, `workflowAnalyticsSnapshots`, `metricsEvents`, `metricsRollups`
+
+**Document Generation (3):**
+- `runGeneratedDocuments`, `signatureEvents`, `finalBlock`
+
+**Billing & Enterprise (5):**
+- `subscriptions`, `billingPlans`, `subscriptionSeats`, `customerBillingInfo`, `usageRecords`
+
+**Versioning & State (6):**
+- `workflowVersions`, `workflowSnapshots`, `sessions`, `userPreferences`, `userPersonalizationSettings`, `workflowPersonalizationSettings`
+
+**Plus: Collections (legacy), utility tables, audit trail, file storage, and more**
+
+**Supported Question/Action Types (15+):**
+- **Text Input:** `short_text`, `long_text`, `email`, `phone`, `website`
+- **Numeric:** `number`, `currency`, `scale`
+- **Date/Time:** `date`, `date_time`, `time`
+- **Selection:** `multiple_choice`, `radio`, `checkbox`, `boolean`
+- **Advanced:** `address`, `signature`, `file_upload`, `display`, `multi_field`, `computed`
 
 ### Key Implementation Details
 
@@ -417,12 +532,18 @@ npm run test-gemini      # Test Gemini API connection
 | ✅ Nov 2025 | **Visibility Logic Builder** - Two-tier System | **Complete (Nov 25, 2025)** 🆕 |
 | ✅ Nov 2025 | **Default Values & URL Parameters** | **Complete (Nov 25, 2025)** 🆕 |
 | ✅ Nov 2025 | **JWT Authentication Enhancements** | **Complete (Nov 24, 2025)** 🆕 |
-| 🔄 | Advanced Analytics & Dashboards | In Progress |
-| 🔄 | Team Collaboration (Full RBAC) | In Progress |
-| 🔜 | DataVault-Workflow Integration | Planned Q1 2026 |
-| 🔜 | Workflow Versioning | Planned Q1 2026 |
-| 🔜 | Real-time Collaboration | Planned Q2 2026 |
+| ✅ Dec 2025 | **Custom Scripting System (Prompt 12)** | **Complete (Dec 7, 2025)** 🆕 |
+| ✅ Dec 2025 | **Portal System & Magic Links** | **Complete** 🆕 |
+| ✅ Dec 2025 | **Billing Integration (Stripe)** | **Complete** 🆕 |
+| ✅ Dec 2025 | **Real-time Collaboration** | **Complete (Presence, Cursors, Comments)** 🆕 |
+| ✅ Dec 2025 | **Versioning & Snapshots** | **Complete** 🆕 |
+| ✅ Dec 2025 | **Multi-Tenant Workspaces** | **Complete** 🆕 |
+| 🔄 | Advanced Analytics Dashboards | In Progress |
+| 🔄 | DataVault-Workflow Integration | In Progress |
+| 🔜 | Enhanced Versioning (Branching) | Planned Q1 2026 |
 | 🔜 | Integration Marketplace | Planned Q2 2026 |
+| 🔜 | Advanced Personalization | Planned Q2 2026 |
+| 🔜 | Mobile Builder App | Planned Q3 2026 |
 
 ---
 
@@ -543,5 +664,5 @@ For more detailed troubleshooting, see [CLAUDE.md](./CLAUDE.md) troubleshooting 
 
 ---
 
-**Last Updated:** December 6, 2025
-**Version:** 1.6.0 (DataVault v4 + Visibility Logic Builder)
+**Last Updated:** December 15, 2025
+**Version:** 1.7.0 (Custom Scripting System + Full Platform)

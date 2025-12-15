@@ -233,13 +233,51 @@ export interface DateTimeUnifiedConfig {
 }
 
 /**
+ * Dynamic Options Source Type
+ */
+export type DynamicOptionsSourceType = 'static' | 'list' | 'table_column';
+
+/**
+ * Dynamic Options Configuration
+ * Supports three source types:
+ * 1. Static: Predefined options
+ * 2. List: From a ListVariable (from Read Table / List Tools blocks)
+ * 3. Table Column: Convenience path that reads from a table column
+ */
+export type DynamicOptionsConfig =
+  | { type: 'static'; options: ChoiceOption[] }
+  | {
+      type: 'list';
+      listVariable: string;     // Name of the list variable (e.g. "usersList")
+      labelColumnId: string;    // Column ID to use for label (display text)
+      valueColumnId: string;    // Column ID to use for value (stored data)
+    }
+  | {
+      type: 'table_column';
+      dataSourceId: string;     // Database ID
+      tableId: string;          // Table ID
+      columnId: string;         // Column to extract values from (used for both label and value)
+      labelColumnId?: string;   // Optional separate column for labels
+      filters?: Array<{         // Optional filters
+        columnId: string;
+        operator: string;
+        value: any;
+      }>;
+      sort?: {                  // Optional sort
+        columnId: string;
+        direction: 'asc' | 'desc';
+      };
+      limit?: number;           // Max options to load (default: 100)
+    };
+
+/**
  * Choice Config (Advanced Mode)
  * Unified choice block (radio/dropdown/multiple)
  */
 export interface ChoiceAdvancedConfig {
   display: 'radio' | 'dropdown' | 'multiple';
   allowMultiple: boolean;  // Enable multi-select
-  options: ChoiceOption[];
+  options: ChoiceOption[] | DynamicOptionsConfig;  // Static options or dynamic config
   min?: number;            // Minimum selections (for multiple)
   max?: number;            // Maximum selections (for multiple)
   allowOther?: boolean;    // Allow "Other" option with text input
@@ -248,6 +286,7 @@ export interface ChoiceAdvancedConfig {
   randomizeOrder?: boolean;  // Randomize option order
 
   /**
+   * @deprecated Use DynamicOptionsConfig instead
    * List Binding Configuration
    * Binds options to a dynamic ListVariable
    */
