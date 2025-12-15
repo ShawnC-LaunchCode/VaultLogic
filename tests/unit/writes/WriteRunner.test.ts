@@ -136,7 +136,7 @@ describe("WriteRunner", () => {
             );
         });
 
-        it("should throw error if row not found", async () => {
+        it("should return failure result if row not found", async () => {
             const writeConfig: WriteBlockConfig = {
                 tableId: "table-users",
                 mode: "update",
@@ -147,8 +147,10 @@ describe("WriteRunner", () => {
 
             (datavaultRowsRepository.findRowByColumnValue as any).mockResolvedValue(null);
 
-            await expect(runner.executeWrite(writeConfig, mockContext, mockTenantId))
-                .rejects.toThrow("Row not found");
+            const result = await runner.executeWrite(writeConfig, mockContext, mockTenantId);
+
+            expect(result.success).toBe(false);
+            expect(result.error).toContain("Row not found");
         });
     });
 });

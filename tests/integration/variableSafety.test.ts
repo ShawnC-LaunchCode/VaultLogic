@@ -30,11 +30,12 @@ describe("Variable Schema Safety & Resolution", () => {
     let sectionId: string;
     let runId: string;
     let runToken: string;
+    let stepId1: string;
 
-    const stepId1 = uuidv4();
     const stepAlias1 = "input_variable";
 
     beforeEach(async () => {
+        stepId1 = uuidv4(); // Generate new ID for each test
         // 1. Setup Tenant & User
         tenantId = uuidv4();
         await db.insert(tenantsSchema).values({
@@ -116,8 +117,28 @@ describe("Variable Schema Safety & Resolution", () => {
     }, TEST_TIMEOUT);
 
     afterAll(async () => {
-        // Cleanup
-        await db.delete(tenantsSchema).where(eq(tenantsSchema.id, tenantId));
+        // Cleanup in correct order to avoid foreign key violations
+        // Delete in reverse order of creation
+        try {
+            // Delete workflow-related data first
+            if (versionId) {
+                await db.delete(workflowVersionsSchema).where(eq(workflowVersionsSchema.id, versionId));
+            }
+            if (workflowId) {
+                await db.delete(workflowsSchema).where(eq(workflowsSchema.id, workflowId));
+            }
+            if (projectId) {
+                await db.delete(projectsSchema).where(eq(projectsSchema.id, projectId));
+            }
+            if (userId) {
+                await db.delete(usersSchema).where(eq(usersSchema.id, userId));
+            }
+            if (tenantId) {
+                await db.delete(tenantsSchema).where(eq(tenantsSchema.id, tenantId));
+            }
+        } catch (error) {
+            console.warn("Cleanup error (non-critical):", error);
+        }
     });
 
     it("REPRO: ScriptEngine fails to resolve alias 'input_variable' when aliasMap is NOT provided", async () => {

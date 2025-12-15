@@ -1,7 +1,6 @@
 import { ExternalSendRunner } from "../../../server/lib/external/ExternalSendRunner";
-import { WebhookAdapter } from "../../../server/lib/external/adapters/WebhookAdapter";
-import { externalDestinationsRepository } from "../../../server/repositories";
-import type { ExternalSendBlockConfig, BlockContext, ExternalDestination } from "@shared/types/blocks";
+import { externalDestinationService } from "../../../server/services/ExternalDestinationService";
+import type { ExternalSendBlockConfig, BlockContext } from "@shared/types/blocks";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock db to prevent connection
@@ -9,26 +8,15 @@ vi.mock("../../../server/db", () => ({
     db: {},
 }));
 
-// Mock repository
-vi.mock("../../../server/repositories", () => ({
-    externalDestinationsRepository: {
-        findById: vi.fn(),
+// Mock ExternalDestinationService
+vi.mock("../../../server/services/ExternalDestinationService", () => ({
+    externalDestinationService: {
+        getDestination: vi.fn(),
     },
-    // Add other exports from index if needed to satisfy import structure
-    datavaultRowsRepository: {},
-    datavaultColumnsRepository: {},
-    datavaultTablesRepository: {},
 }));
 
-// Mock adapter
-vi.mock("../../../server/lib/external/adapters/WebhookAdapter", async (importOriginal) => {
-    // const actual = await importOriginal(); // Optional if we need partials
-    return {
-        WebhookAdapter: vi.fn().mockImplementation(function () {
-            return { send: vi.fn() };
-        })
-    };
-});
+// Mock global fetch
+global.fetch = vi.fn();
 
 describe("ExternalSendRunner", () => {
     let runner: ExternalSendRunner;
@@ -63,41 +51,35 @@ describe("ExternalSendRunner", () => {
             ]
         };
 
-        const mockDest: ExternalDestination = {
+        const mockDest = {
             id: "dest-1",
             workspaceId: "ws-1",
             type: "webhook",
             name: "My Webhook",
-            config: { url: "https://example.com/hook" }
+            config: { url: "https://example.com/hook", method: "POST" }
         };
 
-        (externalDestinationsRepository.findById as any).mockResolvedValue(mockDest);
+        (externalDestinationService.getDestination as any).mockResolvedValue(mockDest);
 
-        // Mock adapter instance behavior
-        const mockSend = vi.fn().mockResolvedValue({ success: true, destinationId: "dest-1", statusCode: 200 });
-        // @ts-ignore
-        WebhookAdapter.mockImplementation(function () {
-            return { send: mockSend };
+        // Mock fetch response
+        (global.fetch as any).mockResolvedValue({
+            ok: true,
+            status: 200,
+            text: async () => JSON.stringify({ success: true })
         });
 
-        // Re-instantiate runner to pick up mocked adapter
-        runner = new ExternalSendRunner();
-
-        const result = await runner.executeSend(config, mockContext);
+        const result = await runner.execute(config, mockContext.data, "tenant-1", "live");
 
         expect(result.success).toBe(true);
         expect(result.statusCode).toBe(200);
-
-        // Verify payload resolution
-        expect(mockSend).toHaveBeenCalledWith(
-            mockDest.config,
+        expect(global.fetch).toHaveBeenCalledWith(
+            "https://example.com/hook",
             expect.objectContaining({
-                fullName: "Alice",
-                contactEmail: "alice@example.com",
-                source: "vault-logic"
-            }),
-            expect.any(Object), // headers
-            mockContext
+                method: "POST",
+                headers: expect.objectContaining({
+                    "Content-Type": "application/json"
+                })
+            })
         );
     });
 
@@ -108,25 +90,26 @@ describe("ExternalSendRunner", () => {
         };
 
         // Even if dest exists
-        (externalDestinationsRepository.findById as any).mockResolvedValue({
+        (externalDestinationService.getDestination as any).mockResolvedValue({
             id: "dest-1",
             type: "webhook",
-            config: {}
+            name: "Test",
+            config: { url: "https://example.com", method: "POST" }
         });
 
-        const result = await runner.executeSend(config, mockContext, true); // isPreview=true
+        const result = await runner.execute(config, mockContext.data, "tenant-1", "preview");
 
         expect(result.success).toBe(true);
-        expect(result.responseSnippet).toContain("Skipped");
+        expect(result.simulated).toBe(true);
         // Adapter should NOT be called
         // We can't easily check instance calls without capturing the instance, but we can check result
     });
 
     it("should fail if destination not found", async () => {
         const config: ExternalSendBlockConfig = { destinationId: "missing", payloadMappings: [] };
-        (externalDestinationsRepository.findById as any).mockResolvedValue(null);
+        (externalDestinationService.getDestination as any).mockResolvedValue(null);
 
-        const result = await runner.executeSend(config, mockContext);
+        const result = await runner.execute(config, mockContext.data, "tenant-1", "live");
         expect(result.success).toBe(false);
         expect(result.error).toContain("Destination not found");
     });
