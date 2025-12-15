@@ -21,8 +21,8 @@ COPY . .
 
 # Build the client and server
 RUN npm run build
-# Prune dev dependencies
-RUN npm prune --production
+# Prune dev dependencies (Commented out for debugging 502)
+# RUN npm prune --production
 
 # Production Stage
 FROM node:20-slim

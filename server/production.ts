@@ -93,7 +93,13 @@ app.use(sanitizeInputs);
     app.use(errorHandler);
 
     // Serve static files in production
-    serveStatic(app);
+    // Wrap in try-catch so one missing folder doesn't crash the whole API
+    try {
+      serveStatic(app);
+    } catch (err: any) {
+      logger.error({ err }, "Failed to serve static files (continuing to allow API access)");
+      console.error("WARNING: Failed to serve static files:", err.message);
+    }
 
     // Start server
     const port = parseInt(process.env.PORT || '5000', 10);
