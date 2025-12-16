@@ -35,7 +35,8 @@ FROM node:20-slim
 WORKDIR /app
 
 # Install minimal runtime deps if needed
-RUN apt-get update && apt-get install -y dumb-init
+# dumb-init removed to prevent path mismatches on Debian
+# RUN apt-get update && apt-get install -y dumb-init
 
 ENV NODE_ENV=production
 ENV PORT=5000
@@ -45,13 +46,10 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/node_modules ./node_modules
 # Copy any public or necessary script files if they aren't bundled
 # COPY --from=builder /app/public ./public 
-# If server/production.ts bundles everything, we might not need node_modules runtime if we bundle deps?
-# The package.json script says: --packages=external
-# So we DO need node_modules.
 
 EXPOSE 5000
 
-# Use dumb-init to handle signals correctly
-ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+# Use dumb-init to handle signals correctly (Disabled for debugging)
+# ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 
-CMD ["node", "dist/index.js"]
+CMD ["npm", "start"]
