@@ -46,7 +46,8 @@ WORKDIR /app
 # RUN apt-get update && apt-get install -y dumb-init
 
 ENV NODE_ENV=production
-ENV PORT=5000
+# Default to port 8080 (standard for many PaaS)
+ENV PORT=8080
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/package.json ./package.json
@@ -54,7 +55,8 @@ COPY --from=builder /app/node_modules ./node_modules
 # Copy any public or necessary script files if they aren't bundled
 # COPY --from=builder /app/public ./public 
 
-EXPOSE 5000
+# EXPOSE instruction is documentation only, but removing to avoid confusion
+# EXPOSE 8080
 
 # Use dumb-init to handle signals correctly (Disabled for debugging)
 # ENTRYPOINT ["/usr/bin/dumb-init", "--"]

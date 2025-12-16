@@ -87,7 +87,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Simple health check that doesn't depend on DB
-app.get('/healthz', (_req, res) => res.status(200).send('OK'));
+app.get('/healthz', (_req, res) => {
+  console.log('[Healthz] Check received from:', _req.ip);
+  res.status(200).send('OK');
+});
 
 // XSS Protection: Sanitize all string inputs
 app.use(sanitizeInputs);
