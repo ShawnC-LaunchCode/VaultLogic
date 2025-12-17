@@ -5,7 +5,7 @@ import TargetAudience from "./components/TargetAudience";
 import FinalCTA from "./components/FinalCTA";
 import { Button } from "@/components/ui/button";
 import { GoogleLogin } from "@/components/GoogleLogin";
-import logo from "@/assets/images/logo.jpg";
+import logo from "@/assets/images/logo.png";
 
 export default function LandingPage() {
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;

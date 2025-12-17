@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GoogleLogin } from "@/components/GoogleLogin";
-import logo from "@/assets/images/logo.jpg";
+import logo from "@/assets/images/logo.png";
 
 export default function Landing() {
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
