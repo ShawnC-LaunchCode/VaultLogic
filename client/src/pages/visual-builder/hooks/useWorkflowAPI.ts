@@ -187,7 +187,7 @@ export function useRunWorkflow(workflowId: string) {
     mutationFn: (inputs: Record<string, any>) =>
       fetchAPI<WorkflowRun>(`/api/workflows/${workflowId}/run?debug=true`, {
         method: 'POST',
-        body: JSON.stringify({ inputs }),
+        body: JSON.stringify({ inputJson: inputs }),
       }),
     onError: (error: Error) => {
       toast({

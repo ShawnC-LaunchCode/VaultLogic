@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { useWorkflows, useDeleteWorkflow, useProjects, useDeleteProject, useCreateProject } from "@/lib/vault-hooks";
+import { useUnfiledWorkflows, useDeleteWorkflow, useProjects, useDeleteProject, useCreateProject } from "@/lib/vault-hooks";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -50,7 +50,7 @@ export default function WorkflowsList() {
     }
   }, [isAuthenticated, isLoading, toast]);
 
-  const { data: workflows, isLoading: workflowsLoading } = useWorkflows();
+  const { data: unfiledWorkflows, isLoading: workflowsLoading } = useUnfiledWorkflows();
   const { data: projects, isLoading: projectsLoading } = useProjects();
   const deleteWorkflowMutation = useDeleteWorkflow();
   const deleteProjectMutation = useDeleteProject();
@@ -205,7 +205,7 @@ export default function WorkflowsList() {
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {(projectsLoading || workflowsLoading) ? (
               <SkeletonCard count={6} height="h-48" />
-            ) : (projects && projects.length > 0) || (workflows && workflows.length > 0) ? (
+            ) : (projects && projects.length > 0) || (unfiledWorkflows && unfiledWorkflows.length > 0) ? (
               <>
                 {/* Projects - shown first */}
                 {projects?.filter(p => p.title !== 'Other Project').map((project) => (
@@ -218,7 +218,7 @@ export default function WorkflowsList() {
                 ))}
 
                 {/* Workflows */}
-                {workflows?.map((workflow) => (
+                {unfiledWorkflows?.map((workflow) => (
                   <Card key={workflow.id} className="hover:shadow-md transition-shadow min-h-[220px]">
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">

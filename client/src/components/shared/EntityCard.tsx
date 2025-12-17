@@ -76,25 +76,27 @@ export function EntityCard({
 
   return (
     <Card
-      className={`group hover:shadow-lg transition-shadow ${onClick || link ? 'cursor-pointer' : ''} ${className}`}
+      className={`group hover:shadow-lg transition-shadow overflow-hidden h-full flex flex-col ${onClick || link ? 'cursor-pointer' : ''} ${className}`}
       onClick={onClick || link ? handleCardClick : undefined}
     >
-      <CardHeader>
+      <CardHeader className="flex-1">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3 flex-1">
-            <div className={`p-2 rounded-lg ${iconClassName}`}>
+            <div className={`p-2 rounded-lg ${iconClassName} shrink-0`}>
               <Icon className="w-5 h-5" />
             </div>
             <div className="flex-1 min-w-0">
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <CardTitle className="text-lg truncate">
-                      {entity.title}
-                    </CardTitle>
+                    <div className="w-full">
+                      <CardTitle className="w-full break-words line-clamp-2 leading-tight">
+                        {entity.title}
+                      </CardTitle>
+                    </div>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>{entity.title}</p>
+                    <div className="max-w-[300px] break-words">{entity.title}</div>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>

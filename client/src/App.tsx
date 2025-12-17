@@ -105,6 +105,7 @@ function Router() {
             <Route path="/workflows/new" component={NewWorkflow} />
             <Route path="/workflows/:id/builder" component={WorkflowBuilder} />
             <Route path="/workflows/:id/visual-builder" component={VisualWorkflowBuilder} />
+
             <Route path="/workflows/:id/analytics" component={WorkflowAnalytics} />
             <Route path="/workflows/:workflowId/optimize" component={OptimizationWizard} />
             {/* Template Test Runner - PR1 */}

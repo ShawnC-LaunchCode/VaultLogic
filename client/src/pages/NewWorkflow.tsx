@@ -164,7 +164,7 @@ export default function NewWorkflow() {
                   </div>
                   <h3 className="text-lg font-medium">Browse Templates</h3>
                   <p className="text-muted-foreground max-w-md">
-                    Start with a pre-built workflow. Browse our library of templates for surveys, forms, and automation workflows.
+                    Start with a pre-built workflow. Browse our library of templates for workflows and forms.
                   </p>
                   <Button onClick={() => setIsTemplateBrowserOpen(true)} className="mt-4">
                     Open Template Library
@@ -188,7 +188,7 @@ export default function NewWorkflow() {
                     <Label htmlFor="ai-prompt">What do you want to build?</Label>
                     <Textarea
                       id="ai-prompt"
-                      placeholder="e.g. A customer feedback survey that asks for a rating, and if the rating is low, asks for detailed feedback and contact info."
+                      placeholder="e.g. A customer feedback form that asks for a rating, and if the rating is low, asks for detailed feedback and contact info."
                       className="min-h-[150px] text-base resize-none"
                     />
                   </div>

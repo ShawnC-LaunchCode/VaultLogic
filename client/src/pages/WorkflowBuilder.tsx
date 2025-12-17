@@ -33,6 +33,7 @@ import {
 // Tab components
 import { BuilderTabNav, type BuilderTab } from "@/components/builder/layout/BuilderTabNav";
 import { SectionsTab } from "@/components/builder/tabs/SectionsTab";
+// VisualBuilderTab removed
 import { TemplatesTab } from "@/components/builder/tabs/TemplatesTab";
 import { DataSourcesTab } from "@/components/builder/tabs/DataSourcesTab";
 import { SettingsTab } from "@/components/builder/tabs/SettingsTab";
@@ -209,10 +210,6 @@ export default function WorkflowBuilder() {
                   </div>
                 )}
 
-                <span className="text-sm text-muted-foreground hidden sm:inline-block">
-                  {sections?.length || 0} {sections?.length === 1 ? UI_LABELS.PAGE.toLowerCase() : UI_LABELS.PAGES.toLowerCase()}
-                </span>
-
                 {/* Presence */}
                 <div className="ml-4 border-l pl-4 hidden md:block">
                   <CollabHeader />
@@ -227,24 +224,20 @@ export default function WorkflowBuilder() {
                   />
                 </div>
 
-                {/* Mode Selector & Other existing controls */}
+                {/* Mode Selector */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="sm" className="mr-2">
-                      {getModeLabel(mode, workflowMode?.source || 'user')}
+                      {mode === 'easy' ? 'Easy Mode' : 'Advanced Mode'}
                       <ChevronDown className="w-4 h-4 ml-2" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuItem onClick={() => setWorkflowModeMutation.mutate({ workflowId: workflowId!, modeOverride: 'easy' })}>
-                      Switch to Easy
+                      Switch to Easy Mode
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setWorkflowModeMutation.mutate({ workflowId: workflowId!, modeOverride: 'advanced' })}>
-                      Switch to Advanced
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => setWorkflowModeMutation.mutate({ workflowId: workflowId!, modeOverride: null })}>
-                      Clear Override
+                      Switch to Advanced Mode
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -260,9 +253,12 @@ export default function WorkflowBuilder() {
                   />
                 </div>
 
-                <Button variant="outline" size="sm" onClick={() => navigate(`/workflows/${workflowId}/visual-builder`)} className="mr-2">
-                  <GitGraph className="w-4 h-4 mr-2" /> Visual Builder
-                </Button>
+                {mode === 'advanced' && (
+                  <Button variant="outline" size="sm" onClick={() => navigate(`/workflows/${workflowId}/visual-builder`)} className="mr-2">
+                    <GitGraph className="w-4 h-4 mr-2" /> Visual Builder
+                  </Button>
+                )}
+
                 <Button variant="outline" size="sm" onClick={() => setIsPreviewMode(true)} disabled={launchingPreview}>
                   <Eye className="w-4 h-4 mr-2" /> Preview
                 </Button>
@@ -353,7 +349,7 @@ export default function WorkflowBuilder() {
           />
         </div>
       </IntakeProvider>
-    </CollaborationProvider>
+    </CollaborationProvider >
   );
 }
 

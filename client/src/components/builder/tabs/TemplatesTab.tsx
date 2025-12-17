@@ -6,7 +6,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import axios from "axios";
-import { useWorkflow, useSteps } from "@/lib/vault-hooks";
+import { useWorkflow, useSteps, useProjects } from "@/lib/vault-hooks";
 import { Upload, FileText, Trash2, RefreshCw, TestTube, AlertCircle, CheckCircle } from "lucide-react";
 import { BuilderLayout, BuilderLayoutHeader, BuilderLayoutContent } from "../layout/BuilderLayout";
 import { Button } from "@/components/ui/button";
@@ -55,15 +55,19 @@ export function TemplatesTab({ workflowId }: TemplatesTabProps) {
   const { data: workflow } = useWorkflow(workflowId);
   // Fetch steps for variable analysis
   const { data: steps } = useSteps(workflowId);
+  // Fetch projects to find fallback
+  const { data: projects } = useProjects();
+
   const workflowVariables = new Set((steps || []).map(s => s.alias).filter(Boolean));
 
   // Fetch templates for this project
   const fetchTemplates = async () => {
     try {
-      if (!workflow?.projectId) return;
+      if (!workflowProjectId) return;
 
-      const response = await axios.get(`/api/projects/${workflow.projectId}/templates`);
-      const data = response.data; const mappedTemplates = (data.items || []).map((t: any) => ({
+      const response = await axios.get(`/api/projects/${workflowProjectId}/templates`);
+      const data = response.data;
+      const mappedTemplates = (data.items || []).map((t: any) => ({
         id: t.id,
         name: t.name,
         key: t.id,
@@ -83,9 +87,17 @@ export function TemplatesTab({ workflowId }: TemplatesTabProps) {
   useEffect(() => {
     if (workflow?.projectId) {
       setWorkflowProjectId(workflow.projectId);
+    } else if (projects && projects.length > 0) {
+      // Fallback: Use the first project (Default Project) if workflow is unfiled
+      setWorkflowProjectId(projects[0].id);
+    }
+  }, [workflow?.projectId, projects]);
+
+  useEffect(() => {
+    if (workflowProjectId) {
       fetchTemplates();
     }
-  }, [workflow?.projectId]);
+  }, [workflowProjectId]);
 
   // Helper to check variable status
   const getVariableStatus = (templateVars: string[]) => {
@@ -242,13 +254,7 @@ export function TemplatesTab({ workflowId }: TemplatesTabProps) {
 
       <BuilderLayoutContent>
         {/* Project Warning */}
-        {!workflowProjectId && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Project Required</AlertTitle>
-            <AlertDescription>This workflow must be part of a project to use templates.</AlertDescription>
-          </Alert>
-        )}
+
 
         {templates.length === 0 && workflowProjectId && (
           <div className="flex flex-col items-center justify-center h-64 text-center border-2 border-dashed rounded-lg">

@@ -4,7 +4,7 @@
  */
 
 import { useState } from "react";
-import { Database, Settings, ExternalLink, RefreshCw, Link2, Unlink2, Lock, Plus } from "lucide-react";
+import { Database, Settings, ExternalLink, Link2, Unlink2, Plus, FileSpreadsheet, Server, Globe } from "lucide-react";
 import { BuilderLayout, BuilderLayoutHeader, BuilderLayoutContent } from "../layout/BuilderLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +12,14 @@ import { Badge } from "@/components/ui/badge";
 import { useDataSources, useWorkflowDataSources, useLinkDataSource, useUnlinkDataSource } from "@/lib/vault-hooks";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { ApiDataSource } from "@/lib/vault-api";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { AddGoogleSheetsDialog } from "@/components/dataSource/AddGoogleSheetsDialog";
 
 interface DataSourcesTabProps {
   workflowId: string;
@@ -20,11 +27,14 @@ interface DataSourcesTabProps {
 }
 
 export function DataSourcesTab({ workflowId, onCollectionsClick }: DataSourcesTabProps) {
-  const { data: allSources, isLoading: isLoadingAll } = useDataSources();
-  const { data: linkedSources, isLoading: isLoadingLinked } = useWorkflowDataSources(workflowId);
+  const { data: allSources, isLoading: isLoadingAll, refetch: refetchAll } = useDataSources();
+  const { data: linkedSources, isLoading: isLoadingLinked, refetch: refetchLinked } = useWorkflowDataSources(workflowId);
   const linkMutation = useLinkDataSource();
   const unlinkMutation = useUnlinkDataSource();
   const { toast } = useToast();
+
+  const [isTypeSelectionOpen, setIsTypeSelectionOpen] = useState(false);
+  const [isGoogleSheetsOpen, setIsGoogleSheetsOpen] = useState(false);
 
   const handleLink = async (sourceId: string) => {
     try {
@@ -45,17 +55,18 @@ export function DataSourcesTab({ workflowId, onCollectionsClick }: DataSourcesTa
   };
 
   const handleConfigure = (sourceId: string) => {
-    if (sourceId === "collections") { // TODO: Check if source name/type matches "collections" or handle by ID
-      // The mock data had ID "collections", real data depends on DB.
-      // Assuming for now the 'collections' logic lives elsewhere or this ID matches the native DB one.
-      // For PR, we might not have a dedicated Collections *DataSource* row yet unless created.
-      // Let's assume we trigger the sidebar regardless.
+    if (sourceId === "collections") {
       onCollectionsClick?.();
     }
     // For others, open settings dialog (future)
   };
 
   const isLinked = (id: string) => linkedSources?.some(s => s.id === id);
+
+  const handleSourceCreated = () => {
+    refetchAll();
+    refetchLinked();
+  };
 
   if (isLoadingAll || isLoadingLinked) {
     return (
@@ -72,14 +83,10 @@ export function DataSourcesTab({ workflowId, onCollectionsClick }: DataSourcesTa
     );
   }
 
-  // Group sources if needed, or just list
-  // Merging with static "Coming Soon" for demo if they don't exist in DB?
-  // For this feature, let's just show what's in DB + maybe hardcode the "Coming Soon" ones if they aren't there.
-
   // Helper to get icon
   const getIcon = (type: string) => {
-    if (type === 'google_sheets') return Database; // Spreadsheet icon?
-    if (type === 'api') return ExternalLink;
+    if (type === 'google_sheets') return FileSpreadsheet;
+    if (type === 'api') return Globe;
     return Database;
   };
 
@@ -93,7 +100,7 @@ export function DataSourcesTab({ workflowId, onCollectionsClick }: DataSourcesTa
               Connect external data sources to your workflow
             </p>
           </div>
-          <Button size="sm" variant="outline">
+          <Button size="sm" variant="outline" onClick={() => setIsTypeSelectionOpen(true)}>
             <Plus className="w-4 h-4 mr-2" />
             New Source
           </Button>
@@ -127,7 +134,7 @@ export function DataSourcesTab({ workflowId, onCollectionsClick }: DataSourcesTa
                             </div>
                             <div className="flex items-center gap-2 mt-1">
                               <Badge variant="outline" className="text-xs font-normal">
-                                {source.type === 'native' ? 'Native Table' : 'External API'}
+                                {source.type === 'native' ? 'Native Table' : source.type === 'google_sheets' ? 'Google Sheets' : 'External API'}
                               </Badge>
                               {/* Capability Badges */}
                               <div className="flex gap-1">
@@ -182,6 +189,73 @@ export function DataSourcesTab({ workflowId, onCollectionsClick }: DataSourcesTa
           </div>
         </div>
       </BuilderLayoutContent>
+
+      {/* Type Selection Dialog */}
+      <Dialog open={isTypeSelectionOpen} onOpenChange={setIsTypeSelectionOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Add Data Source</DialogTitle>
+            <DialogDescription>
+              Select the type of data source you want to connect.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+            <Button
+              variant="outline"
+              className="h-auto p-4 flex flex-col items-start gap-2 hover:border-green-500 hover:bg-green-50"
+              onClick={() => {
+                setIsTypeSelectionOpen(false);
+                setIsGoogleSheetsOpen(true);
+              }}
+            >
+              <div className="p-2 bg-green-100 rounded-md">
+                <FileSpreadsheet className="w-6 h-6 text-green-600" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-semibold">Google Sheets</h3>
+                <p className="text-sm text-muted-foreground">Read and write data to Google Sheets.</p>
+              </div>
+            </Button>
+
+            <Button
+              variant="outline"
+              className="h-auto p-4 flex flex-col items-start gap-2 opacity-60 cursor-not-allowed"
+              disabled
+            >
+              <div className="p-2 bg-blue-100 rounded-md">
+                <Server className="w-6 h-6 text-blue-600" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-semibold">Native Database</h3>
+                <p className="text-sm text-muted-foreground">Create a new table in the internal database.</p>
+                <Badge variant="secondary" className="mt-1 text-xs">Coming Soon</Badge>
+              </div>
+            </Button>
+
+            <Button
+              variant="outline"
+              className="h-auto p-4 flex flex-col items-start gap-2 opacity-60 cursor-not-allowed"
+              disabled
+            >
+              <div className="p-2 bg-orange-100 rounded-md">
+                <Globe className="w-6 h-6 text-orange-600" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-semibold">External API</h3>
+                <p className="text-sm text-muted-foreground">Connect to any REST API endpoint.</p>
+                <Badge variant="secondary" className="mt-1 text-xs">Coming Soon</Badge>
+              </div>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Google Sheets Wizard */}
+      <AddGoogleSheetsDialog
+        open={isGoogleSheetsOpen}
+        onOpenChange={setIsGoogleSheetsOpen}
+        onComplete={handleSourceCreated}
+      />
     </BuilderLayout>
   );
 }

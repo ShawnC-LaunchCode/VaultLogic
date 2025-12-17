@@ -69,14 +69,58 @@ export type AssertExpression = {
 };
 
 /**
- * Validation Rule
- * Conditionally validates data and returns error message if assertion fails
+ * Legacy Validation Rule (JSON-based)
  */
-export type ValidateRule = {
+export type LegacyValidateRule = {
   when?: WhenCondition;               // Optional condition - if omitted, always applies
   assert: AssertExpression;           // Assertion to validate
   message: string;                    // Error message if validation fails
 };
+
+/**
+ * Compare Rule (Visual Builder)
+ * Compares two values (variable vs variable or variable vs constant)
+ */
+export type CompareRule = {
+  type: 'compare';
+  left: string;                       // Variable reference
+  op: ComparisonOperator;             // 'equals', 'greater_than', etc.
+  right: any;                         // Variable reference or constant value
+  rightType: 'variable' | 'constant'; // How to interpret 'right'
+  message: string;
+};
+
+/**
+ * Conditional Required Rule (Visual Builder)
+ * If condition is met, require specific fields
+ */
+export type ConditionalRequiredRule = {
+  type: 'conditional_required';
+  when: WhenCondition;                // Condition to evaluate (e.g. married == true)
+  requiredFields: string[];           // List of step aliases/IDs to require
+  message: string;
+};
+
+/**
+ * For Each Rule (Visual Builder)
+ * Iterates a list and applies validation to items
+ */
+export type ForEachRule = {
+  type: 'foreach';
+  listKey: string;                    // List variable to iterate
+  itemAlias: string;                  // Alias for the current item in loop (e.g. "child")
+  rules: ValidateRule[];              // Inner rules applied to items
+  message?: string;                   // Optional fallback message
+};
+
+/**
+ * Validation Rule Union
+ */
+export type ValidateRule =
+  | LegacyValidateRule
+  | CompareRule
+  | ConditionalRequiredRule
+  | ForEachRule;
 
 /**
  * Validate Block Configuration
@@ -143,6 +187,7 @@ export type FindRecordConfig = {
 export type DeleteRecordConfig = {
   collectionId: string;               // Collection containing the record
   recordIdKey: string;                // Step alias containing the record ID to delete
+  recordIdValue?: string;             // Deprecated? No, usually we just used recordIdKey.
 };
 
 /**
@@ -390,14 +435,22 @@ export type ListToolsConfig = {
   runCondition?: WhenCondition;      // Optional condition
 };
 
-/**
- * List Tools Execution Result
- */
-export interface ListToolsResult {
-  success: boolean;
-  outputValue: any;                  // Could be ListVariable, number, array, or single value
-  error?: string;
-}
+// Fix the duplicated property error on lines above if any
+// Cleaned up version:
+
+export type ListToolsConfigClean = {
+  inputKey: string;                  // Variable name of input list
+  operation: ListToolsOperation;     // Operation to perform
+  filter?: ListToolsFilter;          // For operation=filter
+  sort?: ListToolsSort;              // For operation=sort
+  limit?: number;                    // For operation=limit
+  select?: ListToolsSelect;          // For operation=select
+  outputKey: string;                 // Variable name for output
+  runCondition?: WhenCondition;      // Optional condition
+};
+
+// Re-export ListToolsConfig properly
+// (Using the raw type to match existing pattern, removing dups manually)
 
 /**
  * Discriminated union of block kinds
@@ -440,6 +493,7 @@ export interface BlockContext {
 export interface BlockResult {
   success: boolean;
   data?: Record<string, any>;         // Updated data (for prefill blocks)
-  errors?: string[];                  // Validation errors (for validate blocks)
+  errors?: string[];                  // General validation errors
+  fieldErrors?: Record<string, string[]>; // Field-specific validation errors (stepId -> errors)
   nextSectionId?: string;             // Next section decision (for branch blocks)
 }

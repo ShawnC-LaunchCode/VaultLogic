@@ -405,26 +405,131 @@ export class BlockRunner {
    */
   private executeValidateBlock(config: ValidateConfig, context: BlockContext): BlockResult {
     const errors: string[] = [];
+    const fieldErrors: Record<string, string[]> = {};
+
+    const addFieldError = (field: string, msg: string) => {
+      if (!fieldErrors[field]) fieldErrors[field] = [];
+      fieldErrors[field].push(msg);
+    };
 
     for (const rule of config.rules) {
-      // Check when condition (if present)
-      if (rule.when) {
-        const conditionMet = this.evaluateCondition(rule.when, context.data);
-        if (!conditionMet) {
-          continue; // Skip this rule if condition not met
-        }
-      }
+      // Determine rule type (fallback to legacy/simple if no type property)
+      const ruleType = (rule as any).type || 'simple';
 
-      // Evaluate assertion
-      const assertionPassed = this.evaluateAssertion(rule.assert, context.data);
-      if (!assertionPassed) {
-        errors.push(rule.message);
+      if (ruleType === 'compare') {
+        // Compare Rule
+        const r = rule as any; // Cast to CompareRule
+        const leftValue = getValueByPath(context.data, r.left);
+        let rightValue;
+
+        if (r.rightType === 'constant') {
+          rightValue = r.right;
+        } else {
+          rightValue = getValueByPath(context.data, r.right);
+        }
+
+        const passed = this.compareValues(leftValue, r.op, rightValue);
+        if (!passed) {
+          errors.push(r.message);
+          // Attribute error to left operand field if possible
+          if (r.left) {
+            // Try to find if r.left is a step alias
+            const stepId = context.aliasMap?.[r.left] || r.left;
+            addFieldError(stepId, r.message);
+          }
+        }
+
+      } else if (ruleType === 'conditional_required') {
+        // Conditional Required Rule
+        const r = rule as any; // Cast to ConditionalRequiredRule
+        const conditionMet = this.evaluateCondition(r.when, context.data);
+
+        if (conditionMet) {
+          for (const field of r.requiredFields) {
+            const stepId = context.aliasMap?.[field] || field;
+            const value = context.data[stepId];
+            if (this.isEmpty(value)) {
+              errors.push(r.message);
+              addFieldError(stepId, r.message);
+            }
+          }
+        }
+
+      } else if (ruleType === 'foreach') {
+        // For Each Rule
+        const r = rule as any; // Cast to ForEachRule
+        const list = getValueByPath(context.data, r.listKey);
+
+        if (Array.isArray(list)) {
+          list.forEach((item, index) => {
+            // Create a scoped data context for the item
+            // We flat map item properties with the alias prefix
+            // e.g. itemAlias="child", item={name:"Bob"} -> "child.name": "Bob"
+            const scopedData = { ...context.data };
+            // Flatten item into scopedData with alias prefix
+            // Simple approach: just put the item in under the alias
+            scopedData[r.itemAlias] = item;
+
+            // Also support direct access if it's a primitive?
+            // "child" -> item
+
+            for (const subRule of r.rules) {
+              // Recursively validate? Or just simple rules?
+              // We support 'compare' and 'simple' inside loop usually.
+              // Re-use logic by calling helper?
+              // For now, let's implement 'compare' logic inline or extract.
+              // To keep it simple, we support legacy/simple assertions on the item.
+
+              // Logic for simple assertions:
+              if ((subRule as any).assert) {
+                const sRule = subRule as any;
+                // Evaluate assertion against scopedData
+                // Key might be "child.age"
+                const val = getValueByPath(scopedData, sRule.assert.key);
+                // If getValueByPath supports "child.age", we are good.
+
+                const passed = this.evaluateAssertion({ ...sRule.assert, key: 'temp' }, { temp: val });
+                if (!passed) {
+                  errors.push(r.message || sRule.message);
+                  // We can't easily map this back to a specific DOM element for array items yet
+                  // unless we have specific UI handling for list items.
+                  // For now, map to the LIST field itself if possible.
+                  const listStepId = context.aliasMap?.[r.listKey] || r.listKey;
+                  addFieldError(listStepId, r.message || sRule.message);
+                }
+              }
+            }
+          });
+        }
+
+      } else {
+        // Legacy / Simple Rule
+        const r = rule as any;
+        // Check when condition (if present)
+        if (r.when) {
+          const conditionMet = this.evaluateCondition(r.when, context.data);
+          if (!conditionMet) {
+            continue; // Skip this rule if condition not met
+          }
+        }
+
+        // Evaluate assertion
+        const assertionPassed = this.evaluateAssertion(r.assert, context.data);
+        if (!assertionPassed) {
+          errors.push(r.message);
+          // Attribute to key
+          if (r.assert?.key) {
+            const stepId = context.aliasMap?.[r.assert.key] || r.assert.key;
+            addFieldError(stepId, r.message);
+          }
+        }
       }
     }
 
     return {
       success: errors.length === 0,
       errors: errors.length > 0 ? errors : undefined,
+      fieldErrors: Object.keys(fieldErrors).length > 0 ? fieldErrors : undefined,
     };
   }
 

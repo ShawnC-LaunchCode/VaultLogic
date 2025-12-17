@@ -24,6 +24,7 @@ import { WriteBlockEditor } from "@/components/blocks/WriteBlockEditor";
 import { ExternalSendBlockEditor } from "@/components/blocks/ExternalSendBlockEditor";
 import { ReadTableBlockEditor } from "@/components/blocks/ReadTableBlockEditor";
 import { ListToolsBlockEditor } from "@/components/blocks/ListToolsBlockEditor";
+import { ValidateBlockEditor } from "@/components/blocks/ValidateBlockEditor";
 
 // Combine regular blocks and transform blocks for display
 type UniversalBlock = {
@@ -292,7 +293,7 @@ function getBlockLabel(type: string) {
     case 'external_send': return 'Send Data';
     case 'js': return 'JS Transform';
     case 'prefill': return 'Prefill';
-    case 'validate': return 'Validate';
+    case 'validate': return 'Validate Answers';
     case 'branch': return 'Branch';
     default: return type;
   }
@@ -464,7 +465,7 @@ function BlockEditor({
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="prefill">Prefill</SelectItem>
-                      <SelectItem value="validate">Validate</SelectItem>
+                      <SelectItem value="validate">Validate Answers</SelectItem>
                       <SelectItem value="branch">Branch</SelectItem>
                       {availableBlockTypes.includes('query') && <SelectItem value="query">Query Data</SelectItem>}
                       {availableBlockTypes.includes('read_table') && <SelectItem value="read_table">Read from Table</SelectItem>}
@@ -554,6 +555,8 @@ function BlockEditor({
                     <WriteBlockEditor workflowId={workflowId} config={formData.config} onChange={(c) => setFormData({ ...formData, config: c })} />
                   ) : formData.type === 'external_send' ? (
                     <ExternalSendBlockEditor workflowId={workflowId} config={formData.config} onChange={(c) => setFormData({ ...formData, config: c })} />
+                  ) : formData.type === 'validate' ? (
+                    <ValidateBlockEditor workflowId={workflowId} config={formData.config} onChange={(c) => setFormData({ ...formData, config: c })} mode={mode} />
                   ) : (
                     <div className="space-y-2">
                       <Textarea

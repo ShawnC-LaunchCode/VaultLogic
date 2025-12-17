@@ -699,7 +699,7 @@ export const runAPI = {
     }),
 
   submitSection: (runId: string, sectionId: string, values: Array<{ stepId: string; value: any }>) =>
-    fetchAPI<{ success: boolean; errors?: string[] }>(`/api/runs/${runId}/sections/${sectionId}/submit`, {
+    fetchAPI<{ success: boolean; errors?: string[]; fieldErrors?: Record<string, string[]> }>(`/api/runs/${runId}/sections/${sectionId}/submit`, {
       method: "POST",
       body: JSON.stringify({ values }),
     }),

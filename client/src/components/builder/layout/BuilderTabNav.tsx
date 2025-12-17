@@ -13,6 +13,7 @@ import {
   Camera,
   ClipboardCheck,
   GitBranch,
+  Sparkles,
 } from "lucide-react";
 
 export type BuilderTab = "sections" | "templates" | "data-sources" | "settings" | "snapshots" | "review" | "assignment";

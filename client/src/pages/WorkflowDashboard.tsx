@@ -291,7 +291,7 @@ export default function WorkflowDashboard() {
             {projects && projects.length > 0 && (
               <section>
                 <h2 className="text-xl font-semibold mb-4">Projects</h2>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(300px,1fr))]">
                   {projects.map((project) => (
                     <ProjectCard
                       key={project.id}
@@ -309,7 +309,7 @@ export default function WorkflowDashboard() {
             {unfiledWorkflows && unfiledWorkflows.length > 0 && (
               <section>
                 <h2 className="text-xl font-semibold mb-4">Unfiled Workflows</h2>
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(300px,1fr))]">
                   {unfiledWorkflows.map((workflow) => (
                     <WorkflowCard
                       key={workflow.id}
@@ -389,8 +389,8 @@ export default function WorkflowDashboard() {
               {createProjectMutation.isPending || updateProjectMutation.isPending
                 ? "Saving..."
                 : editingProject
-                ? "Update"
-                : "Create"}
+                  ? "Update"
+                  : "Create"}
             </Button>
           </DialogFooter>
         </DialogContent>

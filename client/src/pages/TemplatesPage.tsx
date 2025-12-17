@@ -87,9 +87,9 @@ export default function TemplatesPage() {
 
   const templates: Template[] =
     viewFilter === "all" ? allTemplates :
-    viewFilter === "mine" ? allTemplates.filter(t => t.creatorId === user?.id && !t.isSystem) :
-    viewFilter === "shared" ? sharedTemplates :
-    allTemplates;
+      viewFilter === "mine" ? allTemplates.filter(t => t.creatorId === user?.id && !t.isSystem) :
+        viewFilter === "shared" ? sharedTemplates :
+          allTemplates;
 
   // Extract all unique tags from templates
   const allTags = useMemo(() => {
@@ -172,7 +172,7 @@ export default function TemplatesPage() {
   const handleEditContent = (templateId: string) => {
     toast({
       title: "Feature coming soon",
-      description: "Template content editing will be available in the Survey Builder",
+      description: "Template content editing will be available in the Workflow Builder",
     });
     // TODO: Implement loading template into Survey Builder
     // setLocation(`/builder?templateId=${templateId}`);
@@ -186,7 +186,7 @@ export default function TemplatesPage() {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Templates</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Reusable sections you can drop into any survey
+              Reusable sections you can drop into any workflow
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
@@ -289,7 +289,7 @@ export default function TemplatesPage() {
               <div className="space-y-1">
                 <CardTitle className="flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-blue-600" />
-                  Save your current survey as a template
+                  Save your current workflow as a template
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">
                   Capture a great section once, then reuse it everywhere
@@ -301,7 +301,7 @@ export default function TemplatesPage() {
                   toast({
                     title: "Open Survey Builder",
                     description:
-                      "Use the 'Save as Template' button in the Survey Builder toolbar",
+                      "Use the 'Save as Template' button in the Workflow Builder toolbar",
                   })
                 }
               >
@@ -604,10 +604,10 @@ function TemplateCard({
             <span>
               {template.createdAt
                 ? new Date(template.createdAt).toLocaleDateString(undefined, {
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                  })
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })
                 : "—"}
             </span>
           </div>
@@ -620,7 +620,7 @@ function TemplateCard({
               className="gap-2"
             >
               <Plus className="w-3 h-3" />
-              Add to survey
+              Add to workflow
             </Button>
           </div>
         </CardContent>
@@ -650,8 +650,8 @@ function EmptyState({ hasQuery }: EmptyStateProps) {
       <div className="text-6xl mb-4">🧩</div>
       <p className="font-medium text-lg mb-2">No templates yet</p>
       <p className="text-sm max-w-md">
-        Create a template from any survey using the "Save as Template" button in the
-        Survey Builder, then it will appear here for reuse.
+        Create a template from any workflow using the "Save as Template" button in the
+        Workflow Builder, then it will appear here for reuse.
       </p>
     </div>
   );

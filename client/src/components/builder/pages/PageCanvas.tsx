@@ -5,6 +5,8 @@
  */
 
 import { useState } from "react";
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DndContext,
   closestCenter,
@@ -24,7 +26,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { useSections, useBlocks, useReorderSections, useAllSteps, useUpdateStep, useReorderSteps } from "@/lib/vault-hooks";
+import { useSections, useBlocks, useReorderSections, useAllSteps, useUpdateStep, useReorderSteps, useCreateSection } from "@/lib/vault-hooks";
 import { PageCard } from "./PageCard";
 import { UI_LABELS } from "@/lib/labels";
 import { QuestionCard } from "../questions/QuestionCard";
@@ -46,9 +48,20 @@ export function PageCanvas({ workflowId }: PageCanvasProps) {
   const reorderSectionsMutation = useReorderSections();
   const reorderStepsMutation = useReorderSteps();
   const updateStepMutation = useUpdateStep();
+  const createSectionMutation = useCreateSection();
 
   const [activeId, setActiveId] = useState<string | null>(null);
+
   const [activeDragData, setActiveDragData] = useState<DragData | null>(null);
+
+  const handleCreateSection = async () => {
+    const order = pages?.length || 0;
+    await createSectionMutation.mutateAsync({
+      workflowId,
+      title: `${UI_LABELS.PAGE} ${order + 1}`,
+      order,
+    });
+  };
 
   // Fetch all steps for all sections using the proper useAllSteps hook
   // This respects React's Rules of Hooks by using useQueries internally
@@ -249,6 +262,18 @@ export function PageCanvas({ workflowId }: PageCanvasProps) {
                   total={pages.length}
                 />
               ))}
+
+              {/* Add Page Button at Bottom */}
+              <div className="flex justify-center pt-4 pb-8">
+                <Button
+                  onClick={handleCreateSection} // Ensure this function is defined
+                  variant="outline"
+                  className="w-full max-w-sm border-dashed text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  {UI_LABELS.ADD_PAGE}
+                </Button>
+              </div>
             </div>
           </SortableContext>
         </DndContext>

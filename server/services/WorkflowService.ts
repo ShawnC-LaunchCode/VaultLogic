@@ -9,8 +9,11 @@ import {
   type DbTransaction,
 } from "../repositories";
 import type { Workflow, InsertWorkflow, Section, Step, LogicRule, WorkflowAccess, PrincipalType, AccessRole } from "@shared/schema";
+import { workflowVersions } from "@shared/schema";
 import { aclService } from "./AclService";
 import { logger } from "../logger";
+import { db } from "../db";
+import { eq } from "drizzle-orm";
 
 /**
  * Service layer for workflow-related business logic
@@ -139,10 +142,25 @@ export class WorkflowService {
       steps: steps.filter((step) => step.sectionId === section.id),
     }));
 
+    let currentVersion = null;
+    if (workflow.currentVersionId) {
+      currentVersion = await db.query.workflowVersions.findFirst({
+        where: eq(workflowVersions.id, workflow.currentVersionId)
+      });
+    } else if (workflow.status === 'draft') {
+      // Fallback: Try to find the latest draft version if currentVersionId is not set
+      const latestDraft = await db.query.workflowVersions.findFirst({
+        where: eq(workflowVersions.workflowId, workflowId),
+        orderBy: (v, { desc }) => [desc(v.versionNumber)],
+      });
+      if (latestDraft) currentVersion = latestDraft;
+    }
+
     return {
       ...workflow,
       sections: sectionsWithSteps,
       logicRules,
+      currentVersion,
     };
   }
 

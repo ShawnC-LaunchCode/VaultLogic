@@ -43,7 +43,10 @@ export function WorkflowHistoryDialog({
     // Fetch Versions
     const { data: versions, isLoading: isVersionsLoading } = useQuery<ApiWorkflowVersion[]>({
         queryKey: ['workflow-versions', workflowId],
-        queryFn: () => versionAPI.list(workflowId),
+        queryFn: async () => {
+            const result = await versionAPI.list(workflowId);
+            return Array.isArray(result) ? result : [];
+        },
         enabled: open,
     });
 
@@ -183,7 +186,7 @@ export function WorkflowHistoryDialog({
                                                     <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No versions found.</TableCell>
                                                 </TableRow>
                                             ) : (
-                                                versions?.map((v) => (
+                                                Array.isArray(versions) && versions.map((v) => (
                                                     <TableRow key={v.id}>
                                                         <TableCell align="center">
                                                             <Badge variant="outline">v{v.versionNumber}</Badge>
