@@ -82,10 +82,10 @@ export default function Header({ title, description, actions }: HeaderProps) {
                 <div className="flex items-center space-x-3">
                   <img
                     src={logo}
-                    alt="Vault-Logic Logo"
+                    alt="Workflow App Logo"
                     className="w-8 h-8 rounded-lg object-cover"
                   />
-                  <SheetTitle className="text-xl font-bold">Workflow App</SheetTitle>
+                  <SheetTitle className="text-xl font-bold">ezBuildr</SheetTitle>
                 </div>
               </SheetHeader>
 

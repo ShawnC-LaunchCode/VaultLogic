@@ -52,7 +52,7 @@ export default function Landing() {
                 className="w-8 h-8 rounded-lg object-cover"
               />
               <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
-                Vault-Logic
+                ezBuildr
               </span>
             </div>
             <div className="flex items-center gap-4">
