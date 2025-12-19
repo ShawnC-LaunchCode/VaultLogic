@@ -32,9 +32,24 @@ export class DataSourceService {
 
     /**
      * Create a new data source
+     * Handles mapping of 'native_table' virtual type to 'native' DB type
      */
-    async createDataSource(data: InsertDatavaultDatabase): Promise<DatavaultDatabase> {
-        return this.repo.create(data);
+    async createDataSource(data: InsertDatavaultDatabase | { type: string;[key: string]: any }): Promise<DatavaultDatabase> {
+        if (data.type === 'native_table') {
+            // Map native_table to native, preserving the config (which contains tableId)
+            // We can also add a flag to config to explicitly mark it if needed
+            const config = data.config || {};
+            const dbData = {
+                ...data,
+                type: 'native' as const, // Cast to satisfy DB enum
+                config: {
+                    ...config,
+                    isNativeTable: true
+                }
+            };
+            return this.repo.create(dbData as InsertDatavaultDatabase);
+        }
+        return this.repo.create(data as InsertDatavaultDatabase);
     }
 
     /**

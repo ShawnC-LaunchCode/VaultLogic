@@ -1,6 +1,6 @@
 import { BaseRepository, type DbTransaction } from "./BaseRepository";
 import { workflows, type Workflow, type InsertWorkflow } from "@shared/schema";
-import { eq, and, desc, isNull } from "drizzle-orm";
+import { eq, and, desc, isNull, or, inArray } from "drizzle-orm";
 import { db } from "../db";
 
 /**
@@ -12,7 +12,8 @@ export class WorkflowRepository extends BaseRepository<typeof workflows, Workflo
   }
 
   /**
-   * Find workflows by creator ID
+   * Find workflows by creator ID (legacy)
+   * @deprecated use findByUserAccess
    */
   async findByCreatorId(creatorId: string, tx?: DbTransaction): Promise<Workflow[]> {
     const database = this.getDb(tx);
@@ -20,6 +21,34 @@ export class WorkflowRepository extends BaseRepository<typeof workflows, Workflo
       .select()
       .from(workflows)
       .where(eq(workflows.creatorId, creatorId))
+      .orderBy(desc(workflows.updatedAt));
+  }
+
+  /**
+   * Find workflows by user access (Owner OR Shared)
+   */
+  async findByUserAccess(userId: string, tx?: DbTransaction): Promise<Workflow[]> {
+    const database = this.getDb(tx);
+
+    // Import workflowAccess here to avoid circular dependencies if possible, or assume it's available
+    const { workflowAccess } = await import("@shared/schema");
+
+    // Subquery for shared workflows
+    const sharedWorkflowIds = database
+      .select({ workflowId: workflowAccess.workflowId })
+      .from(workflowAccess)
+      .where(eq(workflowAccess.principalId, userId));
+
+    return await database
+      .select()
+      .from(workflows)
+      .where(
+        or(
+          eq(workflows.creatorId, userId),
+          eq(workflows.ownerId, userId),
+          inArray(workflows.id, sharedWorkflowIds)
+        )
+      )
       .orderBy(desc(workflows.updatedAt));
   }
 

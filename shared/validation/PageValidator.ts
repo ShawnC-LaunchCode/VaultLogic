@@ -1,5 +1,9 @@
 import { validateValue } from "./Validator";
 import { ValidationSchema, PageValidationResult } from "./ValidationSchema";
+import { formatMessage } from "./messages";
+import { evaluateConditionExpression } from "../conditionEvaluator";
+import type { ConditionExpression } from "../types/conditions"; // Import ConditionExpression types
+import type { ValidateRule, ConditionalRequiredRule, CompareRule, ForEachRule, WhenCondition, ComparisonOperator } from "../types/blocks";
 
 /**
  * Validates a map of block values against their schemas.
@@ -7,22 +11,22 @@ import { ValidationSchema, PageValidationResult } from "./ValidationSchema";
 export async function validatePage({
     schemas,
     values,
-    allValues, // Complete dataset for conditional logic
+    allValues,
+    pageRules = [] // Added pageRules support
 }: {
     schemas: Record<string, ValidationSchema>;
-    values: Record<string, any>; // Values relative to this page/context
-    allValues?: Record<string, any>; // Global context if different
+    values: Record<string, any>;
+    allValues?: Record<string, any>;
+    pageRules?: ValidateRule[];
 }): Promise<PageValidationResult> {
     const blockErrors: Record<string, string[]> = {};
     let valid = true;
 
     const contextValues = allValues || values;
 
+    // 1. Standard Field Validation
     for (const [blockId, schema] of Object.entries(schemas)) {
-        // Determine the value for this block
-        // Handling nested keys if necessary, but typically values is flat map of blockId -> value
         const value = values[blockId];
-
         const result = await validateValue({
             schema,
             value,
@@ -35,8 +39,137 @@ export async function validatePage({
         }
     }
 
+    // 2. Page-Level Rules Validation
+    for (const rule of pageRules) {
+        const error = await validatePageRule(rule, contextValues);
+        if (error) {
+            // Error distribution logic
+            if ('type' in rule && rule.type === 'conditional_required') {
+                const cr = rule as ConditionalRequiredRule;
+                const met = evaluateConditionExpression(whenToCondition(cr.when), contextValues);
+                if (met) {
+                    for (const fieldId of cr.requiredFields) {
+                        const val = contextValues[fieldId];
+                        if (val === null || val === undefined || val === "" || (Array.isArray(val) && val.length === 0)) {
+                            if (!blockErrors[fieldId]) blockErrors[fieldId] = [];
+                            blockErrors[fieldId].push(cr.message || "This field is required");
+                            valid = false;
+                        }
+                    }
+                }
+                continue;
+            }
+
+            // Generic fallback
+            const target = ('left' in rule) ? (rule as any).left : (('listKey' in rule) ? (rule as any).listKey : "_general");
+            if (!blockErrors[target]) blockErrors[target] = [];
+            blockErrors[target].push(error);
+            valid = false;
+        }
+    }
+
     return {
         valid,
         blockErrors,
     };
+}
+
+// Logic implementations
+async function validatePageRule(rule: ValidateRule, values: Record<string, any>): Promise<string | null> {
+    // Type guard / Check
+    if (!('type' in rule)) {
+        // Legacy rule
+        return null;
+    }
+
+    switch (rule.type) {
+        case 'compare': {
+            const r = rule as CompareRule;
+            const leftVal = getVal(r.left, values);
+            const rightVal = r.rightType === 'variable' ? getVal(r.right, values) : r.right;
+
+            if (!compare(leftVal, r.op, rightVal)) {
+                return r.message || `Condition failed`;
+            }
+            return null;
+        }
+        case 'conditional_required':
+            return null; // Handled in main loop
+
+        case 'foreach': {
+            const r = rule as ForEachRule;
+            const list = getVal(r.listKey, values);
+            if (!Array.isArray(list)) return null;
+
+            for (let i = 0; i < list.length; i++) {
+                const item = list[i];
+                const itemContext = { ...values, [r.itemAlias]: item };
+
+                for (const subRule of r.rules) {
+                    // Check legacy inner rules
+                    if (!('type' in subRule)) {
+                        const assert = (subRule as any).assert;
+                        if (assert) {
+                            const val = resolvePath(assert.key, itemContext);
+                            if (!checkOp(val, assert.op, assert.value)) {
+                                return (subRule.message || "Invalid item") + ` (Item ${i + 1})`;
+                            }
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        default:
+            return null;
+    }
+}
+
+function whenToCondition(when: WhenCondition): ConditionExpression {
+    if (!when) return null;
+    return {
+        type: "group",
+        id: "gen_" + Math.random().toString(36).substring(2),
+        operator: "AND",
+        conditions: [{
+            type: "condition",
+            id: "gen_" + Math.random().toString(36).substring(2),
+            variable: when.key,
+            operator: when.op,
+            value: when.value,
+            valueType: "constant"
+        }]
+    };
+}
+
+// Helpers
+function getVal(key: string, values: Record<string, any>) {
+    // support dot syntax?
+    if (key.includes('.')) return resolvePath(key, values);
+    return values[key];
+}
+
+function resolvePath(path: string, obj: any) {
+    return path.split('.').reduce((prev, curr) => prev ? prev[curr] : undefined, obj);
+}
+
+function compare(left: any, op: string, right: any): boolean {
+    switch (op) {
+        case 'equals': return left == right;
+        case 'not_equals': return left != right;
+        case 'greater_than': return Number(left) > Number(right);
+        case 'less_than': return Number(left) < Number(right);
+        case 'contains': return String(left).includes(String(right));
+        default: return false;
+    }
+}
+
+function checkOp(val: any, op: string, compareVal?: any): boolean {
+    switch (op) {
+        case 'is_not_empty': return val !== null && val !== undefined && val !== "";
+        case 'is_empty': return val === null || val === undefined || val === "";
+        case 'equals': return val == compareVal;
+        default: return true; // Loose default
+    }
 }

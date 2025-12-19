@@ -48,8 +48,14 @@ export function ReadTableBlockEditor({
   const { data: allTables } = useTables();
   const { data: columns } = useTableColumns(localConfig.tableId);
 
-  // Filter tables by selected data source (database)
-  const tables = allTables?.filter((t: any) => t.databaseId === localConfig.dataSourceId) || [];
+  // Filter tables:
+  // 1. If selected DS is a "native table" proxy (config.tableId), show only that table.
+  // 2. Otherwise, show tables belonging to the database (t.databaseId === ds.id).
+  const selectedDataSource = dataSources?.find(ds => ds.id === localConfig.dataSourceId);
+
+  const tables = selectedDataSource?.config?.isNativeTable && selectedDataSource?.config?.tableId
+    ? allTables?.filter((t: any) => t.id === selectedDataSource.config.tableId) || []
+    : allTables?.filter((t: any) => t.databaseId === localConfig.dataSourceId) || [];
 
   // Update parent when local config changes
   useEffect(() => {
@@ -57,13 +63,26 @@ export function ReadTableBlockEditor({
   }, [localConfig]);
 
   const handleDataSourceChange = (dataSourceId: string) => {
-    setLocalConfig({
-      ...localConfig,
-      dataSourceId,
-      tableId: "",
-      filters: [],
-      sort: undefined
-    });
+    const ds = dataSources?.find(d => d.id === dataSourceId);
+
+    // If it's a native table proxy, auto-select the table
+    if (ds?.config?.isNativeTable && ds?.config?.tableId) {
+      setLocalConfig({
+        ...localConfig,
+        dataSourceId,
+        tableId: ds.config.tableId,
+        filters: [],
+        sort: undefined
+      });
+    } else {
+      setLocalConfig({
+        ...localConfig,
+        dataSourceId,
+        tableId: "",
+        filters: [],
+        sort: undefined
+      });
+    }
   };
 
   const handleTableChange = (tableId: string) => {
@@ -314,14 +333,14 @@ export function ReadTableBlockEditor({
               <div className="space-y-1">
                 <Label className="text-xs">Sort By</Label>
                 <Select
-                  value={localConfig.sort?.columnId || ""}
-                  onValueChange={handleSortChange}
+                  value={localConfig.sort?.columnId || "NO_SORT"}
+                  onValueChange={(val) => handleSortChange(val === "NO_SORT" ? "" : val)}
                 >
                   <SelectTrigger className="h-8 text-xs">
                     <SelectValue placeholder="None" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="NO_SORT">None</SelectItem>
                     {columns.map((col: any) => (
                       <SelectItem key={col.id} value={col.id}>
                         {col.name}

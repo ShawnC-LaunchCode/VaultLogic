@@ -185,33 +185,37 @@ export function registerAdminRoutes(app: Express): void {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      // Get all users first
+      // Get all users first (for mapping creators)
       const users = await userRepository.findAllUsers();
+      const userMap = new Map(users.map(u => [u.id, u]));
 
-      // Get workflows for each user
-      const allWorkflows = await Promise.all(
-        users.map(async (user) => {
-          const workflows = await workflowRepository.findByCreatorId(user.id);
-          return workflows.map((workflow: any) => ({
-            ...workflow,
-            creator: {
-              id: user.id,
-              email: user.email,
-              firstName: user.firstName,
-              lastName: user.lastName,
-            }
-          }));
-        })
-      );
+      // Get all workflows directly
+      const allWorkflows = await workflowRepository.findAll();
 
-      const flattenedWorkflows = allWorkflows.flat();
+      const workflowsWithCreators = allWorkflows.map((workflow) => {
+        const user = userMap.get(workflow.creatorId);
+        return {
+          ...workflow,
+          creator: user ? {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+          } : {
+            id: 'unknown',
+            email: 'deleted-user@example.com',
+            firstName: 'Deleted',
+            lastName: 'User'
+          }
+        };
+      });
 
       logger.info(
-        { adminId: req.adminUser!.id, workflowCount: flattenedWorkflows.length },
+        { adminId: req.adminUser!.id, workflowCount: workflowsWithCreators.length },
         'Admin fetched all workflows'
       );
 
-      res.json(flattenedWorkflows);
+      res.json(workflowsWithCreators);
     } catch (error) {
       logger.error({ err: error, adminId: req.adminUser!.id }, 'Error fetching all workflows');
       res.status(500).json({ message: "Failed to fetch workflows" });
@@ -339,40 +343,34 @@ export function registerAdminRoutes(app: Express): void {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
+      // Get users count
       const users = await userRepository.findAllUsers();
-      const adminCount = users.filter(u => u.role === 'admin').length;
+      const adminCount = users.filter((u) => u.role === "admin").length;
 
-      // Get all workflows across all users
-      const allWorkflows = await Promise.all(
-        users.map(user => workflowRepository.findByCreatorId(user.id))
-      );
-      const flattenedWorkflows = allWorkflows.flat();
+      // Get all workflows directly
+      const allWorkflows = await workflowRepository.findAll();
 
-      // Get all runs across all workflows
-      const workflowIds = flattenedWorkflows.map((w: any) => w.id);
-      let allRuns: any[] = [];
-      if (workflowIds.length > 0) {
-        allRuns = await workflowRunRepository.findByWorkflowIds(workflowIds);
-      }
+      // Get all runs directly
+      const allRuns = await workflowRunRepository.findAll();
 
       const stats = {
         totalUsers: users.length,
         adminUsers: adminCount,
         creatorUsers: users.length - adminCount,
-        totalWorkflows: flattenedWorkflows.length,
-        activeWorkflows: flattenedWorkflows.filter((w: any) => w.status === 'active').length,
-        draftWorkflows: flattenedWorkflows.filter((w: any) => w.status === 'draft').length,
-        archivedWorkflows: flattenedWorkflows.filter((w: any) => w.status === 'archived').length,
+        totalWorkflows: allWorkflows.length,
+        activeWorkflows: allWorkflows.filter((w) => w.status === "active").length,
+        draftWorkflows: allWorkflows.filter((w) => w.status === "draft").length,
+        archivedWorkflows: allWorkflows.filter((w) => w.status === "archived").length,
         totalRuns: allRuns.length,
-        completedRuns: allRuns.filter((r: any) => r.completed).length,
-        inProgressRuns: allRuns.filter((r: any) => !r.completed).length,
+        completedRuns: allRuns.filter((r) => r.completed).length,
+        inProgressRuns: allRuns.filter((r) => !r.completed).length,
       };
 
-      logger.info({ adminId: req.adminUser!.id }, 'Admin fetched system stats');
+      logger.info({ adminId: req.adminUser!.id }, "Admin fetched system stats");
 
       res.json(stats);
     } catch (error) {
-      logger.error({ err: error, adminId: req.adminUser!.id }, 'Error fetching admin stats');
+      logger.error({ err: error, adminId: req.adminUser!.id }, "Error fetching admin stats");
       res.status(500).json({ message: "Failed to fetch statistics" });
     }
   });

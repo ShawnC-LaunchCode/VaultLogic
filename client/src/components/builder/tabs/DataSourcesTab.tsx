@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { AddGoogleSheetsDialog } from "@/components/dataSource/AddGoogleSheetsDialog";
+import { AddNativeTableDialog } from "@/components/dataSource/AddNativeTableDialog";
 
 interface DataSourcesTabProps {
   workflowId: string;
@@ -35,6 +36,7 @@ export function DataSourcesTab({ workflowId, onCollectionsClick }: DataSourcesTa
 
   const [isTypeSelectionOpen, setIsTypeSelectionOpen] = useState(false);
   const [isGoogleSheetsOpen, setIsGoogleSheetsOpen] = useState(false);
+  const [isNativeTableOpen, setIsNativeTableOpen] = useState(false);
 
   const handleLink = async (sourceId: string) => {
     try {
@@ -124,7 +126,7 @@ export function DataSourcesTab({ workflowId, onCollectionsClick }: DataSourcesTa
                     <CardHeader className="pb-3">
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-lg ${source.type === 'native' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
+                          <div className={`p-2 rounded-lg ${source.type === 'native' || source.type === 'native_table' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
                             <Icon className="w-5 h-5" />
                           </div>
                           <div>
@@ -134,7 +136,7 @@ export function DataSourcesTab({ workflowId, onCollectionsClick }: DataSourcesTa
                             </div>
                             <div className="flex items-center gap-2 mt-1">
                               <Badge variant="outline" className="text-xs font-normal">
-                                {source.type === 'native' ? 'Native Table' : source.type === 'google_sheets' ? 'Google Sheets' : 'External API'}
+                                {source.type === 'native' || source.type === 'native_table' ? 'Native Table' : source.type === 'google_sheets' ? 'Google Sheets' : 'External API'}
                               </Badge>
                               {/* Capability Badges */}
                               <div className="flex gap-1">
@@ -150,7 +152,7 @@ export function DataSourcesTab({ workflowId, onCollectionsClick }: DataSourcesTa
                       <CardDescription className="line-clamp-2">{source.description || "No description provided."}</CardDescription>
                       <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
                         <code>ID: {source.id.slice(0, 8)}...</code>
-                        {source.type === 'native' && <span>PostgreSQL</span>}
+                        {(source.type === 'native' || source.type === 'native_table') && <span>PostgreSQL</span>}
                       </div>
                     </CardContent>
                     <CardFooter className="pt-0 flex gap-2">
@@ -219,16 +221,18 @@ export function DataSourcesTab({ workflowId, onCollectionsClick }: DataSourcesTa
 
             <Button
               variant="outline"
-              className="h-auto p-4 flex flex-col items-start gap-2 opacity-60 cursor-not-allowed"
-              disabled
+              className="h-auto p-4 flex flex-col items-start gap-2 hover:border-blue-500 hover:bg-blue-50"
+              onClick={() => {
+                setIsTypeSelectionOpen(false);
+                setIsNativeTableOpen(true);
+              }}
             >
               <div className="p-2 bg-blue-100 rounded-md">
                 <Server className="w-6 h-6 text-blue-600" />
               </div>
               <div className="text-left">
-                <h3 className="font-semibold">Native Database</h3>
-                <p className="text-sm text-muted-foreground">Create a new table in the internal database.</p>
-                <Badge variant="secondary" className="mt-1 text-xs">Coming Soon</Badge>
+                <h3 className="font-semibold">Native Table</h3>
+                <p className="text-sm text-muted-foreground">Select an existing table from your database.</p>
               </div>
             </Button>
 
@@ -254,6 +258,13 @@ export function DataSourcesTab({ workflowId, onCollectionsClick }: DataSourcesTa
       <AddGoogleSheetsDialog
         open={isGoogleSheetsOpen}
         onOpenChange={setIsGoogleSheetsOpen}
+        onComplete={handleSourceCreated}
+      />
+
+      {/* Native Table Wizard */}
+      <AddNativeTableDialog
+        open={isNativeTableOpen}
+        onOpenChange={setIsNativeTableOpen}
         onComplete={handleSourceCreated}
       />
     </BuilderLayout>

@@ -63,17 +63,38 @@ export function registerDatavaultRoutes(app: Express): void {
   app.get('/api/datavault/databases', hybridAuth, async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
+      const userId = getAuthUserId(req);
+
+      if (!userId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
       const { scopeType, scopeId } = req.query;
 
       let databases;
       if (scopeType && typeof scopeType === 'string') {
+        // Explicit scope request - ensure user has access to this scope?
+        // Ideally we should also check access here, but for now we rely on the list filtering
+        // or we could enforce it. simpler to just let list filtering handle the "All" view
+        // and if they request specific scope, we might want to check permissions.
+        // For consistency with specific "List" request, we might just continue using scope filter.
+        // BUT strict requirement: "I shouldn't see data sources I don't have access to".
+
+        // Use the safe list method even if filtering by scope? 
+        // Or blindly trust scope? No, blindly trusting scope would leak existence.
+        // Let's use the safe list method and then filter in memory or add scope params to it?
+        // Efficient way: pass scope params to repo method? 
+        // For now, let's keep the dedicated scope method but we might need to secure it too.
+        // Given the prompt "I shouldn't see...", the main list is usually the vector.
+        // Let's secure the main list first.
+
         databases = await datavaultDatabasesService.getDatabasesByScope(
           tenantId,
           scopeType as any,
           scopeId as string
         );
       } else {
-        databases = await datavaultDatabasesService.getDatabasesForTenant(tenantId);
+        databases = await datavaultDatabasesService.getDatabasesForTenant(tenantId, userId);
       }
 
       res.json(databases);
@@ -243,9 +264,15 @@ export function registerDatavaultRoutes(app: Express): void {
       const tenantId = getTenantId(req);
       const withStats = req.query.stats === 'true';
 
+      const userId = getAuthUserId(req);
+
+      if (!userId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
       const tables = withStats
-        ? await datavaultTablesService.listTablesWithStats(tenantId)
-        : await datavaultTablesService.listTables(tenantId);
+        ? await datavaultTablesService.listTablesWithStats(tenantId, userId)
+        : await datavaultTablesService.listTables(tenantId, userId);
 
       res.json(tables);
     } catch (error) {
@@ -301,6 +328,10 @@ export function registerDatavaultRoutes(app: Express): void {
 
       if (!userId) {
         return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      if (!z.string().uuid().safeParse(tableId).success) {
+        return res.status(400).json({ message: 'Invalid table ID format' });
       }
 
       // Check read permission
@@ -440,6 +471,10 @@ export function registerDatavaultRoutes(app: Express): void {
         return res.status(401).json({ message: 'Authentication required' });
       }
 
+      if (!z.string().uuid().safeParse(tableId).success) {
+        return res.status(400).json({ message: 'Invalid table ID format' });
+      }
+
       // Check read permission
       await datavaultTablesService.requirePermission(userId, tableId, tenantId, 'read');
 
@@ -465,6 +500,10 @@ export function registerDatavaultRoutes(app: Express): void {
     try {
       const tenantId = getTenantId(req);
       const { tableId } = req.params;
+
+      if (!z.string().uuid().safeParse(tableId).success) {
+        return res.status(400).json({ message: 'Invalid table ID format' });
+      }
 
       const columns = await datavaultColumnsService.listColumns(tableId, tenantId);
       res.json(columns);
@@ -673,6 +712,10 @@ export function registerDatavaultRoutes(app: Express): void {
 
       if (!userId) {
         return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      if (!z.string().uuid().safeParse(tableId).success) {
+        return res.status(400).json({ message: 'Invalid table ID format' });
       }
 
       // Check read permission

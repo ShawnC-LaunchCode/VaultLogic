@@ -1,6 +1,6 @@
 import { BaseRepository, type DbTransaction } from "./BaseRepository";
-import { datavaultTables, datavaultColumns, type DatavaultTable, type InsertDatavaultTable } from "@shared/schema";
-import { eq, and, desc, sql, asc } from "drizzle-orm";
+import { datavaultTables, datavaultColumns, datavaultTablePermissions, type DatavaultTable, type InsertDatavaultTable } from "@shared/schema";
+import { eq, and, desc, sql, asc, or, inArray } from "drizzle-orm";
 import { db } from "../db";
 
 /**
@@ -18,6 +18,7 @@ export class DatavaultTablesRepository extends BaseRepository<
 
   /**
    * Find tables by tenant ID
+   * @deprecated logic should use user-scoped findByTenantAndUser
    */
   async findByTenantId(tenantId: string, tx?: DbTransaction): Promise<DatavaultTable[]> {
     const database = this.getDb(tx);
@@ -25,6 +26,33 @@ export class DatavaultTablesRepository extends BaseRepository<
       .select()
       .from(datavaultTables)
       .where(eq(datavaultTables.tenantId, tenantId))
+      .orderBy(desc(datavaultTables.createdAt));
+  }
+
+  /**
+   * Find tables by tenant ID and User Access (Owner OR Shared)
+   */
+  async findByTenantAndUser(tenantId: string, userId: string, tx?: DbTransaction): Promise<DatavaultTable[]> {
+    const database = this.getDb(tx);
+
+    // Subquery for shared tables
+    const sharedTableIds = database
+      .select({ tableId: datavaultTablePermissions.tableId })
+      .from(datavaultTablePermissions)
+      .where(eq(datavaultTablePermissions.userId, userId));
+
+    return await database
+      .select()
+      .from(datavaultTables)
+      .where(
+        and(
+          eq(datavaultTables.tenantId, tenantId),
+          or(
+            eq(datavaultTables.ownerUserId, userId),
+            inArray(datavaultTables.id, sharedTableIds)
+          )
+        )
+      )
       .orderBy(desc(datavaultTables.createdAt));
   }
 
@@ -137,9 +165,9 @@ export class DatavaultTablesRepository extends BaseRepository<
       isUnique: col.isUnique,
       reference: col.type === 'reference'
         ? {
-            tableId: col.referenceTableId,
-            displayColumnSlug: col.referenceDisplayColumnSlug,
-          }
+          tableId: col.referenceTableId,
+          displayColumnSlug: col.referenceDisplayColumnSlug,
+        }
         : null,
     }));
 

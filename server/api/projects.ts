@@ -1,5 +1,5 @@
 import { Router, type Request, Response } from 'express';
-import { eq, and, desc, lt } from 'drizzle-orm';
+import { eq, and, desc, lt, or, inArray } from 'drizzle-orm';
 import { db } from '../db';
 import * as schema from '@shared/schema';
 import { hybridAuth } from '../middleware/auth';
@@ -41,6 +41,16 @@ router.get(
       const whereConditions = [
         eq(schema.projects.tenantId, tenantId),
         eq(schema.projects.archived, false),
+        or(
+          eq(schema.projects.ownerId, authReq.userId!),
+          // Subquery for shared projects
+          inArray(
+            schema.projects.id,
+            db.select({ projectId: schema.projectAccess.projectId })
+              .from(schema.projectAccess)
+              .where(eq(schema.projectAccess.principalId, authReq.userId!))
+          )
+        )
       ];
 
       // Add cursor condition if provided

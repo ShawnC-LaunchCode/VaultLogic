@@ -3,7 +3,7 @@
  */
 
 import { useState } from "react";
-import { Plus, GripVertical, ChevronDown, ChevronRight, FileText, Blocks, Code, FileCheck, Sparkles, Database, Save, Send, GitBranch, Play, CheckCircle, Info, Lock, Zap } from "lucide-react";
+import { Plus, GripVertical, ChevronDown, ChevronRight, FileText, Blocks, Code, FileCheck, Sparkles, Database, Save, Send, GitBranch, Play, CheckCircle, Info, Lock, Zap, Settings } from "lucide-react";
 import { useSections, useSteps, useCreateSection, useCreateStep, useReorderSections, useReorderSteps, useWorkflowMode, useBlocks, useTransformBlocks, useWorkflow, useCreateBlock } from "@/lib/vault-hooks";
 import { useWorkflowBuilder } from "@/store/workflow-builder";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { LogicIndicator } from "@/components/logic";
-import { BlocksPanel } from "./BlocksPanel";
+import { BlockEditorDialog, type UniversalBlock } from "./BlockEditorDialog";
+import { SectionSettingsDialog } from "./SectionSettingsDialog";
 import { DocumentStatusPanel } from "./sidebar/DocumentStatusPanel";
 import { AiAssistantDialog } from "./ai/AiAssistantDialog";
 import { AddSnipDialog } from "./AddSnipDialog";
@@ -51,7 +52,10 @@ export function SidebarTree({ workflowId }: { workflowId: string }) {
   const { data: workflowMode } = useWorkflowMode(workflowId);
   const mode = workflowMode?.mode || 'easy';
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
-  const [showBlocksDialog, setShowBlocksDialog] = useState(false);
+  const [editingBlock, setEditingBlock] = useState<UniversalBlock | null>(null);
+  const [editingSection, setEditingSection] = useState<any>(null);
+  const [isBlockEditorOpen, setIsBlockEditorOpen] = useState(false);
+  const [isSectionSettingsOpen, setIsSectionSettingsOpen] = useState(false);
   const [showAiDialog, setShowAiDialog] = useState(false);
   const [showSnipDialog, setShowSnipDialog] = useState(false);
 
@@ -140,15 +144,7 @@ export function SidebarTree({ workflowId }: { workflowId: string }) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        {/* Blocks button - Hidden in Easy Mode */}
-        {mode === 'advanced' && (
-          <div className="flex gap-2">
-            <Button onClick={() => setShowBlocksDialog(true)} size="sm" variant="outline" className="flex-1">
-              <Blocks className="w-3 h-3 mr-1" />
-              Blocks
-            </Button>
-          </div>
-        )}
+
 
         {/* AI Assistant Button */}
         <Button
@@ -206,20 +202,42 @@ export function SidebarTree({ workflowId }: { workflowId: string }) {
               onToggle={() => toggleSection(section.id)}
               mode={mode}
               blocks={blocksBySection[section.id] || []}
+              onEditBlock={(block) => {
+                setEditingBlock(block);
+                setIsBlockEditorOpen(true);
+              }}
+              onEditSection={() => {
+                setEditingSection(section);
+                setIsSectionSettingsOpen(true);
+              }}
             />
           ))}
         </div>
       </ScrollArea>
 
-      {/* Blocks Dialog */}
-      <Dialog open={showBlocksDialog} onOpenChange={setShowBlocksDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Workflow Blocks</DialogTitle>
-          </DialogHeader>
-          <BlocksPanel workflowId={workflowId} />
-        </DialogContent>
-      </Dialog>
+      {/* Block Editor Dialog */}
+      <BlockEditorDialog
+        workflowId={workflowId}
+        block={editingBlock}
+        mode={mode as any}
+        isOpen={isBlockEditorOpen}
+        onClose={() => {
+          setIsBlockEditorOpen(false);
+          setEditingBlock(null);
+        }}
+      />
+
+      {/* Section Settings Dialog */}
+      <SectionSettingsDialog
+        workflowId={workflowId}
+        section={editingSection}
+        isOpen={isSectionSettingsOpen}
+        onClose={() => {
+          setIsSectionSettingsOpen(false);
+          setEditingSection(null);
+        }}
+        mode={mode as any}
+      />
 
       <AiAssistantDialog
         workflowId={workflowId}
@@ -243,6 +261,8 @@ function SectionItem({
   onToggle,
   mode,
   blocks,
+  onEditBlock,
+  onEditSection,
 }: {
   section: any;
   workflowId: string;
@@ -250,6 +270,8 @@ function SectionItem({
   onToggle: () => void;
   mode: string;
   blocks: any[];
+  onEditBlock: (block: any) => void;
+  onEditSection: () => void;
 }) {
   const { data: steps } = useSteps(section.id);
   const createStepMutation = useCreateStep();
@@ -287,25 +309,21 @@ function SectionItem({
     if (!isExpanded) onToggle();
   };
 
-  const handleCreateLogicBlock = async (type: "write" | "query" | "validate") => {
+  const handleCreateLogicBlock = async (type: "write" | "read_table" | "list_tools" | "external_send") => {
     const order = blocks?.length || 0;
+    // Default configs for quick-add
     const config = type === "write" ? {
       dataSourceId: "",
       tableId: "",
-      mode: "upsert",
-      columnMappings: [],
-      matchStrategy: { type: "column_match" }
-    } : type === "query" ? {
-      queryId: "",
-      outputVariableName: ""
-    } : {
-      rules: []
-    };
+      mode: "upsert"
+    } : type === "read_table" ? {
+      tableId: ""
+    } : {};
 
     await createBlockMutation.mutateAsync({
       workflowId,
       type,
-      phase: "onSectionSubmit",
+      phase: "onSectionSubmit", // Default to submit phase for flow
       sectionId: section.id,
       config,
       enabled: true,
@@ -371,8 +389,25 @@ function SectionItem({
             Conditional
           </Badge>
         )}
+        <div className="flex gap-1 items-center opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEditSection();
+            }}
+            title="Page Settings"
+          >
+            <Settings className="h-3 w-3 text-muted-foreground" />
+          </Button>
+        </div>
         {!isFinalSection && (
-          <div className="flex gap-1 opacity-0 group-hover:opacity-100">
+          <div className={cn(
+            "flex gap-1",
+            mode === 'easy' ? "opacity-100" : "opacity-0 group-hover:opacity-100 transition-opacity"
+          )}>
             <Button
               variant="ghost"
               size="icon"
@@ -382,7 +417,7 @@ function SectionItem({
             >
               <Plus className="h-3 w-3" />
             </Button>
-            {mode === 'easy' && (
+            {(mode === 'easy' || mode === 'advanced') && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -401,21 +436,28 @@ function SectionItem({
                     handleCreateLogicBlock("write");
                   }}>
                     <Save className="w-3 h-3 mr-2" />
-                    Write to Table
+                    Save Data
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={(e) => {
                     e.stopPropagation();
-                    handleCreateLogicBlock("query");
+                    handleCreateLogicBlock("read_table");
                   }}>
                     <Database className="w-3 h-3 mr-2" />
-                    Query Data
+                    Read from Table
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={(e) => {
                     e.stopPropagation();
-                    handleCreateLogicBlock("validate");
+                    handleCreateLogicBlock("external_send");
                   }}>
-                    <CheckCircle className="w-3 h-3 mr-2" />
-                    Validate Data
+                    <Send className="w-3 h-3 mr-2" />
+                    Send Data
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={(e) => {
+                    e.stopPropagation();
+                    handleCreateLogicBlock("list_tools");
+                  }}>
+                    <Sparkles className="w-3 h-3 mr-2" />
+                    List Tools
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -428,8 +470,8 @@ function SectionItem({
         <div className="ml-4 pl-2 mt-1 space-y-0.5 border-l border-sidebar-border/50">
 
           {/* Top Blocks (Prefill/Enter) */}
-          {topBlocks.map(block => (
-            <BlockTreeItem key={block.id} block={block} mode={mode} />
+          {topBlocks.map((block: any) => (
+            <BlockTreeItem key={block.id} block={block} mode={mode} onEdit={() => onEditBlock(block)} />
           ))}
 
           {/* Steps */}
@@ -448,8 +490,8 @@ function SectionItem({
               ))}
 
           {/* Bottom Blocks (Submit/Next) */}
-          {bottomBlocks.map(block => (
-            <BlockTreeItem key={block.id} block={block} mode={mode} />
+          {bottomBlocks.map((block: any) => (
+            <BlockTreeItem key={block.id} block={block} mode={mode} onEdit={() => onEditBlock(block)} />
           ))}
 
         </div>
@@ -507,20 +549,34 @@ function StepItem({ step, sectionId }: { step: any; sectionId: string }) {
   );
 }
 
-function BlockTreeItem({ block, mode }: { block: any, mode: string }) {
-  // In Easy Mode, show as read-only/locked
-  const isLocked = mode === 'easy';
+function BlockTreeItem({ block, mode, onEdit }: { block: any, mode: string, onEdit: () => void }) {
+  // Unlock editing for supported blocks in Easy Mode
+  const isEditableInEasyMode = ['read_table', 'write', 'external_send', 'list_tools', 'query'].includes(block.type);
+  const isLocked = mode === 'easy' && !isEditableInEasyMode;
 
   const getIcon = (type: string) => {
     switch (type) {
       case 'prefill': return <Play className="w-3 h-3" />;
       case 'validate': return <CheckCircle className="w-3 h-3" />;
       case 'branch': return <GitBranch className="w-3 h-3" />;
-      case 'query': return <Database className="w-3 h-3" />;
+      case 'query': case 'read_table': return <Database className="w-3 h-3" />;
       case 'write': return <Save className="w-3 h-3" />;
       case 'external_send': return <Send className="w-3 h-3" />;
       case 'js': case 'transform': return <Code className="w-3 h-3" />;
+      case 'list_tools': return <Sparkles className="w-3 h-3" />;
       default: return <Blocks className="w-3 h-3" />;
+    }
+  }
+
+  const getLabel = (type: string) => {
+    switch (type) {
+      case 'read_table': return 'Read Table';
+      case 'write': return 'Send Data';
+      case 'external_send': return 'Send External Data';
+      case 'list_tools': return 'List Tool';
+      case 'js': return 'Script';
+      case 'query': return 'Read Data (Legacy)';
+      default: return type;
     }
   }
 
@@ -532,9 +588,14 @@ function BlockTreeItem({ block, mode }: { block: any, mode: string }) {
           ? "bg-slate-50 text-slate-400 cursor-not-allowed italic"
           : "hover:bg-sidebar-accent/50 cursor-pointer text-slate-600"
       )}
-      title={isLocked ? "Switch to Advanced Mode to edit this logic block" : block.type}
+      onClick={(e) => {
+        if (!isLocked) {
+          e.stopPropagation();
+          onEdit();
+        }
+      }}
+      title={isLocked ? "This block type is only editable in Advanced Mode" : block.type}
     >
-      {/* Indent slightly deeper to show it's 'attached' to section logic? Or same level? Same level seems fine. */}
       <div className={cn("w-3 mr-1", isLocked ? "opacity-50" : "")}>
         {isLocked ? <Lock className="w-3 h-3" /> : <GripVertical className="w-3 h-3 text-muted-foreground" />}
       </div>
@@ -542,9 +603,10 @@ function BlockTreeItem({ block, mode }: { block: any, mode: string }) {
         {getIcon(block.type)}
       </div>
       <span className="flex-1 truncate text-xs font-medium">
-        {block.type === 'js' ? 'Script' : block.type}
+        {getLabel(block.type)}
         {block.phase === 'onSectionEnter' ? ' (Enter)' : ' (Submit)'}
       </span>
+      {/* Add delete button here if needed, or rely on inside the editor dialog */}
     </div>
   )
 }

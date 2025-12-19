@@ -1,19 +1,74 @@
 import { db } from '../db';
-import { datavaultDatabases, datavaultTables, workflowDataSources } from '../../shared/schema';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { datavaultDatabases, datavaultTables, workflowDataSources, projects, workflows, projectAccess, workflowAccess } from '../../shared/schema';
+import { eq, and, desc, sql, or, inArray } from 'drizzle-orm';
 import type { DatavaultDatabase, InsertDatavaultDatabase, DatavaultScopeType } from '../../shared/schema';
 import type { DbTransaction } from './BaseRepository';
 
 export class DatavaultDatabasesRepository {
 
   /**
-   * Find all databases for a tenant
+   * Find all databases for a tenant (Legacy - admin only)
    */
   async findByTenantId(tenantId: string): Promise<DatavaultDatabase[]> {
     return db
       .select()
       .from(datavaultDatabases)
       .where(eq(datavaultDatabases.tenantId, tenantId))
+      .orderBy(desc(datavaultDatabases.updatedAt));
+  }
+
+  /**
+   * Find databases visible to user (Account scope OR Project scope with access OR Workflow scope with access)
+   */
+  async findByTenantAndUser(tenantId: string, userId: string): Promise<DatavaultDatabase[]> {
+    // 1. Get projects user has access to
+    const sharedProjectIds = db
+      .select({ id: projectAccess.projectId })
+      .from(projectAccess)
+      .where(eq(projectAccess.principalId, userId));
+
+    // 2. Get workflows user has access to
+    const sharedWorkflowIds = db
+      .select({ id: workflowAccess.workflowId })
+      .from(workflowAccess)
+      .where(eq(workflowAccess.principalId, userId));
+
+    return db
+      .select()
+      .from(datavaultDatabases)
+      .where(
+        and(
+          eq(datavaultDatabases.tenantId, tenantId),
+          or(
+            // Account Scope: Visible to everyone in tenant
+            eq(datavaultDatabases.scopeType, 'account'),
+
+            // Project Scope: User owns project OR has shared access
+            and(
+              eq(datavaultDatabases.scopeType, 'project'),
+              or(
+                inArray(
+                  datavaultDatabases.scopeId,
+                  db.select({ id: projects.id }).from(projects).where(eq(projects.ownerId, userId))
+                ),
+                inArray(datavaultDatabases.scopeId, sharedProjectIds)
+              )
+            ),
+
+            // Workflow Scope: User created/owns workflow OR has shared access
+            and(
+              eq(datavaultDatabases.scopeType, 'workflow'),
+              or(
+                inArray(
+                  datavaultDatabases.scopeId,
+                  db.select({ id: workflows.id }).from(workflows).where(or(eq(workflows.creatorId, userId), eq(workflows.ownerId, userId)))
+                ),
+                inArray(datavaultDatabases.scopeId, sharedWorkflowIds)
+              )
+            )
+          )
+        )
+      )
       .orderBy(desc(datavaultDatabases.updatedAt));
   }
 

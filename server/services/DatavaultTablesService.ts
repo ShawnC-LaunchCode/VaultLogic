@@ -230,17 +230,17 @@ export class DatavaultTablesService {
   }
 
   /**
-   * List all tables for a tenant
+   * List all tables for a tenant (filtered by user access)
    */
-  async listTables(tenantId: string, tx?: DbTransaction): Promise<DatavaultTable[]> {
-    return await this.tablesRepo.findByTenantId(tenantId, tx);
+  async listTables(tenantId: string, userId: string, tx?: DbTransaction): Promise<DatavaultTable[]> {
+    return await this.tablesRepo.findByTenantAndUser(tenantId, userId, tx);
   }
 
   /**
    * List tables with stats (column count, row count)
    */
-  async listTablesWithStats(tenantId: string, tx?: DbTransaction) {
-    const tables = await this.tablesRepo.findByTenantId(tenantId, tx);
+  async listTablesWithStats(tenantId: string, userId: string, tx?: DbTransaction) {
+    const tables = await this.tablesRepo.findByTenantAndUser(tenantId, userId, tx);
 
     const tablesWithStats = await Promise.all(
       tables.map(async (table) => {

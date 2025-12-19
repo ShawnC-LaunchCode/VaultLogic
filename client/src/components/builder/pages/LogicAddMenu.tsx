@@ -1,10 +1,9 @@
 /**
  * Logic Add Menu Component
- * Dropdown menu for adding logic blocks (prefill, validate, branch, js)
- * JS blocks only available in Advanced mode
+ * Dropdown menu for adding logic blocks (new data blocks + advanced)
  */
 
-import { Code2, Database, CheckCircle, GitBranch } from "lucide-react";
+import { Code2, Database, Save, Send, Sparkles, GitBranch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -28,16 +27,28 @@ interface LogicAddMenuProps {
 const LOGIC_TYPES = {
   easy: [
     {
-      type: "prefill" as const,
-      label: "Prefill Data",
-      icon: Database,
-      description: "Set default values for questions",
+      type: "write" as const,
+      label: "Save Data",
+      icon: Save,
+      description: "Save conceptual row to DataVault",
     },
     {
-      type: "validate" as const,
-      label: "Validate Input",
-      icon: CheckCircle,
-      description: "Check if answers meet criteria",
+      type: "read_table" as const,
+      label: "Read from Table",
+      icon: Database,
+      description: "Query rows from DataVault",
+    },
+    {
+      type: "external_send" as const,
+      label: "Send Data",
+      icon: Send,
+      description: "Send payload to external API",
+    },
+    {
+      type: "list_tools" as const,
+      label: "List Tools",
+      icon: Sparkles,
+      description: "Filter, sort and transform lists",
     },
     {
       type: "branch" as const,
@@ -66,9 +77,9 @@ export function LogicAddMenu({ workflowId, sectionId, nextOrder }: LogicAddMenuP
   const mode = workflowMode?.mode || "easy";
   const showAdvanced = isFeatureAllowed(mode, "js");
 
-  const handleAddLogic = async (type: "prefill" | "validate" | "branch" | "js") => {
+  const handleAddLogic = async (type: string) => {
     try {
-      // Handle JS blocks differently - they use the transform blocks API
+      // Handle JS blocks differently
       if (type === "js") {
         const block = await createTransformBlockMutation.mutateAsync({
           workflowId,
@@ -83,49 +94,62 @@ export function LogicAddMenu({ workflowId, sectionId, nextOrder }: LogicAddMenuP
           enabled: true,
           order: nextOrder,
         });
-
-        // Select the newly created block
         selectBlock(block.id);
-
-        toast({
-          title: "Logic block added",
-          description: "JS Transform created",
-        });
+        toast({ title: "Logic block added", description: "JS Transform created" });
         return;
       }
 
-      // Handle regular blocks (prefill, validate, branch)
+      // Handle regular blocks
       let config = {};
-      let phase: "onSectionEnter" | "onSectionSubmit" = "onSectionEnter";
+      let phase: "onSectionEnter" | "onSectionSubmit" = "onSectionSubmit";
+      const blockType = type as any;
 
-      // Set default config based on type
-      if (type === "prefill") {
-        config = { mode: "static", staticMap: {} };
-        phase = "onSectionEnter";
-      } else if (type === "validate") {
-        config = { rules: [] };
-        phase = "onSectionSubmit";
-      } else if (type === "branch") {
+      // New Block Defaults
+      if (type === 'write') {
+        config = {
+          mode: 'create',
+          dataSourceId: '',
+          tableId: '',
+          columnMappings: []
+        };
+      } else if (type === 'read_table') {
+        config = {
+          dataSourceId: '',
+          tableId: '',
+          outputKey: 'list_data',
+          filters: []
+        };
+      } else if (type === 'external_send') {
+        config = {
+          destinationId: '',
+          payloadMappings: []
+        };
+      } else if (type === 'list_tools') {
+        config = {
+          inputKey: '',
+          operation: 'filter',
+          outputKey: 'processed_list'
+        };
+      } else if (type === 'branch') {
         config = { conditions: [], targetSectionId: null };
-        phase = "onSectionSubmit";
       }
 
       const block = await createBlockMutation.mutateAsync({
         workflowId,
         sectionId,
-        type,
+        type: blockType,
         phase,
         config,
         enabled: true,
         order: nextOrder,
       });
 
-      // Select the newly created block
       selectBlock(block.id);
 
+      const label = [...LOGIC_TYPES.easy, ...LOGIC_TYPES.advanced].find((t) => t.type === type)?.label;
       toast({
         title: "Logic block added",
-        description: `${LOGIC_TYPES.easy.find((t) => t.type === type)?.label} created`,
+        description: `${label} created`,
       });
     } catch (error) {
       toast({

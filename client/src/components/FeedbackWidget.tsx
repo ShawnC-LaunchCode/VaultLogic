@@ -30,18 +30,14 @@ export default function FeedbackWidget() {
             </button>
           </DialogTrigger>
           <DialogContent
-            className="sm:max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 p-8 text-center"
+            className="sm:max-w-2xl h-[80vh] bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-800 p-0 overflow-hidden"
           >
-            <div className="flex flex-col items-center justify-center space-y-4">
-              <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-full">
-                <MessageSquare className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
-              </div>
-              <h2 className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-fuchsia-600">
-                Feedback Coming Soon
-              </h2>
-              <p className="text-gray-500 dark:text-gray-400 text-sm">
-                We are preparing a new feedback survey to better capture your thoughts. Stay tuned!
-              </p>
+            <div className="w-full h-full relative">
+              <iframe
+                src="https://poll-vault-production.up.railway.app/survey/627635e4-6329-4928-afa7-3dab2d1714e4"
+                className="w-full h-full border-0"
+                title="Feedback Survey"
+              />
             </div>
           </DialogContent>
         </Dialog>

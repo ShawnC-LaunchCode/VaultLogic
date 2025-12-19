@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2 } from "lucide-react";
-import { useWorkflowDataSources } from "@/lib/vault-hooks";
+import { useWorkflowDataSources, useWorkflowVariables } from "@/lib/vault-hooks";
 import { dataSourceAPI } from "@/lib/vault-api";
 import { useQuery } from "@tanstack/react-query";
+import { useTables } from "@/hooks/useDatavaultTables";
+import { useTableColumns } from "@/hooks/useTableColumns";
 
 interface ColumnMapping {
     columnId: string; // UUID for durable identifier
@@ -38,12 +40,61 @@ interface WriteBlockEditorProps {
 
 export function WriteBlockEditor({ workflowId, config, onChange }: WriteBlockEditorProps) {
     const { data: dataSources } = useWorkflowDataSources(workflowId);
+    const { data: variables = [] } = useWorkflowVariables(workflowId);
+    const selectedDataSource = dataSources?.find(ds => ds.id === config.dataSourceId);
 
-    const { data: tables } = useQuery({
+    // Fetch tables for standard data sources (Postgres, etc.)
+    const { data: fetchedTables } = useQuery({
         queryKey: ["dataSource", config.dataSourceId, "tables"],
         queryFn: () => config.dataSourceId ? dataSourceAPI.getTables(config.dataSourceId) : Promise.resolve([]),
-        enabled: !!config.dataSourceId
+        enabled: !!config.dataSourceId && !selectedDataSource?.config?.isNativeTable
     });
+
+    // Fetch all native tables to resolve the proxy
+    const { data: allNativeTables } = useTables();
+
+    // Determine the list of tables to show
+    let tables: { name: string; type: string; id: string }[] = [];
+
+    // Normalize fetched tables which might only have name/type
+    if (fetchedTables) {
+        // Warning: standard data source tables might not have IDs yet if just discovered
+        // But for native tables we rely on IDs.
+        // For external sources, we might default to using name as ID if ID is missing.
+        tables = fetchedTables.map((t: any) => ({ ...t, id: t.id || t.name }));
+    }
+
+    if (selectedDataSource?.config?.isNativeTable && selectedDataSource?.config?.tableId) {
+        const targetTable = allNativeTables?.find(t => t.id === selectedDataSource.config.tableId);
+        if (targetTable) {
+            tables = [{ name: targetTable.name, type: 'native', id: targetTable.id }];
+        }
+    }
+
+    // Determine resolved table ID for column fetching
+    // If it's a native table, we use the ID directly. 
+    // If it's an external table, we also need an ID (or we might need to change useTableColumns to support names)
+    // Currently useTableColumns expects a tableId (UUID).
+    // For external tables, this might be tricky if we don't have UUIDs.
+    // Assuming native tables for now as per user context (Datavault).
+    const resolvedTableId = config.tableId && tables.find(t => t.name === config.tableId || t.id === config.tableId)?.id;
+
+    // Fetch columns for the selected table
+    const { data: columns } = useTableColumns(resolvedTableId);
+
+    // Auto-select table if it's a native table proxy
+    useEffect(() => {
+        if (selectedDataSource?.config?.isNativeTable && tables.length === 1) {
+            // Store the table NAME in config as per current convention, or proper ID?
+            // Existing code seemed to use name.
+            if (config.tableId !== tables[0].name) {
+                // If the config expects name (legacy assumption from viewing previous code), use name.
+                // But resolvedTableId lookup above tries to handle both.
+                // Standard WriteBlock uses tableId from config.
+                updateConfig({ tableId: tables[0].id });
+            }
+        }
+    }, [selectedDataSource, tables, config.tableId]);
 
     const updateConfig = (updates: Partial<WriteConfig>) => {
         onChange({ ...config, ...updates });
@@ -51,7 +102,9 @@ export function WriteBlockEditor({ workflowId, config, onChange }: WriteBlockEdi
 
     const addMapping = () => {
         const mappings = config.columnMappings || [];
-        updateConfig({ columnMappings: [...mappings, { columnId: "", value: "" }] });
+        // Default to first available column if possible
+        const defaultCol = columns && columns.length > 0 ? columns[0].id : "";
+        updateConfig({ columnMappings: [...mappings, { columnId: defaultCol, value: "" }] });
     };
 
     const updateMapping = (index: number, key: keyof ColumnMapping, value: string) => {
@@ -65,6 +118,11 @@ export function WriteBlockEditor({ workflowId, config, onChange }: WriteBlockEdi
         mappings.splice(index, 1);
         updateConfig({ columnMappings: mappings });
     };
+
+    // Helper to get column name
+    const getColumnName = (colId: string) => {
+        return columns?.find(c => c.id === colId)?.name || colId;
+    }
 
     return (
         <div className="space-y-4">
@@ -108,15 +166,19 @@ export function WriteBlockEditor({ workflowId, config, onChange }: WriteBlockEdi
                 <Label>Table / Collection</Label>
                 <Select
                     value={config.tableId}
-                    onValueChange={(val) => updateConfig({ tableId: val })}
+                    onValueChange={(val) => {
+                        // Find the selected table to get the right ID/Name to store
+                        // Storing ID is safer for native.
+                        updateConfig({ tableId: val })
+                    }}
                     disabled={!config.dataSourceId}
                 >
                     <SelectTrigger>
                         <SelectValue placeholder="Select table" />
                     </SelectTrigger>
                     <SelectContent>
-                        {tables?.map(t => (
-                            <SelectItem key={t.name} value={t.name}>{t.name}</SelectItem>
+                        {tables.map(t => (
+                            <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
@@ -148,37 +210,60 @@ export function WriteBlockEditor({ workflowId, config, onChange }: WriteBlockEdi
 
                     <div className="space-y-2">
                         <Label>Match Column</Label>
-                        <Input
-                            placeholder="Column UUID (e.g. col_abc123)"
+                        {/* Column Select for Match Strategy */}
+                        <Select
                             value={config.matchStrategy?.columnId || ""}
-                            onChange={(e) => updateConfig({
+                            onValueChange={(val) => updateConfig({
                                 matchStrategy: {
                                     ...config.matchStrategy,
                                     type: config.matchStrategy?.type || "column_match",
-                                    columnId: e.target.value
+                                    columnId: val
                                 } as MatchStrategy
                             })}
-                        />
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select column..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {columns?.map(col => (
+                                    <SelectItem key={col.id} value={col.id}>{col.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                         <p className="text-xs text-muted-foreground">
-                            The column UUID to match against (must be unique identifier)
+                            The column to match against (must be unique identifier)
                         </p>
                     </div>
 
                     <div className="space-y-2">
                         <Label>Match Value</Label>
-                        <Input
-                            placeholder="Variable or expression (e.g. client_id)"
+                        <Select
                             value={config.matchStrategy?.columnValue || ""}
-                            onChange={(e) => updateConfig({
+                            onValueChange={(val) => updateConfig({
                                 matchStrategy: {
                                     ...config.matchStrategy,
                                     type: config.matchStrategy?.type || "column_match",
-                                    columnValue: e.target.value
+                                    columnValue: val
                                 } as MatchStrategy
                             })}
-                        />
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select variable..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {variables.map(v => (
+                                    <SelectItem key={v.key} value={v.alias || v.key}>
+                                        <div className="flex items-center gap-2">
+                                            {/* Basic variable display */}
+                                            <span className="font-mono text-xs">{v.alias || v.key}</span>
+                                            {v.label && <span className="text-muted-foreground text-xs font-normal">({v.label})</span>}
+                                        </div>
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                         <p className="text-xs text-muted-foreground">
-                            Workflow variable containing the value to match (e.g. step.client_id)
+                            Workflow variable containing the value to match
                         </p>
                     </div>
                 </div>
@@ -196,19 +281,49 @@ export function WriteBlockEditor({ workflowId, config, onChange }: WriteBlockEdi
                 <div className="space-y-2">
                     {config.columnMappings?.map((mapping, idx) => (
                         <div key={idx} className="flex gap-2 items-center">
-                            <Input
-                                placeholder="Column UUID"
-                                value={mapping.columnId}
-                                onChange={(e) => updateMapping(idx, "columnId", e.target.value)}
-                                className="flex-1"
-                            />
+                            {/* Column Select for Mappings */}
+                            <div className="flex-1 min-w-0">
+                                <Select
+                                    value={mapping.columnId}
+                                    onValueChange={(val) => updateMapping(idx, "columnId", val)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select column">
+                                            {getColumnName(mapping.columnId)}
+                                        </SelectValue>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {columns?.map(col => (
+                                            <SelectItem key={col.id} value={col.id}>{col.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
                             <span className="text-muted-foreground">=</span>
-                            <Input
-                                placeholder="Value / Variable"
-                                value={mapping.value}
-                                onChange={(e) => updateMapping(idx, "value", e.target.value)}
-                                className="flex-1"
-                            />
+
+                            {/* Variable Select for Mapping Value */}
+                            <div className="flex-1 min-w-0">
+                                <Select
+                                    value={mapping.value}
+                                    onValueChange={(val) => updateMapping(idx, "value", val)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select variable..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {variables.map(v => (
+                                            <SelectItem key={v.key} value={v.alias || v.key}>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-mono text-xs">{v.alias || v.key}</span>
+                                                    {v.label && <span className="text-muted-foreground text-xs font-normal">({v.label})</span>}
+                                                </div>
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
                             <Button type="button" variant="ghost" size="icon" onClick={() => removeMapping(idx)}>
                                 <Trash2 className="w-4 h-4 text-muted-foreground" />
                             </Button>

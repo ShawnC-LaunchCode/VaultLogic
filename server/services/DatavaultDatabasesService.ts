@@ -20,10 +20,10 @@ interface UpdateDatabaseInput {
 export class DatavaultDatabasesService {
 
   /**
-   * Get all databases for a tenant
+   * Get all databases for a tenant (filtered by user access)
    */
-  async getDatabasesForTenant(tenantId: string): Promise<DatavaultDatabase[]> {
-    return datavaultDatabasesRepository.findByTenantId(tenantId);
+  async getDatabasesForTenant(tenantId: string, userId: string): Promise<DatavaultDatabase[]> {
+    return datavaultDatabasesRepository.findByTenantAndUser(tenantId, userId);
   }
 
   /**

@@ -399,9 +399,11 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
     }
   }, [run, mode]);
 
+  // Calculate current section early to use in effects
+  const currentSection = visibleSections[currentSectionIndex] || (sections ? sections[currentSectionIndex] : undefined);
+
   // Analytics: Track Page Views
   useEffect(() => {
-    const currentSection = visibleSections[currentSectionIndex] || sections?.[currentSectionIndex];
     if (currentSection) {
       const rId = mode === 'preview' ? 'preview-session' : actualRunId;
       const wId = workflowId;
@@ -422,7 +424,8 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
         });
       }
     }
-  }, [currentSectionIndex, mode, actualRunId, workflowId, run?.versionId, sections, visibleSections, previewEnvironment]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentSection?.id, mode, actualRunId, workflowId, run?.versionId, previewEnvironment]);
 
   // Show initializing state
   if (isInitializing) {
@@ -458,7 +461,7 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
     );
   }
 
-  const currentSection = visibleSections[currentSectionIndex] || (sections ? sections[currentSectionIndex] : undefined);
+  // removed duplicate currentSection declaration
   const progress = ((currentSectionIndex + 1) / visibleSections.length) * 100;
   const isLastSection = currentSectionIndex === visibleSections.length - 1;
 
@@ -532,7 +535,8 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
       const validationResult = await validatePage({
         schemas: stepSchemas,
         values: effectiveValues,
-        allValues: effectiveValues
+        allValues: effectiveValues,
+        pageRules: (currentSection.config as any)?.validationRules || []
       });
 
       if (!validationResult.valid) {

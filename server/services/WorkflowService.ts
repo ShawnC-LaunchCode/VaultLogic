@@ -165,10 +165,11 @@ export class WorkflowService {
   }
 
   /**
-   * List workflows for a user
+   * List workflows for a user (Owner OR Shared)
    */
-  async listWorkflows(creatorId: string): Promise<Workflow[]> {
-    return await this.workflowRepo.findByCreatorId(creatorId);
+  async listWorkflows(userId: string): Promise<Workflow[]> {
+    // Stage 15: Updated to include shared workflows
+    return await this.workflowRepo.findByUserAccess(userId);
   }
 
   /**

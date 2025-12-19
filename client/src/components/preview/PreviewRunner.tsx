@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { WorkflowRunner } from "@/pages/WorkflowRunner";
 import { PreviewEnvironment } from "@/lib/previewRunner/PreviewEnvironment";
@@ -44,7 +44,9 @@ export function PreviewRunner({ workflowId, onExit }: PreviewRunnerProps) {
         gcTime: 0,
     });
 
-    const allSteps = workflow?.sections?.flatMap((section: any) => section.steps || []) || [];
+    const allSteps = useMemo(() => {
+        return workflow?.sections?.flatMap((section: any) => section.steps || []) || [];
+    }, [workflow]);
 
     // Fetch snapshot values
     const { data: snapshotValues } = useQuery({
@@ -81,6 +83,7 @@ export function PreviewRunner({ workflowId, onExit }: PreviewRunnerProps) {
     }, [workflowId, previewRunId]);
 
     // Init Environment
+    // Init Environment
     useEffect(() => {
         if (workflow && allSteps && workflow.sections) {
             // Always recreate env when workflow/steps change to pick up schema updates (e.g., required status)
@@ -111,7 +114,8 @@ export function PreviewRunner({ workflowId, onExit }: PreviewRunnerProps) {
             hotReloadManager.attach(newEnv);
         }
         return () => hotReloadManager.detach();
-    }, [workflow, allSteps, snapshotId, snapshotValues]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [workflow?.id, JSON.stringify(workflow?.sections?.map((s: any) => s.id)), JSON.stringify(allSteps?.map((s: ApiStep) => s.id)), snapshotId, snapshotValues]);
 
     const handleRandomFill = async () => {
         if (!env || !allSteps) return;

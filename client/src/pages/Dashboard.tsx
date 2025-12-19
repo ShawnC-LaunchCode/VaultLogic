@@ -99,6 +99,24 @@ export default function Dashboard() {
         />
 
         <div className="flex-1 overflow-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
+          {/* AI Availability Banner */}
+          <div className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 rounded-xl p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/20">
+                <Sparkles className="h-4 w-4 text-indigo-500" />
+              </span>
+              <div>
+                <h3 className="font-medium text-foreground">AI Generated Workflows Coming Soon</h3>
+                <p className="text-sm text-muted-foreground">Full AI generation capabilities will be available in early January.</p>
+              </div>
+            </div>
+            <Link href="/workflows/new">
+              <Button variant="outline" size="sm" className="hidden sm:flex">
+                Get Ready
+              </Button>
+            </Link>
+          </div>
+
           {/* AI Hero Card */}
           <AIHeroCard
             onAIClick={() => track("ai_workflow_entry_clicked", { source: "dashboard_hero" })}

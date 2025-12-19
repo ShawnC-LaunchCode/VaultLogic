@@ -1,37 +1,36 @@
+
 import { useState } from "react";
-import { Plus, Trash2, Code, AlertCircle, Copy, Database, List } from "lucide-react";
+import { Plus, Trash2, Code, AlertCircle, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { EnhancedVariablePicker } from "@/components/common/EnhancedVariablePicker"; // Ensure this path is correct
+import { EnhancedVariablePicker } from "@/components/common/EnhancedVariablePicker";
+import { Badge } from "@/components/ui/badge";
+import { Database } from "lucide-react";
+
+// Types derived from existing codebase or re-declared for standalone usage if needed
+// Assuming @shared/types/blocks is available
 import type {
-    ValidateConfig,
     ValidateRule,
     CompareRule,
     ConditionalRequiredRule,
     ForEachRule,
     LegacyValidateRule
 } from "@shared/types/blocks";
-import { Badge } from "@/components/ui/badge";
-import { ValidationRulesEditor } from "../builder/ValidationRulesEditor";
 
-interface ValidateBlockEditorProps {
+interface ValidationRulesEditorProps {
+    rules: ValidateRule[];
+    onChange: (rules: ValidateRule[]) => void;
     workflowId: string;
-    config: ValidateConfig;
-    onChange: (config: ValidateConfig) => void;
     mode?: "easy" | "advanced";
 }
 
-export function ValidateBlockEditor({ workflowId, config, onChange, mode = "easy" }: ValidateBlockEditorProps) {
+export function ValidationRulesEditor({ rules, onChange, workflowId, mode = "easy" }: ValidationRulesEditorProps) {
     const [activeTab, setActiveTab] = useState<"visual" | "json">("visual");
-
-    // Ensure rules array exists
-    const rules = config.rules || [];
 
     const addRule = (type: string) => {
         let newRule: ValidateRule;
@@ -61,41 +60,95 @@ export function ValidateBlockEditor({ workflowId, config, onChange, mode = "easy
                 message: 'List item validation failed'
             } as ForEachRule;
         } else {
-            // Legacy fallback
             newRule = { assert: { key: '', op: 'is_not_empty' }, message: 'Invalid' } as LegacyValidateRule;
         }
 
-        onChange({ ...config, rules: [...rules, newRule] });
+        onChange([...rules, newRule]);
     };
 
     const updateRule = (index: number, updated: ValidateRule) => {
         const newRules = [...rules];
         newRules[index] = updated;
-        onChange({ ...config, rules: newRules });
+        onChange(newRules);
     };
 
     const deleteRule = (index: number) => {
         const newRules = [...rules];
         newRules.splice(index, 1);
-        onChange({ ...config, rules: newRules });
+        onChange(newRules);
     };
 
     return (
         <div className="space-y-4">
-            <ValidationRulesEditor
-                rules={config.rules || []}
-                onChange={(newRules: ValidateRule[]) => onChange({ ...config, rules: newRules })}
-                workflowId={workflowId}
-                mode={mode}
-            />
+            <div className="flex items-center justify-between">
+                <Label>Validation Rules</Label>
+                {mode === 'advanced' && (
+                    <div className="flex bg-muted rounded-md p-1">
+                        <button
+                            onClick={() => setActiveTab("visual")}
+                            className={`px-3 py-1 text-xs rounded-sm transition-all ${activeTab === "visual" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+                        >
+                            Visual
+                        </button>
+                        <button
+                            onClick={() => setActiveTab("json")}
+                            className={`px-3 py-1 text-xs rounded-sm transition-all ${activeTab === "json" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+                        >
+                            JSON
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            {activeTab === "json" ? (
+                <Textarea
+                    value={JSON.stringify(rules, null, 2)}
+                    onChange={(e) => {
+                        try {
+                            onChange(JSON.parse(e.target.value));
+                        } catch (e) { }
+                    }}
+                    className="font-mono text-xs h-[400px]"
+                />
+            ) : (
+                <div className="space-y-4">
+                    {rules.length === 0 && (
+                        <div className="text-center py-8 border-2 border-dashed rounded-lg text-muted-foreground text-sm">
+                            No validation rules defined.
+                        </div>
+                    )}
+
+                    {rules.map((rule, index) => (
+                        <RuleCard
+                            key={index}
+                            rule={rule}
+                            index={index}
+                            onUpdate={(r) => updateRule(index, r)}
+                            onDelete={() => deleteRule(index)}
+                            workflowId={workflowId}
+                        />
+                    ))}
+
+                    <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => addRule('compare')} className="gap-1">
+                            <Code className="w-3 h-3" /> Compare Values
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => addRule('conditional_required')} className="gap-1">
+                            <AlertCircle className="w-3 h-3" /> Conditional Required
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => addRule('foreach')} className="gap-1">
+                            <List className="w-3 h-3" /> For Each Loop
+                        </Button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
 
-// Remove unused local components if they are now in ValidationRulesEditor or imported
-
-
-// --- Subcomponents for Rules ---
+// ... Copy RuleCard and sub-editors from ValidateBlockEditor.tsx ...
+// To save space/complexity in this artifact generation, I will assume I can copy-paste them or define them here.
+// For now, I'll paste the full content including subcomponents to ensure it works standalone.
 
 function RuleCard({ rule, index, onUpdate, onDelete, workflowId }: {
     rule: ValidateRule,
@@ -108,7 +161,6 @@ function RuleCard({ rule, index, onUpdate, onDelete, workflowId }: {
 
     return (
         <Card className="relative group">
-            {/* Delete Button */}
             <div className="absolute top-2 right-2">
                 <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={onDelete}>
                     <Trash2 className="h-3 w-3" />
@@ -175,7 +227,6 @@ function CompareRuleEditor({ rule, onChange, workflowId }: { rule: CompareRule, 
                             <SelectItem value="greater_than">&gt;</SelectItem>
                             <SelectItem value="less_than">&lt;</SelectItem>
                             <SelectItem value="contains">contains</SelectItem>
-                            {/* Add before/after if backend supports it later */}
                         </SelectContent>
                     </Select>
                 </div>
@@ -296,9 +347,6 @@ function ForEachRuleEditor({ rule, onChange, workflowId }: { rule: ForEachRule, 
                 <div className="font-semibold text-slate-700 mb-2">Item Validations:</div>
                 {rule.rules.map((subRule, idx) => (
                     <div key={idx} className="mb-2 pb-2 border-b last:border-0">
-                        {/* Simplified editor for inner rules - restricted to basic asserts or compare? */}
-                        {/* Reusing existing types recursively? */}
-                        {/* For MVP, let's just show a simple JSON editor or simple assert for inner rules */}
                         <div className="flex gap-1 items-center mb-1">
                             <span className="font-mono text-slate-500">{(subRule as any).assert?.key || (subRule as any).left || 'Rule'}</span>
                             <Button variant="ghost" size="icon" className="h-4 w-4 ml-auto" onClick={() => {
@@ -309,7 +357,6 @@ function ForEachRuleEditor({ rule, onChange, workflowId }: { rule: ForEachRule, 
                                 <Trash2 className="h-3 w-3" />
                             </Button>
                         </div>
-                        {/* Quick Edit for Inner Rule Message */}
                         <Input
                             value={subRule.message}
                             onChange={(e) => {
@@ -323,20 +370,15 @@ function ForEachRuleEditor({ rule, onChange, workflowId }: { rule: ForEachRule, 
                     </div>
                 ))}
                 <Button variant="secondary" size="sm" className="w-full h-6 text-[10px]" onClick={() => {
-                    // Add a simple assert rule by default
                     const newSub = [...rule.rules, { assert: { key: rule.itemAlias + '.field', op: 'is_not_empty' }, message: 'Required' } as LegacyValidateRule];
                     onChange({ ...rule, rules: newSub });
                 }}>
                     + Add Item Check (JSON)
                 </Button>
-                <p className="text-[10px] text-muted-foreground mt-1">Note: Use <code>{rule.itemAlias}.fieldName</code> to reference item properties.</p>
             </div>
         </div>
     );
 }
-
-
-// --- Helper Inputs ---
 
 interface VariableInputProps {
     label?: string;

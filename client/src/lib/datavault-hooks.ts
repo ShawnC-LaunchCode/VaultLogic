@@ -124,18 +124,20 @@ export function useDatavaultTables(withStats = false) {
 }
 
 export function useDatavaultTable(tableId: string | undefined, withColumns = false) {
+  const isUuid = !!tableId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tableId);
   return useQuery({
     queryKey: datavaultQueryKeys.table(tableId!),
     queryFn: () => datavaultAPI.getTable(tableId!, withColumns),
-    enabled: !!tableId,
+    enabled: isUuid,
   });
 }
 
 export function useDatavaultTableSchema(tableId: string | undefined) {
+  const isUuid = !!tableId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tableId);
   return useQuery({
     queryKey: [...datavaultQueryKeys.table(tableId!), 'schema'],
     queryFn: () => datavaultAPI.getTableSchema(tableId!),
-    enabled: !!tableId,
+    enabled: isUuid,
   });
 }
 
@@ -216,10 +218,11 @@ export function useDeleteDatavaultTable() {
 // ============================================================================
 
 export function useDatavaultColumns(tableId: string | undefined) {
+  const isUuid = !!tableId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tableId);
   return useQuery({
     queryKey: datavaultQueryKeys.tableColumns(tableId!),
     queryFn: () => datavaultAPI.listColumns(tableId!),
-    enabled: !!tableId,
+    enabled: isUuid,
   });
 }
 
@@ -277,10 +280,11 @@ export function useReorderDatavaultColumns() {
 // ============================================================================
 
 export function useDatavaultRows(tableId: string | undefined, options?: { limit?: number; offset?: number }) {
+  const isUuid = !!tableId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tableId);
   return useQuery({
     queryKey: [...datavaultQueryKeys.tableRows(tableId!), options],
     queryFn: () => datavaultAPI.listRows(tableId!, options),
-    enabled: !!tableId,
+    enabled: isUuid,
   });
 }
 
