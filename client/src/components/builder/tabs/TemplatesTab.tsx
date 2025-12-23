@@ -6,8 +6,9 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import axios from "axios";
-import { useWorkflow, useSteps, useProjects } from "@/lib/vault-hooks";
-import { Upload, FileText, Trash2, RefreshCw, TestTube, AlertCircle, CheckCircle } from "lucide-react";
+import { useWorkflow, useSteps, useProjects, useWorkflowVariables } from "@/lib/vault-hooks";
+import { type ApiWorkflowVariable } from "@/lib/vault-api";
+import { Upload, FileText, Trash2, RefreshCw, TestTube, AlertCircle, CheckCircle, ExternalLink } from "lucide-react";
 import { BuilderLayout, BuilderLayoutHeader, BuilderLayoutContent } from "../layout/BuilderLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +27,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DocumentTemplateEditor } from "@/pages/visual-builder/components/DocumentTemplateEditor";
+import { PdfMappingEditor } from "../templates/PdfMappingEditor";
+import { Edit } from "lucide-react";
 
 interface Template {
   id: string;
@@ -50,15 +54,23 @@ export function TemplatesTab({ workflowId }: TemplatesTabProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [templateKey, setTemplateKey] = useState("");
   const [workflowProjectId, setWorkflowProjectId] = useState<string | null>(null);
+  const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
 
   // Fetch workflow for project context
   const { data: workflow } = useWorkflow(workflowId);
-  // Fetch steps for variable analysis
-  const { data: steps } = useSteps(workflowId);
+  // Fetch variables for variable analysis
+  const { data: variables } = useWorkflowVariables(workflowId);
+
   // Fetch projects to find fallback
   const { data: projects } = useProjects();
 
-  const workflowVariables = new Set((steps || []).map(s => s.alias).filter(Boolean));
+  const workflowVariables = (variables || []).map((v: ApiWorkflowVariable) => ({
+    id: v.key,
+    alias: v.alias || null,
+    text: v.label
+  }));
+  // console.log("TemplatesTab: Computed workflowVariables", workflowVariables);
+  const workflowVariableAliases = new Set(workflowVariables.map(v => v.alias).filter((a): a is string => !!a));
 
   // Fetch templates for this project
   const fetchTemplates = async () => {
@@ -101,8 +113,8 @@ export function TemplatesTab({ workflowId }: TemplatesTabProps) {
 
   // Helper to check variable status
   const getVariableStatus = (templateVars: string[]) => {
-    const missing = templateVars.filter(v => !workflowVariables.has(v));
-    const matched = templateVars.filter(v => workflowVariables.has(v));
+    const missing = templateVars.filter(v => !workflowVariableAliases.has(v));
+    const matched = templateVars.filter(v => workflowVariableAliases.has(v));
     return { missing, matched, total: templateVars.length };
   };
 
@@ -202,6 +214,98 @@ export function TemplatesTab({ workflowId }: TemplatesTabProps) {
     }
   };
 
+  const renderTemplateGrid = (type: 'docx' | 'pdf') => {
+    const filteredTemplates = templates.filter(t => t.type === type);
+
+    if (filteredTemplates.length === 0 && workflowProjectId) {
+      return (
+        <div className="flex flex-col items-center justify-center h-64 text-center border-2 border-dashed rounded-lg bg-slate-50/50">
+          <FileText className="w-10 h-10 text-muted-foreground mb-4 opacity-50" />
+          <p className="text-sm text-muted-foreground font-medium">No {type === 'docx' ? 'Word' : 'PDF'} templates uploaded.</p>
+          <p className="text-xs text-muted-foreground mt-1">Upload a {type === 'docx' ? '.docx' : '.pdf'} file to get started.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredTemplates.map((template) => {
+          const { missing, matched, total } = getVariableStatus(template.variables || []);
+          const hasMissing = missing.length > 0;
+
+          return (
+            <Card key={template.id} className="flex flex-col hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex justify-between items-start gap-4">
+                  <div className="min-w-0">
+                    <CardTitle className="text-base truncate leading-tight" title={template.name}>{template.name}</CardTitle>
+                    <CardDescription className="font-mono text-[10px] mt-1 text-slate-400 truncate">{template.key}</CardDescription>
+                  </div>
+                  <Badge variant="secondary" className="shrink-0 text-[10px] px-1.5 py-0 h-5 font-normal text-slate-500">
+                    {template.type.toUpperCase()}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="flex-1 space-y-4">
+                {/* Variable Analysis Feedback */}
+                <div className="rounded-md bg-slate-50 p-3 text-xs space-y-2 border border-slate-100">
+                  <div className="flex items-center justify-between font-medium">
+                    <span className="text-slate-500">Variables</span>
+                    {hasMissing ? (
+                      <span className="text-amber-600 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {missing.length} missing
+                      </span>
+                    ) : (
+                      <span className="text-emerald-600 flex items-center gap-1">
+                        <CheckCircle className="w-3 h-3" />
+                        {matched.length}/{total} matched
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                    <div
+                      className={cn("h-full transition-all", hasMissing ? "bg-amber-500" : "bg-emerald-500")}
+                      style={{ width: `${total > 0 ? (matched.length / total) * 100 : 100}%` }}
+                    />
+                  </div>
+
+                  {hasMissing && (
+                    <div className="pt-2 border-t border-slate-200/50 mt-2">
+                      <p className="font-semibold text-amber-700 mb-1.5">Create these variables:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {missing.slice(0, 3).map(v => (
+                          <code key={v} className="bg-white text-amber-700 px-1 py-0.5 rounded border border-amber-200 shadow-sm text-[10px]">
+                            {v}
+                          </code>
+                        ))}
+                        {missing.length > 3 && <span className="text-amber-600 text-[10px] self-center">+{missing.length - 3}</span>}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+              <CardFooter className="pt-0 flex gap-2 justify-end border-t bg-slate-50/30 p-3">
+                <Button size="sm" variant="default" className="h-7 text-xs px-3 shadow-sm" onClick={() => setEditingTemplate(template)}>
+                  <Edit className="w-3 h-3 mr-1.5" />
+                  {template.type === 'pdf' ? 'Map Fields' : 'Preview'}
+                </Button>
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleTest(template.id)} title="Test Generation">
+                  <TestTube className="w-3.5 h-3.5 text-slate-500" />
+                </Button>
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0 hover:bg-destructive/10 hover:text-destructive text-slate-400" onClick={() => handleDelete(template.id, template.name)} title="Delete Template">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </CardFooter>
+            </Card>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <BuilderLayout>
       <BuilderLayoutHeader>
@@ -253,86 +357,99 @@ export function TemplatesTab({ workflowId }: TemplatesTabProps) {
       </BuilderLayoutHeader>
 
       <BuilderLayoutContent>
-        {/* Project Warning */}
+        <div className="space-y-12">
 
+          {/* Word Templates Section */}
+          <section className="space-y-4">
+            <div className="flex items-center justify-between border-b pb-2">
+              <h3 className="text-lg font-semibold tracking-tight">Word Templates</h3>
+              <div className="flex items-center gap-4">
+                <a
+                  href="#"
+                  className="text-sm text-primary hover:underline flex items-center gap-1"
+                  onClick={(e) => { e.preventDefault(); toast({ description: "Word add-in coming soon" }); }}
+                >
+                  Use Word add-in <ExternalLink className="w-3 h-3" />
+                </a>
+                <Button
+                  size="sm"
+                  variant="default"
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={() => {
+                    setTemplateKey("");
+                    setSelectedFile(null);
+                    setUploadDialogOpen(true);
+                  }}
+                >
+                  Create online
+                </Button>
+              </div>
+            </div>
 
-        {templates.length === 0 && workflowProjectId && (
-          <div className="flex flex-col items-center justify-center h-64 text-center border-2 border-dashed rounded-lg">
-            <FileText className="w-10 h-10 text-muted-foreground mb-4" />
-            <p className="text-sm text-muted-foreground">No templates uploaded yet.</p>
-          </div>
-        )}
+            {renderTemplateGrid('docx')}
+          </section>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {templates.map((template) => {
-            const { missing, matched, total } = getVariableStatus(template.variables || []);
-            const hasMissing = missing.length > 0;
+          {/* PDF Templates Section */}
+          <section className="space-y-4">
+            <div className="flex items-center justify-between border-b pb-2">
+              <h3 className="text-lg font-semibold tracking-tight">PDF Templates</h3>
+              <Button
+                size="sm"
+                variant="default"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={() => {
+                  setTemplateKey("");
+                  setSelectedFile(null);
+                  setUploadDialogOpen(true);
+                }}
+              >
+                Upload
+              </Button>
+            </div>
 
-            return (
-              <Card key={template.id} className="flex flex-col">
-                <CardHeader className="pb-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-base truncate" title={template.name}>{template.name}</CardTitle>
-                      <CardDescription className="font-mono text-xs mt-1">{template.key}</CardDescription>
-                    </div>
-                    <Badge variant="outline">{template.type.toUpperCase()}</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-1 space-y-4">
-                  {/* Variable Analysis Feedback */}
-                  <div className="rounded-md bg-slate-50 p-3 text-xs space-y-2">
-                    <div className="flex items-center justify-between font-medium">
-                      <span>Variable Analysis</span>
-                      {hasMissing ? (
-                        <span className="text-amber-600 flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3" />
-                          {missing.length} missing
-                        </span>
-                      ) : (
-                        <span className="text-emerald-600 flex items-center gap-1">
-                          <CheckCircle className="w-3 h-3" />
-                          All Good
-                        </span>
-                      )}
-                    </div>
+            {renderTemplateGrid('pdf')}
+          </section>
 
-                    {/* Progress Bar */}
-                    <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
-                      <div
-                        className={cn("h-full transition-all", hasMissing ? "bg-amber-500" : "bg-emerald-500")}
-                        style={{ width: `${(matched.length / Math.max(total, 1)) * 100}%` }}
-                      />
-                    </div>
+          {/* Email Templates Section (Placeholder) */}
+          <section className="space-y-4">
+            <div className="flex items-center justify-between border-b pb-2">
+              <h3 className="text-lg font-semibold tracking-tight">Email Templates</h3>
+              <Button
+                size="sm"
+                variant="default"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={() => toast({ description: "Email templates coming soon" })}
+              >
+                Create
+              </Button>
+            </div>
 
-                    {hasMissing && (
-                      <div className="pt-1">
-                        <p className="font-semibold text-amber-700 mb-1">Missing in Workflow:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {missing.slice(0, 3).map(v => (
-                            <code key={v} className="bg-amber-100 text-amber-800 px-1 py-0.5 rounded border border-amber-200">
-                              {v}
-                            </code>
-                          ))}
-                          {missing.length > 3 && <span className="text-amber-600">+{missing.length - 3} more</span>}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-                <CardFooter className="pt-0 flex gap-2 justify-end border-t bg-slate-50/50 p-3">
-                  <Button size="sm" variant="ghost" className="h-8" onClick={() => handleTest(template.id)}>
-                    <TestTube className="w-3 h-3 mr-2" /> Test
-                  </Button>
-                  <Button size="sm" variant="ghost" className="h-8 text-destructive hover:text-destructive" onClick={() => handleDelete(template.id, template.name)}>
-                    <Trash2 className="w-3 h-3" />
-                  </Button>
-                </CardFooter>
-              </Card>
-            );
-          })}
+            <div className="flex flex-col items-center justify-center h-24 text-center border-2 border-dashed rounded-lg bg-slate-50/50">
+              <p className="text-sm text-muted-foreground font-medium">You have no email templates</p>
+            </div>
+          </section>
         </div>
       </BuilderLayoutContent>
+
+      {/* Editors */}
+      {editingTemplate && editingTemplate.type === 'docx' && (
+        <DocumentTemplateEditor
+          templateId={editingTemplate.id}
+          isOpen={true}
+          onClose={() => setEditingTemplate(null)}
+          workflowVariables={Array.from(workflowVariableAliases)}
+        />
+      )}
+
+      {editingTemplate && editingTemplate.type === 'pdf' && workflowProjectId && (
+        <PdfMappingEditor
+          templateId={editingTemplate.id}
+          isOpen={true}
+          onClose={() => setEditingTemplate(null)}
+          workflowVariables={workflowVariables}
+          projectId={workflowProjectId}
+        />
+      )}
     </BuilderLayout>
   );
 }

@@ -3,9 +3,31 @@ import { Router } from "express";
 import { documentAIAssistService } from "../lib/ai/DocumentAIAssistService";
 import { hybridAuth } from "../middleware/auth";
 import multer from "multer";
+import { MAX_FILE_SIZE, ALLOWED_FILE_TYPES } from "../services/fileService";
 
 const router = Router();
-const upload = multer(); // Memory storage for parsing
+// SECURITY FIX: Add file size and type validation
+const upload = multer({
+  storage: multer.memoryStorage(), // Memory storage for parsing
+  limits: {
+    fileSize: MAX_FILE_SIZE, // 10MB default
+    files: 1
+  },
+  fileFilter: (req, file, cb) => {
+    // Only allow document types for template analysis
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+
+    if (!allowedTypes.includes(file.mimetype)) {
+      return cb(new Error(`File type ${file.mimetype} is not allowed. Only PDF and Word documents are supported.`));
+    }
+
+    cb(null, true);
+  }
+});
 
 // Middleware
 router.use(hybridAuth);
@@ -14,7 +36,27 @@ router.use(hybridAuth);
  * POST /api/ai/template/analyze
  * Upload a file buffer, get analysis (variables + suggestions)
  */
-router.post("/analyze", upload.single('file'), async (req, res) => {
+router.post("/analyze", (req, res, next) => {
+    // SECURITY FIX: Add multer error handling
+    upload.single('file')(req, res, (err) => {
+        if (err instanceof multer.MulterError) {
+            if (err.code === 'LIMIT_FILE_SIZE') {
+                return res.status(413).json({
+                    error: `File size exceeds maximum allowed size of ${MAX_FILE_SIZE / (1024 * 1024)}MB`
+                });
+            }
+            if (err.code === 'LIMIT_FILE_COUNT') {
+                return res.status(400).json({ error: 'Too many files uploaded' });
+            }
+            return res.status(400).json({ error: err.message });
+        } else if (err) {
+            // Custom file filter error
+            return res.status(400).json({ error: err.message });
+        }
+
+        next();
+    });
+}, async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ error: "No file provided" });
 

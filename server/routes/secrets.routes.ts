@@ -6,6 +6,7 @@
 
 import type { Express, Request, Response } from 'express';
 import { hybridAuth, type AuthRequest } from '../middleware/auth';
+import { requireProjectRole } from '../middleware/aclAuth';
 import { z } from 'zod';
 import { logger } from '../logger';
 import {
@@ -47,7 +48,7 @@ export function registerSecretsRoutes(app: Express): void {
    * List all secrets for a project (metadata only, no values)
    * Required role: Owner or Builder
    */
-  app.get('/api/projects/:projectId/secrets', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/projects/:projectId/secrets', hybridAuth, requireProjectRole('edit'), async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const userId = authReq.userId;
@@ -56,9 +57,6 @@ export function registerSecretsRoutes(app: Express): void {
       }
 
       const { projectId } = req.params;
-
-      // TODO: Add ACL check for Owner/Builder role
-      // For now, assume authenticated users with project access can list secrets
 
       const secrets = await listSecrets(projectId);
       res.json(secrets);
@@ -76,7 +74,7 @@ export function registerSecretsRoutes(app: Express): void {
    * Get a single secret (metadata only, no value)
    * Required role: Owner or Builder
    */
-  app.get('/api/projects/:projectId/secrets/:secretId', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/projects/:projectId/secrets/:secretId', hybridAuth, requireProjectRole('edit'), async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const userId = authReq.userId;
@@ -103,7 +101,7 @@ export function registerSecretsRoutes(app: Express): void {
    * Create a new secret
    * Required role: Owner or Builder
    */
-  app.post('/api/projects/:projectId/secrets', hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/projects/:projectId/secrets', hybridAuth, requireProjectRole('edit'), async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const userId = authReq.userId;
@@ -153,7 +151,7 @@ export function registerSecretsRoutes(app: Express): void {
    * Update a secret (rotate value, change key, update metadata)
    * Required role: Owner or Builder
    */
-  app.patch('/api/projects/:projectId/secrets/:secretId', hybridAuth, async (req: Request, res: Response) => {
+  app.patch('/api/projects/:projectId/secrets/:secretId', hybridAuth, requireProjectRole('edit'), async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const userId = authReq.userId;
@@ -204,7 +202,7 @@ export function registerSecretsRoutes(app: Express): void {
    * Delete a secret
    * Required role: Owner or Builder
    */
-  app.delete('/api/projects/:projectId/secrets/:secretId', hybridAuth, async (req: Request, res: Response) => {
+  app.delete('/api/projects/:projectId/secrets/:secretId', hybridAuth, requireProjectRole('edit'), async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const userId = authReq.userId;
@@ -233,7 +231,7 @@ export function registerSecretsRoutes(app: Express): void {
    * Test if a secret can be decrypted successfully
    * Required role: Owner or Builder
    */
-  app.post('/api/projects/:projectId/secrets/:secretId/test', hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/projects/:projectId/secrets/:secretId/test', hybridAuth, requireProjectRole('edit'), async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const userId = authReq.userId;

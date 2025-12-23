@@ -132,6 +132,9 @@ export const Helpers = {
     return false;
   },
   not: (v: any): boolean => !v,
+
+  // PDF Helpers
+  checkbox: (v: any): string => !!v ? 'X' : '',
 };
 
 // List of all allowed helper names for validation
@@ -266,16 +269,43 @@ export function evaluateExpression(
       }
     }
 
+    // SECURITY FIX: Add operation counting to prevent DoS
+    // Wrap all helpers to count operations and enforce limits
+    const MAX_OPERATIONS = options?.maxOps ?? 10000;
+
+
+    const wrappedHelpers: any = {};
+    for (const [name, fn] of Object.entries(helpersWithClock)) {
+      wrappedHelpers[name] = (...args: any[]) => {
+        opCount++;
+        if (opCount > MAX_OPERATIONS) {
+          throw new Error(`Expression exceeded maximum operations (${MAX_OPERATIONS})`);
+        }
+        return fn(...(args as any));
+      };
+    }
+
+    // Add wrapped helpers to parser
+    for (const [name, fn] of Object.entries(wrappedHelpers)) {
+      parser.functions[name] = fn;
+    }
+
     // Evaluate with timeout protection
     const timeoutId = setTimeout(() => {
       throw new Error(`Expression evaluation timeout (${timeoutMs}ms)`);
     }, timeoutMs);
 
     try {
-      // Note: expr-eval doesn't have built-in operation counting
-      // but it's deterministic and safe by design
+      // Note: setTimeout doesn't interrupt JS execution, but operation counting does
       const result = parsed.evaluate(cleanVars as any);
       clearTimeout(timeoutId);
+
+      // Additional time check
+      const elapsed = Date.now() - startTime;
+      if (elapsed > timeoutMs) {
+        throw new Error(`Expression evaluation took too long (${elapsed}ms > ${timeoutMs}ms)`);
+      }
+
       return result;
     } catch (evalError) {
       clearTimeout(timeoutId);

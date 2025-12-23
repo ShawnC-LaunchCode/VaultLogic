@@ -1,6 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import mammoth from 'mammoth';
+import DOMPurify from 'dompurify';
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader2, FileEdit } from 'lucide-react';
@@ -68,6 +69,25 @@ export function DocumentTemplateEditor({ templateId, isOpen, onClose, workflowVa
         // TODO: Persist mapping to backend
     };
 
+    // SECURITY FIX: Sanitize HTML content to prevent XSS attacks
+    const sanitizedHtml = useMemo(() => {
+        if (!htmlContent || fileName.endsWith('.pdf')) {
+            return htmlContent;
+        }
+
+        return DOMPurify.sanitize(htmlContent, {
+            ALLOWED_TAGS: [
+                'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+                'ul', 'ol', 'li', 'strong', 'em', 'u', 'br',
+                'table', 'thead', 'tbody', 'tr', 'td', 'th',
+                'div', 'span', 'a', 'img', 'blockquote', 'pre', 'code'
+            ],
+            ALLOWED_ATTR: ['class', 'style', 'href', 'src', 'alt', 'title'],
+            FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'link', 'form', 'input'],
+            FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus', 'onblur']
+        });
+    }, [htmlContent, fileName]);
+
     return (
         <Dialog open={isOpen} onOpenChange={(val) => !val && onClose()}>
             <DialogContent className="max-w-[90vw] h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
@@ -95,7 +115,7 @@ export function DocumentTemplateEditor({ templateId, isOpen, onClose, workflowVa
                                 ) : (
                                     <div
                                         className="bg-white shadow-lg p-10 min-h-[800px] w-[800px] prose dark:prose-invert max-w-none"
-                                        dangerouslySetInnerHTML={{ __html: htmlContent }}
+                                        dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
                                     />
                                 )
                             )}

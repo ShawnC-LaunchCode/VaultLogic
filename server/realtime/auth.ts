@@ -94,11 +94,11 @@ export async function authenticateConnection(
   request: IncomingMessage,
   roomKey: string
 ): Promise<AuthenticatedUser> {
-  console.log('[DEBUG] authenticateConnection started for room:', roomKey);
+  logger.debug({ roomKey }, 'authenticateConnection started');
   // Extract JWT token
   const token = extractToken(request);
   if (!token) {
-    console.warn('[DEBUG] No token found in request');
+    logger.warn({ roomKey }, 'No token found in request');
     throw new Error('Missing authentication token');
   }
 

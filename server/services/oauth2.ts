@@ -237,8 +237,32 @@ function cleanExpiredStates() {
   }
 }
 
-// Clean up expired states every minute
-setInterval(cleanExpiredStates, 60000);
+// RESOURCE LEAK FIX: Store interval ID for proper cleanup
+let cleanupIntervalId: NodeJS.Timeout | null = null;
+
+/**
+ * Start OAuth2 state cleanup interval
+ */
+export function startOAuth2StateCleanup(): void {
+  if (cleanupIntervalId) {
+    return; // Already running
+  }
+  // Clean up expired states every minute
+  cleanupIntervalId = setInterval(cleanExpiredStates, 60000);
+}
+
+/**
+ * Stop OAuth2 state cleanup interval (for graceful shutdown)
+ */
+export function stopOAuth2StateCleanup(): void {
+  if (cleanupIntervalId) {
+    clearInterval(cleanupIntervalId);
+    cleanupIntervalId = null;
+  }
+}
+
+// Start cleanup on module load
+startOAuth2StateCleanup();
 
 /**
  * Generate OAuth2 authorization URL for 3-legged flow

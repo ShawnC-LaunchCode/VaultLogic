@@ -14,19 +14,32 @@ const __dirname = path.dirname(__filename);
 
 const viteLogger = createLogger();
 
+// Log module load
+log("📦 vite.ts module loaded successfully");
+
 export async function setupVite(app: Express, server: Server) {
+  log("📝 setupVite: Starting Vite setup...");
+
   // Resolve vite config (it's a function that needs to be called)
+  log("📝 setupVite: Resolving Vite config...");
   const resolvedConfig = typeof viteConfig === 'function'
-    ? viteConfig({ mode: process.env.NODE_ENV || 'development', command: 'serve', isSsrBuild: false, isPreview: false })
+    ? viteConfig({ mode: process.env.NODE_ENV ?? 'development', command: 'serve', isSsrBuild: false, isPreview: false })
     : viteConfig;
+  log("📝 setupVite: Vite config resolved");
 
   const serverOptions = {
     ...resolvedConfig.server,
     middlewareMode: true,
     allowedHosts: true as const,
   };
+  log("📝 setupVite: Server options prepared, creating Vite server...");
 
-  const vite = await createViteServer({
+  // Create a timeout promise to prevent indefinite hanging
+  const timeout = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error("Vite server creation timed out after 30s")), 30000);
+  });
+
+  const vitePromise = createViteServer({
     ...resolvedConfig,
     configFile: false,
     customLogger: {
@@ -47,7 +60,12 @@ export async function setupVite(app: Express, server: Server) {
     appType: "custom",
   });
 
+  const vite = await Promise.race([vitePromise, timeout]) as any;
+  log("📝 setupVite: Vite server created successfully");
+
+  log("📝 setupVite: Mounting Vite middlewares...");
   app.use(vite.middlewares);
+  log("📝 setupVite: Vite middlewares mounted");
   app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
 
@@ -77,5 +95,6 @@ export async function setupVite(app: Express, server: Server) {
       next(e);
     }
   });
+  log("📝 setupVite: Vite setup complete!");
 }
 

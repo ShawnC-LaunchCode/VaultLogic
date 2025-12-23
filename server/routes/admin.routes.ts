@@ -35,16 +35,21 @@ export function registerAdminRoutes(app: Express): void {
 
       const users = await userRepository.findAllUsers();
 
+      // Fetch all workflows at once to avoid N+1 query problem
+      const allWorkflows = await workflowRepository.findAll();
+
+      // Group workflows by creator ID
+      const workflowsByCreator = new Map<string, number>();
+      for (const workflow of allWorkflows) {
+        const count = workflowsByCreator.get(workflow.createdBy) || 0;
+        workflowsByCreator.set(workflow.createdBy, count + 1);
+      }
+
       // Return users with workflow count
-      const usersWithStats = await Promise.all(
-        users.map(async (user) => {
-          const workflows = await workflowRepository.findByCreatorId(user.id);
-          return {
-            ...user,
-            workflowCount: workflows.length,
-          };
-        })
-      );
+      const usersWithStats = users.map((user) => ({
+        ...user,
+        workflowCount: workflowsByCreator.get(user.id) || 0,
+      }));
 
       logger.info(
         { adminId: req.adminUser!.id, userCount: users.length },

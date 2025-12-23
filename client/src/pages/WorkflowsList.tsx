@@ -313,7 +313,7 @@ export default function WorkflowsList() {
                       Start your first workflow
                     </h3>
                     <p className="text-muted-foreground text-center mb-8 max-w-md text-sm leading-relaxed">
-                      VaultLogic helps you build powerful data collection workflows. Create one from scratch or explore a sample to see how it works.
+                      ezBuildr helps you build powerful data collection workflows. Create one from scratch or explore a sample to see how it works.
                     </p>
                     <div className="flex items-center gap-3">
                       <Link href="/workflows/new">

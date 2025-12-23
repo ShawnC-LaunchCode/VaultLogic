@@ -28,9 +28,8 @@ export class IntakeService {
       primaryColor?: string;
     };
   }> {
-    // Find workflow by slug
-    const workflows = await workflowRepository.findAll();
-    const workflow = workflows.find(w => w.slug === slug);
+    // PERFORMANCE FIX: Use indexed query instead of loading all workflows
+    const workflow = await workflowRepository.findBySlug(slug);
 
     if (!workflow) {
       throw new Error("Workflow not found");
@@ -77,9 +76,8 @@ export class IntakeService {
     initialAnswers?: Record<string, any>,
     prefillParams?: Record<string, string>
   ): Promise<{ runId: string; runToken: string }> {
-    // Get workflow by slug
-    const workflows = await workflowRepository.findAll();
-    const workflow = workflows.find(w => w.slug === slug);
+    // PERFORMANCE FIX: Use indexed query instead of loading all workflows
+    const workflow = await workflowRepository.findBySlug(slug);
 
     if (!workflow) {
       throw new Error("Workflow not found");
@@ -260,25 +258,41 @@ export class IntakeService {
 
       // Stage 12.5: Send email receipt if configured
       if (intakeConfig.sendEmailReceipt && intakeConfig.receiptEmailVar) {
-        // Get all step values to find the email
-        const allSteps = await (stepRepository as any).findByWorkflowId(workflow.id);
-        const emailStep = allSteps.find((s: any) => s.alias === intakeConfig.receiptEmailVar);
+        // ERROR ISOLATION FIX: Use Promise.allSettled instead of Promise.all
+        // This prevents independent operations from failing together
+        const results = await Promise.allSettled([
+          (stepRepository as any).findByWorkflowId(workflow.id),
+          stepValueRepository.findByRunId(run.id)
+        ]);
+
+        // Check if either query failed - if so, skip email receipt gracefully
+        if (results[0].status === 'rejected' || results[1].status === 'rejected') {
+          logger.warn({
+            runId: run.id,
+            stepsError: results[0].status === 'rejected' ? results[0].reason : null,
+            valuesError: results[1].status === 'rejected' ? results[1].reason : null
+          }, 'Failed to fetch data for email receipt - skipping email');
+          // Continue without email receipt - don't fail the entire submission
+        } else {
+          const allSteps = results[0].value;
+          const stepValues = results[1].value;
+
+          // Create Maps for efficient lookups
+          const stepMap = new Map(allSteps.map((s: any) => [s.id, s]));
+          const emailStep = allSteps.find((s: any) => s.alias === intakeConfig.receiptEmailVar);
 
         if (emailStep) {
-          const stepValues = await stepValueRepository.findByRunId(run.id);
           const emailValue = stepValues.find(sv => sv.stepId === emailStep.id);
 
           if (emailValue && typeof emailValue.value === "string") {
             const email = emailValue.value;
 
-            // Build summary (non-sensitive fields only)
+            // Build summary (non-sensitive fields only) - O(N) instead of O(N²)
             const summary: Record<string, any> = {};
-            for (const step of allSteps) {
-              if (step.alias && !this.isSensitiveField(step.alias)) {
-                const value = stepValues.find(sv => sv.stepId === step.id);
-                if (value) {
-                  summary[step.alias] = value.value;
-                }
+            for (const stepValue of stepValues) {
+              const step = stepMap.get(stepValue.stepId);
+              if (step?.alias && !this.isSensitiveField(step.alias)) {
+                summary[step.alias] = stepValue.value;
               }
             }
 
@@ -304,6 +318,7 @@ export class IntakeService {
             logger.warn({ runId: run.id, receiptEmailVar: intakeConfig.receiptEmailVar }, "Email field not found or invalid");
           }
         }
+        } // Close the else block for successful Promise.allSettled results
       }
 
       return result;

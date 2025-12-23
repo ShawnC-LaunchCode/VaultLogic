@@ -110,9 +110,7 @@ export function InfiniteDataGrid({
   // Flatten all pages into a single array
   const allRows = data?.pages.flatMap((page) => page.rows) || [];
 
-  if (allRows.length === 0) {
-    return <DataGridEmptyState variant="no_rows" />;
-  }
+
 
   return (
     <div>

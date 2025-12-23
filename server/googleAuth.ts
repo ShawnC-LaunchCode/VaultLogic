@@ -63,6 +63,10 @@ export function getSession() {
     !process.env.ALLOWED_ORIGIN.includes('127.0.0.1') &&
     !process.env.ALLOWED_ORIGIN.includes('0.0.0.0');
 
+  // SECURITY FIX: When using sameSite='none', secure MUST be true
+  // This is a browser requirement - sameSite=none cookies must be secure
+  const requireSecure = isCrossOrigin || process.env.NODE_ENV === 'production';
+
   return session({
     secret: process.env.SESSION_SECRET!,
     store: sessionStore,
@@ -71,7 +75,8 @@ export function getSession() {
     name: 'survey-session', // Custom cookie name for additional security
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      // SECURITY FIX: secure must be true when sameSite='none'
+      secure: requireSecure,
       // For cross-origin deployments, use SameSite=None to allow cross-origin cookies
       // For same-origin deployments, use SameSite=lax for CSRF protection
       sameSite: isCrossOrigin ? 'none' : 'lax',

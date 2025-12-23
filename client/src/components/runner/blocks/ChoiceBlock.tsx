@@ -37,8 +37,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ChevronsUpDown, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
 import type { Step } from "@/types";
 import type { ChoiceAdvancedConfig, ChoiceOption, DynamicOptionsConfig } from "@/../../shared/types/stepConfigs";
+import { generateOptionsFromList } from "@/lib/choice-utils";
 
 export interface ChoiceBlockProps {
   step: Step;
@@ -48,12 +66,77 @@ export interface ChoiceBlockProps {
   context?: Record<string, any>;
 }
 
+// Helper for Searchable Dropdown
+function SearchableDropdown({
+  options,
+  value,
+  onChange,
+  disabled,
+  placeholder = "Select an option..."
+}: {
+  options: ChoiceOption[],
+  value: string,
+  onChange: (val: string) => void,
+  disabled?: boolean,
+  placeholder?: string
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between font-normal text-left"
+          disabled={disabled}
+        >
+          {value
+            ? options.find((option) => (option.alias || option.id) === value)?.label
+            : <span className="text-muted-foreground">{placeholder}</span>}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+        <Command>
+          <CommandInput placeholder="Search..." />
+          <CommandList>
+            <CommandEmpty>No option found.</CommandEmpty>
+            <CommandGroup>
+              {options.map((option) => (
+                <CommandItem
+                  key={option.id}
+                  value={option.label}
+                  onSelect={() => {
+                    onChange(option.alias || option.id);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      (option.alias || option.id) === value ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  {option.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export function ChoiceBlockRenderer({ step, value, onChange, readOnly, context }: ChoiceBlockProps) {
   // -------------------------------------------------------------------------
   // Parse configuration
   // -------------------------------------------------------------------------
   let displayMode: "radio" | "dropdown" | "multiple" = "radio";
   let allowMultiple = false;
+  let isSearchable = false;
   const [options, setOptions] = useState<ChoiceOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -139,36 +222,14 @@ export function ChoiceBlockRenderer({ step, value, onChange, readOnly, context }
 
             // From List Variable
             else if (dynamicConfig.type === 'list') {
-              const { listVariable, labelColumnId, valueColumnId } = dynamicConfig;
+              const { listVariable } = dynamicConfig;
 
               if (context && listVariable && context[listVariable]) {
-                const listData = context[listVariable];
-
-                // Handle ListVariable structure
-                if (listData.rows && Array.isArray(listData.rows)) {
-                  const opts = listData.rows.map((row: any, idx: number) => ({
-                    id: row[valueColumnId] || row.id || `opt-${idx}`,
-                    label: String(row[labelColumnId] || row[valueColumnId] || `Option ${idx}`),
-                    alias: String(row[valueColumnId] || row[labelColumnId] || `opt-${idx}`)
-                  }));
-                  setOptions(opts);
-                } else if (Array.isArray(listData)) {
-                  // Fallback: plain array
-                  const opts = listData.map((item: any, idx: number) => ({
-                    id: item[valueColumnId] || `opt-${idx}`,
-                    label: String(item[labelColumnId] || item[valueColumnId] || `Option ${idx}`),
-                    alias: String(item[valueColumnId] || item[labelColumnId] || `opt-${idx}`)
-                  }));
-                  setOptions(opts);
-                } else {
-                  console.warn(`[ChoiceBlock] List variable '${listVariable}' is not in expected format.`);
-                  setOptions([]);
-                }
+                const newOptions = generateOptionsFromList(context[listVariable], dynamicConfig);
+                setOptions(newOptions);
               } else {
-                console.warn(`[ChoiceBlock] List variable '${listVariable}' not found in context.`, {
-                  contextKeys: context ? Object.keys(context) : []
-                });
-                setOptions([]);
+                // If not found, it might be loading or empty.
+                if (options.length > 0) setOptions([]);
               }
             }
 
@@ -233,6 +294,7 @@ export function ChoiceBlockRenderer({ step, value, onChange, readOnly, context }
     const config = step.config as ChoiceAdvancedConfig;
     displayMode = config?.display || "radio";
     allowMultiple = config?.allowMultiple ?? false;
+    isSearchable = config?.searchable ?? false;
   }
 
   // -------------------------------------------------------------------------
@@ -285,9 +347,20 @@ export function ChoiceBlockRenderer({ step, value, onChange, readOnly, context }
   // Render: Dropdown (Select)
   // -------------------------------------------------------------------------
   if (displayMode === "dropdown" && !allowMultiple) {
+    if (isSearchable) {
+      return (
+        <SearchableDropdown
+          options={options}
+          value={currentValue as string}
+          onChange={(val) => !readOnly && onChange(val)}
+          disabled={readOnly}
+        />
+      );
+    }
+
     return (
       <Select
-        value={currentValue}
+        value={currentValue as string}
         onValueChange={(newValue) => !readOnly && onChange(newValue)}
         disabled={readOnly}
       >

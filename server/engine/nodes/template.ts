@@ -8,6 +8,8 @@ import { renderDocx2 } from '../../services/docxRenderer2';
 import { getTemplateFilePath, getOutputFilePath } from '../../services/templates';
 import fs from 'fs/promises';
 import path from 'path';
+import { pdfService } from '../../services/document/PdfService';
+import { logger } from '../../logger';
 
 /**
  * Template Node Executor (Stage 21 - Multi-Template Support)
@@ -144,7 +146,49 @@ export async function executeTemplateNode(
 
     let result: { fileRef: string; pdfRef?: string; size: number; format: string };
 
-    if (engine === 'v2') {
+    if (template.type === 'pdf') {
+      // Stage 22: PDF Form Filling
+      const templatePath = getTemplateFilePath(template.fileRef);
+      const fileBuffer = await fs.readFile(templatePath);
+
+      // Resolve mappings
+      const pdfData: Record<string, string> = {};
+      const mapping = (template.mapping as Record<string, string>) || {};
+
+      for (const [field, variable] of Object.entries(mapping)) {
+        try {
+          // Resolve value. If it's a direct variable name or simple expression, evaluate it.
+          // We assume the stored mapping is an expression or variable path.
+          const val = evaluateExpression(variable, context);
+          if (val !== undefined && val !== null) {
+            pdfData[field] = String(val);
+          }
+        } catch (e) {
+          logger.warn({ field, variable, error: e }, "Failed to resolve PDF mapping");
+        }
+      }
+
+      const filledBuffer = await pdfService.fillPdf(fileBuffer, pdfData);
+
+      // Save output
+      const outputName = config.outputName
+        ? (config.outputName.endsWith('.pdf') ? config.outputName : `${config.outputName}.pdf`)
+        : `output-${nodeId}-${Date.now()}.pdf`;
+
+      const outputDir = path.join(process.cwd(), 'server', 'files', 'outputs');
+      await fs.mkdir(outputDir, { recursive: true });
+      const outputPath = path.join(outputDir, outputName);
+
+      await fs.writeFile(outputPath, filledBuffer);
+
+      result = {
+        fileRef: outputName,
+        pdfRef: outputName,
+        size: filledBuffer.length,
+        format: 'pdf'
+      };
+
+    } else if (engine === 'v2') {
       // Use new docxRenderer2 with loops, conditionals, helpers
       const templatePath = getTemplateFilePath(template.fileRef);
       const outputDir = path.join(process.cwd(), 'server', 'files', 'outputs');

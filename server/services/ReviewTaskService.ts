@@ -62,11 +62,10 @@ export class ReviewTaskService {
       throw createError.notFound("Project not found");
     }
 
-    // TODO: Add proper ACL check using AclService
-    // For now, just check if user is in the same tenant
-    if (project.tenantId !== userId) {
-      // This is simplified; in production we'd check actual tenant membership
-      // throw createError.forbidden("Access denied");
+    // Verify user has at least view access to the project (Dec 2025 - Security fix)
+    const hasAccess = await this.aclService.hasProjectRole(userId, task.projectId, 'view');
+    if (!hasAccess) {
+      throw createError.forbidden("Access denied - insufficient permissions for this project");
     }
 
     return task;
@@ -89,7 +88,11 @@ export class ReviewTaskService {
       throw createError.notFound("Project not found");
     }
 
-    // TODO: Add proper ACL check
+    // Verify user has at least view access to the project (Dec 2025 - Security fix)
+    const hasAccess = await this.aclService.hasProjectRole(userId, projectId, 'view');
+    if (!hasAccess) {
+      throw createError.forbidden("Access denied - insufficient permissions for this project");
+    }
 
     return await this.reviewTaskRepo.findPendingByProjectId(projectId);
   }

@@ -9,7 +9,7 @@ export default function FeedbackWidget() {
   const [submitted, setSubmitted] = useState(false);
   const { fire } = useConfetti();
 
-  if (typeof window !== 'undefined' && window.self !== window.top) {
+  if (typeof window !== 'undefined' && (window.self !== window.top || new URLSearchParams(window.location.search).get('hideFeedback') === 'true')) {
     return null;
   }
 
@@ -39,9 +39,12 @@ export default function FeedbackWidget() {
             <DialogTitle className="sr-only">Feedback Survey</DialogTitle>
             <div className="w-full h-full relative">
               <iframe
-                src="https://poll-vault-production.up.railway.app/survey/627635e4-6329-4928-afa7-3dab2d1714e4"
+                src="https://poll-vault-production.up.railway.app/survey/627635e4-6329-4928-afa7-3dab2d1714e4?hideFeedback=true"
                 className="w-full h-full border-0"
                 title="Feedback Survey"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allow="accelerometer 'none'; camera 'none'; geolocation 'none'; microphone 'none'; payment 'none'"
               />
             </div>
           </DialogContent>

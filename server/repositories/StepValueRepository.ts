@@ -41,29 +41,34 @@ export class StepValueRepository extends BaseRepository<
 
   /**
    * Upsert a step value (insert or update)
+   *
+   * PERFORMANCE OPTIMIZED (Dec 2025):
+   * Uses PostgreSQL's native onConflictDoUpdate for atomic single-query upsert.
+   * Replaces inefficient 2-3 query pattern (check + insert/update) with 1 query.
+   *
+   * Requires unique constraint: step_values_run_step_unique (run_id, step_id)
    */
   async upsert(data: InsertStepValue, tx?: DbTransaction): Promise<StepValue> {
     const database = this.getDb(tx);
 
-    // Check if value already exists
-    const existing = await this.findByRunAndStep(data.runId, data.stepId, tx);
-
-    if (existing) {
-      // Update existing
-      const [updated] = await database
-        .update(stepValues)
-        .set({
+    // Single atomic upsert operation
+    const [result] = await database
+      .insert(stepValues)
+      .values({
+        ...data,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: [stepValues.runId, stepValues.stepId],
+        set: {
           value: data.value,
           updatedAt: new Date(),
-        })
-        .where(eq(stepValues.id, existing.id))
-        .returning();
-      return updated;
-    } else {
-      // Insert new
-      const [created] = await database.insert(stepValues).values(data).returning();
-      return created;
-    }
+        },
+      })
+      .returning();
+
+    return result;
   }
 }
 

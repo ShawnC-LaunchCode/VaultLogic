@@ -144,6 +144,16 @@ export function redactObject<T extends Record<string, any>>(
 }
 
 /**
+ * SECURITY FIX: Hash a token using SHA-256 for constant-time comparison
+ * Used for magic links, reset tokens, etc. to prevent timing attacks
+ * @param token The plaintext token to hash
+ * @returns SHA-256 hash of the token as hex string
+ */
+export function hashToken(token: string): string {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+/**
  * Mask a secret value for display (shows first 4 and last 4 characters)
  * Example: "sk_test_1234567890abcdef" -> "sk_t...cdef"
  */
@@ -176,13 +186,7 @@ export function generateApiToken(byteLength: number = 48): string {
   return buffer.toString('base64url');
 }
 
-/**
- * Hash an API token using SHA-256
- * Returns a hex-encoded hash string
- */
-export function hashToken(token: string): string {
-  return crypto.createHash('sha256').update(token).digest('hex');
-}
+
 
 /**
  * Verify that a plaintext token matches a stored hash

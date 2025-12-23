@@ -277,8 +277,14 @@ export function registerIntakeRoutes(app: Express): void {
       // Generate secure file reference
       const fileRef = randomUUID() + path.extname(req.file.originalname);
 
-      // TODO: Move file to permanent storage with virus scanning
-      // For now, just return file reference
+      // SECURITY WARNING: Production deployment requires virus scanning before file storage
+      // Recommended implementations:
+      // 1. ClamAV integration: Use 'clamscan' npm package to scan files before storage
+      // 2. Cloud services: AWS S3 + GuardDuty, Azure Blob + Defender, or dedicated services like VirusTotal API
+      // 3. File validation: Verify MIME types, check magic numbers, enforce size limits
+      // 4. Quarantine: Move suspicious files to isolated storage for review
+      // 5. Logging: Track all file uploads and scan results for audit trail
+      // For now, files are accepted without virus scanning - DO NOT use in production without implementing security measures
 
       res.json({
         success: true,

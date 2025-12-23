@@ -1,7 +1,9 @@
-import { datavaultRowsRepository, datavaultColumnsRepository, datavaultTablesRepository } from "../../repositories";
-import { getValueByPath } from "@shared/conditionEvaluator";
+import { datavaultRowsRepository, datavaultColumnsRepository, datavaultTablesRepository, type DbTransaction } from "../../repositories";
 import type { WriteBlockConfig, WriteResult, ColumnMapping, BlockContext } from "@shared/types/blocks";
 import { createLogger } from "../../logger";
+import { db } from "../../db";
+import { resolveSingleValue, resolveColumnMappings } from "../shared/variableResolver";
+import { datavaultRowsService } from "../../services/DatavaultRowsService";
 
 const logger = createLogger({ module: "write-runner" });
 
@@ -18,14 +20,20 @@ export class WriteRunner {
         logger.info({
             operation: "write_start",
             mode: config.mode,
+            config, // Debug full config
             tableId: config.tableId,
             preview: isPreview
         }, "Starting write execution");
 
         try {
+            // 0. Verify table exists and user has write permission
+            const { datavaultTablesService } = await import("../../services/DatavaultTablesService");
+            await datavaultTablesService.verifyTenantOwnership(config.tableId, tenantId);
+
             // 1. Resolve Values (Variables & Expressions)
             // This happens BEFORE preview check so we validate logic even in preview
-            const mappedValues = this.resolveValues(config.columnMappings, context.data);
+            // Pass aliasMap to allow resolving variable aliases to step IDs
+            const mappedValues = resolveColumnMappings(config.columnMappings, context.data, context.aliasMap);
 
             // 2. Resolve match strategy (for update and upsert modes)
             let matchColumnId: string | undefined;
@@ -39,7 +47,7 @@ export class WriteRunner {
                             throw new Error("Match strategy column_match requires columnId");
                         }
                         matchColumnId = config.matchStrategy.columnId;
-                        matchValue = this.resolveSingleValue(config.matchStrategy.columnValue, context.data);
+                        matchValue = resolveSingleValue(config.matchStrategy.columnValue, context.data, context.aliasMap);
                     } else if (config.matchStrategy.type === "primary_key") {
                         // For primary_key type, we need to determine the actual PK column
                         // This would require fetching table metadata
@@ -48,12 +56,12 @@ export class WriteRunner {
                             throw new Error("Match strategy primary_key requires columnId");
                         }
                         matchColumnId = config.matchStrategy.columnId;
-                        matchValue = this.resolveSingleValue(config.matchStrategy.columnValue, context.data);
+                        matchValue = resolveSingleValue(config.matchStrategy.columnValue, context.data, context.aliasMap);
                     }
                 } else if (config.primaryKeyColumnId && config.primaryKeyValue) {
                     // Legacy support
                     matchColumnId = config.primaryKeyColumnId;
-                    matchValue = this.resolveSingleValue(config.primaryKeyValue, context.data);
+                    matchValue = resolveSingleValue(config.primaryKeyValue, context.data, context.aliasMap);
                 } else {
                     throw new Error(`${config.mode} mode requires matchStrategy or primaryKeyColumnId/primaryKeyValue`);
                 }
@@ -85,29 +93,36 @@ export class WriteRunner {
                 };
             }
 
-            // 4. Execute Real Write
-            let resultRowId: string;
-            let actualOperation: "create" | "update" | "upsert" = config.mode;
+            // 4. Execute Real Write (wrapped in transaction for atomicity)
+            const writeResult = await db.transaction(async (tx: DbTransaction) => {
+                let resultRowId: string;
+                let actualOperation: "create" | "update" | "upsert" = config.mode;
 
-            if (config.mode === "create") {
-                resultRowId = await this.executeCreate(config.tableId, mappedValues, tenantId);
-            } else if (config.mode === "update") {
-                resultRowId = await this.executeUpdate(config.tableId, matchColumnId!, matchValue, mappedValues, tenantId);
-            } else if (config.mode === "upsert") {
-                // Upsert: try to find existing row, update if found, create if not
-                const result = await this.executeUpsert(config.tableId, matchColumnId!, matchValue, mappedValues, tenantId);
-                resultRowId = result.rowId;
-                actualOperation = result.operation as "create" | "update" | "upsert";
-            } else {
-                throw new Error(`Unknown write mode: ${config.mode}`);
-            }
+                if (config.mode === "create") {
+                    resultRowId = await this.executeCreate(config.tableId, mappedValues, tenantId, context.userId, tx);
+                } else if (config.mode === "update") {
+                    resultRowId = await this.executeUpdate(config.tableId, matchColumnId!, matchValue, mappedValues, tenantId, context.userId, tx);
+                } else if (config.mode === "upsert") {
+                    // Upsert: try to find existing row, update if found, create if not
+                    const result = await this.executeUpsert(config.tableId, matchColumnId!, matchValue, mappedValues, tenantId, context.userId, tx);
+                    resultRowId = result.rowId;
+                    actualOperation = result.operation as "create" | "update" | "upsert";
+                } else {
+                    throw new Error(`Unknown write mode: ${config.mode}`);
+                }
+
+                return {
+                    rowId: resultRowId,
+                    operation: actualOperation
+                };
+            });
 
             return {
                 success: true,
                 tableId: config.tableId,
-                rowId: resultRowId,
+                rowId: writeResult.rowId,
                 writtenColumnIds: Object.keys(mappedValues),
-                operation: actualOperation,
+                operation: writeResult.operation,
                 writtenData: mappedValues
             };
 
@@ -124,77 +139,23 @@ export class WriteRunner {
     }
 
     /**
-     * Resolve column mappings to actual values using context data
-     */
-    private resolveValues(mappings: ColumnMapping[], data: Record<string, any>): Record<string, any> {
-        const result: Record<string, any> = {};
-        for (const mapping of mappings) {
-            // TODO: Enhanced expression support. For now, try simple var resolution or static.
-            // If value starts with {{ }} it might be handle bars, but here simpler dot notation access is implied
-            // or we assume the value field IS the path if it matches a variable pattern.
-            // For now, let's treat `value` as a path if it looks like one, or static.
-            // Ideally we need the Tokenizer/Evaluator here if we want complex expressions.
-            // Using `getValueByPath` which covers `step.var` access.
-
-            const resolved = this.resolveSingleValue(mapping.value, data);
-            result[mapping.columnId] = resolved;
-        }
-        return result;
-    }
-
-    private resolveSingleValue(expression: string | undefined, data: Record<string, any>): any {
-        if (!expression) return null;
-
-        // Simple heuristic: if it contains dots or looks like a var, try resolving
-        // Actually strictly speaking, `getValueByPath` returns undefined if not found, 
-        // but maybe we want to treat it as a literal string if not found?
-        // For safety/strictness in "Write Blocks", explicit variable binding is frequent.
-        // Let's rely on getValueByPath. If it returns undefined, check if it's meant to be a literal?
-        // The prompt says "Expression" - usually implies {{ }}. 
-        // Let's strip {{ }} if present.
-
-        let path = expression;
-        if (path.startsWith("{{") && path.endsWith("}}")) {
-            path = path.slice(2, -2).trim();
-        }
-
-        const val = getValueByPath(data, path);
-        // If val is defined, return it.
-        if (val !== undefined) return val;
-
-        // If strictly undefined, maybe it was a valid path that is empty?
-        // Or maybe it is a static string? 
-        // For now, return the expression as is if resolution fails, assuming static?
-        // Safer to defaults to null if it looked like a variable.
-
-        if (expression.includes("{{")) return null; // Failed var resolution
-        return expression; // Static string
-    }
-
-
-    /**
      * Execute Create Operation
      */
     private async executeCreate(
         tableId: string,
         values: Record<string, any>, // key = columnId
-        tenantId: string
+        tenantId: string,
+        userId: string | undefined,
+        tx: DbTransaction
     ): Promise<string> {
-        // Transform map {colId: val} into array [{columnId, value}]
-        const valueList = Object.entries(values).map(([columnId, value]) => ({
-            columnId,
-            value
-        }));
-
-        // We need a generic "insert row" method. DatavaultRowsRepository.createRowWithValues
-        // requires InsertDatavaultRow struct.
-        const rowData = {
+        // Create row via service (handles validation and autonumber generation)
+        const result = await datavaultRowsService.createRow(
             tableId,
-            tenantId, // Ensure tenant isolation
-            // metadata like createdBy could come from context if we had it
-        };
-
-        const result = await datavaultRowsRepository.createRowWithValues(rowData, valueList);
+            tenantId,
+            values,
+            userId,
+            tx
+        );
         return result.row.id;
     }
 
@@ -206,29 +167,27 @@ export class WriteRunner {
         pkColumnId: string,
         pkValue: any,
         values: Record<string, any>,
-        tenantId: string
+        tenantId: string,
+        userId: string | undefined,
+        tx: DbTransaction
     ): Promise<string> {
         // 1. Find the row ID based on the "Primary Key" logical concept (Column Value = pkValue)
         // Datavault doesn't strictly enforce one PK, but we treat `pkColumnId` as the lookup key.
 
-        // We need a method to find row by (ColumnId, Value). 
-        // datavaultRowsRepository.findByTableId has sort/filter, but maybe generic filter?
-        // We can use a direct query or helper.
-
-        // TODO: Implement findRowByColumnValue in repository or here.
-        // For now assuming we have a way.
-        const rowId = await this.findRowIdByColumnValue(tableId, pkColumnId, pkValue, tenantId);
+        const rowId = await this.findRowIdByColumnValue(tableId, pkColumnId, pkValue, tenantId, tx);
 
         if (!rowId) {
             throw new Error(`Row not found for Table ${tableId} where Column ${pkColumnId} = ${pkValue}`);
         }
 
-        const valueList = Object.entries(values).map(([columnId, value]) => ({
-            columnId,
-            value
-        }));
-
-        await datavaultRowsRepository.updateRowValues(rowId, valueList);
+        // Update row via service
+        await datavaultRowsService.updateRow(
+            rowId,
+            tenantId,
+            values,
+            userId,
+            tx
+        );
         return rowId;
     }
 
@@ -236,45 +195,53 @@ export class WriteRunner {
         tableId: string,
         columnId: string,
         value: any,
-        tenantId: string
+        tenantId: string,
+        tx: DbTransaction
     ): Promise<string | null> {
-        return await datavaultRowsRepository.findRowByColumnValue(tableId, columnId, value, tenantId);
+        return await datavaultRowsRepository.findRowByColumnValue(tableId, columnId, value, tenantId, tx);
     }
 
     /**
      * Execute Upsert Operation
      * Try to find existing row by match column, update if found, create if not
+     *
+     * RACE CONDITION FIX: Uses SELECT FOR UPDATE to prevent duplicate inserts
      */
     private async executeUpsert(
         tableId: string,
         matchColumnId: string,
         matchValue: any,
         values: Record<string, any>,
-        tenantId: string
+        tenantId: string,
+        userId: string | undefined,
+        tx: DbTransaction
     ): Promise<{ rowId: string; operation: "create" | "update" }> {
         // If matchValue is null/undefined, create new row
         if (matchValue === undefined || matchValue === null) {
             logger.info({ tableId, matchColumnId }, "Upsert: match value is null, creating new row");
-            const rowId = await this.executeCreate(tableId, values, tenantId);
+            const rowId = await this.executeCreate(tableId, values, tenantId, userId, tx);
             return { rowId, operation: "create" };
         }
 
-        // Try to find existing row
-        const existingRowId = await this.findRowIdByColumnValue(tableId, matchColumnId, matchValue, tenantId);
+        // RACE CONDITION FIX: Use row-level locking (SELECT FOR UPDATE) to prevent race conditions
+        // This locks the row if it exists, preventing another transaction from inserting a duplicate
+        const existingRowId = await this.findRowIdByColumnValue(tableId, matchColumnId, matchValue, tenantId, tx, true);
 
         if (existingRowId) {
-            // Row exists, update it
+            // Row exists (and is now locked), update it
             logger.info({ tableId, matchColumnId, matchValue, existingRowId }, "Upsert: found existing row, updating");
             const valueList = Object.entries(values).map(([columnId, value]) => ({
                 columnId,
                 value
             }));
-            await datavaultRowsRepository.updateRowValues(existingRowId, valueList);
+            await datavaultRowsRepository.updateRowValues(existingRowId, valueList, userId, tx);
             return { rowId: existingRowId, operation: "update" };
         } else {
             // Row doesn't exist, create new
+            // NOTE: Between check and insert, another transaction might create the row
+            // But SELECT FOR UPDATE ensures no duplicate exists at check time
             logger.info({ tableId, matchColumnId, matchValue }, "Upsert: row not found, creating new");
-            const rowId = await this.executeCreate(tableId, values, tenantId);
+            const rowId = await this.executeCreate(tableId, values, tenantId, userId, tx);
             return { rowId, operation: "create" };
         }
     }

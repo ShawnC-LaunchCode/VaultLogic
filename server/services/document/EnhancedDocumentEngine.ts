@@ -20,6 +20,15 @@ import { normalizeVariables, type NormalizedData, type NormalizationOptions } fr
 import { applyMapping, type DocumentMapping, type MappingResult } from './MappingInterpreter.js';
 import type { FinalBlockConfig, LogicExpression } from '../../../shared/types/stepConfigs.js';
 import { createLogger } from '../../logger.js';
+import {
+  DocumentGenerationError,
+  createNormalizationError,
+  createMappingError,
+  createRenderError,
+  wrapAsDocumentGenerationError,
+  isDocumentGenerationError
+} from '../../errors/DocumentGenerationError.js';
+import { templateAnalytics } from '../TemplateAnalyticsService.js';
 
 const logger = createLogger({ module: 'enhanced-doc-engine' });
 
@@ -118,6 +127,10 @@ export interface FinalBlockRenderResult {
   failed: Array<{
     alias: string;
     error: string;
+    phase?: string;
+    recoverable?: boolean;
+    suggestion?: string;
+    details?: any;
   }>;
 
   /** Total number of documents attempted */
@@ -172,50 +185,129 @@ export class EnhancedDocumentEngine {
       normalize,
     }, 'Generating document with mapping');
 
-    // Step 1: Normalize variables
-    const normalizedData = normalize
-      ? normalizeVariables(rawData, normalizationOptions)
-      : (rawData as NormalizedData);
+    try {
+      // Step 1: Normalize variables
+      let normalizedData: NormalizedData;
+      try {
+        normalizedData = normalize
+          ? normalizeVariables(rawData, normalizationOptions)
+          : (rawData as NormalizedData);
 
-    logger.debug({
-      originalKeys: Object.keys(rawData).length,
-      normalizedKeys: Object.keys(normalizedData).length,
-    }, 'Variables normalized');
-
-    // Step 2: Apply mapping (if provided)
-    let mappingResult: MappingResult | undefined;
-    let finalData: NormalizedData = normalizedData;
-
-    if (mapping) {
-      mappingResult = applyMapping(normalizedData, mapping);
-      finalData = mappingResult.data;
-
-      logger.debug({
-        mapped: mappingResult.mapped.length,
-        missing: mappingResult.missing.length,
-        unused: mappingResult.unused.length,
-      }, 'Mapping applied');
-
-      // Log warnings for missing source variables
-      if (mappingResult.missing.length > 0) {
-        logger.warn({
-          missing: mappingResult.missing,
-        }, 'Mapping references missing variables');
+        logger.debug({
+          originalKeys: Object.keys(rawData).length,
+          normalizedKeys: Object.keys(normalizedData).length,
+        }, 'Variables normalized');
+      } catch (error: any) {
+        throw createNormalizationError(
+          baseOptions.outputName || 'unknown',
+          error,
+          rawData
+        );
       }
+
+      // Step 2: Apply mapping (if provided)
+      let mappingResult: MappingResult | undefined;
+      let finalData: NormalizedData = normalizedData;
+
+      if (mapping) {
+        try {
+          mappingResult = applyMapping(normalizedData, mapping);
+          finalData = mappingResult.data;
+
+          logger.debug({
+            mapped: mappingResult.mapped.length,
+            missing: mappingResult.missing.length,
+            unused: mappingResult.unused.length,
+          }, 'Mapping applied');
+
+          // Log warnings for missing source variables
+          if (mappingResult.missing.length > 0) {
+            logger.warn({
+              missing: mappingResult.missing,
+            }, 'Mapping references missing variables');
+          }
+        } catch (error: any) {
+          throw createMappingError(
+            baseOptions.templatePath,
+            baseOptions.outputName || 'unknown',
+            error,
+            mapping
+          );
+        }
+      }
+
+      // Step 3: Generate document using base engine
+      let result: DocumentGenerationResult;
+      const startTime = Date.now();
+
+      try {
+        result = await this.engine.generate({
+          ...baseOptions,
+          data: finalData,
+        });
+
+        const duration = Date.now() - startTime;
+
+        logger.info({
+          outputName: baseOptions.outputName,
+          docxPath: result.docxPath,
+          pdfPath: result.pdfPath,
+          durationMs: duration,
+        }, 'Document generated successfully');
+
+        // Track successful generation (if templateId is available)
+        if (baseOptions.templatePath && !baseOptions.templatePath.startsWith('preview-')) {
+          templateAnalytics.trackGeneration(
+            baseOptions.templatePath,
+            'success',
+            duration,
+            undefined,
+            baseOptions.outputName
+          ).catch((err) => {
+            logger.warn({ error: err }, 'Failed to track generation metric');
+          });
+        }
+      } catch (error: any) {
+        const duration = Date.now() - startTime;
+
+        // Track failed generation
+        if (baseOptions.templatePath && !baseOptions.templatePath.startsWith('preview-')) {
+          templateAnalytics.trackGeneration(
+            baseOptions.templatePath,
+            'failure',
+            duration,
+            error.message,
+            baseOptions.outputName
+          ).catch((err) => {
+            logger.warn({ error: err }, 'Failed to track generation metric');
+          });
+        }
+
+        throw createRenderError(
+          baseOptions.templatePath,
+          baseOptions.outputName || 'unknown',
+          error,
+          finalData
+        );
+      }
+
+      // Step 4: Return enhanced result
+      return {
+        ...result,
+        normalizedData,
+        mappingResult,
+      };
+    } catch (error: any) {
+      // Wrap non-DocumentGenerationError errors
+      if (!isDocumentGenerationError(error)) {
+        throw wrapAsDocumentGenerationError(error, {
+          phase: 'unknown',
+          templateId: baseOptions.templatePath,
+          runId: baseOptions.outputName,
+        });
+      }
+      throw error;
     }
-
-    // Step 3: Generate document using base engine
-    const result = await this.engine.generate({
-      ...baseOptions,
-      data: finalData,
-    });
-
-    // Step 4: Return enhanced result
-    return {
-      ...result,
-      normalizedData,
-      mappingResult,
-    };
   }
 
   /**
@@ -318,16 +410,33 @@ export class EnhancedDocumentEngine {
           docxPath: result.docxPath,
           pdfPath: result.pdfPath,
         }, 'Document generated successfully');
-      } catch (error) {
+      } catch (error: any) {
+        // Enhanced error logging with full context
+        const docError = isDocumentGenerationError(error)
+          ? error
+          : wrapAsDocumentGenerationError(error, {
+              phase: 'render',
+              templateId: doc.documentId,
+              templateAlias: doc.alias,
+            });
+
         failed.push({
           alias: doc.alias,
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: docError.getUserMessage(),
+          phase: docError.phase,
+          recoverable: docError.recoverable,
+          suggestion: docError.suggestion,
+          details: docError.toJSON(),
         });
 
         logger.error({
           alias: doc.alias,
-          error,
+          documentId: doc.documentId,
+          phase: docError.phase,
+          error: docError.toJSON(),
         }, 'Document generation failed');
+
+        // Continue with other documents (graceful degradation)
       }
     }
 

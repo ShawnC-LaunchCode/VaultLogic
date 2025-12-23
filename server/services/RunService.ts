@@ -305,17 +305,23 @@ export class RunService {
       });
 
       // Stage 15: Workflow Analytics (New System)
-      await analyticsService.recordEvent({
-        runId: run.id,
-        workflowId,
-        versionId: targetVersionId || 'draft',
-        type: 'run.start',
-        timestamp: new Date().toISOString(),
-        isPreview: false, // RunService manages live runs
-        payload: {
-          accessMode: options?.accessMode || 'anonymous'
-        }
-      });
+      // ERROR HANDLING FIX: Wrap analytics calls in try-catch
+      try {
+        await analyticsService.recordEvent({
+          runId: run.id,
+          workflowId,
+          versionId: targetVersionId || 'draft',
+          type: 'run.start',
+          timestamp: new Date().toISOString(),
+          isPreview: false, // RunService manages live runs
+          payload: {
+            accessMode: options?.accessMode || 'anonymous'
+          }
+        });
+      } catch (error) {
+        // Analytics failures should not block workflow execution
+        logger.warn({ error, runId: run.id }, 'Failed to record run.start analytics event');
+      }
     }
 
     // Execute onRunStart blocks (transform + generic)

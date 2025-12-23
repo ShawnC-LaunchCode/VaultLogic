@@ -61,7 +61,7 @@ export function useProject(id: string | undefined, options?: Omit<UseQueryOption
   return useQuery({
     queryKey: queryKeys.project(id!),
     queryFn: () => projectAPI.get(id!),
-    enabled: !!id,
+    enabled: !!id && id !== "undefined",
     ...options,
   });
 }
@@ -70,7 +70,7 @@ export function useProjectWorkflows(projectId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.projectWorkflows(projectId!),
     queryFn: () => projectAPI.getWorkflows(projectId!),
-    enabled: !!projectId,
+    enabled: !!projectId && projectId !== "undefined",
   });
 }
 
@@ -150,7 +150,7 @@ export function useWorkflow(id: string | undefined, options?: Omit<UseQueryOptio
   return useQuery({
     queryKey: queryKeys.workflow(id!),
     queryFn: () => workflowAPI.get(id!),
-    enabled: !!id,
+    enabled: !!id && id !== "undefined",
     ...options,
   });
 }
@@ -279,7 +279,7 @@ export function useVersions(workflowId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.versions(workflowId!),
     queryFn: () => versionAPI.list(workflowId!),
-    enabled: !!workflowId,
+    enabled: !!workflowId && workflowId !== "undefined",
   });
 }
 
@@ -319,7 +319,7 @@ export function useSnapshots(workflowId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.snapshots(workflowId!),
     queryFn: () => snapshotAPI.list(workflowId!),
-    enabled: !!workflowId,
+    enabled: !!workflowId && workflowId !== "undefined",
   });
 }
 
@@ -327,7 +327,7 @@ export function useSnapshot(workflowId: string | undefined, snapshotId: string |
   return useQuery({
     queryKey: queryKeys.snapshot(workflowId!, snapshotId!),
     queryFn: () => snapshotAPI.get(workflowId!, snapshotId!),
-    enabled: !!workflowId && !!snapshotId,
+    enabled: !!workflowId && workflowId !== "undefined" && !!snapshotId && snapshotId !== "undefined",
   });
 }
 
@@ -385,7 +385,7 @@ export function useWorkflowVariables(workflowId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.variables(workflowId!),
     queryFn: () => variableAPI.list(workflowId!),
-    enabled: !!workflowId,
+    enabled: !!workflowId && workflowId !== "undefined",
   });
 }
 
@@ -395,9 +395,9 @@ export function useWorkflowVariables(workflowId: string | undefined) {
 
 export function useSections(workflowId: string | undefined, options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: queryKeys.sections(workflowId!),
+    queryKey: queryKeys.sections(workflowId || ""),
     queryFn: () => sectionAPI.list(workflowId!),
-    enabled: options?.enabled !== undefined ? options.enabled : !!workflowId,
+    enabled: options?.enabled !== undefined ? options.enabled : !!workflowId && workflowId !== "undefined",
   });
 }
 
@@ -511,7 +511,7 @@ export function useSteps(sectionId: string | undefined, options?: Omit<UseQueryO
   return useQuery({
     queryKey: queryKeys.steps(sectionId!),
     queryFn: () => stepAPI.list(sectionId!),
-    enabled: !!sectionId,
+    enabled: !!sectionId && sectionId !== "undefined",
     ...options,
   });
 }
@@ -545,7 +545,7 @@ export function useStep(stepId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.step(stepId!),
     queryFn: () => stepAPI.get(stepId!),
-    enabled: !!stepId,
+    enabled: !!stepId && stepId !== "undefined",
   });
 }
 
@@ -675,15 +675,17 @@ export function useBlocks(workflowId: string | undefined, phase?: string) {
   return useQuery({
     queryKey: queryKeys.blocks(workflowId!, phase),
     queryFn: () => blockAPI.list(workflowId!, phase as any),
-    enabled: !!workflowId,
+    enabled: !!workflowId && workflowId !== "undefined",
   });
 }
 
 export function useCreateBlock() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ workflowId, ...data }: Omit<ApiBlock, "id" | "createdAt" | "updatedAt"> & { workflowId: string }) =>
-      blockAPI.create(workflowId, data),
+    mutationFn: ({ workflowId, ...data }: Omit<ApiBlock, "id" | "createdAt" | "updatedAt"> & { workflowId: string }) => {
+      if (workflowId === "undefined") throw new Error("Invalid workflow ID");
+      return blockAPI.create(workflowId, data);
+    },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.blocks(variables.workflowId) });
     },
@@ -693,8 +695,10 @@ export function useCreateBlock() {
 export function useUpdateBlock() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, workflowId, ...data }: Partial<ApiBlock> & { id: string; workflowId: string }) =>
-      blockAPI.update(id, data),
+    mutationFn: ({ id, workflowId, ...data }: Partial<ApiBlock> & { id: string; workflowId: string }) => {
+      if (workflowId === "undefined") throw new Error("Invalid workflow ID");
+      return blockAPI.update(id, data);
+    },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.blocks(variables.workflowId) });
     },
@@ -757,7 +761,7 @@ export function useTransformBlocks(workflowId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.transformBlocks(workflowId!),
     queryFn: () => transformBlockAPI.list(workflowId!),
-    enabled: !!workflowId,
+    enabled: !!workflowId && workflowId !== "undefined",
   });
 }
 
@@ -765,15 +769,17 @@ export function useTransformBlock(id: string | undefined) {
   return useQuery({
     queryKey: queryKeys.transformBlock(id!),
     queryFn: () => transformBlockAPI.get(id!),
-    enabled: !!id,
+    enabled: !!id && id !== "undefined",
   });
 }
 
 export function useCreateTransformBlock() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ workflowId, ...data }: Omit<ApiTransformBlock, "id" | "createdAt" | "updatedAt"> & { workflowId: string }) =>
-      transformBlockAPI.create(workflowId, data),
+    mutationFn: ({ workflowId, ...data }: Omit<ApiTransformBlock, "id" | "createdAt" | "updatedAt"> & { workflowId: string }) => {
+      if (workflowId === "undefined") throw new Error("Invalid workflow ID");
+      return transformBlockAPI.create(workflowId, data);
+    },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.transformBlocks(variables.workflowId) });
     },
@@ -783,8 +789,10 @@ export function useCreateTransformBlock() {
 export function useUpdateTransformBlock() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, workflowId, ...data }: Partial<ApiTransformBlock> & { id: string; workflowId: string }) =>
-      transformBlockAPI.update(id, data),
+    mutationFn: ({ id, workflowId, ...data }: Partial<ApiTransformBlock> & { id: string; workflowId: string }) => {
+      if (workflowId === "undefined") throw new Error("Invalid workflow ID");
+      return transformBlockAPI.update(id, data);
+    },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.transformBlocks(variables.workflowId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.transformBlock(variables.id) });
@@ -818,7 +826,7 @@ export function useRuns(workflowId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.runs(workflowId!),
     queryFn: () => runAPI.list(workflowId!),
-    enabled: !!workflowId,
+    enabled: !!workflowId && workflowId !== "undefined",
   });
 }
 
@@ -826,7 +834,7 @@ export function useRun(id: string | undefined) {
   return useQuery({
     queryKey: queryKeys.run(id!),
     queryFn: () => runAPI.get(id!),
-    enabled: !!id,
+    enabled: !!id && id !== "undefined",
   });
 }
 
@@ -834,7 +842,7 @@ export function useRunWithValues(id: string | undefined, options?: { enabled?: b
   return useQuery({
     queryKey: queryKeys.runWithValues(id!),
     queryFn: () => runAPI.getWithValues(id!),
-    enabled: options?.enabled !== undefined ? options.enabled : !!id,
+    enabled: options?.enabled !== undefined ? options.enabled : !!id && id !== "undefined",
   });
 }
 
@@ -918,7 +926,7 @@ export function useWorkflowMode(workflowId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.workflowMode(workflowId!),
     queryFn: () => workflowModeAPI.getMode(workflowId!),
-    enabled: !!workflowId,
+    enabled: !!workflowId && workflowId !== "undefined",
   });
 }
 
@@ -942,7 +950,7 @@ export function useCollections(tenantId: string | undefined, withStats?: boolean
   return useQuery({
     queryKey: queryKeys.collections(tenantId!),
     queryFn: () => collectionsAPI.list(tenantId!, withStats),
-    enabled: !!tenantId,
+    enabled: !!tenantId && tenantId !== "undefined",
   });
 }
 
@@ -950,7 +958,7 @@ export function useCollection(tenantId: string | undefined, collectionId: string
   return useQuery({
     queryKey: queryKeys.collection(tenantId!, collectionId!),
     queryFn: () => collectionsAPI.get(tenantId!, collectionId!, withFields),
-    enabled: !!tenantId && !!collectionId,
+    enabled: !!tenantId && tenantId !== "undefined" && !!collectionId && collectionId !== "undefined",
   });
 }
 
@@ -993,7 +1001,7 @@ export function useCollectionFields(tenantId: string | undefined, collectionId: 
   return useQuery({
     queryKey: queryKeys.collectionFields(tenantId!, collectionId!),
     queryFn: () => collectionsAPI.listFields(tenantId!, collectionId!),
-    enabled: !!tenantId && !!collectionId,
+    enabled: !!tenantId && tenantId !== "undefined" && !!collectionId && collectionId !== "undefined",
   });
 }
 
@@ -1038,7 +1046,7 @@ export function useCollectionRecords(tenantId: string | undefined, collectionId:
   return useQuery({
     queryKey: [...queryKeys.collectionRecords(tenantId!, collectionId!), params],
     queryFn: () => collectionsAPI.listRecords(tenantId!, collectionId!, params),
-    enabled: !!tenantId && !!collectionId,
+    enabled: !!tenantId && tenantId !== "undefined" && !!collectionId && collectionId !== "undefined",
   });
 }
 
@@ -1046,7 +1054,7 @@ export function useCollectionRecord(tenantId: string | undefined, collectionId: 
   return useQuery({
     queryKey: queryKeys.collectionRecord(tenantId!, collectionId!, recordId!),
     queryFn: () => collectionsAPI.getRecord(tenantId!, collectionId!, recordId!),
-    enabled: !!tenantId && !!collectionId && !!recordId,
+    enabled: !!tenantId && tenantId !== "undefined" && !!collectionId && collectionId !== "undefined" && !!recordId && recordId !== "undefined",
   });
 }
 
@@ -1101,7 +1109,7 @@ export function useWorkflowDataSources(workflowId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.workflowDataSources(workflowId!),
     queryFn: () => dataSourceAPI.listForWorkflow(workflowId!),
-    enabled: !!workflowId,
+    enabled: !!workflowId && workflowId !== "undefined",
   });
 }
 
@@ -1136,7 +1144,7 @@ export function useTemplatePlaceholders(templateId: string | undefined) {
   return useQuery({
     queryKey: ["templates", templateId, "placeholders"],
     queryFn: () => templateAPI.getPlaceholders(templateId!),
-    enabled: !!templateId,
+    enabled: !!templateId && templateId !== "undefined",
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
 }

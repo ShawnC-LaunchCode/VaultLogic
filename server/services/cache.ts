@@ -4,9 +4,41 @@
  * Used for OAuth2 tokens, HTTP responses, etc.
  */
 
+import crypto from 'crypto';
+
 interface CacheEntry<T> {
   value: T;
   expiresAt: number; // Unix timestamp in ms
+}
+
+/**
+ * SECURITY FIX: Create a secure, tamper-proof cache key
+ * Includes cryptographic hash to prevent key crafting and cross-tenant poisoning
+ */
+function createSecureCacheKey(parts: {
+  tenantId: string;
+  projectId?: string;
+  type: 'oauth2' | 'http';
+  identifier: string;
+}): string {
+  const { tenantId, projectId, type, identifier } = parts;
+
+  // Validate tenant ID exists
+  if (!tenantId || typeof tenantId !== 'string') {
+    throw new Error('Invalid tenantId for cache key');
+  }
+
+  // Create base key with clear structure
+  const baseKey = `${type}:${tenantId}:${projectId || 'global'}:${identifier}`;
+
+  // Add HMAC to prevent key crafting
+  const secret = process.env.CACHE_KEY_SECRET || process.env.SESSION_SECRET || 'default-cache-secret';
+  const hmac = crypto.createHmac('sha256', secret)
+    .update(baseKey)
+    .digest('hex')
+    .substring(0, 16); // First 16 chars
+
+  return `${baseKey}:${hmac}`;
 }
 
 class LRUCache<T = any> {
@@ -144,20 +176,40 @@ const httpResponseCache = new LRUCache<{
 /**
  * OAuth2 Token Cache
  * Stores access tokens with automatic expiration
+ * SECURITY FIX: Uses secure cache keys to prevent cross-tenant poisoning
  */
 export const oauth2Cache = {
   /**
-   * Get a cached OAuth2 token
+   * Get a cached OAuth2 token (legacy - uses simple key)
+   * @deprecated Use getSecure() for tenant-isolated caching
    */
   get(key: string): { access_token: string; token_type: string; expires_in: number; obtainedAt: number } | undefined {
     return oAuth2TokenCache.get(key);
   },
 
   /**
-   * Set a cached OAuth2 token
-   * @param key Cache key (e.g., `${tenantId}:${projectId}:${tokenUrl}:${clientId}:${scope}`)
-   * @param token OAuth2 token response
-   * @param ttlMs Time-to-live in milliseconds (defaults to expires_in - 30s buffer)
+   * Get a cached OAuth2 token with secure key generation
+   */
+  getSecure(params: {
+    tenantId: string;
+    projectId?: string;
+    tokenUrl: string;
+    clientId: string;
+    scope: string;
+  }): { access_token: string; token_type: string; expires_in: number; obtainedAt: number } | undefined {
+    const key = createSecureCacheKey({
+      tenantId: params.tenantId,
+      projectId: params.projectId,
+      type: 'oauth2',
+      identifier: `${params.tokenUrl}:${params.clientId}:${params.scope}`
+    });
+
+    return oAuth2TokenCache.get(key);
+  },
+
+  /**
+   * Set a cached OAuth2 token (legacy - uses simple key)
+   * @deprecated Use setSecure() for tenant-isolated caching
    */
   set(
     key: string,
@@ -174,16 +226,88 @@ export const oauth2Cache = {
   },
 
   /**
-   * Delete a cached OAuth2 token
+   * Set a cached OAuth2 token with secure key generation
+   */
+  setSecure(
+    params: {
+      tenantId: string;
+      projectId?: string;
+      tokenUrl: string;
+      clientId: string;
+      scope: string;
+    },
+    token: { access_token: string; token_type: string; expires_in: number },
+    ttlMs?: number
+  ): void {
+    const key = createSecureCacheKey({
+      tenantId: params.tenantId,
+      projectId: params.projectId,
+      type: 'oauth2',
+      identifier: `${params.tokenUrl}:${params.clientId}:${params.scope}`
+    });
+
+    const obtainedAt = Date.now();
+    const effectiveTtl = ttlMs ?? (token.expires_in * 1000 - 30000);
+
+    oAuth2TokenCache.set(key, {
+      ...token,
+      obtainedAt,
+    }, effectiveTtl);
+  },
+
+  /**
+   * Delete a cached OAuth2 token (legacy)
+   * @deprecated Use deleteSecure() for tenant-isolated caching
    */
   delete(key: string): boolean {
     return oAuth2TokenCache.delete(key);
   },
 
   /**
-   * Check if a token is cached and not expired
+   * Delete a cached OAuth2 token with secure key generation
+   */
+  deleteSecure(params: {
+    tenantId: string;
+    projectId?: string;
+    tokenUrl: string;
+    clientId: string;
+    scope: string;
+  }): boolean {
+    const key = createSecureCacheKey({
+      tenantId: params.tenantId,
+      projectId: params.projectId,
+      type: 'oauth2',
+      identifier: `${params.tokenUrl}:${params.clientId}:${params.scope}`
+    });
+
+    return oAuth2TokenCache.delete(key);
+  },
+
+  /**
+   * Check if a token is cached and not expired (legacy)
+   * @deprecated Use hasSecure() for tenant-isolated caching
    */
   has(key: string): boolean {
+    return oAuth2TokenCache.has(key);
+  },
+
+  /**
+   * Check if a token is cached with secure key generation
+   */
+  hasSecure(params: {
+    tenantId: string;
+    projectId?: string;
+    tokenUrl: string;
+    clientId: string;
+    scope: string;
+  }): boolean {
+    const key = createSecureCacheKey({
+      tenantId: params.tenantId,
+      projectId: params.projectId,
+      type: 'oauth2',
+      identifier: `${params.tokenUrl}:${params.clientId}:${params.scope}`
+    });
+
     return oAuth2TokenCache.has(key);
   },
 

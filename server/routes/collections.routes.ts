@@ -358,15 +358,19 @@ export function registerCollectionsRoutes(app: Express): void {
     try {
       const { tenantId, collectionId } = req.params;
 
-      // Parse query params
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
-      const offset = req.query.offset ? parseInt(req.query.offset as string) : undefined;
+      // SECURITY FIX: Validate pagination parameters properly (no NaN from parseInt)
+      const { paginationSchema } = await import('../utils/validation');
+      const pagination = paginationSchema.partial().parse({
+        limit: req.query.limit,
+        offset: req.query.offset,
+      });
+
       const orderBy = (req.query.orderBy as 'created_at' | 'updated_at') || 'created_at';
       const order = (req.query.order as 'asc' | 'desc') || 'desc';
 
       const records = await recordService.listRecords(collectionId, tenantId, {
-        limit,
-        offset,
+        limit: pagination.limit,
+        offset: pagination.offset,
         orderBy,
         order,
       });

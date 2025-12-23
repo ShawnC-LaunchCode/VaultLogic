@@ -3,6 +3,12 @@
  * Provides consistent error handling with proper HTTP status codes
  */
 
+export interface ValidationErrorDetail {
+  field?: string;
+  message: string;
+  code?: string;
+}
+
 export class AppError extends Error {
   constructor(
     public message: string,
@@ -32,7 +38,7 @@ export class UnauthorizedError extends AppError {
 }
 
 export class ValidationError extends AppError {
-  constructor(message: string, public errors?: any[]) {
+  constructor(message: string, public errors?: ValidationErrorDetail[]) {
     super(message, 422, 'VALIDATION_ERROR');
   }
 }

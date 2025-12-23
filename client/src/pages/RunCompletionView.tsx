@@ -193,7 +193,7 @@ export default function RunCompletionView() {
 
                 {/* Footer / Branding */}
                 <div className="mt-12 text-center text-sm text-gray-400">
-                    Powered by VaultLogic
+                    Powered by ezBuildr
                 </div>
             </div>
         </div>

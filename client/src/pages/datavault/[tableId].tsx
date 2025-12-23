@@ -135,12 +135,30 @@ export default function TableViewPage() {
     },
   });
 
+  const bulkDeleteRowsMutation = useMutation({
+    mutationFn: (rowIds: string[]) => datavaultAPI.bulkDeleteRows(rowIds),
+    onSuccess: (_, rowIds) => {
+      queryClient.invalidateQueries({ queryKey: datavaultQueryKeys.tableRows(tableId!) });
+      toast({ title: "Rows deleted", description: `${rowIds.length} row(s) deleted successfully.` });
+      setSelectedRowIds(new Set());
+      setBulkDeleteConfirmOpen(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to delete rows",
+        description: error instanceof Error ? error.message : "An error occurred",
+        variant: "destructive",
+      });
+    },
+  });
+
   const [activeTab, setActiveTab] = useState("data");
   const [rowEditorOpen, setRowEditorOpen] = useState(false);
   const [editingRow, setEditingRow] = useState<{ id: string; values: Record<string, any> } | null>(null);
   const [deleteRowConfirm, setDeleteRowConfirm] = useState<string | null>(null);
   const [moveTableOpen, setMoveTableOpen] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
+  const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false);
   const [selectedRowIds, setSelectedRowIds] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<string | undefined>(undefined);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | undefined>(undefined);
@@ -320,13 +338,11 @@ export default function TableViewPage() {
 
   const handleBulkDelete = async () => {
     if (selectedRowIds.size === 0) return;
-    // This would require a bulk delete API endpoint
-    // For now, show a warning
-    toast({
-      title: "Bulk delete",
-      description: "Bulk delete is not implemented yet. Please delete rows individually.",
-      variant: "destructive",
-    });
+    setBulkDeleteConfirmOpen(true);
+  };
+
+  const confirmBulkDelete = () => {
+    bulkDeleteRowsMutation.mutate(Array.from(selectedRowIds));
   };
 
   // Sort handler
@@ -606,6 +622,29 @@ export default function TableViewPage() {
             >
               {isRowMutating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Delete Row
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Delete Confirmation */}
+      <AlertDialog open={bulkDeleteConfirmOpen} onOpenChange={setBulkDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedRowIds.size} Rows?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the selected rows? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmBulkDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={bulkDeleteRowsMutation.isPending}
+            >
+              {bulkDeleteRowsMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Delete Rows
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -106,7 +106,10 @@ export function ValidationRulesEditor({ rules, onChange, workflowId, mode = "eas
                     onChange={(e) => {
                         try {
                             onChange(JSON.parse(e.target.value));
-                        } catch (e) { }
+                        } catch (error) {
+                            // Ignore parse errors during typing - user may be mid-edit
+                            // The textarea will keep showing the invalid JSON until fixed
+                        }
                     }}
                     className="font-mono text-xs h-[400px]"
                 />

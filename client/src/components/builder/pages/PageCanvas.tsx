@@ -26,11 +26,12 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { useSections, useBlocks, useReorderSections, useAllSteps, useUpdateStep, useReorderSteps, useCreateSection } from "@/lib/vault-hooks";
+import { useSections, useBlocks, useReorderSections, useAllSteps, useUpdateStep, useReorderSteps, useCreateSection, useWorkflowMode, useTransformBlocks } from "@/lib/vault-hooks";
 import { PageCard } from "./PageCard";
 import { UI_LABELS } from "@/lib/labels";
 import { QuestionCard } from "../questions/QuestionCard";
 import type { ApiStep } from "@/lib/vault-api";
+import { BlockEditorDialog, type UniversalBlock } from "../BlockEditorDialog";
 
 interface PageCanvasProps {
   workflowId: string;
@@ -45,14 +46,18 @@ interface DragData {
 export function PageCanvas({ workflowId }: PageCanvasProps) {
   const { data: pages = [] } = useSections(workflowId);
   const { data: allBlocks = [] } = useBlocks(workflowId);
+  const { data: transformBlocks = [] } = useTransformBlocks(workflowId);
+  const { data: modeData } = useWorkflowMode(workflowId);
+  const mode = modeData?.mode || 'easy';
   const reorderSectionsMutation = useReorderSections();
   const reorderStepsMutation = useReorderSteps();
   const updateStepMutation = useUpdateStep();
   const createSectionMutation = useCreateSection();
 
   const [activeId, setActiveId] = useState<string | null>(null);
-
   const [activeDragData, setActiveDragData] = useState<DragData | null>(null);
+  const [editingBlock, setEditingBlock] = useState<UniversalBlock | null>(null);
+  const [isBlockEditorOpen, setIsBlockEditorOpen] = useState(false);
 
   const handleCreateSection = async () => {
     const order = pages?.length || 0;
@@ -61,6 +66,40 @@ export function PageCanvas({ workflowId }: PageCanvasProps) {
       title: `${UI_LABELS.PAGE} ${order + 1}`,
       order,
     });
+  };
+
+  const handleEditBlock = (blockId: string) => {
+    // Find the block in regular blocks or transform blocks
+    const regularBlock = allBlocks.find(b => b.id === blockId);
+    const transformBlock = transformBlocks.find(tb => tb.id === blockId);
+
+    if (regularBlock) {
+      setEditingBlock({
+        id: regularBlock.id,
+        type: regularBlock.type,
+        phase: regularBlock.phase,
+        order: regularBlock.order,
+        enabled: regularBlock.enabled,
+        raw: regularBlock,
+        source: 'regular',
+        title: undefined,
+        displayType: regularBlock.type,
+      });
+      setIsBlockEditorOpen(true);
+    } else if (transformBlock) {
+      setEditingBlock({
+        id: transformBlock.id,
+        type: 'js',
+        phase: transformBlock.phase,
+        order: transformBlock.order,
+        enabled: transformBlock.enabled,
+        raw: transformBlock,
+        source: 'transform',
+        title: transformBlock.name,
+        displayType: 'js',
+      });
+      setIsBlockEditorOpen(true);
+    }
   };
 
   // Fetch all steps for all sections using the proper useAllSteps hook
@@ -260,6 +299,7 @@ export function PageCanvas({ workflowId }: PageCanvasProps) {
                   allSteps={allSteps[page.id] || []}
                   index={index}
                   total={pages.length}
+                  onEditBlock={handleEditBlock}
                 />
               ))}
 
@@ -277,6 +317,18 @@ export function PageCanvas({ workflowId }: PageCanvasProps) {
             </div>
           </SortableContext>
         </DndContext>
+
+        {/* Block Editor Dialog */}
+        <BlockEditorDialog
+          workflowId={workflowId}
+          block={editingBlock}
+          mode={mode as any}
+          isOpen={isBlockEditorOpen}
+          onClose={() => {
+            setIsBlockEditorOpen(false);
+            setEditingBlock(null);
+          }}
+        />
       </div>
     </div>
   );

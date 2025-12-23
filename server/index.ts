@@ -78,11 +78,23 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+
+// SECURITY: Comprehensive security headers (CSP, HSTS, X-Frame-Options, etc.)
+const { securityHeaders } = await import("./middleware/securityHeaders.js");
+app.use(securityHeaders());
+
+// SECURITY FIX: Add payload size limits to prevent DoS attacks
+// Limits JSON and URL-encoded payloads to 10MB (configurable via MAX_REQUEST_SIZE env var)
+const maxRequestSize = process.env.MAX_REQUEST_SIZE || '10mb';
+app.use(express.json({ limit: maxRequestSize }));
+app.use(express.urlencoded({ extended: false, limit: maxRequestSize }));
 
 // XSS Protection: Sanitize all string inputs
 app.use(sanitizeInputs);
+
+// SECURITY FIX: Request timeout protection (30s default, configurable)
+const { requestTimeout } = await import("./middleware/timeout.js");
+app.use(requestTimeout);
 
 // =====================================================================
 // 💡 REQUEST LOGGING MIDDLEWARE
@@ -125,14 +137,30 @@ app.use((req, res, next) => {
 
 (async () => {
     try {
+        // CONFIGURATION FIX: Validate master key at startup (fail fast if misconfigured)
+        const { validateMasterKey } = await import("./utils/encryption.js");
+        try {
+            validateMasterKey();
+            logger.info('Master key validated successfully');
+        } catch (error) {
+            logger.fatal({ error }, 'FATAL: VL_MASTER_KEY is not properly configured');
+            logger.fatal('Please ensure VL_MASTER_KEY is set to a valid base64-encoded 32-byte key');
+            logger.fatal('Generate a new key with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'base64\'))"');
+            process.exit(1);
+        }
+
         // Ensure database is initialized before starting server
+        console.log('Initializing database...');
         const { dbInitPromise } = await import("./db.js");
         await dbInitPromise;
+        console.log('Database initialized.');
 
         // Initialize routes and collaboration server
-        console.log('[DEBUG] Registering routes...');
+        logger.debug('Registering routes...');
+        console.log('Registering routes...');
         const server = await registerRoutes(app);
-        console.log('[DEBUG] Routes registered. Server created.');
+        logger.debug('Routes registered. Server created.');
+        console.log('Routes registered.');
 
         // Register centralized error handler middleware (must be after all routes)
         app.use(errorHandler);
@@ -141,7 +169,7 @@ app.use((req, res, next) => {
         // setting up all the other routes so the catch-all route
         // doesn't interfere with the other routes
         if (app.get("env") === "development" || app.get("env") === "test") {
-            // Dynamic import vite only in development/test to avoid bundling it
+            // Dynamic import vite only in development and test to avoid bundling it
             try {
                 logger.info("Loading Vite for development...");
                 const { setupVite } = await import("./vite.js");
@@ -168,8 +196,32 @@ app.use((req, res, next) => {
         }, () => {
             log(`serving on port ${port}`);
         });
+
+        // RESOURCE LEAK FIX: Graceful shutdown handlers
+        const shutdown = async (signal: string) => {
+            logger.info({ signal }, 'Shutdown signal received, cleaning up...');
+
+            // Clean up OAuth2 state cleanup interval
+            const { stopOAuth2StateCleanup } = await import('./services/oauth2.js');
+            stopOAuth2StateCleanup();
+
+            // Close server
+            server.close(() => {
+                logger.info('Server closed successfully');
+                process.exit(0);
+            });
+
+            // Force exit after timeout
+            setTimeout(() => {
+                logger.error('Forced shutdown after timeout');
+                process.exit(1);
+            }, 10000);
+        };
+
+        process.on('SIGTERM', () => shutdown('SIGTERM'));
+        process.on('SIGINT', () => shutdown('SIGINT'));
     } catch (error) {
-        console.error("FATAL: Failed to start server:", error);
+        console.error('FATAL STARTUP ERROR:', error);
         logger.fatal({ error }, "FATAL: Failed to start server");
         process.exit(1);
     }

@@ -20,10 +20,13 @@ import {
   datavaultTablePermissionsService,
 } from '../services';
 import { datavaultDatabasesService } from '../services/DatavaultDatabasesService';
+import { AclService } from '../services/AclService';
 import { z } from 'zod';
 import { logger } from '../logger';
 import { DATAVAULT_CONFIG } from '@shared/config';
 import { validationMessages } from '../utils/validationMessages';
+
+const aclService = new AclService();
 
 /**
  * Register DataVault routes
@@ -73,20 +76,27 @@ export function registerDatavaultRoutes(app: Express): void {
 
       let databases;
       if (scopeType && typeof scopeType === 'string') {
-        // Explicit scope request - ensure user has access to this scope?
-        // Ideally we should also check access here, but for now we rely on the list filtering
-        // or we could enforce it. simpler to just let list filtering handle the "All" view
-        // and if they request specific scope, we might want to check permissions.
-        // For consistency with specific "List" request, we might just continue using scope filter.
-        // BUT strict requirement: "I shouldn't see data sources I don't have access to".
-
-        // Use the safe list method even if filtering by scope? 
-        // Or blindly trust scope? No, blindly trusting scope would leak existence.
-        // Let's use the safe list method and then filter in memory or add scope params to it?
-        // Efficient way: pass scope params to repo method? 
-        // For now, let's keep the dedicated scope method but we might need to secure it too.
-        // Given the prompt "I shouldn't see...", the main list is usually the vector.
-        // Let's secure the main list first.
+        // SECURITY FIX: Verify user has access to the requested scope before returning data
+        if (scopeId && typeof scopeId === 'string') {
+          if (scopeType === 'project') {
+            // Verify user has at least 'view' access to the project
+            const projectRole = await aclService.resolveRoleForProject(userId, scopeId);
+            if (projectRole === 'none') {
+              return res.status(403).json({
+                message: 'Access denied: You do not have permission to view this project'
+              });
+            }
+          } else if (scopeType === 'workflow') {
+            // Verify user has at least 'view' access to the workflow
+            const workflowRole = await aclService.resolveRoleForWorkflow(userId, scopeId);
+            if (workflowRole === 'none') {
+              return res.status(403).json({
+                message: 'Access denied: You do not have permission to view this workflow'
+              });
+            }
+          }
+          // For 'account' scope: tenantId check is sufficient (already done above)
+        }
 
         databases = await datavaultDatabasesService.getDatabasesByScope(
           tenantId,
@@ -669,6 +679,13 @@ export function registerDatavaultRoutes(app: Express): void {
 
       const { requests } = schema.parse(req.body);
 
+      // DOS PROTECTION FIX: Validate batch size to prevent resource exhaustion
+      if (requests.length > DATAVAULT_CONFIG.MAX_BATCH_REQUESTS) {
+        return res.status(400).json({
+          message: `Batch size exceeds maximum allowed value of ${DATAVAULT_CONFIG.MAX_BATCH_REQUESTS} requests`
+        });
+      }
+
       const resultMap = await datavaultRowsService.batchResolveReferences(requests, tenantId);
 
       // Convert Map to object for JSON serialization
@@ -721,10 +738,15 @@ export function registerDatavaultRoutes(app: Express): void {
       // Check read permission
       await datavaultTablesService.requirePermission(userId, tableId, tenantId, 'read');
 
-      const limit = req.query.limit
-        ? Math.min(parseInt(req.query.limit as string, 10), DATAVAULT_CONFIG.MAX_PAGE_SIZE)
-        : DATAVAULT_CONFIG.DEFAULT_PAGE_SIZE;
-      const offset = req.query.offset ? parseInt(req.query.offset as string, 10) : 0;
+      // SECURITY FIX: Validate pagination parameters properly (no NaN from parseInt)
+      const { paginationSchema } = await import('../utils/validation');
+      const pagination = paginationSchema.parse({
+        limit: req.query.limit,
+        offset: req.query.offset,
+      });
+
+      const { limit, offset } = pagination;
+
       const showArchived = req.query.showArchived === 'true';
       const sortBy = req.query.sortBy as string | undefined;
       const sortOrder = (req.query.sortOrder === 'desc' ? 'desc' : 'asc') as 'asc' | 'desc';
@@ -1043,6 +1065,43 @@ export function registerDatavaultRoutes(app: Express): void {
       }
 
       const message = error instanceof Error ? error.message : 'Failed to unarchive rows';
+      const status = message.includes('not found') || message.includes('unauthorized') ? 403 : 500;
+      res.status(status).json({ message });
+    }
+  });
+
+  /**
+   * DELETE /api/datavault/rows/bulk/delete
+   * Bulk delete rows (permanent)
+   * Body: { rowIds: string[] }
+   */
+  app.delete('/api/datavault/rows/bulk/delete', deleteLimiter, hybridAuth, async (req: Request, res: Response) => {
+    try {
+      const tenantId = getTenantId(req);
+
+      const schema = z.object({
+        rowIds: z.array(z.string().uuid()).min(1).max(100),
+      });
+
+      const { rowIds } = schema.parse(req.body);
+
+      await datavaultRowsService.bulkDeleteRows(rowIds, tenantId);
+      res.json({
+        success: true,
+        message: `${rowIds.length} row(s) deleted successfully`,
+        count: rowIds.length,
+      });
+    } catch (error) {
+      logger.error({ error }, 'Error bulk deleting DataVault rows');
+
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          message: 'Invalid input',
+          errors: error.errors,
+        });
+      }
+
+      const message = error instanceof Error ? error.message : 'Failed to delete rows';
       const status = message.includes('not found') || message.includes('unauthorized') ? 403 : 500;
       res.status(status).json({ message });
     }

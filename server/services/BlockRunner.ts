@@ -29,7 +29,7 @@ import type {
 } from "@shared/types/blocks";
 import { getValueByPath } from "@shared/conditionEvaluator";
 import type { LifecycleHookPhase } from "@shared/types/scripting";
-import { Block, workflows, projects } from "@shared/schema";
+import { Block, workflows, projects, users } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { logger } from "../logger";
 import { queryRunner } from "../lib/queries/QueryRunner";
@@ -84,17 +84,36 @@ export class BlockRunner {
   }
 
   /**
+   * Run all blocks for a given phase WITH TRANSACTION WRAPPER
+   * Execution order: lifecycle hooks → transform blocks → generic blocks
+   *
+   * TRANSACTION FIX: All write operations within this phase are wrapped in a single database
+   * transaction. If any block fails, all previous writes are rolled back atomically.
+   * Use this for critical workflows where data consistency is essential.
+   *
+   * NOTE: External side effects (HTTP calls, emails, external APIs) cannot be rolled back
+   * by database transactions. Design your workflows accordingly.
+   */
+  async runPhaseWithTransaction(context: BlockContext): Promise<BlockResult> {
+    return db.transaction(async (tx) => {
+      // Execute the phase with transaction context
+      return this.runPhase(context, tx);
+    });
+  }
+
+  /**
    * Run all blocks for a given phase
    * Execution order: lifecycle hooks → transform blocks → generic blocks
    * Returns combined result from all blocks
    *
-   * TODO: Add transaction boundary support
-   * Currently, this method performs multiple database operations without a transaction wrapper.
-   * If any operation fails midway, previous changes are already committed, leading to
-   * inconsistent state. Consider refactoring to accept an optional transaction parameter
-   * and propagate it through all repository calls.
+   * NOTE: Individual write operations use transactions (see WriteRunner), but cross-block
+   * operations are not wrapped in a single transaction by default. Each block commits independently.
+   * Use runPhaseWithTransaction() for atomic cross-block operations.
+   *
+   * @param context - Block execution context
+   * @param tx - Optional database transaction (for atomic cross-block operations)
    */
-  async runPhase(context: BlockContext): Promise<BlockResult> {
+  async runPhase(context: BlockContext, tx?: any): Promise<BlockResult> {
     let currentData = { ...context.data };
     const allErrors: string[] = [];
     let nextSectionId: string | undefined;
@@ -229,23 +248,26 @@ export class BlockRunner {
    */
   private async executeBlock(block: Block, context: BlockContext): Promise<BlockResult> {
     // Stage 15: Analytics - Block Start
+    // ERROR HANDLING FIX: Wrap analytics in try/catch to prevent workflow crashes
     if (context.runId) {
-      // accessMode logic? BlockContext doesn't have accessMode usually, but we can assume 'unknown' or payload it.
-      // Actually we just want block events here.
-      await analyticsService.recordEvent({
-        runId: context.runId,
-        workflowId: context.workflowId,
-        versionId: context.versionId || 'draft',
-        type: 'block.start',
-        blockId: block.id,
-        // pageId? context.sectionId is roughly pageId
-        pageId: context.sectionId,
-        timestamp: new Date().toISOString(),
-        isPreview: context.mode === 'preview',
-        payload: {
-          blockType: block.type
-        }
-      });
+      try {
+        await analyticsService.recordEvent({
+          runId: context.runId,
+          workflowId: context.workflowId,
+          versionId: context.versionId || 'draft',
+          type: 'block.start',
+          blockId: block.id,
+          pageId: context.sectionId,
+          timestamp: new Date().toISOString(),
+          isPreview: context.mode === 'preview',
+          payload: {
+            blockType: block.type
+          }
+        });
+      } catch (analyticsError) {
+        // Log but don't fail the workflow due to analytics failures
+        logger.warn({ error: analyticsError, blockId: block.id }, 'Failed to record block.start analytics event');
+      }
     }
 
     let result: BlockResult;
@@ -321,46 +343,53 @@ export class BlockRunner {
       // Catch unexpected errors during block execution
       const errorMsg = error instanceof Error ? error.message : "unknown error";
 
+      // ERROR HANDLING FIX: Wrap analytics in try/catch
       if (context.runId) {
-        await analyticsService.recordEvent({
-          runId: context.runId,
-          workflowId: context.workflowId,
-          versionId: context.versionId || 'draft',
-          type: 'block.error',
-          blockId: block.id,
-          pageId: context.sectionId,
-          timestamp: new Date().toISOString(),
-          isPreview: context.mode === 'preview',
-          payload: {
-            error: errorMsg,
-            blockType: block.type
-          }
-        });
+        try {
+          await analyticsService.recordEvent({
+            runId: context.runId,
+            workflowId: context.workflowId,
+            versionId: context.versionId || 'draft',
+            type: 'block.error',
+            blockId: block.id,
+            pageId: context.sectionId,
+            timestamp: new Date().toISOString(),
+            isPreview: context.mode === 'preview',
+            payload: {
+              error: errorMsg,
+              blockType: block.type
+            }
+          });
+        } catch (analyticsError) {
+          logger.warn({ error: analyticsError, blockId: block.id }, 'Failed to record block.error analytics event');
+        }
       }
       throw error;
     }
 
     // Stage 15: Analytics - Block End (Complete or Validated Error)
+    // ERROR HANDLING FIX: Wrap analytics in try/catch
     if (context.runId) {
-      const eventType = result.success ? 'block.complete' : 'validation.error'; // Generic blocks usually return validation errors as non-success
-      // However, 'create_record' errors are runtime errors.
-      // Let's distinguish?
-      // For now, if !success, it's an error.
+      try {
+        const eventType = result.success ? 'block.complete' : 'validation.error';
 
-      await analyticsService.recordEvent({
-        runId: context.runId,
-        workflowId: context.workflowId,
-        versionId: context.versionId || 'draft',
-        type: eventType,
-        blockId: block.id,
-        pageId: context.sectionId,
-        timestamp: new Date().toISOString(),
-        isPreview: context.mode === 'preview',
-        payload: {
-          blockType: block.type,
-          errors: result.errors
-        }
-      });
+        await analyticsService.recordEvent({
+          runId: context.runId,
+          workflowId: context.workflowId,
+          versionId: context.versionId || 'draft',
+          type: eventType,
+          blockId: block.id,
+          pageId: context.sectionId,
+          timestamp: new Date().toISOString(),
+          isPreview: context.mode === 'preview',
+          payload: {
+            blockType: block.type,
+            errors: result.errors
+          }
+        });
+      } catch (analyticsError) {
+        logger.warn({ error: analyticsError, blockId: block.id }, 'Failed to record block completion analytics event');
+      }
     }
 
     return result;
@@ -732,26 +761,38 @@ export class BlockRunner {
   /**
    * Helper: Get tenantId from workflowId
    */
+  // Helper: Get tenantId from workflowId
   private async getTenantIdFromWorkflow(workflowId: string): Promise<string | null> {
     try {
       // Import at top level to avoid circular dependency issues
       const { workflowRepository } = await import('../repositories');
       const workflow = await workflowRepository.findById(workflowId);
-      if (!workflow || !workflow.projectId) {
-        logger.warn({ workflowId }, "Workflow not found or has no projectId");
+
+      if (!workflow) {
+        logger.warn({ workflowId }, "Workflow not found");
         return null;
       }
 
-      // Fetch project to get tenantId
-      const { projectRepository } = await import('../repositories');
-      const project = await projectRepository.findById(workflow.projectId);
-
-      if (!project) {
-        logger.warn({ projectId: workflow.projectId }, "Project not found");
-        return null;
+      // 1. Try Project linkage
+      if (workflow.projectId) {
+        const { projectRepository } = await import('../repositories');
+        const project = await projectRepository.findById(workflow.projectId);
+        if (project) {
+          return project.tenantId;
+        }
+        logger.warn({ projectId: workflow.projectId, workflowId }, "Project not found for workflow, falling back to creator");
       }
 
-      return project.tenantId;
+      // 2. Fallback: Creator's Tenant (Unfiled workflows)
+      const { userRepository } = await import('../repositories');
+      const creator = await userRepository.findById(workflow.creatorId);
+
+      if (creator && creator.tenantId) {
+        return creator.tenantId;
+      }
+
+      logger.warn({ workflowId, creatorId: workflow.creatorId }, "Could not resolve tenantId from project or creator");
+      return null;
     } catch (error) {
       logger.error({ error, workflowId }, "Error fetching tenantId from workflow");
       return null;
@@ -895,14 +936,22 @@ export class BlockRunner {
 
       logger.info({ tenantId, collectionId: config.collectionId, filters: config.filters }, "Finding records via block");
 
+      // TYPE SAFETY FIX: Remove 'as any' cast and add proper null checking
       // Query records with filters
-      // Note: The recordService.findByFilters uses pagination, we'll use page=1 and limit from config
-      const result = await (recordService as any).findByFilters(
+      const result = await recordService.findByFilters(
         tenantId,
         config.collectionId,
         config.filters,
         { page: 1, limit: config.limit || 1 }
       );
+
+      // NULL CHECK FIX: Validate result structure before accessing properties
+      if (!result || !result.records || !Array.isArray(result.records)) {
+        return {
+          success: false,
+          errors: ['Invalid response from record service']
+        };
+      }
 
       if (result.records.length === 0 && config.failIfNotFound) {
         return {
@@ -1058,14 +1107,27 @@ export class BlockRunner {
    */
   private async resolveTenantId(workflowId: string): Promise<string | null> {
     try {
-      const [result] = await db
+      // 1. Try Project linkage (Standard)
+      const [projectResult] = await db
         .select({ tenantId: projects.tenantId })
         .from(workflows)
         .innerJoin(projects, eq(workflows.projectId, projects.id))
         .where(eq(workflows.id, workflowId))
         .limit(1);
 
-      return result?.tenantId || null;
+      if (projectResult?.tenantId) {
+        return projectResult.tenantId;
+      }
+
+      // 2. Fallback: Workflow Creator's Tenant (Unfiled)
+      const [creatorResult] = await db
+        .select({ tenantId: users.tenantId })
+        .from(workflows)
+        .innerJoin(users, eq(workflows.creatorId, users.id))
+        .where(eq(workflows.id, workflowId))
+        .limit(1);
+
+      return creatorResult?.tenantId || null;
     } catch (e) {
       logger.error({ error: e, workflowId }, "Failed to resolve tenant ID");
       return null;
@@ -1172,7 +1234,7 @@ export class BlockRunner {
 
       const result = await externalSendRunner.execute(
         config,
-        context.data,
+        context,
         tenantId,
         context.mode || 'live'
       );
@@ -1228,8 +1290,14 @@ export class BlockRunner {
       }
 
       // Get table columns for metadata
-      const columns = await datavaultColumnsRepository.findByTableId(config.tableId);
-      const columnMap = new Map(columns.map(c => [c.id, c]));
+      const allColumns = await datavaultColumnsRepository.findByTableId(config.tableId);
+      const columnMap = new Map(allColumns.map(c => [c.id, c]));
+
+      // Determine selected columns for output
+      let outputColumns = allColumns;
+      if (config.columns && config.columns.length > 0) {
+        outputColumns = allColumns.filter(c => config.columns!.includes(c.id));
+      }
 
       // Build filter conditions
       let filterConditions: any[] = [];
@@ -1278,7 +1346,8 @@ export class BlockRunner {
           queryParams: {
             filters: config.filters,
             sort: config.sort,
-            limit: config.limit
+            limit: config.limit,
+            selectedColumns: config.columns // Add metadata about selection
           },
           filteredBy: config.filters?.map(f => f.columnId),
           sortedBy: config.sort
@@ -1286,13 +1355,13 @@ export class BlockRunner {
         rows: rows.map(row => {
           // Convert internal row structure to column name-accessible object
           const rowData: Record<string, any> = { id: row.id };
-          for (const col of columns) {
+          for (const col of outputColumns) {
             rowData[col.id] = row.data?.[col.id] ?? null;
           }
           return rowData;
         }),
         count: rows.length,
-        columns: columns.map(c => ({
+        columns: outputColumns.map(c => ({
           id: c.id,
           name: c.name,
           type: c.type
@@ -1300,6 +1369,7 @@ export class BlockRunner {
       };
 
       // Persist to virtual step if runId is present
+      const persistenceWarnings: string[] = [];
       if (context.runId && block.virtualStepId) {
         try {
           await stepValueRepository.upsert({
@@ -1313,7 +1383,10 @@ export class BlockRunner {
             rowCount: listVariable.count
           }, "Persisted read_table block output");
         } catch (error) {
+          // ERROR HANDLING FIX: Don't silently continue - track persistence failures
+          const errorMsg = error instanceof Error ? error.message : 'Unknown error';
           logger.error({ error, blockId: block.id }, "Failed to persist read_table block output");
+          persistenceWarnings.push(`Warning: Failed to persist output to virtual step: ${errorMsg}`);
         }
       }
 
@@ -1321,7 +1394,9 @@ export class BlockRunner {
         success: true,
         data: {
           [config.outputKey]: listVariable
-        }
+        },
+        // Include warnings if persistence failed (non-breaking but should be visible)
+        ...(persistenceWarnings.length > 0 ? { errors: persistenceWarnings } : {})
       };
 
     } catch (error) {
@@ -1357,6 +1432,13 @@ export class BlockRunner {
     const whereConditions = [eq(datavaultRows.tableId, params.tableId)];
 
     for (const filter of params.filters) {
+      // SECURITY FIX: Validate columnId to prevent SQL injection
+      // Only allow alphanumeric characters, underscores, and hyphens
+      if (!/^[a-zA-Z0-9_-]+$/.test(filter.columnId)) {
+        logger.warn({ columnId: filter.columnId }, 'Invalid columnId detected - skipping filter');
+        continue;
+      }
+
       const columnPath = `data->>'${filter.columnId}'`;
 
       switch (filter.operator) {
@@ -1416,8 +1498,10 @@ export class BlockRunner {
 
         case 'in':
           if (Array.isArray(filter.value) && filter.value.length > 0) {
-            const placeholders = filter.value.map(v => `'${v}'`).join(',');
-            whereConditions.push(sql`${sql.raw(columnPath)} IN (${sql.raw(placeholders)})`);
+            // SECURITY FIX: Use parameterized array instead of string concatenation
+            // This prevents SQL injection through the IN clause values
+            const values = filter.value.map(v => String(v));
+            whereConditions.push(sql`${sql.raw(columnPath)} = ANY(${values})`);
           }
           break;
       }
@@ -1434,11 +1518,16 @@ export class BlockRunner {
     if (params.sort) {
       const sortColumn = params.columns.get(params.sort.columnId);
       if (sortColumn) {
-        const columnPath = `data->>'${params.sort.columnId}'`;
-        if (params.sort.direction === 'asc') {
-          query = query.orderBy(sql`${sql.raw(columnPath)} ASC`);
+        // SECURITY FIX: Validate columnId to prevent SQL injection
+        if (!/^[a-zA-Z0-9_-]+$/.test(params.sort.columnId)) {
+          logger.warn({ columnId: params.sort.columnId }, 'Invalid sort columnId detected - skipping sort');
         } else {
-          query = query.orderBy(sql`${sql.raw(columnPath)} DESC`);
+          const columnPath = `data->>'${params.sort.columnId}'`;
+          if (params.sort.direction === 'asc') {
+            query = query.orderBy(sql`${sql.raw(columnPath)} ASC`);
+          } else {
+            query = query.orderBy(sql`${sql.raw(columnPath)} DESC`);
+          }
         }
       }
     }

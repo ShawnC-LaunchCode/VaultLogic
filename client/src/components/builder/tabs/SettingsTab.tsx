@@ -101,10 +101,6 @@ export function SettingsTab({ workflowId }: SettingsTabProps) {
 
       // Publishing
       setIsPublic(workflow.status === 'active' || !!workflow.publicLink);
-      if (workflow.publicLink) {
-        const baseUrl = window.location.origin; // Or use env var
-        setShareableLink(`${baseUrl}/run/${workflow.publicLink}`);
-      }
 
       // Access Settings
       if (workflow.accessSettings) {
@@ -120,6 +116,19 @@ export function SettingsTab({ workflowId }: SettingsTabProps) {
       }
     }
   }, [workflow]);
+
+  // Update shareable link when dependent values change
+  useEffect(() => {
+    if (workflow && isPublic) {
+      const baseUrl = window.location.origin;
+      // Prioritize explicit public link, then current slug (state), then workflow ID
+      // using 'slug' state allows the link to update in real-time as user edits the slug field
+      const identifier = workflow.publicLink || slug || workflow.id;
+      setShareableLink(`${baseUrl}/run/${identifier}`);
+    } else {
+      setShareableLink("");
+    }
+  }, [workflow, isPublic, slug]);
 
   // PR3: Real projects data
   const projects = projectsData?.map(p => ({ id: p.id, name: p.title })) || [];

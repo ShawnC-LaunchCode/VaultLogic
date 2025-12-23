@@ -42,9 +42,10 @@ interface PageCardProps {
   allSteps: ApiStep[];
   index?: number;
   total?: number;
+  onEditBlock?: (blockId: string) => void;
 }
 
-export function PageCard({ workflowId, page, blocks, allSteps: steps, index, total }: PageCardProps) {
+export function PageCard({ workflowId, page, blocks, allSteps: steps, index, total, onEditBlock }: PageCardProps) {
   const { data: transformBlocks = [] } = useTransformBlocks(workflowId);
   const { data: modeData } = useWorkflowMode(workflowId);
   const mode = modeData?.mode || 'easy';
@@ -394,6 +395,7 @@ export function PageCard({ workflowId, page, blocks, allSteps: steps, index, tot
                           isExpanded={expandedBlockIds.has(item.id)}
                           onToggleExpand={() => handleToggleBlockExpand(item.id)}
                           onEnterNext={handleEnterNext}
+                          onEdit={() => onEditBlock?.(item.id)}
                         />
                       );
                     }

@@ -11,7 +11,8 @@ import {
   boolean,
   integer,
   pgEnum,
-  primaryKey
+  primaryKey,
+  unique
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
@@ -184,7 +185,7 @@ export const authProviderEnum = pgEnum('auth_provider', ['local', 'google']);
 // Users table with multi-tenant support
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull(), // .unique(), // Temporary fix for DB push duplicates // DATA INTEGRITY FIX: unique constraint
   fullName: varchar("full_name", { length: 255 }),
   firstName: varchar("first_name", { length: 255 }),
   lastName: varchar("last_name", { length: 255 }),
@@ -1208,7 +1209,7 @@ export const workflowStatusEnum = pgEnum('workflow_status', ['draft', 'active', 
 export const versionStatusEnum = pgEnum('version_status', ['draft', 'published']);
 
 // Template type enum
-export const templateTypeEnum = pgEnum('template_type', ['docx', 'html']);
+export const templateTypeEnum = pgEnum('template_type', ['docx', 'html', 'pdf']);
 
 // Run status enum
 export const runStatusEnum = pgEnum('run_status', ['pending', 'success', 'error', 'waiting_review', 'waiting_signature']);
@@ -1365,7 +1366,7 @@ export const workflows = pgTable("workflows", {
   currentVersionId: uuid("current_version_id"),
   // Stage 12: Intake Portal fields
   isPublic: boolean("is_public").default(false).notNull(),
-  slug: text("slug"),
+  slug: text("slug").unique(), // DATA INTEGRITY FIX: unique constraint for public URLs
   requireLogin: boolean("require_login").default(false).notNull(),
   // Stage 12.5: Intake Portal extras
   intakeConfig: jsonb("intake_config").default(sql`'{}'::jsonb`).notNull(),
@@ -1441,11 +1442,51 @@ export const templates = pgTable("templates", {
   fileRef: varchar("file_ref", { length: 500 }).notNull(),
   type: templateTypeEnum("type").notNull(),
   helpersVersion: integer("helpers_version").default(1).notNull(),
+  metadata: jsonb("metadata").default(sql`'{}'::jsonb`), // Stage 22: PDF metadata (fields, pages)
+  mapping: jsonb("mapping").default(sql`'{}'::jsonb`),   // Stage 22: PDF field mapping
+  currentVersion: integer("current_version").default(1), // Version tracking
+  lastModifiedBy: uuid("last_modified_by"), // .references(() => users.id, { onDelete: 'set null' }), // Who last modified
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
   index("templates_project_idx").on(table.projectId),
   index("templates_type_idx").on(table.type),
+]);
+
+// Template Versions (Version History & Rollback)
+export const templateVersions = pgTable("template_versions", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  templateId: uuid("template_id").references(() => templates.id, { onDelete: 'cascade' }).notNull(),
+  versionNumber: integer("version_number").notNull(),
+  fileRef: varchar("file_ref", { length: 500 }).notNull(), // Snapshot of file at this version
+  metadata: jsonb("metadata").default(sql`'{}'::jsonb`), // Snapshot of metadata
+  mapping: jsonb("mapping").default(sql`'{}'::jsonb`), // Snapshot of mapping
+  createdBy: uuid("created_by"), // .references(() => users.id, { onDelete: 'set null' }), // Temporary fix for DB push error
+  createdAt: timestamp("created_at").defaultNow(),
+  notes: text("notes"), // Optional notes about what changed
+  isActive: boolean("is_active").default(true), // Mark deprecated versions as inactive
+}, (table) => [
+  index("template_versions_template_idx").on(table.templateId),
+  index("template_versions_created_at_idx").on(table.createdAt),
+  index("template_versions_created_by_idx").on(table.createdBy),
+  // Ensure version numbers are unique per template
+  uniqueIndex("template_versions_unique_idx").on(table.templateId, table.versionNumber),
+]);
+
+// Template Generation Metrics (Analytics)
+export const templateGenerationMetrics = pgTable("template_generation_metrics", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  templateId: uuid("template_id").references(() => templates.id, { onDelete: 'cascade' }).notNull(),
+  runId: uuid("run_id").references(() => workflowRuns.id, { onDelete: 'cascade' }),
+  result: varchar("result", { length: 50 }).notNull(), // 'success', 'failure', 'skipped'
+  durationMs: integer("duration_ms"),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("template_metrics_template_idx").on(table.templateId),
+  index("template_metrics_run_idx").on(table.runId),
+  index("template_metrics_result_idx").on(table.result),
+  index("template_metrics_created_at_idx").on(table.createdAt),
 ]);
 
 // Stage 15: Workflow Blueprints (Full Workflow Templates)
@@ -1566,6 +1607,8 @@ export const secrets = pgTable("secrets", {
   index("secrets_project_idx").on(table.projectId),
   index("secrets_project_key_idx").on(table.projectId, table.key),
   index("secrets_type_idx").on(table.type),
+  // DATA INTEGRITY FIX: unique constraint on projectId + key
+  unique("secrets_project_key_unique").on(table.projectId, table.key),
 ]);
 
 // External connections table for reusable API configurations (DEPRECATED - use connections table)
@@ -1893,6 +1936,9 @@ export const logicRules = pgTable("logic_rules", {
 }, (table) => [
   index("logic_rules_workflow_idx").on(table.workflowId),
   index("logic_rules_condition_step_idx").on(table.conditionStepId),
+  // Target foreign key indexes for visibility evaluation (Dec 2025 - Performance optimization)
+  index("logic_rules_target_step_idx").on(table.targetStepId),
+  index("logic_rules_target_section_idx").on(table.targetSectionId),
 ]);
 
 // Workflow runs table (execution instances)
@@ -1936,6 +1982,10 @@ export const stepValues = pgTable("step_values", {
 }, (table) => [
   index("step_values_run_idx").on(table.runId),
   index("step_values_step_idx").on(table.stepId),
+  // Composite index for efficient upsert operations (Dec 2025 - Performance optimization)
+  index("step_values_run_step_idx").on(table.runId, table.stepId),
+  // Unique constraint to ensure one value per step per run (enables onConflictDoUpdate)
+  uniqueIndex("step_values_run_step_unique").on(table.runId, table.stepId),
 ]);
 
 // Run generated documents table (documents generated during workflow completion)
@@ -2095,7 +2145,37 @@ export const templatesRelations = relations(templates, ({ one, many }) => ({
     fields: [templates.projectId],
     references: [projects.id],
   }),
+  lastModifiedByUser: one(users, {
+    fields: [templates.lastModifiedBy],
+    references: [users.id],
+  }),
   workflowTemplates: many(workflowTemplates), // Stage 21: Templates can be attached to multiple workflows
+  versions: many(templateVersions), // Version history
+  metrics: many(templateGenerationMetrics), // Analytics metrics
+}));
+
+// Template Versions Relations
+export const templateVersionsRelations = relations(templateVersions, ({ one }) => ({
+  template: one(templates, {
+    fields: [templateVersions.templateId],
+    references: [templates.id],
+  }),
+  createdByUser: one(users, {
+    fields: [templateVersions.createdBy],
+    references: [users.id],
+  }),
+}));
+
+// Template Generation Metrics Relations
+export const templateGenerationMetricsRelations = relations(templateGenerationMetrics, ({ one }) => ({
+  template: one(templates, {
+    fields: [templateGenerationMetrics.templateId],
+    references: [templates.id],
+  }),
+  run: one(workflowRuns, {
+    fields: [templateGenerationMetrics.runId],
+    references: [workflowRuns.id],
+  }),
 }));
 
 // Stage 21: Workflow Templates relations

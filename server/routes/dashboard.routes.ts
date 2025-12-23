@@ -77,7 +77,11 @@ export function registerDashboardRoutes(app: Express): void {
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized - no user ID" });
       }
-      const limit = parseInt(req.query.limit as string) || 10;
+
+      // SECURITY FIX: Validate limit parameter properly (no NaN from parseInt)
+      const { numericParamSchema } = await import('../utils/validation');
+      const limitSchema = numericParamSchema(1, 100).default(10);
+      const limit = req.query.limit ? limitSchema.parse(req.query.limit) : 10;
       const status = req.query.status as string | undefined;
 
       const workflows = await workflowRepository.findByCreatorId(userId);
@@ -116,7 +120,11 @@ export function registerDashboardRoutes(app: Express): void {
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized - no user ID" });
       }
-      const limit = parseInt(req.query.limit as string) || 10;
+
+      // SECURITY FIX: Validate limit parameter properly (no NaN from parseInt)
+      const { numericParamSchema } = await import('../utils/validation');
+      const limitSchema = numericParamSchema(1, 100).default(10);
+      const limit = req.query.limit ? limitSchema.parse(req.query.limit) : 10;
 
       // Get user's workflows
       const workflows = await workflowRepository.findByCreatorId(userId);

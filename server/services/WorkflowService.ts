@@ -151,7 +151,7 @@ export class WorkflowService {
       // Fallback: Try to find the latest draft version if currentVersionId is not set
       const latestDraft = await db.query.workflowVersions.findFirst({
         where: eq(workflowVersions.workflowId, workflowId),
-        orderBy: (v, { desc }) => [desc(v.versionNumber)],
+        orderBy: (v: any, { desc }: any) => [desc(v.versionNumber)],
       });
       if (latestDraft) currentVersion = latestDraft;
     }

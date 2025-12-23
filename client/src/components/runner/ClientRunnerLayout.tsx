@@ -27,7 +27,7 @@ export function ClientRunnerLayout({
                     <div className="flex items-center gap-2">
                         {/* Placeholder Logo / Brand */}
                         <div className="w-6 h-6 bg-slate-900 rounded-sm" />
-                        <span className="font-semibold text-sm tracking-tight">VaultLogic</span>
+                        <span className="font-semibold text-sm tracking-tight">ezBuildr</span>
                     </div>
                     {totalSteps && currentStep !== undefined && (
                         <div className="text-xs text-slate-500 font-medium">
@@ -61,7 +61,7 @@ export function ClientRunnerLayout({
 
                 {/* Footer / Trust Signals */}
                 <div className="mt-8 text-center text-xs text-slate-400 pb-8">
-                    <p>Securely powered by VaultLogic</p>
+                    <p>Securely powered by ezBuildr</p>
                 </div>
             </main>
         </div>

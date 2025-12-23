@@ -11,6 +11,9 @@ import {
 } from "@shared/schema";
 import { eq, and, desc, sql, inArray, asc, isNull, isNotNull, or, like, gt, lt, gte, lte } from "drizzle-orm";
 import { db } from "../db";
+import { createLogger } from "../logger";
+
+const logger = createLogger({ module: "datavault-rows-repository" });
 
 /**
  * Repository for DataVault row data access
@@ -218,7 +221,8 @@ export class DatavaultRowsRepository extends BaseRepository<
     try {
       row = await this.create(rowData, tx);
     } catch (error) {
-      console.log('Error creating row in repository:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+      // CODE QUALITY FIX: Use structured logger instead of console.log
+      logger.error({ error, tableId: rowData.tableId }, 'Error creating row in repository');
       throw error;
     }
 
@@ -630,17 +634,20 @@ export class DatavaultRowsRepository extends BaseRepository<
   /**
    * Find a single row ID by a specific column value
    * Used for "Primary Key" lookups in Write Blocks
+   *
+   * RACE CONDITION FIX: Added optional forUpdate parameter for row-level locking
    */
   async findRowByColumnValue(
     tableId: string,
     columnId: string,
     value: any,
     tenantId: string,
-    tx?: DbTransaction
+    tx?: DbTransaction,
+    forUpdate: boolean = false
   ): Promise<string | null> {
     const database = this.getDb(tx);
 
-    const [result] = await database
+    let query = database
       .select({ id: datavaultRows.id })
       .from(datavaultRows)
       .innerJoin(
@@ -653,19 +660,18 @@ export class DatavaultRowsRepository extends BaseRepository<
       .where(
         and(
           eq(datavaultRows.tableId, tableId),
-          // eq(datavaultRows.tenantId, tenantId) // Schema check: does row have tenantId? Yes (line 210 implies create uses it)
-          // Wait, createRowWithValues passes tenantId in rowData.
-          // Let's verify schema `DatavaultRow` later, but assuming yes for now.
-          // Looking at repo `createRowWithValues`: `this.create(rowData, tx)`.
-          // BaseRepository defaults? 
-          // `datavaultRows` table definition likely has tenantId.
-          // Using generic where clause for safety.
-          sql`${datavaultValues.value} = ${value}` // CAUTION: weak typing on value comparison? 
-          // Drizzle `eq` is safer if types align. datavaultValues.value is likely `text` or `jsonb`?
-          // If `value` col is `text`, perfect. EAV usually text.
+          eq(datavaultRows.tenantId, tenantId),
+          eq(datavaultValues.value, value)
         )
       )
       .limit(1);
+
+    // Apply row-level locking if requested (prevents race conditions in upsert)
+    if (forUpdate) {
+      query = query.for('update') as any;
+    }
+
+    const [result] = await query;
 
     return result?.id || null;
   }

@@ -1,0 +1,164 @@
+import { describe, it, expect } from 'vitest';
+import { generateOptionsFromList } from "../../../client/src/lib/choice-utils";
+import type { DynamicOptionsConfig, ChoiceOption } from "../../../shared/types/stepConfigs";
+
+describe("choice-utils", () => {
+    // ... (mockList definition remains same)
+    const mockList = {
+        metadata: { sourceId: "table1" },
+        count: 3,
+        columns: [
+            { id: "col1", name: "Name", type: "text" },
+            { id: "col2", name: "Email", type: "text" },
+            { id: "col3", name: "Role", type: "text" },
+            { id: "col4", name: "Age", type: "number" }
+        ],
+        rows: [
+            { id: "row1", col1: "Alice", col2: "alice@example.com", col3: "Admin", col4: 30 },
+            { id: "row2", col1: "Bob", col2: "bob@example.com", col3: "User", col4: 25 },
+            { id: "row3", col1: "Charlie", col2: "charlie@example.com", col3: "User", col4: 35 }
+        ]
+    };
+
+    const duplicateList = {
+        ...mockList,
+        rows: [
+            ...mockList.rows,
+            { id: "row4", col1: "Alice", col2: "alice2@example.com", col3: "Guest", col4: 20 }, // Duplicate Name
+            { id: "row5", col1: "David", col2: "david@example.com", col3: "User", col4: 25 } // Duplicate Age
+        ]
+    };
+
+    it("generates options with basic mapping", () => {
+        const config: DynamicOptionsConfig = {
+            type: "list",
+            listVariable: "users",
+            labelColumnId: "col1",
+            valueColumnId: "id"
+        };
+        const opts = generateOptionsFromList(mockList, config);
+        expect(opts).toHaveLength(3);
+        expect(opts[0]).toEqual({ id: "row1", label: "Alice", alias: "row1" });
+        expect(opts[1]).toEqual({ id: "row2", label: "Bob", alias: "row2" });
+    });
+
+    it("sorts by label asc", () => {
+        const config: DynamicOptionsConfig = {
+            type: "list",
+            listVariable: "users",
+            labelColumnId: "col1",
+            valueColumnId: "id",
+            sort: { by: "label", direction: "asc" }
+        };
+        const opts = generateOptionsFromList(mockList, config);
+        expect(opts.map((o: ChoiceOption) => o.label)).toEqual(["Alice", "Bob", "Charlie"]);
+    });
+
+    it("sorts by label desc", () => {
+        const config: DynamicOptionsConfig = {
+            type: "list",
+            listVariable: "users",
+            labelColumnId: "col1",
+            valueColumnId: "id",
+            sort: { by: "label", direction: "desc" }
+        };
+        const opts = generateOptionsFromList(mockList, config);
+        expect(opts.map((o: ChoiceOption) => o.label)).toEqual(["Charlie", "Bob", "Alice"]);
+    });
+
+    it("dedupes by label", () => {
+        const config: DynamicOptionsConfig = {
+            type: "list",
+            listVariable: "users",
+            labelColumnId: "col1", // Name
+            valueColumnId: "id",
+            dedupeBy: "label" // Should remove duplicates of "Alice" if any (Alice appears twice in duplicateList)
+        };
+        const opts = generateOptionsFromList(duplicateList, config);
+        // duplicateList has two Alices.
+        const alices = opts.filter((o: ChoiceOption) => o.label === "Alice");
+        expect(alices).toHaveLength(1);
+    });
+
+    it("dedupes by value (alias)", () => {
+        // Mock list where valueColumnId produces dupes
+        const config: DynamicOptionsConfig = {
+            type: "list",
+            listVariable: "users",
+            labelColumnId: "col1",
+            valueColumnId: "col3", // Role (Admin, User, User)
+            dedupeBy: "value"
+        };
+        const opts = generateOptionsFromList(mockList, config);
+        // Roles: Admin, User, User - should be Admin, User
+        expect(opts).toHaveLength(2);
+        expect(opts.map((o: ChoiceOption) => o.alias)).toContain("Admin");
+        expect(opts.map((o: ChoiceOption) => o.alias)).toContain("User");
+    });
+
+    it("uses label template with column names", () => {
+        const config: DynamicOptionsConfig = {
+            type: "list",
+            listVariable: "users",
+            labelColumnId: "col1",
+            valueColumnId: "id",
+            labelTemplate: "{Name} ({Role})"
+        };
+        const opts = generateOptionsFromList(mockList, config);
+        expect(opts[0].label).toBe("Alice (Admin)");
+        expect(opts[1].label).toBe("Bob (User)");
+    });
+
+    it("handles missing content gracefully", () => {
+        const config: DynamicOptionsConfig = {
+            type: "list",
+            listVariable: "users",
+            labelColumnId: "col1",
+            valueColumnId: "id"
+        };
+        expect(generateOptionsFromList(null, config)).toEqual([]);
+        expect(generateOptionsFromList([], config)).toEqual([]);
+    });
+
+    it("includes blank option at the top", () => {
+        const config: DynamicOptionsConfig = {
+            type: "list",
+            listVariable: "users",
+            labelColumnId: "col1",
+            valueColumnId: "id",
+            includeBlankOption: true,
+            blankLabel: "Select One..."
+        };
+        const opts = generateOptionsFromList(mockList, config);
+        expect(opts).toHaveLength(4);
+        expect(opts[0]).toEqual({ id: 'blank', label: "Select One...", alias: "" });
+        expect(opts[1].label).toBe("Alice");
+    });
+
+    it("sorts by specific column asc", () => {
+        const config: DynamicOptionsConfig = {
+            type: "list",
+            listVariable: "users",
+            labelColumnId: "col1",
+            valueColumnId: "id",
+            sort: { by: "column", columnId: "col4", direction: "asc" } // col4 is Age: 30, 25, 35
+        };
+        const opts = generateOptionsFromList(mockList, config);
+        // Age: 25 (Bob), 30 (Alice), 35 (Charlie)
+        expect(opts.map((o: ChoiceOption) => o.label)).toEqual(["Bob", "Alice", "Charlie"]);
+    });
+
+    it("sorts by specific column desc", () => {
+        const config: DynamicOptionsConfig = {
+            type: "list",
+            listVariable: "users",
+            labelColumnId: "col1",
+            valueColumnId: "id",
+            sort: { by: "column", columnId: "col4", direction: "desc" }
+        };
+        const opts = generateOptionsFromList(mockList, config);
+        // Age: 35 (Charlie), 30 (Alice), 25 (Bob)
+        expect(opts.map((o: ChoiceOption) => o.label)).toEqual(["Charlie", "Alice", "Bob"]);
+    });
+
+});

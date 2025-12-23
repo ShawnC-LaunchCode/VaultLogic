@@ -38,9 +38,9 @@ class AnalyticsService {
             // Basic validation
             const data = eventSchema.parse(input);
 
-            // Skip storing preview events in database (they're ephemeral)
-            if (data.isPreview) {
-                logger.debug({ event: data }, "Skipping preview analytics event");
+            // Skip storing preview events or draft runs (non-UUID versions) in database
+            if (data.isPreview || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(data.versionId)) {
+                logger.debug({ event: data }, "Skipping preview/draft analytics event");
                 return;
             }
 

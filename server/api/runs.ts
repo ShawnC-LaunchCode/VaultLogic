@@ -351,7 +351,11 @@ router.get(
         with: {
           workflowVersion: {
             with: {
-              workflow: true,
+              workflow: {
+                with: {
+                  project: true,
+                },
+              },
             },
           },
           createdByUser: {
@@ -370,10 +374,10 @@ router.get(
       let filteredRuns = runs.filter((run: ExportRunWithRelations) => {
         // Verify tenant through workflow version
         const workflow = run.workflowVersion?.workflow;
-        if (!workflow) return false;
+        if (!workflow || !workflow.project) return false;
 
-        // Tenant check would require loading project - simplified for now
-        return true; // TODO: proper tenant filtering
+        // Verify tenant access to this workflow's project
+        return workflow.project.tenantId === tenantId;
       });
 
       if (workflowId) {
@@ -940,7 +944,11 @@ router.get(
         with: {
           workflowVersion: {
             with: {
-              workflow: true,
+              workflow: {
+                with: {
+                  project: true,
+                },
+              },
             },
           },
           createdByUser: {
@@ -959,10 +967,10 @@ router.get(
       let filteredRuns = runs.filter((run: ExportRunWithRelations) => {
         // Verify tenant through workflow version
         const workflow = run.workflowVersion?.workflow;
-        if (!workflow) return false;
+        if (!workflow || !workflow.project) return false;
 
-        // Tenant check would require loading project - simplified for now
-        return true; // TODO: proper tenant filtering
+        // Verify tenant access to this workflow's project
+        return workflow.project.tenantId === tenantId;
       });
 
       if (workflowId) {

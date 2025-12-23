@@ -11,9 +11,9 @@ import { createLogger } from "../logger";
 const logger = createLogger({ module: "enhanced-sandbox" });
 
 // Security Constants (Mirrored from sandboxExecutor)
-const MAX_CODE_SIZE = parseInt(process.env.SANDBOX_MAX_CODE_SIZE || "32768", 10);
-const MAX_INPUT_SIZE = parseInt(process.env.SANDBOX_MAX_INPUT_SIZE || "65536", 10);
-const MAX_OUTPUT_SIZE = parseInt(process.env.SANDBOX_MAX_OUTPUT_SIZE || "65536", 10);
+const MAX_CODE_SIZE = parseInt(process.env.SANDBOX_MAX_CODE_SIZE ?? "32768", 10);
+const MAX_INPUT_SIZE = parseInt(process.env.SANDBOX_MAX_INPUT_SIZE ?? "65536", 10);
+const MAX_OUTPUT_SIZE = parseInt(process.env.SANDBOX_MAX_OUTPUT_SIZE ?? "65536", 10);
 const MIN_TIMEOUT_MS = 100;
 const MAX_TIMEOUT_MS = 3000;
 

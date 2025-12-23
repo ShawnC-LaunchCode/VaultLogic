@@ -208,9 +208,10 @@ export function ColumnManagerWithDnd({
   );
 
   // Update local columns when props change
-  useState(() => {
+  // Update local columns when props change
+  useEffect(() => {
     setLocalColumns(columns);
-  });
+  }, [columns]);
 
   // Listen for custom event from header button
   useEffect(() => {

@@ -1,16 +1,19 @@
 
 import { BillingProvider, CreateCustomerParams, CreateSubscriptionParams } from "./BillingProvider";
+import { createLogger } from "../../../logger";
+
+const logger = createLogger({ module: 'stripe-provider' });
 
 export class StripeProvider implements BillingProvider {
     // In a real implementation, this would use 'stripe' SDK
 
     async createCustomer(params: CreateCustomerParams) {
-        console.log("Stripe: Creating customer", params);
+        logger.info({ params }, "Stripe: Creating customer");
         return { id: `cus_mock_${Math.random().toString(36).substring(7)}` };
     }
 
     async createSubscription(params: CreateSubscriptionParams) {
-        console.log("Stripe: Creating subscription", params);
+        logger.info({ params }, "Stripe: Creating subscription");
         return {
             id: `sub_mock_${Math.random().toString(36).substring(7)}`,
             status: 'active',
@@ -19,11 +22,11 @@ export class StripeProvider implements BillingProvider {
     }
 
     async cancelSubscription(subscriptionId: string) {
-        console.log("Stripe: Canceling subscription", subscriptionId);
+        logger.info({ subscriptionId }, "Stripe: Canceling subscription");
     }
 
     async updateSubscription(subscriptionId: string, params: any) {
-        console.log("Stripe: Updating subscription", subscriptionId, params);
+        logger.info({ subscriptionId, params }, "Stripe: Updating subscription");
     }
 
     async getPortalUrl(customerId: string) {

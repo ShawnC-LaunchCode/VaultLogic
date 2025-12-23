@@ -131,13 +131,7 @@ export function DataGrid({
     );
   }
 
-  if (rows.length === 0) {
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        <p>No data yet</p>
-      </div>
-    );
-  }
+
 
   const allRowIds = rows.map((r) => r.row.id);
   const allSelected = selectedRowIds && allRowIds.length > 0 && allRowIds.every((id) => selectedRowIds.has(id));
@@ -170,9 +164,8 @@ export function DataGrid({
                 return (
                   <TableHead
                     key={column.id}
-                    className={`whitespace-nowrap relative border-r border-border ${
-                      isSorted ? 'bg-primary/10' : ''
-                    }`}
+                    className={`whitespace-nowrap relative border-r border-border ${isSorted ? 'bg-primary/10' : ''
+                      }`}
                     style={{ width: `${columnWidths[column.id] || 150}px`, minWidth: '80px' }}
                   >
                     <div className="flex items-center gap-2 pr-2 relative z-10">
@@ -215,6 +208,16 @@ export function DataGrid({
             </TableRow>
           </TableHeader>
           <TableBody>
+            {rows.length === 0 && (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length + (onSelectAll ? 1 : 0) + 1}
+                  className="h-24 text-center text-muted-foreground"
+                >
+                  No data yet
+                </TableCell>
+              </TableRow>
+            )}
             {rows.map((rowData) => {
               const isArchived = !!rowData.row.deletedAt;
               const isSelected = selectedRowIds?.has(rowData.row.id) || false;

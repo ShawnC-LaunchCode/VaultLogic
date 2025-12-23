@@ -61,13 +61,14 @@ export function useKeyboardShortcuts({
   );
 
   useEffect(() => {
-    if (!enabled) return;
-
+    // MEMORY LEAK FIX: Always add/remove listener regardless of enabled flag
+    // The enabled check is handled inside handleKeyDown callback
+    // This prevents listeners from staying attached when enabled switches to false
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [handleKeyDown, enabled]);
+  }, [handleKeyDown]); // Removed 'enabled' from deps since we always add/remove now
 }
 
 /**

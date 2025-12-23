@@ -247,28 +247,37 @@ export type DynamicOptionsSourceType = 'static' | 'list' | 'table_column';
 export type DynamicOptionsConfig =
   | { type: 'static'; options: ChoiceOption[] }
   | {
-      type: 'list';
-      listVariable: string;     // Name of the list variable (e.g. "usersList")
-      labelColumnId: string;    // Column ID to use for label (display text)
-      valueColumnId: string;    // Column ID to use for value (stored data)
-    }
-  | {
-      type: 'table_column';
-      dataSourceId: string;     // Database ID
-      tableId: string;          // Table ID
-      columnId: string;         // Column to extract values from (used for both label and value)
-      labelColumnId?: string;   // Optional separate column for labels
-      filters?: Array<{         // Optional filters
-        columnId: string;
-        operator: string;
-        value: any;
-      }>;
-      sort?: {                  // Optional sort
-        columnId: string;
-        direction: 'asc' | 'desc';
-      };
-      limit?: number;           // Max options to load (default: 100)
+    type: 'list';
+    listVariable: string;     // Name of the list variable (e.g. "usersList")
+    labelColumnId: string;    // Column ID to use for label (display text)
+    valueColumnId: string;    // Column ID to use for value (stored data)
+    dedupeBy?: 'value' | 'label' | null;
+    sort?: {
+      by: 'label' | 'value' | 'column';
+      columnId?: string;
+      direction: 'asc' | 'desc';
     };
+    labelTemplate?: string;   // Optional template like "{FirstName} {LastName}"
+    includeBlankOption?: boolean;
+    blankLabel?: string;
+  }
+  | {
+    type: 'table_column';
+    dataSourceId: string;     // Database ID
+    tableId: string;          // Table ID
+    columnId: string;         // Column to extract values from (used for both label and value)
+    labelColumnId?: string;   // Optional separate column for labels
+    filters?: Array<{         // Optional filters
+      columnId: string;
+      operator: string;
+      value: any;
+    }>;
+    sort?: {                  // Optional sort
+      columnId: string;
+      direction: 'asc' | 'desc';
+    };
+    limit?: number;           // Max options to load (default: 100)
+  };
 
 /**
  * Choice Config (Advanced Mode)

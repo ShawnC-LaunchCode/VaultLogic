@@ -7,7 +7,7 @@
 import { useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, FileText, Code2, Database, CheckCircle, GitBranch, Trash2, ChevronDown, ChevronRight } from "lucide-react";
+import { GripVertical, FileText, Code2, Database, CheckCircle, GitBranch, Trash2, ChevronDown, ChevronRight, ArrowRight, ArrowLeft } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,7 @@ interface BlockCardProps {
   isExpanded?: boolean;
   onToggleExpand?: () => void;
   onEnterNext?: () => void;
+  onEdit?: () => void;
 }
 
 const BLOCK_TYPE_ICONS: Record<string, any> = {
@@ -49,6 +50,9 @@ const BLOCK_TYPE_ICONS: Record<string, any> = {
   validate: CheckCircle,
   branch: GitBranch,
   js: Code2,
+  read_table: ArrowRight,
+  write: ArrowLeft,
+  send_table: ArrowLeft,
 };
 
 const BLOCK_TYPE_LABELS: Record<string, string> = {
@@ -56,9 +60,59 @@ const BLOCK_TYPE_LABELS: Record<string, string> = {
   validate: "Validate",
   branch: "Branch",
   js: "JS Transform",
+  write: "Send Data to Table",
+  send_table: "Send Data to Table",
+  read_table: "Read from Table",
+  external_send: "Send Data to API",
+  list_tools: "List Tool",
 };
 
-export function BlockCard({ item, workflowId, sectionId, isExpanded = false, onToggleExpand, onEnterNext }: BlockCardProps) {
+// Helper to generate block summaries
+function getBlockSummary(block: any): string | null {
+  try {
+    if (block.type === 'write' || block.type === 'send_table') {
+      const config = block.config || {};
+      const mode = config.mode === 'create' ? 'Insert' : config.mode === 'update' ? 'Update' : 'Upsert';
+      const mappingCount = config.columnMappings?.length || 0;
+      if (!mappingCount) return null;
+      return `${mode} ${mappingCount} field${mappingCount === 1 ? '' : 's'}`;
+    }
+
+    if (block.type === 'read_table') {
+      const config = block.config || {};
+      const columnCount = config.columns?.length;
+      const totalCount = config.totalColumnCount || 0;
+
+      if (columnCount === undefined || columnCount === null) {
+        // All fields selected
+        return `Retrieving all(${totalCount}) fields`;
+      } else {
+        // Specific fields selected
+        return `Retrieving ${columnCount} field${columnCount === 1 ? '' : 's'}`;
+      }
+    }
+
+    if (block.type === 'external_send') {
+      const config = block.config || {};
+      const mappingCount = config.payloadMappings?.length || 0;
+      if (!mappingCount) return null;
+      return `${mappingCount} field${mappingCount === 1 ? '' : 's'}`;
+    }
+
+    if (block.type === 'list_tools') {
+      const config = block.config || {};
+      if (config.operation) {
+        return config.operation.charAt(0).toUpperCase() + config.operation.slice(1);
+      }
+    }
+  } catch (e) {
+    return null;
+  }
+
+  return null;
+}
+
+export function BlockCard({ item, workflowId, sectionId, isExpanded = false, onToggleExpand, onEnterNext, onEdit }: BlockCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id });
 
@@ -84,11 +138,31 @@ export function BlockCard({ item, workflowId, sectionId, isExpanded = false, onT
     (item.kind === "step" && selection?.type === "step" && selection.id === item.id) ||
     (item.kind === "block" && selection?.type === "block" && selection.id === item.id);
 
+  // Helper to check if read/write blocks are configured
+  const isReadWriteConfigured = () => {
+    if (item.kind !== 'block') return true;
+    const { type, config } = item.data;
+    if (type === 'read_table') {
+      return !!(config?.tableId && config?.outputKey);
+    }
+    if (type === 'write' || type === 'send_table') {
+      return !!(config?.tableId && config?.mode);
+    }
+    return true; // Other blocks considered configured by default for this styling purpose
+  };
+
+  const isReadTableOrWrite = item.kind === 'block' && ['read_table', 'write', 'send_table'].includes(item.data.type);
+  const isNotConfigured = !isReadWriteConfigured();
+
   const handleClick = () => {
     if (item.kind === "step") {
       selectStep(item.id);
     } else {
       selectBlock(item.id);
+      // For non-JS blocks, also open the editor dialog
+      if (item.data.type !== "js" && onEdit) {
+        onEdit();
+      }
     }
   };
 
@@ -245,7 +319,7 @@ export function BlockCard({ item, workflowId, sectionId, isExpanded = false, onT
 
     // Choice blocks (radio, multiple_choice, choice)
     if (stepType === "radio" || stepType === "multiple_choice" || stepType === "choice") {
-      return <ChoiceCardEditor stepId={step.id} sectionId={sectionId} step={step} />;
+      return <ChoiceCardEditor stepId={step.id} sectionId={sectionId} step={step} workflowId={workflowId} />;
     }
 
     // Address block
@@ -294,6 +368,8 @@ export function BlockCard({ item, workflowId, sectionId, isExpanded = false, onT
         className={cn(
           "cursor-pointer hover:shadow-md transition-shadow",
           isSelected && "ring-2 ring-primary",
+          isReadTableOrWrite && isNotConfigured && !isSelected && "ring-2 ring-green-500 bg-green-50/50",
+          isReadTableOrWrite && isNotConfigured && isSelected && "bg-green-50/30",
           isDragging && "opacity-50"
         )}
         onClick={handleClick}
@@ -321,21 +397,23 @@ export function BlockCard({ item, workflowId, sectionId, isExpanded = false, onT
                   })()
                 )}
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-5 w-5"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleExpand?.();
-                }}
-              >
-                {isExpanded ? (
-                  <ChevronDown className="h-3 w-3" />
-                ) : (
-                  <ChevronRight className="h-3 w-3" />
-                )}
-              </Button>
+              {!isReadTableOrWrite && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleExpand?.();
+                  }}
+                >
+                  {isExpanded ? (
+                    <ChevronDown className="h-3 w-3" />
+                  ) : (
+                    <ChevronRight className="h-3 w-3" />
+                  )}
+                </Button>
+              )}
             </div>
 
             {/* Content */}
@@ -426,6 +504,12 @@ export function BlockCard({ item, workflowId, sectionId, isExpanded = false, onT
                       ? item.data.config.name
                       : (BLOCK_TYPE_LABELS[item.data.type] || item.data.type)}
                   </div>
+                  {/* Block summary */}
+                  {getBlockSummary(item.data) && (
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {getBlockSummary(item.data)}
+                    </div>
+                  )}
                   <div className="flex items-center gap-2 mt-1">
                     <Badge variant="outline" className="text-xs">
                       {item.data.type}

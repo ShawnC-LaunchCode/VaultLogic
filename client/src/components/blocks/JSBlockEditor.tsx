@@ -215,9 +215,7 @@ export const JSBlockEditor: React.FC<JSBlockEditorProps> = ({ block, onChange, w
       const fn = new Function("input", code);
       const mockInput = generateMockInput();
 
-      console.log('Test Input:', mockInput);
       const result = fn(mockInput);
-      console.log('Test Output:', result);
 
       toast({
         title: "Test Run Complete ✓",

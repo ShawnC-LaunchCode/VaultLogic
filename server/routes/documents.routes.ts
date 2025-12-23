@@ -11,10 +11,12 @@
 
 import type { Express, Request, Response } from 'express';
 import { hybridAuth, type AuthRequest } from '../middleware/auth';
+import { requireProjectRole } from '../middleware/aclAuth';
 import { db } from '../db';
 import { templates } from '@/../../shared/schema';
 import { eq, and } from 'drizzle-orm';
 import { createLogger } from '../logger';
+import { aclService } from '../services/AclService';
 
 const logger = createLogger({ module: 'documents-routes' });
 
@@ -46,6 +48,15 @@ export function registerDocumentRoutes(app: Express): void {
 
       const { projectId } = req.query;
 
+      // If projectId is specified, verify user has access to that project
+      if (projectId && typeof projectId === 'string') {
+        const hasAccess = await aclService.hasProjectRole(userId, projectId, 'view');
+        if (!hasAccess) {
+          logger.warn({ userId, projectId }, 'User denied access to project documents');
+          return res.status(403).json({ message: 'Forbidden - insufficient permissions for this project' });
+        }
+      }
+
       // Build query
       let query = db.select({
         id: templates.id,
@@ -53,6 +64,7 @@ export function registerDocumentRoutes(app: Express): void {
         type: templates.type,
         uploadedAt: templates.createdAt,
         fileRef: templates.fileRef,
+        projectId: templates.projectId,
       }).from(templates);
 
       // Filter by project if specified
@@ -60,14 +72,21 @@ export function registerDocumentRoutes(app: Express): void {
         query = query.where(eq(templates.projectId, projectId)) as any;
       }
 
-      // Filter by user (templates they own or have access to)
-      // TODO: Implement proper ACL based on project membership
-      // query = query.where(eq(templates.userId, userId)) as any;
-
       const documents = await query;
 
+      // Filter documents to only include those from projects user has access to
+      const accessibleDocs = await Promise.all(
+        documents.map(async (doc) => {
+          if (!doc.projectId) return doc;
+          const hasAccess = await aclService.hasProjectRole(userId, doc.projectId, 'view');
+          return hasAccess ? doc : null;
+        })
+      );
+
+      const filteredDocs = accessibleDocs.filter((doc): doc is NonNullable<typeof doc> => doc !== null);
+
       // Format response
-      const formattedDocs = documents.map((doc: any) => ({
+      const formattedDocs = filteredDocs.map((doc) => ({
         id: doc.id,
         name: doc.name,
         type: doc.type || 'docx',
@@ -114,6 +133,15 @@ export function registerDocumentRoutes(app: Express): void {
 
       if (!document) {
         return res.status(404).json({ message: 'Document not found' });
+      }
+
+      // Check ACL based on document's project
+      if (document.projectId) {
+        const hasAccess = await aclService.hasProjectRole(userId, document.projectId, 'view');
+        if (!hasAccess) {
+          logger.warn({ userId, projectId: document.projectId, documentId: id }, 'User denied access to document');
+          return res.status(403).json({ message: 'Forbidden - insufficient permissions for this document' });
+        }
       }
 
       logger.info({ documentId: id, userId }, 'Fetched document');

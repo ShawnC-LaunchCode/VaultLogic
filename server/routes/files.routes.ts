@@ -14,6 +14,11 @@ import fs from "fs";
 import { createLogger } from "../logger";
 import { workflowRunRepository } from "../repositories";
 import { createError } from "../utils/errors";
+import { hybridAuth, type AuthRequest } from "../middleware/auth";
+import { db } from "../db";
+import { runGeneratedDocuments, workflows } from "@shared/schema";
+import { eq, and } from "drizzle-orm";
+import { aclService } from "../services/AclService";
 
 const logger = createLogger({ module: "file-routes" });
 
@@ -23,11 +28,16 @@ const logger = createLogger({ module: "file-routes" });
 export function registerFileRoutes(app: Express): void {
   const outputsDir = path.join(process.cwd(), 'server', 'files', 'outputs');
 
-  // Secure download endpoint
+  // Secure download endpoint with authorization
   // GET /api/files/download/:filename
-  app.get('/api/files/download/:filename', async (req: Request, res: Response, next: NextFunction) => {
+  app.get('/api/files/download/:filename', hybridAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const { filename } = req.params;
+      const userId = req.userId;
+
+      if (!userId) {
+        throw createError.unauthorized('Authentication required to download files');
+      }
 
       // Basic path traversal protection
       if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
@@ -41,16 +51,48 @@ export function registerFileRoutes(app: Express): void {
         throw createError.notFound('File', filename);
       }
 
-      // TODO: Add strict ownership check here
-      // For now, we rely on the runToken/session check in the API that provides the link
-      // But ideally, we should verify that the current user/token has access to the run 
-      // that generated this file.
-      // Since filenames contain timestamps and are hard to guess, this is "better" than static hosting
-      // but not fully secure yet without a database lookup to map filename -> runId -> userId.
+      // SECURITY FIX: Verify user has access to this document
+      // Look up document in database and verify ownership/access
+      const documentRecord = await db.query.runGeneratedDocuments.findFirst({
+        where: eq(runGeneratedDocuments.documentUrl, filename)
+      });
 
-      // For this iteration, we at least prevent directory listing and ensure it's a valid file.
-      // The next step would be to look up the file in runGeneratedDocumentsRepository 
-      // and verify the current user has access to the associated run.
+      if (!documentRecord) {
+        logger.warn({ filename, userId }, 'Document not found in database');
+        throw createError.notFound('File', filename);
+      }
+
+      // Verify user has access to the run that generated this document
+      const run = await workflowRunRepository.findById(documentRecord.runId);
+
+      if (!run) {
+        logger.warn({ filename, runId: documentRecord.runId, userId }, 'Run not found for document');
+        throw createError.notFound('File', filename);
+      }
+
+      // Check if user owns the run or has access to the workflow
+      const userOwnsRun = run.createdBy === userId || run.createdBy === `creator:${userId}`;
+
+      if (!userOwnsRun) {
+        // Check if user has access to the workflow
+        const workflow = await db.query.workflows.findFirst({
+          where: eq(workflows.id, run.workflowId)
+        });
+
+        if (!workflow) {
+          throw createError.forbidden('Access denied to this file');
+        }
+
+        // Check ACL permissions
+        const hasAccess = await aclService.hasWorkflowAccess(userId, run.workflowId);
+
+        if (!hasAccess) {
+          logger.warn({ filename, userId, runId: run.id, workflowId: run.workflowId }, 'User lacks access to file');
+          throw createError.forbidden('Access denied to this file');
+        }
+      }
+
+      logger.info({ filename, userId, runId: run.id }, 'Authorized file download');
 
       // Set headers
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);

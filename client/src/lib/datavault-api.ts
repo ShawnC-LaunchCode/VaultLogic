@@ -271,6 +271,13 @@ export const datavaultAPI = {
     }
   },
 
+  bulkDeleteRows: async (rowIds: string[]): Promise<void> => {
+    const res = await apiRequest('DELETE', '/api/datavault/rows/bulk/delete', { rowIds });
+    if (res.status !== 200) {
+      await res.json();
+    }
+  },
+
   // ============================================================================
   // Row Notes (v4 Micro-Phase 3)
   // ============================================================================

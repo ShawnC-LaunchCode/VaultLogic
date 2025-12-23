@@ -9,6 +9,7 @@ import {
   validatePasswordStrength
 } from "../services/auth";
 import { hybridAuth, optionalHybridAuth, type AuthRequest } from "../middleware/auth";
+import { getCsrfTokenHandler } from "../middleware/csrf";
 import { nanoid } from "nanoid";
 
 const logger = createLogger({ module: 'auth-routes' });
@@ -361,6 +362,18 @@ export function registerAuthRoutes(app: Express): void {
       res.status(500).json({ message: "Failed to fetch user" });
     }
   });
+
+  // =====================================================================
+  // CSRF TOKEN ENDPOINT
+  // =====================================================================
+
+  /**
+   * GET /api/auth/csrf-token
+   * Get a CSRF token for the current session
+   * Required for all state-changing operations (POST, PUT, DELETE, PATCH)
+   * Client should include this token in X-CSRF-Token header
+   */
+  app.get('/api/auth/csrf-token', getCsrfTokenHandler);
 
   // =====================================================================
   // JWT TOKEN ENDPOINT (for WebSocket/API authentication)

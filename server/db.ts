@@ -4,9 +4,13 @@ dotenv.config();
 import * as schema from "@shared/schema";
 import type { Pool } from 'pg';
 import type { Pool as NeonPool } from '@neondatabase/serverless';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import type { NeonDatabase } from 'drizzle-orm/neon-serverless';
+
+type DrizzleDB = NodePgDatabase<typeof schema> | NeonDatabase<typeof schema>;
 
 let pool: Pool | NeonPool;
-let _db: any;  // Internal db reference
+let _db: DrizzleDB | null = null;  // Internal db reference
 let dbInitialized = false;
 let dbInitPromise: Promise<void>;
 
@@ -70,12 +74,12 @@ function getDb() {
 
 // Create a getter for db that returns the initialized database
 // This ensures that code importing { db } will get the properly initialized instance
-const db = new Proxy({} as any, {
+const db = new Proxy({} as DrizzleDB, {
   get(target, prop) {
     if (!_db) {
       throw new Error("Database not initialized. Call await initializeDatabase() first.");
     }
-    return _db[prop];
+    return _db[prop as keyof DrizzleDB];
   },
   set(target, prop, value) {
     if (!_db) {

@@ -1,426 +1,436 @@
 /**
- * Read Table Block Editor Component
- * Configures a DataVault table read operation with filters, sorting, and limit
+ * Read Table Block Editor
+ * Simplified UX for reading workflow data from DataVault tables
  */
 
 import { useState, useEffect } from "react";
-import { Database, Filter, SortAsc, Trash2, Plus, X } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { AlertCircle, Plus, Trash2 } from "lucide-react";
 import { useWorkflowDataSources } from "@/lib/vault-hooks";
+import { dataSourceAPI } from "@/lib/vault-api";
+import { useQuery } from "@tanstack/react-query";
 import { useTables } from "@/hooks/useDatavaultTables";
 import { useTableColumns } from "@/hooks/useTableColumns";
-import type { ReadTableConfig, ReadTableFilter, ReadTableOperator } from "@shared/types/blocks";
+import type { ReadTableConfig } from "@shared/types/blocks";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 interface ReadTableBlockEditorProps {
   workflowId: string;
   config: ReadTableConfig;
   onChange: (config: ReadTableConfig) => void;
-  mode?: "easy" | "advanced";
+  phase: string;
+  onPhaseChange: (phase: string) => void;
+  // New props for integrated UI
+  order: number;
+  onOrderChange: (order: number) => void;
+  enabled: boolean;
+  onEnabledChange: (enabled: boolean) => void;
 }
-
-const OPERATORS: { value: ReadTableOperator; label: string }[] = [
-  { value: "equals", label: "Equals" },
-  { value: "not_equals", label: "Not Equals" },
-  { value: "contains", label: "Contains" },
-  { value: "starts_with", label: "Starts With" },
-  { value: "ends_with", label: "Ends With" },
-  { value: "greater_than", label: "Greater Than" },
-  { value: "less_than", label: "Less Than" },
-  { value: "is_empty", label: "Is Empty" },
-  { value: "is_not_empty", label: "Is Not Empty" },
-  { value: "in", label: "In (comma-separated)" },
-];
 
 export function ReadTableBlockEditor({
   workflowId,
   config,
   onChange,
-  mode = "easy"
+  phase,
+  onPhaseChange,
+  order,
+  onOrderChange,
+  enabled,
+  onEnabledChange
 }: ReadTableBlockEditorProps) {
-  const [localConfig, setLocalConfig] = useState<ReadTableConfig>(config);
-
   const { data: dataSources } = useWorkflowDataSources(workflowId);
-  const { data: allTables } = useTables();
-  const { data: columns } = useTableColumns(localConfig.tableId);
+  const selectedDataSource = dataSources?.find(ds => ds.id === config.dataSourceId);
 
-  // Filter tables:
-  // 1. If selected DS is a "native table" proxy (config.tableId), show only that table.
-  // 2. Otherwise, show tables belonging to the database (t.databaseId === ds.id).
-  const selectedDataSource = dataSources?.find(ds => ds.id === localConfig.dataSourceId);
+  // Fetch tables
+  const { data: fetchedTables } = useQuery({
+    queryKey: ["dataSource", config.dataSourceId, "tables"],
+    queryFn: () => config.dataSourceId ? dataSourceAPI.getTables(config.dataSourceId) : Promise.resolve([]),
+    enabled: !!config.dataSourceId && !selectedDataSource?.config?.isNativeTable
+  });
 
-  const tables = selectedDataSource?.config?.isNativeTable && selectedDataSource?.config?.tableId
-    ? allTables?.filter((t: any) => t.id === selectedDataSource.config.tableId) || []
-    : allTables?.filter((t: any) => t.databaseId === localConfig.dataSourceId) || [];
+  const { data: allNativeTables } = useTables();
 
-  // Update parent when local config changes
+  let tables: { name: string; type: string; id: string }[] = [];
+
+  if (fetchedTables) {
+    tables = fetchedTables.map((t: any) => ({ ...t, id: t.id || t.name }));
+  }
+
+  if (selectedDataSource?.config?.isNativeTable && selectedDataSource?.config?.tableId) {
+    const targetTable = allNativeTables?.find(t => t.id === selectedDataSource.config.tableId);
+    if (targetTable) {
+      tables = [{ name: targetTable.name, type: 'native', id: targetTable.id }];
+    }
+  }
+
+  const resolvedTableId = config.tableId && tables.find(t => t.name === config.tableId || t.id === config.tableId)?.id;
+  const { data: columns } = useTableColumns(resolvedTableId);
+
+  // Auto-select table if native table proxy
   useEffect(() => {
-    onChange(localConfig);
-  }, [localConfig]);
-
-  const handleDataSourceChange = (dataSourceId: string) => {
-    const ds = dataSources?.find(d => d.id === dataSourceId);
-
-    // If it's a native table proxy, auto-select the table
-    if (ds?.config?.isNativeTable && ds?.config?.tableId) {
-      setLocalConfig({
-        ...localConfig,
-        dataSourceId,
-        tableId: ds.config.tableId,
-        filters: [],
-        sort: undefined
-      });
-    } else {
-      setLocalConfig({
-        ...localConfig,
-        dataSourceId,
-        tableId: "",
-        filters: [],
-        sort: undefined
-      });
+    if (selectedDataSource?.config?.isNativeTable && tables.length === 1 && config.tableId !== tables[0].id) {
+      updateConfig({ tableId: tables[0].id });
     }
+  }, [selectedDataSource, tables, config.tableId]);
+
+  const updateConfig = (updates: Partial<ReadTableConfig>) => {
+    onChange({ ...config, ...updates });
   };
 
-  const handleTableChange = (tableId: string) => {
-    setLocalConfig({
-      ...localConfig,
-      tableId,
-      filters: [],
-      sort: undefined
-    });
-  };
+  // ---------------------------------------------------------------------------
+  // Validation & Progress Logic
+  // ---------------------------------------------------------------------------
+  const hasSource = !!config.dataSourceId && !!config.tableId;
+  const hasOutput = !!config.outputKey;
 
-  const handleAddFilter = () => {
-    const newFilter: ReadTableFilter = {
-      columnId: columns?.[0]?.id || "",
-      operator: "equals",
-      value: ""
-    };
-    setLocalConfig({
-      ...localConfig,
-      filters: [...(localConfig.filters || []), newFilter]
-    });
-  };
+  // Logic Steps:
+  // 1. Source (Data Source + Table) -> When done, highlights Output
+  // 2. Output (Variable Name) -> When done, highlights Settings
+  // 3. Settings (Filters, Sort, Limit) -> Always available after Output
 
-  const handleUpdateFilter = (index: number, updates: Partial<ReadTableFilter>) => {
-    const newFilters = [...(localConfig.filters || [])];
-    newFilters[index] = { ...newFilters[index], ...updates };
-    setLocalConfig({ ...localConfig, filters: newFilters });
-  };
+  const step1Complete = hasSource;
+  const step2Complete = step1Complete && hasOutput;
 
-  const handleRemoveFilter = (index: number) => {
-    const newFilters = [...(localConfig.filters || [])];
-    newFilters.splice(index, 1);
-    setLocalConfig({ ...localConfig, filters: newFilters });
-  };
+  // Visual States
+  const isStep1Active = !step1Complete;
+  const isStep2Active = step1Complete && !step2Complete;
 
-  const handleSortChange = (columnId: string) => {
-    if (!columnId) {
-      setLocalConfig({ ...localConfig, sort: undefined });
-    } else {
-      setLocalConfig({
-        ...localConfig,
-        sort: {
-          columnId,
-          direction: localConfig.sort?.direction || "asc"
-        }
-      });
-    }
-  };
-
-  const handleSortDirectionChange = (direction: "asc" | "desc") => {
-    if (localConfig.sort) {
-      setLocalConfig({
-        ...localConfig,
-        sort: { ...localConfig.sort, direction }
-      });
-    }
-  };
-
-  const isEasyMode = mode === "easy";
-  const maxFilters = isEasyMode ? 1 : 10;
-  const showLimit = !isEasyMode;
+  // Highlighting classes
+  const activeRingClass = "ring-2 ring-green-500 ring-offset-2 bg-green-50/50";
+  const inactiveClass = "opacity-40 pointer-events-none grayscale-[0.5]";
 
   return (
-    <div className="space-y-4">
-      {/* Data Source Selection */}
-      <div className="space-y-2">
-        <Label className="flex items-center gap-2">
-          <Database className="w-4 h-4" />
-          Data Source
-        </Label>
-        <Select
-          value={localConfig.dataSourceId || ""}
-          onValueChange={handleDataSourceChange}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select a data source..." />
-          </SelectTrigger>
-          <SelectContent>
-            {dataSources?.map((ds: any) => (
-              <SelectItem key={ds.id} value={ds.id}>
-                {ds.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
+      {/* LEFT COLUMN: Data Source, Table, Output */}
+      <div className="space-y-6">
 
-      {/* Table Selection */}
-      {localConfig.dataSourceId && (
-        <div className="space-y-2">
-          <Label>Table</Label>
-          <Select
-            value={localConfig.tableId || ""}
-            onValueChange={handleTableChange}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select a table..." />
-            </SelectTrigger>
-            <SelectContent>
-              {tables?.map((table: any) => (
-                <SelectItem key={table.id} value={table.id}>
-                  {table.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
+        {/* 1. DATA SOURCE & TABLE */}
+        <div className={cn(
+          "space-y-3 p-4 rounded-lg transition-all duration-300 border",
+          isStep1Active ? activeRingClass + " border-green-500 bg-white shadow-sm" : "border-transparent px-0"
+        )}>
+          <div className="flex items-center justify-between">
+            <Label className="text-base font-medium">Data Source</Label>
+            {step1Complete && <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">Configured</Badge>}
+          </div>
 
-      {/* Output Variable Name */}
-      <div className="space-y-2">
-        <Label>Output Variable Name</Label>
-        <Input
-          value={localConfig.outputKey || ""}
-          onChange={(e) => setLocalConfig({ ...localConfig, outputKey: e.target.value })}
-          placeholder="e.g., customerList"
-          className="font-mono"
-        />
-        <p className="text-xs text-muted-foreground">
-          This variable will contain a list of rows from the table
-        </p>
-      </div>
-
-      {/* Filters Section */}
-      {localConfig.tableId && columns && columns.length > 0 && (
-        <Card className="border-blue-200 bg-blue-50/30">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-blue-600" />
-                <CardTitle className="text-sm">Filters</CardTitle>
-                <Badge variant="outline" className="text-xs">
-                  {localConfig.filters?.length || 0} / {maxFilters}
-                </Badge>
-              </div>
-              {(localConfig.filters?.length || 0) < maxFilters && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleAddFilter}
-                  className="h-7 gap-1"
-                >
-                  <Plus className="w-3 h-3" />
-                  Add Filter
-                </Button>
-              )}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Data Source</Label>
+              <Select value={config.dataSourceId || ""} onValueChange={(val) => updateConfig({ dataSourceId: val, tableId: '' })}>
+                <SelectTrigger className="bg-white">
+                  <SelectValue placeholder="Select source..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {dataSources?.map(ds => (
+                    <SelectItem key={ds.id} value={ds.id}>{ds.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <CardDescription className="text-xs">
-              {isEasyMode
-                ? "Add one filter to narrow down results"
-                : "Add multiple filters to narrow down results"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {(!localConfig.filters || localConfig.filters.length === 0) && (
-              <div className="text-sm text-muted-foreground text-center py-4">
-                No filters configured. All rows will be returned (up to limit).
+            <div className="space-y-1.5">
+              <Label className="text-xs text-muted-foreground">Table</Label>
+              <Select value={config.tableId || ""} onValueChange={(val) => updateConfig({ tableId: val })} disabled={!config.dataSourceId}>
+                <SelectTrigger className="bg-white">
+                  <SelectValue placeholder="Select table..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {tables.map(t => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+
+        {/* 2. OUTPUT VARIABLE */}
+        <div className={cn(
+          "space-y-3 rounded-lg transition-all duration-300",
+          !step1Complete ? inactiveClass : "",
+          isStep2Active ? activeRingClass + " p-4 border border-green-500 bg-white shadow-sm" : "px-0"
+        )}>
+          <div className="flex items-center justify-between">
+            <Label className="text-base font-medium">Output Variable</Label>
+            {step2Complete && !isStep1Active && <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100"><span className="mr-1">✓</span> Ready</Badge>}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Variable Name</Label>
+            <Input
+              value={config.outputKey || ""}
+              onChange={(e) => updateConfig({ outputKey: e.target.value })}
+              placeholder="e.g. users_list"
+              className="font-mono"
+            />
+            <p className="text-[11px] text-muted-foreground">
+              This list variable will contain all rows found. Access properties via alias (e.g. <code>users_list[0].email</code>).
+            </p>
+          </div>
+        </div>
+
+        {/* 3. COLUMNS SELECTOR */}
+        <div className={cn(
+          "space-y-3 rounded-lg transition-all duration-300",
+          !step2Complete ? inactiveClass : "",
+          // If step2 is complete (has output), this is always potentially active along with settings
+          // Actually, step 2 highlights Output. Once Output is done, Next steps (Settings/Columns) are available
+          // We can use same ring class if interacted with or just keep available
+        )}>
+          <div className="flex items-center justify-between">
+            <Label className="text-base font-medium">Columns</Label>
+            <Badge variant="outline">{(config.columns === undefined || config.columns === null) ? `All (${columns?.length || 0})` : config.columns.length}</Badge>
+          </div>
+
+          <div className="bg-slate-50 border rounded-lg p-4 space-y-3">
+            <div className="flex items-center space-x-2 pb-2 border-b border-slate-200">
+              <input
+                type="checkbox"
+                id="all-cols"
+                className="rounded border-gray-300"
+                checked={config.columns === undefined || config.columns === null}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    // Explicitly set columns to null to clear it from database
+                    updateConfig({ columns: null, totalColumnCount: columns?.length || 0 });
+                  } else {
+                    // Default to all selected when switching to manual mode
+                    updateConfig({ columns: columns?.map(c => c.id) || [], totalColumnCount: columns?.length || 0 });
+                  }
+                }}
+              />
+              <Label htmlFor="all-cols" className="font-medium cursor-pointer">
+                Read All Columns
+              </Label>
+            </div>
+
+            {/* Individual Columns List */}
+            {config.columns !== undefined && config.columns !== null && (
+              <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+                {columns?.map((col) => {
+                  const isSelected = config.columns?.includes(col.id);
+                  return (
+                    <div key={col.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`col-${col.id}`}
+                        className="rounded border-gray-300"
+                        checked={isSelected}
+                        onChange={(e) => {
+                          const current = config.columns || [];
+                          let next: string[];
+                          if (e.target.checked) {
+                            next = [...current, col.id];
+                          } else {
+                            next = current.filter(id => id !== col.id);
+                          }
+                          updateConfig({ columns: next });
+                        }}
+                      />
+                      <Label htmlFor={`col-${col.id}`} className="text-sm font-normal cursor-pointer truncate" title={col.name}>
+                        {col.name}
+                      </Label>
+                    </div>
+                  );
+                })}
               </div>
             )}
-            {localConfig.filters?.map((filter, index) => (
-              <div key={index} className="flex gap-2 items-start p-3 bg-background rounded-md border">
-                <div className="flex-1 grid grid-cols-3 gap-2">
-                  {/* Column Selection */}
-                  <div className="space-y-1">
-                    <Label className="text-xs">Column</Label>
-                    <Select
-                      value={filter.columnId}
-                      onValueChange={(value) => handleUpdateFilter(index, { columnId: value })}
-                    >
-                      <SelectTrigger className="h-8 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {columns.map((col: any) => (
-                          <SelectItem key={col.id} value={col.id}>
-                            {col.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
 
-                  {/* Operator Selection */}
-                  <div className="space-y-1">
-                    <Label className="text-xs">Operator</Label>
-                    <Select
-                      value={filter.operator}
-                      onValueChange={(value) =>
-                        handleUpdateFilter(index, { operator: value as ReadTableOperator })
+            {(config.columns === undefined || config.columns === null) && (
+              <div className="py-4 text-center text-xs text-muted-foreground italic">
+                Retrieving all({columns?.length || 0}) fields.
+              </div>
+            )}
+          </div>
+        </div>
+
+      </div>
+
+      {/* RIGHT COLUMN: Settings, Order, Enabled */}
+      <div className={cn(
+        "space-y-6 border-l pl-6 transition-opacity duration-500",
+        !step2Complete ? inactiveClass : "opacity-100"
+      )}>
+
+        {/* 3. FILTERS (Moved to Top of Right Column) */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold">Filters</h3>
+            <Badge variant="outline">{config.filters?.length || 0}</Badge>
+          </div>
+
+          <div className="bg-slate-50 border rounded-lg p-4 space-y-3">
+            {(config.filters || []).map((filter, index) => (
+              <div key={index} className="flex gap-2 items-start p-2 bg-white rounded border shadow-sm">
+                <div className="grid grid-cols-3 gap-2 flex-1">
+                  <Select
+                    value={filter.columnId || "_clear"}
+                    onValueChange={(val) => {
+                      const newFilters = [...(config.filters || [])];
+                      if (val === '_clear') {
+                        newFilters[index] = { columnId: '', operator: 'equals', value: '' };
+                      } else {
+                        newFilters[index].columnId = val;
                       }
-                    >
-                      <SelectTrigger className="h-8 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {OPERATORS.map((op) => (
-                          <SelectItem key={op.value} value={op.value}>
-                            {op.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                      updateConfig({ filters: newFilters });
+                    }}
+                  >
+                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Column" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="_clear" className="text-muted-foreground italic">None</SelectItem>
+                      {columns?.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
 
-                  {/* Value Input */}
-                  {filter.operator !== "is_empty" && filter.operator !== "is_not_empty" && (
-                    <div className="space-y-1">
-                      <Label className="text-xs">Value</Label>
-                      <Input
-                        value={filter.value || ""}
-                        onChange={(e) => handleUpdateFilter(index, { value: e.target.value })}
-                        placeholder="Value or {{variable}}"
-                        className="h-8 text-xs font-mono"
-                      />
-                    </div>
-                  )}
+                  <Select
+                    value={filter.operator}
+                    onValueChange={(val: any) => {
+                      const newFilters = [...(config.filters || [])];
+                      newFilters[index].operator = val;
+                      updateConfig({ filters: newFilters });
+                    }}
+                  >
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="equals">Equals</SelectItem>
+                      <SelectItem value="contains">Contains</SelectItem>
+                      <SelectItem value="gt">Greater Than</SelectItem>
+                      <SelectItem value="lt">Less Than</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Input
+                    value={filter.value}
+                    onChange={(e) => {
+                      const newFilters = [...(config.filters || [])];
+                      newFilters[index].value = e.target.value;
+                      updateConfig({ filters: newFilters });
+                    }}
+                    className="h-8 text-xs"
+                    placeholder="Value..."
+                  />
                 </div>
-
-                {/* Remove Button */}
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => handleRemoveFilter(index)}
-                  className="h-8 w-8 mt-5 text-destructive hover:text-destructive"
-                >
-                  <X className="w-4 h-4" />
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-red-500" onClick={() => {
+                  const newFilters = [...(config.filters || [])];
+                  newFilters.splice(index, 1);
+                  updateConfig({ filters: newFilters });
+                }}>
+                  <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
             ))}
-          </CardContent>
-        </Card>
-      )}
 
-      {/* Sort Section */}
-      {localConfig.tableId && columns && columns.length > 0 && (
-        <Card className="border-purple-200 bg-purple-50/30">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <SortAsc className="w-4 h-4 text-purple-600" />
-              <CardTitle className="text-sm">Sort</CardTitle>
-            </div>
-            <CardDescription className="text-xs">
-              Optional: Order results by a column
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
-                <Label className="text-xs">Sort By</Label>
-                <Select
-                  value={localConfig.sort?.columnId || "NO_SORT"}
-                  onValueChange={(val) => handleSortChange(val === "NO_SORT" ? "" : val)}
-                >
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue placeholder="None" />
+            <Button variant="outline" size="sm" className="w-full border-dashed" onClick={() => {
+              updateConfig({ filters: [...(config.filters || []), { columnId: '', operator: 'equals', value: '' }] });
+            }}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Filter
+            </Button>
+          </div>
+        </div>
+
+        <div className="h-px bg-gray-100 my-4" />
+
+        <div className="space-y-4">
+          <h3 className="font-semibold mb-4">Query Settings</h3>
+
+          {/* Sorting */}
+          <div className="space-y-2">
+            <Label>Sort By</Label>
+            <div className="flex gap-2">
+              <Select value={config.sort?.columnId || "none"} onValueChange={(val) => {
+                if (val === 'none') {
+                  updateConfig({ sort: undefined });
+                } else {
+                  updateConfig({ sort: { columnId: val, direction: config.sort?.direction || 'asc' } });
+                }
+              }}>
+                <SelectTrigger className="bg-white flex-1">
+                  <SelectValue placeholder="No sorting" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {columns?.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+
+              {config.sort && (
+                <Select value={config.sort.direction} onValueChange={(val: 'asc' | 'desc') => {
+                  updateConfig({ sort: { ...config.sort!, direction: val } });
+                }}>
+                  <SelectTrigger className="w-[100px] bg-white">
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="NO_SORT">None</SelectItem>
-                    {columns.map((col: any) => (
-                      <SelectItem key={col.id} value={col.id}>
-                        {col.name}
-                      </SelectItem>
-                    ))}
+                    <SelectItem value="asc">Asc</SelectItem>
+                    <SelectItem value="desc">Desc</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              {localConfig.sort && (
-                <div className="space-y-1">
-                  <Label className="text-xs">Direction</Label>
-                  <Select
-                    value={localConfig.sort.direction}
-                    onValueChange={(value: "asc" | "desc") => handleSortDirectionChange(value)}
-                  >
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="asc">Ascending</SelectItem>
-                      <SelectItem value="desc">Descending</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
               )}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
 
-      {/* Limit (Advanced Mode Only) */}
-      {showLimit && (
-        <div className="space-y-2">
-          <Label className="text-xs">Row Limit</Label>
-          <Input
-            type="number"
-            value={localConfig.limit || 100}
-            onChange={(e) =>
-              setLocalConfig({ ...localConfig, limit: parseInt(e.target.value) || 100 })
-            }
-            min={1}
-            max={1000}
-            className="h-8 text-xs"
-          />
-          <p className="text-xs text-muted-foreground">
-            Maximum number of rows to return (default: 100, max: 1000)
-          </p>
+          {/* Limit */}
+          <div className="space-y-2">
+            <Label>Row Limit</Label>
+            <Input
+              type="number"
+              value={config.limit || 100}
+              onChange={(e) => updateConfig({ limit: parseInt(e.target.value) })}
+              className="bg-white"
+            />
+            <p className="text-xs text-muted-foreground">Max rows to fetch (default 100).</p>
+          </div>
+
+          <div className="h-px bg-gray-100 my-4" />
+
+          {/* Execution Phase */}
+          <div className="space-y-2">
+            <Label>When to Run</Label>
+            <Select value={phase || "onRunStart"} onValueChange={onPhaseChange}>
+              <SelectTrigger className="bg-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="onRunStart">On Run Start</SelectItem>
+                <SelectItem value="onSectionEnter">On Section Enter</SelectItem>
+                <SelectItem value="onSectionSubmit">On Section Submit</SelectItem>
+                <SelectItem value="onNext">On Next</SelectItem>
+                <SelectItem value="onRunComplete">On Run Complete</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Order */}
+          <div className="space-y-2">
+            <Label>Order</Label>
+            <Input
+              type="number"
+              value={order}
+              onChange={(e) => onOrderChange(Number(e.target.value))}
+              className="bg-white"
+            />
+          </div>
+
+          {/* Enabled */}
+          <div className="pt-2">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={enabled}
+                onChange={(e) => onEnabledChange(e.target.checked)}
+                className="rounded border-gray-300"
+              />
+              <span className="text-sm font-medium">Enabled</span>
+            </label>
+          </div>
+
         </div>
-      )}
-
-      {/* Configuration Summary */}
-      {localConfig.tableId && (
-        <Card className="bg-slate-50 border-slate-200">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-mono">Configuration Summary</CardTitle>
-          </CardHeader>
-          <CardContent className="text-xs space-y-1 font-mono">
-            <div>
-              <span className="text-muted-foreground">Output:</span>{" "}
-              <span className="font-semibold">{localConfig.outputKey || "(not set)"}</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Filters:</span>{" "}
-              <span className="font-semibold">{localConfig.filters?.length || 0}</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Sort:</span>{" "}
-              <span className="font-semibold">
-                {localConfig.sort
-                  ? `${columns?.find((c: any) => c.id === localConfig.sort?.columnId)?.name || "Unknown"} (${localConfig.sort.direction})`
-                  : "None"}
-              </span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Limit:</span>{" "}
-              <span className="font-semibold">{localConfig.limit || 100} rows</span>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      </div>
     </div>
   );
 }

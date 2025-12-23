@@ -124,7 +124,7 @@ export default function PublicRunner() {
                 </Card>
 
                 <div className="text-center text-sm text-gray-400">
-                    Powered by VaultLogic
+                    Powered by ezBuildr
                 </div>
             </div>
             <FloatingAIAssist

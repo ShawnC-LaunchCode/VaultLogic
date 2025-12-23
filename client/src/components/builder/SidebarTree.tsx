@@ -3,8 +3,8 @@
  */
 
 import { useState } from "react";
-import { Plus, GripVertical, ChevronDown, ChevronRight, FileText, Blocks, Code, FileCheck, Sparkles, Database, Save, Send, GitBranch, Play, CheckCircle, Info, Lock, Zap, Settings } from "lucide-react";
-import { useSections, useSteps, useCreateSection, useCreateStep, useReorderSections, useReorderSteps, useWorkflowMode, useBlocks, useTransformBlocks, useWorkflow, useCreateBlock } from "@/lib/vault-hooks";
+import { Plus, GripVertical, ChevronDown, ChevronRight, FileText, Blocks, Code, FileCheck, Sparkles, Database, Save, Send, GitBranch, Play, CheckCircle, Info, Lock, Zap, Settings, Trash2 } from "lucide-react";
+import { useSections, useSteps, useCreateSection, useCreateStep, useReorderSections, useReorderSteps, useWorkflowMode, useBlocks, useTransformBlocks, useWorkflow, useCreateBlock, useDeleteStep, useDeleteBlock } from "@/lib/vault-hooks";
 import { useWorkflowBuilder } from "@/store/workflow-builder";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -202,8 +202,20 @@ export function SidebarTree({ workflowId }: { workflowId: string }) {
               onToggle={() => toggleSection(section.id)}
               mode={mode}
               blocks={blocksBySection[section.id] || []}
-              onEditBlock={(block) => {
-                setEditingBlock(block);
+              onEditBlock={(rawBlock) => {
+                // Transform raw block to UniversalBlock format
+                const universalBlock: UniversalBlock = {
+                  id: rawBlock.id,
+                  type: rawBlock.type,
+                  phase: rawBlock.phase,
+                  order: rawBlock.order,
+                  enabled: rawBlock.enabled,
+                  raw: rawBlock,
+                  source: 'regular',
+                  title: rawBlock.name || undefined,
+                  displayType: rawBlock.type,
+                };
+                setEditingBlock(universalBlock);
                 setIsBlockEditorOpen(true);
               }}
               onEditSection={() => {
@@ -315,9 +327,12 @@ function SectionItem({
     const config = type === "write" ? {
       dataSourceId: "",
       tableId: "",
-      mode: "upsert"
+      mode: "upsert",
+      columnMappings: []
     } : type === "read_table" ? {
-      tableId: ""
+      tableId: "",
+      outputKey: "list_data",
+      filters: []
     } : {};
 
     await createBlockMutation.mutateAsync({
@@ -436,7 +451,7 @@ function SectionItem({
                     handleCreateLogicBlock("write");
                   }}>
                     <Save className="w-3 h-3 mr-2" />
-                    Save Data
+                    Send Data to Table
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={(e) => {
                     e.stopPropagation();
@@ -450,7 +465,7 @@ function SectionItem({
                     handleCreateLogicBlock("external_send");
                   }}>
                     <Send className="w-3 h-3 mr-2" />
-                    Send Data
+                    Send Data to API
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={(e) => {
                     e.stopPropagation();
@@ -471,7 +486,7 @@ function SectionItem({
 
           {/* Top Blocks (Prefill/Enter) */}
           {topBlocks.map((block: any) => (
-            <BlockTreeItem key={block.id} block={block} mode={mode} onEdit={() => onEditBlock(block)} />
+            <BlockTreeItem key={block.id} block={block} mode={mode} onEdit={() => onEditBlock(block)} workflowId={workflowId} />
           ))}
 
           {/* Steps */}
@@ -491,7 +506,7 @@ function SectionItem({
 
           {/* Bottom Blocks (Submit/Next) */}
           {bottomBlocks.map((block: any) => (
-            <BlockTreeItem key={block.id} block={block} mode={mode} onEdit={() => onEditBlock(block)} />
+            <BlockTreeItem key={block.id} block={block} mode={mode} onEdit={() => onEditBlock(block)} workflowId={workflowId} />
           ))}
 
         </div>
@@ -502,12 +517,20 @@ function SectionItem({
 
 function StepItem({ step, sectionId }: { step: any; sectionId: string }) {
   const { selection, selectStep } = useWorkflowBuilder();
+  const deleteStepMutation = useDeleteStep();
   const isSelected = selection?.type === "step" && selection.id === step.id;
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirm("Are you sure you want to delete this question?")) {
+      deleteStepMutation.mutate({ id: step.id, sectionId });
+    }
+  };
 
   return (
     <div
       className={cn(
-        "flex items-start gap-2 py-1.5 px-1.5 rounded-md hover:bg-sidebar-accent/50 cursor-pointer text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20",
+        "flex items-start gap-2 py-1.5 px-1.5 rounded-md hover:bg-sidebar-accent/50 cursor-pointer text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20 group",
         isSelected && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
       )}
       onClick={() => selectStep(step.id)}
@@ -545,14 +568,35 @@ function StepItem({ step, sectionId }: { step: any; sectionId: string }) {
           Cond
         </Badge>
       )}
+
+      {/* Delete Action (Hover) */}
+      <div className="opacity-0 group-hover:opacity-100 transition-opacity ml-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-5 w-5 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+          onClick={handleDelete}
+          title="Delete Question"
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
+      </div>
     </div>
   );
 }
 
-function BlockTreeItem({ block, mode, onEdit }: { block: any, mode: string, onEdit: () => void }) {
+function BlockTreeItem({ block, mode, onEdit, workflowId }: { block: any, mode: string, onEdit: () => void, workflowId: string }) {
   // Unlock editing for supported blocks in Easy Mode
-  const isEditableInEasyMode = ['read_table', 'write', 'external_send', 'list_tools', 'query'].includes(block.type);
+  const isEditableInEasyMode = ['read_table', 'write', 'send_table', 'external_send', 'list_tools', 'query'].includes(block.type);
   const isLocked = mode === 'easy' && !isEditableInEasyMode;
+  const deleteBlockMutation = useDeleteBlock();
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirm("Are you sure you want to delete this block?")) {
+      deleteBlockMutation.mutate({ id: block.id, workflowId });
+    }
+  };
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -560,7 +604,7 @@ function BlockTreeItem({ block, mode, onEdit }: { block: any, mode: string, onEd
       case 'validate': return <CheckCircle className="w-3 h-3" />;
       case 'branch': return <GitBranch className="w-3 h-3" />;
       case 'query': case 'read_table': return <Database className="w-3 h-3" />;
-      case 'write': return <Save className="w-3 h-3" />;
+      case 'write': case 'send_table': return <Save className="w-3 h-3" />;
       case 'external_send': return <Send className="w-3 h-3" />;
       case 'js': case 'transform': return <Code className="w-3 h-3" />;
       case 'list_tools': return <Sparkles className="w-3 h-3" />;
@@ -571,8 +615,8 @@ function BlockTreeItem({ block, mode, onEdit }: { block: any, mode: string, onEd
   const getLabel = (type: string) => {
     switch (type) {
       case 'read_table': return 'Read Table';
-      case 'write': return 'Send Data';
-      case 'external_send': return 'Send External Data';
+      case 'write': case 'send_table': return 'Send to Table';
+      case 'external_send': return 'Send to API';
       case 'list_tools': return 'List Tool';
       case 'js': return 'Script';
       case 'query': return 'Read Data (Legacy)';
@@ -583,7 +627,7 @@ function BlockTreeItem({ block, mode, onEdit }: { block: any, mode: string, onEd
   return (
     <div
       className={cn(
-        "flex items-center gap-2 p-1.5 rounded-md text-sm transition-colors border border-transparent",
+        "flex items-center gap-2 p-1.5 rounded-md text-sm transition-colors border border-transparent group",
         isLocked
           ? "bg-slate-50 text-slate-400 cursor-not-allowed italic"
           : "hover:bg-sidebar-accent/50 cursor-pointer text-slate-600"
@@ -606,7 +650,21 @@ function BlockTreeItem({ block, mode, onEdit }: { block: any, mode: string, onEd
         {getLabel(block.type)}
         {block.phase === 'onSectionEnter' ? ' (Enter)' : ' (Submit)'}
       </span>
-      {/* Add delete button here if needed, or rely on inside the editor dialog */}
+
+      {/* Delete Action (Hover) */}
+      {!isLocked && (
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity ml-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-5 w-5 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            onClick={handleDelete}
+            title="Delete Block"
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

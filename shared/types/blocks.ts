@@ -339,8 +339,10 @@ export type ReadTableConfig = {
   filters?: ReadTableFilter[];   // Optional filter conditions (Easy: 0-1, Advanced: multiple)
   sort?: ReadTableSort;          // Optional sort configuration
   limit?: number;                // Row limit (default: 100, Easy: hidden, Advanced: configurable)
+  columns?: string[] | null;     // Optional specific columns to select (null/undefined = all)
   outputKey: string;             // Variable name to store the result list
   runCondition?: WhenCondition;  // Optional condition to run this block
+  totalColumnCount?: number;     // Total columns available (for display purposes)
 };
 
 /**
@@ -484,6 +486,7 @@ export interface BlockContext {
   mode?: 'preview' | 'live'; // Added execution mode
   aliasMap?: Record<string, string>; // Map of alias -> stepId
   versionId?: string; // Workflow version ID
+  userId?: string; // User ID of the person executing the workflow (if authenticated)
 }
 
 /**

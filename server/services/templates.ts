@@ -41,8 +41,12 @@ export async function saveTemplateFile(
   mimeType: string
 ): Promise<string> {
   // Validate file type
-  if (!mimeType.includes('wordprocessingml') && !mimeType.includes('msword')) {
-    throw createError.invalidFileType('Only .docx files are supported', { mimeType });
+  if (
+    !mimeType.includes('wordprocessingml') &&
+    !mimeType.includes('msword') &&
+    !mimeType.includes('application/pdf')
+  ) {
+    throw createError.invalidFileType('Only .docx and .pdf files are supported', { mimeType });
   }
 
   // Ensure files directory exists

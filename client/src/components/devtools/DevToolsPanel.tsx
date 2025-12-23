@@ -38,8 +38,7 @@ export function DevToolsPanel({ env, isOpen, onClose }: DevToolsPanelProps) {
             .filter(v => v.sectionTitle !== "Final Documents");
     }, [state, env]);
 
-    if (!isOpen || !state) return null;
-
+    // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
     // Determine the effective toggle handler based on parent's onClose or local intent
     // The requirement says "minimize to Sidebar", so we should ideally control the open state
     // But PreviewRunner might be controlling the overall visibility.
@@ -126,6 +125,9 @@ export function DevToolsPanel({ env, isOpen, onClose }: DevToolsPanelProps) {
         // JS objects preserve insertion order mostly, but recursive structure is what matters.
         return contextAwareValues;
     }, [state, env]);
+
+    // Conditional return AFTER all hooks have been called
+    if (!isOpen || !state) return null;
 
     return (
         <div className="h-full flex flex-col pointer-events-auto">

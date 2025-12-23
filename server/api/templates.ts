@@ -40,19 +40,176 @@ const upload = multer({
     file: Express.Multer.File,
     cb: FileFilterCallback
   ) => {
-    // Only accept .docx files
+    // Only accept .docx and .pdf files
     if (
       file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-      file.originalname.endsWith('.docx')
+      file.originalname.endsWith('.docx') ||
+      file.mimetype === 'application/pdf' ||
+      file.originalname.endsWith('.pdf')
     ) {
       cb(null, true);
     } else {
-      cb(new Error('Only .docx files are supported'));
+      cb(new Error('Only .docx and .pdf files are supported'));
     }
   },
 });
 
+import { pdfService } from '../services/document/PdfService';
 
+
+
+/**
+ * GET /templates/:id/download
+ * Download template file
+ */
+router.get(
+  '/templates/:id/download',
+  hybridAuth,
+  requireTenant,
+  requirePermission('template:view'),
+  async (req: Request, res: Response) => {
+    try {
+      console.log(`[Templates] Downloading template ${req.params.id}`);
+      const authReq = req as AuthRequest;
+      const tenantId = authReq.tenantId!;
+
+      // Validate params
+      const params = templateParamsSchema.parse(req.params);
+
+      // Fetch template with project
+      const template = await db.query.templates.findFirst({
+        where: eq(schema.templates.id, params.id),
+        with: {
+          project: true,
+        },
+      });
+
+      if (!template) {
+        console.error(`[Templates] Template not found: ${params.id}`);
+        throw createError.notFound('Template', params.id);
+      }
+
+      // Verify tenant access
+      if (template.project.tenantId !== tenantId) {
+        console.error(`[Templates] Access denied for tenant ${tenantId} to template ${template.id}`);
+        throw createError.forbidden('Access denied to this template');
+      }
+
+      // Get file path
+      const { getTemplateFilePath } = await import('../services/templates');
+      const filePath = getTemplateFilePath(template.fileRef);
+
+      // Import fs locally to avoid toplevel conflict if not imported
+      const fs = await import('fs');
+
+      if (!fs.existsSync(filePath)) {
+        console.error(`[Templates] File missing at path: ${filePath}`);
+        throw createError.notFound('Template file', template.fileRef);
+      }
+
+      console.log(`[Templates] Serving file: ${filePath}`);
+
+      // Set headers
+      res.setHeader('Content-Disposition', `attachment; filename="${template.name}.${template.type === 'pdf' ? 'pdf' : 'docx'}"`);
+
+      if (template.type === 'pdf') {
+        res.setHeader('Content-Type', 'application/pdf');
+      } else {
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      }
+
+      // Stream file
+      const stream = fs.createReadStream(filePath);
+      stream.pipe(res);
+
+    } catch (error) {
+      console.error(`[Templates] Download error:`, error);
+      // If headers sent, we can't send error json
+      if (res.headersSent) {
+        return;
+      }
+      const formatted = formatErrorResponse(error);
+      res.status(formatted.status).json(formatted.body);
+    }
+  }
+);
+
+
+/**
+ * GET /templates/:id/download
+ * Download template file
+ */
+router.get(
+  '/templates/:id/download',
+  hybridAuth,
+  requireTenant,
+  requirePermission('template:view'),
+  async (req: Request, res: Response) => {
+    try {
+      console.log(`[Templates] Downloading template ${req.params.id}`);
+      const authReq = req as AuthRequest;
+      const tenantId = authReq.tenantId!;
+
+      // Validate params
+      const params = templateParamsSchema.parse(req.params);
+
+      // Fetch template with project
+      const template = await db.query.templates.findFirst({
+        where: eq(schema.templates.id, params.id),
+        with: {
+          project: true,
+        },
+      });
+
+      if (!template) {
+        console.error(`[Templates] Template not found: ${params.id}`);
+        throw createError.notFound('Template', params.id);
+      }
+
+      // Verify tenant access
+      if (template.project.tenantId !== tenantId) {
+        console.error(`[Templates] Access denied for tenant ${tenantId} to template ${template.id}`);
+        throw createError.forbidden('Access denied to this template');
+      }
+
+      // Get file path
+      const { getTemplateFilePath } = await import('../services/templates');
+      const filePath = getTemplateFilePath(template.fileRef);
+
+      // Import fs locally to avoid toplevel conflict if not imported
+      const fs = await import('fs');
+
+      if (!fs.existsSync(filePath)) {
+        console.error(`[Templates] File missing at path: ${filePath}`);
+        throw createError.notFound('Template file', template.fileRef);
+      }
+
+      console.log(`[Templates] Serving file: ${filePath}`);
+
+      // Set headers
+      res.setHeader('Content-Disposition', `attachment; filename="${template.name}.${template.type === 'pdf' ? 'pdf' : 'docx'}"`);
+
+      if (template.type === 'pdf') {
+        res.setHeader('Content-Type', 'application/pdf');
+      } else {
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      }
+
+      // Stream file
+      const stream = fs.createReadStream(filePath);
+      stream.pipe(res);
+
+    } catch (error) {
+      console.error(`[Templates] Download error:`, error);
+      // If headers sent, we can't send error json
+      if (res.headersSent) {
+        return;
+      }
+      const formatted = formatErrorResponse(error);
+      res.status(formatted.status).json(formatted.body);
+    }
+  }
+);
 
 /**
  * GET /projects/:projectId/templates
@@ -151,30 +308,53 @@ router.post(
       }
 
       // Validate body
-      const data = createTemplateSchema.parse(req.body);
+      let data;
+      try {
+        data = createTemplateSchema.parse(req.body);
+      } catch (validationError) {
+        logger.error({ error: validationError, body: req.body }, "Template validation failed");
+        throw createError.validation("Invalid template data");
+      }
 
-      // SCAN & FIX TEMPLATE
+      const isPdf = req.file.mimetype === 'application/pdf' || req.file.originalname.endsWith('.pdf');
+
+      // SCAN & FIX TEMPLATE (DOCX Only)
       let fileBuffer = req.file.buffer;
       let warnings: string[] = [];
+      let pdfMetadata: any = {};
 
-      try {
-        const scanResult = await templateScanner.scanAndFix(fileBuffer);
+      if (!isPdf) {
+        try {
+          const scanResult = await templateScanner.scanAndFix(fileBuffer);
 
-        if (!scanResult.isValid) {
-          throw createError.validation(
-            `Invalid template: ${scanResult.errors?.join(', ')}`
-          );
+          if (!scanResult.isValid) {
+            throw createError.validation(
+              `Invalid template: ${scanResult.errors?.join(', ')}`
+            );
+          }
+
+          if (scanResult.fixed) {
+            fileBuffer = scanResult.buffer;
+            warnings = scanResult.repairs;
+          }
+        } catch (error: any) {
+          // If it's already a validation error, rethrow
+          if (error.code === 'VALIDATION_ERROR') throw error;
+          // Otherwise wrap it
+          throw createError.validation(`Template validation failed: ${error.message}`);
         }
+      } else {
+        // Handle PDF
+        try {
+          // 1. Unlock PDF (remove restrictions)
+          fileBuffer = await pdfService.unlockPdf(fileBuffer);
 
-        if (scanResult.fixed) {
-          fileBuffer = scanResult.buffer;
-          warnings = scanResult.repairs;
+          // 2. Extract fields
+          pdfMetadata = await pdfService.extractFields(fileBuffer);
+        } catch (error: any) {
+          logger.error({ error }, 'PDF processing failed');
+          throw createError.validation(`PDF processing failed: ${error.message}`);
         }
-      } catch (error: any) {
-        // If it's already a validation error, rethrow
-        if (error.code === 'VALIDATION_ERROR') throw error;
-        // Otherwise wrap it
-        throw createError.validation(`Template validation failed: ${error.message}`);
       }
 
       // Save file
@@ -191,8 +371,9 @@ router.post(
           projectId: params.projectId,
           name: data.name,
           fileRef,
-          type: 'docx',
+          type: isPdf ? 'pdf' : 'docx',
           helpersVersion: 1,
+          metadata: isPdf ? pdfMetadata : {},
         })
         .returning();
 
@@ -293,26 +474,40 @@ router.patch(
       let warnings: string[] = [];
 
       if (req.file) {
-        // SCAN & FIX TEMPLATE
         let fileBuffer = req.file.buffer;
 
-        try {
-          const scanResult = await templateScanner.scanAndFix(fileBuffer);
+        // Handle PDF or scan DOCX
+        const isPdf = req.file.mimetype === 'application/pdf' || req.file.originalname.endsWith('.pdf');
+        let pdfMetadata: any = {};
 
-          if (!scanResult.isValid) {
-            logger.error({ errors: scanResult.errors }, 'Template validation failed in API (PATCH)');
-            throw createError.validation(
-              `Invalid template: ${scanResult.errors?.join(', ')}`
-            );
-          }
+        if (!isPdf) {
+          try {
+            const scanResult = await templateScanner.scanAndFix(fileBuffer);
 
-          if (scanResult.fixed) {
-            fileBuffer = scanResult.buffer;
-            warnings = scanResult.repairs;
+            if (!scanResult.isValid) {
+              logger.error({ errors: scanResult.errors }, 'Template validation failed in API (PATCH)');
+              throw createError.validation(
+                `Invalid template: ${scanResult.errors?.join(', ')}`
+              );
+            }
+
+            if (scanResult.fixed) {
+              fileBuffer = scanResult.buffer;
+              warnings = scanResult.repairs;
+            }
+          } catch (error: any) {
+            if (error.code === 'VALIDATION_ERROR') throw error;
+            throw createError.validation(`Template validation failed: ${error.message}`);
           }
-        } catch (error: any) {
-          if (error.code === 'VALIDATION_ERROR') throw error;
-          throw createError.validation(`Template validation failed: ${error.message}`);
+        } else {
+          // Handle PDF
+          try {
+            fileBuffer = await pdfService.unlockPdf(fileBuffer);
+            pdfMetadata = await pdfService.extractFields(fileBuffer);
+          } catch (error: any) {
+            logger.error({ error }, 'PDF processing failed (PATCH)');
+            throw createError.validation(`PDF processing failed: ${error.message}`);
+          }
         }
 
         // Save new file
@@ -321,6 +516,11 @@ router.patch(
           req.file.originalname,
           req.file.mimetype
         );
+
+        // Update data object with new type/metadata if file changed
+        // We will pass this to the update call below
+        (data as any).type = isPdf ? 'pdf' : 'docx';
+        (data as any).metadata = isPdf ? pdfMetadata : {};
 
         // Delete old file
         await deleteTemplateFile(template.fileRef);
@@ -332,6 +532,8 @@ router.patch(
         .set({
           ...(data.name !== undefined && { name: data.name }),
           ...(newFileRef && { fileRef: newFileRef }),
+          ...((data as any).type && { type: (data as any).type }),
+          ...((data as any).metadata && { metadata: (data as any).metadata }),
           updatedAt: new Date(),
         })
         .where(eq(schema.templates.id, params.id))
@@ -439,6 +641,508 @@ router.get(
       };
 
       res.json(response);
+    } catch (error) {
+      const formatted = formatErrorResponse(error);
+      res.status(formatted.status).json(formatted.body);
+    }
+  }
+);
+
+/**
+ * GET /templates/:id/download
+ * Download template file
+ */
+router.get(
+  '/templates/:id/download',
+  hybridAuth,
+  requireTenant,
+  requirePermission('template:view'),
+  async (req: Request, res: Response) => {
+    try {
+      const authReq = req as AuthRequest;
+      const tenantId = authReq.tenantId!;
+
+      // Validate params
+      const params = templateParamsSchema.parse(req.params);
+
+      // Fetch template with project
+      const template = await db.query.templates.findFirst({
+        where: eq(schema.templates.id, params.id),
+        with: {
+          project: true,
+        },
+      });
+
+      if (!template) {
+        throw createError.notFound('Template', params.id);
+      }
+
+      // Verify tenant access
+      if (template.project.tenantId !== tenantId) {
+        throw createError.forbidden('Access denied to this template');
+      }
+
+      // Get file path
+      const { getTemplateFilePath } = await import('../services/templates');
+      const filePath = getTemplateFilePath(template.fileRef);
+
+      // Import fs locally to avoid toplevel conflict if not imported
+      const fs = await import('fs');
+
+      if (!fs.existsSync(filePath)) {
+        throw createError.notFound('Template file', template.fileRef);
+      }
+
+      // Set headers
+      res.setHeader('Content-Disposition', `attachment; filename="${template.name}.${template.type === 'pdf' ? 'pdf' : 'docx'}"`);
+
+      if (template.type === 'pdf') {
+        res.setHeader('Content-Type', 'application/pdf');
+      } else {
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      }
+
+      // Stream file
+      const stream = fs.createReadStream(filePath);
+      stream.pipe(res);
+
+    } catch (error) {
+      // If headers sent, we can't send error json
+      if (res.headersSent) {
+        return;
+      }
+      const formatted = formatErrorResponse(error);
+      res.status(formatted.status).json(formatted.body);
+    }
+  }
+);
+
+/**
+ * POST /templates/:id/preview
+ * Generate a preview of the template with sample data
+ */
+router.post(
+  '/templates/:id/preview',
+  hybridAuth,
+  requireTenant,
+  requirePermission('template:view'),
+  async (req: Request, res: Response) => {
+    try {
+      const authReq = req as AuthRequest;
+      const tenantId = authReq.tenantId!;
+
+      // Validate params
+      const params = templateParamsSchema.parse(req.params);
+
+      // Fetch template with project
+      const template = await db.query.templates.findFirst({
+        where: eq(schema.templates.id, params.id),
+        with: {
+          project: true,
+        },
+      });
+
+      if (!template) {
+        throw createError.notFound('Template', params.id);
+      }
+
+      // Verify tenant access
+      if (template.project.tenantId !== tenantId) {
+        throw createError.forbidden('Access denied to this template');
+      }
+
+      // Get preview options from request body
+      const { mapping, sampleData, outputFormat = 'pdf', validateMapping = true } = req.body;
+
+      if (!sampleData || typeof sampleData !== 'object') {
+        throw createError.validation('sampleData is required and must be an object');
+      }
+
+      // Generate preview
+      const { templatePreviewService } = await import('../services/TemplatePreviewService');
+      const previewResult = await templatePreviewService.generatePreview({
+        templateId: params.id,
+        mapping,
+        sampleData,
+        outputFormat,
+        validateMapping,
+        expiresIn: 300, // 5 minutes
+      });
+
+      res.json({
+        previewUrl: previewResult.previewUrl,
+        format: previewResult.format,
+        size: previewResult.size,
+        expiresAt: previewResult.expiresAt,
+        validationReport: previewResult.validationReport,
+        mappingMetadata: previewResult.mappingMetadata,
+      });
+    } catch (error) {
+      const formatted = formatErrorResponse(error);
+      res.status(formatted.status).json(formatted.body);
+    }
+  }
+);
+
+/**
+ * POST /templates/:id/test-mapping
+ * Test field mapping with sample data (validation only, no generation)
+ */
+router.post(
+  '/templates/:id/test-mapping',
+  hybridAuth,
+  requireTenant,
+  requirePermission('template:view'),
+  async (req: Request, res: Response) => {
+    try {
+      const authReq = req as AuthRequest;
+      const tenantId = authReq.tenantId!;
+
+      // Validate params
+      const params = templateParamsSchema.parse(req.params);
+
+      // Fetch template with project
+      const template = await db.query.templates.findFirst({
+        where: eq(schema.templates.id, params.id),
+        with: {
+          project: true,
+        },
+      });
+
+      if (!template) {
+        throw createError.notFound('Template', params.id);
+      }
+
+      // Verify tenant access
+      if (template.project.tenantId !== tenantId) {
+        throw createError.forbidden('Access denied to this template');
+      }
+
+      // Get mapping and test data from request body
+      const { mapping, testData } = req.body;
+
+      if (!mapping || typeof mapping !== 'object') {
+        throw createError.validation('mapping is required and must be an object');
+      }
+
+      if (!testData || typeof testData !== 'object') {
+        throw createError.validation('testData is required and must be an object');
+      }
+
+      // Validate mapping
+      const { mappingValidator } = await import('../services/document/MappingValidator');
+      const report = await mappingValidator.validateWithTestData(
+        params.id,
+        mapping,
+        testData
+      );
+
+      res.json(report);
+    } catch (error) {
+      const formatted = formatErrorResponse(error);
+      res.status(formatted.status).json(formatted.body);
+    }
+  }
+);
+
+/**
+ * GET /templates/:id/versions
+ * Get version history for a template
+ */
+router.get(
+  '/templates/:id/versions',
+  hybridAuth,
+  requireTenant,
+  requirePermission('template:view'),
+  async (req: Request, res: Response) => {
+    try {
+      const authReq = req as AuthRequest;
+      const tenantId = authReq.tenantId!;
+
+      // Validate params
+      const params = templateParamsSchema.parse(req.params);
+
+      // Fetch template with project
+      const template = await db.query.templates.findFirst({
+        where: eq(schema.templates.id, params.id),
+        with: {
+          project: true,
+        },
+      });
+
+      if (!template) {
+        throw createError.notFound('Template', params.id);
+      }
+
+      // Verify tenant access
+      if (template.project.tenantId !== tenantId) {
+        throw createError.forbidden('Access denied to this template');
+      }
+
+      // Get version history
+      const { templateVersionService } = await import('../services/TemplateVersionService');
+      const history = await templateVersionService.getVersionHistory(params.id);
+
+      res.json({ versions: history });
+    } catch (error) {
+      const formatted = formatErrorResponse(error);
+      res.status(formatted.status).json(formatted.body);
+    }
+  }
+);
+
+/**
+ * GET /templates/:id/versions/:versionNumber
+ * Get a specific version
+ */
+router.get(
+  '/templates/:id/versions/:versionNumber',
+  hybridAuth,
+  requireTenant,
+  requirePermission('template:view'),
+  async (req: Request, res: Response) => {
+    try {
+      const authReq = req as AuthRequest;
+      const tenantId = authReq.tenantId!;
+
+      // Validate params
+      const params = templateParamsSchema.parse(req.params);
+      const versionNumber = parseInt(req.params.versionNumber, 10);
+
+      if (isNaN(versionNumber)) {
+        throw createError.validation('Invalid version number');
+      }
+
+      // Fetch template with project
+      const template = await db.query.templates.findFirst({
+        where: eq(schema.templates.id, params.id),
+        with: {
+          project: true,
+        },
+      });
+
+      if (!template) {
+        throw createError.notFound('Template', params.id);
+      }
+
+      // Verify tenant access
+      if (template.project.tenantId !== tenantId) {
+        throw createError.forbidden('Access denied to this template');
+      }
+
+      // Get specific version
+      const { templateVersionService } = await import('../services/TemplateVersionService');
+      const version = await templateVersionService.getVersion(params.id, versionNumber);
+
+      res.json(version);
+    } catch (error) {
+      const formatted = formatErrorResponse(error);
+      res.status(formatted.status).json(formatted.body);
+    }
+  }
+);
+
+/**
+ * POST /templates/:id/versions
+ * Create a new version snapshot
+ */
+router.post(
+  '/templates/:id/versions',
+  hybridAuth,
+  requireTenant,
+  requirePermission('template:edit'),
+  async (req: Request, res: Response) => {
+    try {
+      const authReq = req as AuthRequest;
+      const tenantId = authReq.tenantId!;
+      const userId = authReq.userId!;
+
+      // Validate params
+      const params = templateParamsSchema.parse(req.params);
+
+      // Fetch template with project
+      const template = await db.query.templates.findFirst({
+        where: eq(schema.templates.id, params.id),
+        with: {
+          project: true,
+        },
+      });
+
+      if (!template) {
+        throw createError.notFound('Template', params.id);
+      }
+
+      // Verify tenant access
+      if (template.project.tenantId !== tenantId) {
+        throw createError.forbidden('Access denied to this template');
+      }
+
+      // Get notes from request body
+      const { notes, force } = req.body;
+
+      // Create version
+      const { templateVersionService } = await import('../services/TemplateVersionService');
+      const version = await templateVersionService.createVersion({
+        templateId: params.id,
+        userId,
+        notes,
+        force,
+      });
+
+      res.status(201).json(version);
+    } catch (error) {
+      const formatted = formatErrorResponse(error);
+      res.status(formatted.status).json(formatted.body);
+    }
+  }
+);
+
+/**
+ * POST /templates/:id/versions/:versionNumber/restore
+ * Restore a template to a previous version
+ */
+router.post(
+  '/templates/:id/versions/:versionNumber/restore',
+  hybridAuth,
+  requireTenant,
+  requirePermission('template:edit'),
+  async (req: Request, res: Response) => {
+    try {
+      const authReq = req as AuthRequest;
+      const tenantId = authReq.tenantId!;
+      const userId = authReq.userId!;
+
+      // Validate params
+      const params = templateParamsSchema.parse(req.params);
+      const versionNumber = parseInt(req.params.versionNumber, 10);
+
+      if (isNaN(versionNumber)) {
+        throw createError.validation('Invalid version number');
+      }
+
+      // Fetch template with project
+      const template = await db.query.templates.findFirst({
+        where: eq(schema.templates.id, params.id),
+        with: {
+          project: true,
+        },
+      });
+
+      if (!template) {
+        throw createError.notFound('Template', params.id);
+      }
+
+      // Verify tenant access
+      if (template.project.tenantId !== tenantId) {
+        throw createError.forbidden('Access denied to this template');
+      }
+
+      // Get notes from request body
+      const { notes } = req.body;
+
+      // Restore version
+      const { templateVersionService } = await import('../services/TemplateVersionService');
+      await templateVersionService.restoreVersion(params.id, versionNumber, userId, notes);
+
+      res.json({ success: true, message: `Restored to version ${versionNumber}` });
+    } catch (error) {
+      const formatted = formatErrorResponse(error);
+      res.status(formatted.status).json(formatted.body);
+    }
+  }
+);
+
+/**
+ * GET /templates/:id/versions/compare
+ * Compare two versions
+ */
+router.get(
+  '/templates/:id/versions/compare',
+  hybridAuth,
+  requireTenant,
+  requirePermission('template:view'),
+  async (req: Request, res: Response) => {
+    try {
+      const authReq = req as AuthRequest;
+      const tenantId = authReq.tenantId!;
+
+      // Validate params
+      const params = templateParamsSchema.parse(req.params);
+      const from = parseInt(req.query.from as string, 10);
+      const to = parseInt(req.query.to as string, 10);
+
+      if (isNaN(from) || isNaN(to)) {
+        throw createError.validation('Invalid version numbers');
+      }
+
+      // Fetch template with project
+      const template = await db.query.templates.findFirst({
+        where: eq(schema.templates.id, params.id),
+        with: {
+          project: true,
+        },
+      });
+
+      if (!template) {
+        throw createError.notFound('Template', params.id);
+      }
+
+      // Verify tenant access
+      if (template.project.tenantId !== tenantId) {
+        throw createError.forbidden('Access denied to this template');
+      }
+
+      // Compare versions
+      const { templateVersionService } = await import('../services/TemplateVersionService');
+      const comparison = await templateVersionService.compareVersions(params.id, from, to);
+
+      res.json(comparison);
+    } catch (error) {
+      const formatted = formatErrorResponse(error);
+      res.status(formatted.status).json(formatted.body);
+    }
+  }
+);
+
+/**
+ * GET /templates/:id/analytics
+ * Get analytics for a template
+ */
+router.get(
+  '/templates/:id/analytics',
+  hybridAuth,
+  requireTenant,
+  requirePermission('template:view'),
+  async (req: Request, res: Response) => {
+    try {
+      const authReq = req as AuthRequest;
+      const tenantId = authReq.tenantId!;
+
+      // Validate params
+      const params = templateParamsSchema.parse(req.params);
+
+      // Fetch template with project
+      const template = await db.query.templates.findFirst({
+        where: eq(schema.templates.id, params.id),
+        with: {
+          project: true,
+        },
+      });
+
+      if (!template) {
+        throw createError.notFound('Template', params.id);
+      }
+
+      // Verify tenant access
+      if (template.project.tenantId !== tenantId) {
+        throw createError.forbidden('Access denied to this template');
+      }
+
+      // Get analytics
+      const { templateAnalytics } = await import('../services/TemplateAnalyticsService');
+      const insights = await templateAnalytics.getTemplateInsights(params.id);
+
+      res.json(insights);
     } catch (error) {
       const formatted = formatErrorResponse(error);
       res.status(formatted.status).json(formatted.body);

@@ -63,6 +63,26 @@ export class ReadTableBlockService {
       targetSectionId = sections[0].id;
     }
 
+    // Calculate order: put at the end of the section
+    // Get max order from both steps and blocks in the section
+    const [sectionSteps, sectionBlocks] = await Promise.all([
+      this.stepRepo.findBySectionId(targetSectionId),
+      // We want all blocks in this section to determine the next order index
+      // Using 'onSectionSubmit' as a proxy effectively, but ideally we check all phases that render in the main list
+      // For now, finding all blocks in the section is safer if we want to be at the very bottom
+      this.blockRepo.findBySectionPhase(targetSectionId, data.phase)
+    ]);
+
+    let maxOrder = -1;
+    for (const step of sectionSteps) {
+      if (step.order > maxOrder) maxOrder = step.order;
+    }
+    for (const b of sectionBlocks) {
+      if (b.order > maxOrder) maxOrder = b.order;
+    }
+
+    const newOrder = maxOrder + 1;
+
     // Create virtual step for persistence
     const virtualStep = await this.stepRepo.create({
       sectionId: targetSectionId,
@@ -71,7 +91,7 @@ export class ReadTableBlockService {
       description: `Virtual step for read table block: ${data.name}`,
       alias: data.config.outputKey,
       required: false,
-      order: -1,
+      order: newOrder,
       isVirtual: true,
     });
 
@@ -82,7 +102,7 @@ export class ReadTableBlockService {
       phase: data.phase,
       sectionId: data.sectionId || null,
       config: data.config,
-      order: 0, // Should be calculated or app logic handles reordering
+      order: newOrder,
       virtualStepId: virtualStep.id,
       enabled: true,
     });
@@ -119,6 +139,7 @@ export class ReadTableBlockService {
     }
 
     const currentConfig = block.config as ReadTableConfig;
+    // Merge configs - note: null values in data.config will override existing values
     const newConfig = { ...currentConfig, ...data.config };
 
     // Update virtual step if output key changes

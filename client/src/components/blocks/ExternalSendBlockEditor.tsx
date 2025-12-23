@@ -3,8 +3,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2 } from "lucide-react";
-import { useWorkflowDataSources } from "@/lib/vault-hooks";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, Trash2, Clock } from "lucide-react";
+import { useWorkflowDataSources, useWorkflowVariables } from "@/lib/vault-hooks";
 
 interface PayloadMapping {
     key: string;
@@ -20,19 +21,13 @@ interface ExternalSendBlockEditorProps {
     workflowId: string;
     config: ExternalSendConfig;
     onChange: (config: ExternalSendConfig) => void;
+    phase?: string;
+    onPhaseChange?: (phase: string) => void;
 }
 
-export function ExternalSendBlockEditor({ workflowId, config, onChange }: ExternalSendBlockEditorProps) {
-    // Assuming "external" type data sources act as destinations or we have a separate "ExternalDestination" API
-    // Requirement refers to "External Data Destinations" implemented previously.
-    // We might need a separate hook for External Destinations or they are exposed as DataSources with type='external'?
-    // Based on shared/schema.ts, `externalDestinations` is a separate table, but `dataSources` can be type='external'.
-    // Let's assume for now we list `dataSources` with type='external' or similar.
-    // Actually, the previous implementation created "External Data Destinations" in `server/routes/externalDestinations.routes.ts`?
-    // Let's check if we have a hook for `externalDestinations`. If not, we might need to add one or use generic `dataSource` if they are merged.
-    // For now I'll use `useWorkflowDataSources` filtering by type or just showing all.
-
+export function ExternalSendBlockEditor({ workflowId, config, onChange, phase, onPhaseChange }: ExternalSendBlockEditorProps) {
     const { data: dataSources } = useWorkflowDataSources(workflowId);
+    const { data: variables = [] } = useWorkflowVariables(workflowId);
     const destinations = dataSources?.filter(ds => ds.type === 'external' || (ds.type as any) === 'api'); // Adjust logic as needed
 
     const updateConfig = (updates: Partial<ExternalSendConfig>) => {
@@ -91,18 +86,64 @@ export function ExternalSendBlockEditor({ workflowId, config, onChange }: Extern
                     {config.payloadMappings?.map((mapping, idx) => (
                         <div key={idx} className="flex gap-2 items-center">
                             <Input
-                                placeholder="JSON Key"
+                                placeholder="Field name"
                                 value={mapping.key}
                                 onChange={(e) => updateMapping(idx, "key", e.target.value)}
                                 className="flex-1"
                             />
-                            <span className="text-muted-foreground">:</span>
-                            <Input
-                                placeholder="Value / Variable"
-                                value={mapping.value}
-                                onChange={(e) => updateMapping(idx, "value", e.target.value)}
-                                className="flex-1"
-                            />
+                            <span className="text-muted-foreground">=</span>
+
+                            {/* Variable Select for Mapping Value */}
+                            <div className="flex-1 min-w-0">
+                                <Select
+                                    value={mapping.value}
+                                    onValueChange={(val) => updateMapping(idx, "value", val)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select value...">
+                                            {mapping.value?.startsWith('system:') ? (
+                                                <span className="text-xs">
+                                                    {mapping.value === 'system:current_date' && '📅 Current Date'}
+                                                    {mapping.value === 'system:current_time' && '🕐 Current Time'}
+                                                    {mapping.value === 'system:current_datetime' && '📅 Current Date & Time'}
+                                                </span>
+                                            ) : (
+                                                <span className="font-mono text-xs">{mapping.value}</span>
+                                            )}
+                                        </SelectValue>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {/* System Values */}
+                                        <SelectItem value="system:current_date">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs">📅 Current Date</span>
+                                            </div>
+                                        </SelectItem>
+                                        <SelectItem value="system:current_time">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs">🕐 Current Time</span>
+                                            </div>
+                                        </SelectItem>
+                                        <SelectItem value="system:current_datetime">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs">📅 Current Date & Time</span>
+                                            </div>
+                                        </SelectItem>
+                                        {variables.length > 0 && <hr className="my-1" />}
+
+                                        {/* Workflow Variables */}
+                                        {variables.map(v => (
+                                            <SelectItem key={v.key} value={v.alias || v.key}>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-mono text-xs">{v.alias || v.key}</span>
+                                                    {v.label && <span className="text-muted-foreground text-xs font-normal">({v.label})</span>}
+                                                </div>
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
                             <Button type="button" variant="ghost" size="icon" onClick={() => removeMapping(idx)}>
                                 <Trash2 className="w-4 h-4 text-muted-foreground" />
                             </Button>
@@ -118,6 +159,48 @@ export function ExternalSendBlockEditor({ workflowId, config, onChange }: Extern
                 <div className="p-2 border border-yellow-200 bg-yellow-50 text-yellow-800 text-xs rounded">
                     Please select a destination.
                 </div>
+            )}
+
+            {/* Execution Timing */}
+            {phase && onPhaseChange && (
+                <Card>
+                    <CardHeader className="pb-4">
+                        <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-primary" />
+                            <CardTitle className="text-sm">When to Run</CardTitle>
+                        </div>
+                        <CardDescription className="text-xs">
+                            Choose when this action should execute
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Select value={phase} onValueChange={onPhaseChange}>
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="onSectionSubmit">
+                                    <div className="flex flex-col">
+                                        <span className="font-medium">When page is submitted</span>
+                                        <span className="text-xs text-muted-foreground">Runs after user submits this page</span>
+                                    </div>
+                                </SelectItem>
+                                <SelectItem value="onRunComplete">
+                                    <div className="flex flex-col">
+                                        <span className="font-medium">When workflow completes</span>
+                                        <span className="text-xs text-muted-foreground">Runs at the end of the workflow</span>
+                                    </div>
+                                </SelectItem>
+                                <SelectItem value="onSectionEnter">
+                                    <div className="flex flex-col">
+                                        <span className="font-medium">When page loads</span>
+                                        <span className="text-xs text-muted-foreground">Runs before user sees this page</span>
+                                    </div>
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </CardContent>
+                </Card>
             )}
         </div>
     );

@@ -60,7 +60,7 @@ export default function IntakeFooter({
             >
               Powered by{' '}
               <a
-                href="https://vaultlogic.com"
+                href="https://ezbuildr.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:underline"
@@ -68,7 +68,7 @@ export default function IntakeFooter({
                   color: 'var(--brand-link, #3B82F6)',
                 }}
               >
-                VaultLogic
+                ezBuildr
               </a>
             </p>
           )}

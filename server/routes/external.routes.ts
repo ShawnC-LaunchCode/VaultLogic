@@ -1,11 +1,13 @@
 
 import { Router } from "express";
 import { db } from "../db";
-import { surveys, usageRecords, users } from "@shared/schema";
+import { surveys, usageRecords, users, workspaces } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { requireExternalAuth, ExternalAuthRequest } from "../lib/authz/externalAuth";
 import { TenantContext } from "../lib/tenancy/tenantContext";
+import { createLogger } from "../logger";
 
+const logger = createLogger({ module: 'external-routes' });
 const router = Router();
 
 // Apply middleware to all external routes
@@ -60,9 +62,18 @@ router.post("/workflows/:id/runs", async (req: ExternalAuthRequest, res) => {
         // In real impl, insert into 'survey_results' or 'workflow_runs'
         const runId = "run_" + Math.random().toString(36).substr(2, 9);
 
+        // Resolve organization ID from workspace
+        const workspace = await db.query.workspaces.findFirst({
+            where: eq(workspaces.id, workspaceId)
+        });
+
+        if (!workspace) {
+            return res.status(500).json({ error: "Workspace not found" });
+        }
+
         // Record Usage (Metering)
         await db.insert(usageRecords).values({
-            organizationId: "ed328704-586b-4b10-911d-2947118ae320", // TODO: Resolve Org from Workspace
+            organizationId: workspace.organizationId,
             metric: 'workflow_run',
             quantity: 1,
             workflowId: id,
@@ -76,7 +87,7 @@ router.post("/workflows/:id/runs", async (req: ExternalAuthRequest, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        logger.error({ err }, 'Error creating workflow run');
         res.status(500).json({ error: "Internal Error" });
     }
 });

@@ -27,20 +27,20 @@ interface LogicAddMenuProps {
 const LOGIC_TYPES = {
   easy: [
     {
-      type: "write" as const,
-      label: "Save Data",
-      icon: Save,
-      description: "Save conceptual row to DataVault",
-    },
-    {
       type: "read_table" as const,
       label: "Read from Table",
       icon: Database,
       description: "Query rows from DataVault",
     },
     {
+      type: "write" as const,
+      label: "Send Data to Table",
+      icon: Save,
+      description: "Save data to a DataVault table",
+    },
+    {
       type: "external_send" as const,
-      label: "Send Data",
+      label: "Send Data to API",
       icon: Send,
       description: "Send payload to external API",
     },
@@ -49,12 +49,6 @@ const LOGIC_TYPES = {
       label: "List Tools",
       icon: Sparkles,
       description: "Filter, sort and transform lists",
-    },
-    {
-      type: "branch" as const,
-      label: "Branch Logic",
-      icon: GitBranch,
-      description: "Show/hide pages based on answers",
     },
   ],
   advanced: [
@@ -107,10 +101,11 @@ export function LogicAddMenu({ workflowId, sectionId, nextOrder }: LogicAddMenuP
       // New Block Defaults
       if (type === 'write') {
         config = {
-          mode: 'create',
+          mode: 'upsert',
           dataSourceId: '',
           tableId: '',
-          columnMappings: []
+          columnMappings: [],
+          matchStrategy: undefined
         };
       } else if (type === 'read_table') {
         config = {
@@ -119,6 +114,7 @@ export function LogicAddMenu({ workflowId, sectionId, nextOrder }: LogicAddMenuP
           outputKey: 'list_data',
           filters: []
         };
+        phase = 'onSectionEnter';
       } else if (type === 'external_send') {
         config = {
           destinationId: '',

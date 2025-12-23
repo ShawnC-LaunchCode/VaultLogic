@@ -26,6 +26,49 @@ import { encrypt, decrypt } from '../utils/encryption';
 import { logger } from '../logger';
 
 /**
+ * TYPE SAFETY FIX: Valid connection types
+ */
+const VALID_CONNECTION_TYPES = ['api_key', 'bearer', 'oauth2_client_credentials', 'oauth2_3leg'] as const;
+
+/**
+ * TYPE SAFETY FIX: Validate connection type
+ */
+function validateConnectionType(type: string): void {
+  if (!VALID_CONNECTION_TYPES.includes(type as any)) {
+    throw new Error(
+      `Invalid connection type: "${type}". Must be one of: ${VALID_CONNECTION_TYPES.join(', ')}`
+    );
+  }
+}
+
+/**
+ * TYPE SAFETY FIX: Sanitize headers to prevent XSS and validate structure
+ */
+function sanitizeHeaders(headers: unknown): Record<string, string> {
+  if (!headers || typeof headers !== 'object' || Array.isArray(headers)) {
+    return {};
+  }
+
+  const sanitized: Record<string, string> = {};
+  for (const [key, value] of Object.entries(headers)) {
+    if (typeof key === 'string' && typeof value === 'string') {
+      // Only allow alphanumeric, dash, and underscore in header names (RFC 7230)
+      if (!/^[a-zA-Z0-9-_]+$/.test(key)) {
+        logger.warn({ headerKey: key }, 'Skipping invalid header name');
+        continue;
+      }
+      // Store as-is but validate no control characters
+      if (/[\x00-\x1F\x7F]/.test(value)) {
+        logger.warn({ headerKey: key }, 'Skipping header with control characters');
+        continue;
+      }
+      sanitized[key] = value;
+    }
+  }
+  return sanitized;
+}
+
+/**
  * List all connections for a project
  */
 export async function listConnections(projectId: string): Promise<Connection[]> {
@@ -35,26 +78,33 @@ export async function listConnections(projectId: string): Promise<Connection[]> 
     .where(eq(connections.projectId, projectId))
     .orderBy(connections.name);
 
-  return results.map((row: any) => ({
-    id: row.id,
-    tenantId: row.tenantId,
-    projectId: row.projectId,
-    name: row.name,
-    type: row.type as any,
-    baseUrl: row.baseUrl ?? undefined,
-    authConfig: (row.authConfig as Record<string, any>) || {},
-    secretRefs: (row.secretRefs as Record<string, string>) || {},
-    oauthState: row.oauthState as OAuth2State | undefined,
-    defaultHeaders: (row.defaultHeaders as Record<string, string>) || {},
-    timeoutMs: row.timeoutMs ?? 8000,
-    retries: row.retries ?? 2,
-    backoffMs: row.backoffMs ?? 250,
-    enabled: row.enabled,
-    lastTestedAt: row.lastTestedAt ?? undefined,
-    lastUsedAt: row.lastUsedAt ?? undefined,
-    createdAt: row.createdAt ?? new Date(),
-    updatedAt: row.updatedAt ?? new Date(),
-  }));
+  return results.map((row: any) => {
+    // TYPE SAFETY FIX: Validate connection type on read
+    if (!VALID_CONNECTION_TYPES.includes(row.type)) {
+      logger.warn({ connectionId: row.id, type: row.type }, 'Invalid connection type found in database');
+    }
+
+    return {
+      id: row.id,
+      tenantId: row.tenantId,
+      projectId: row.projectId,
+      name: row.name,
+      type: row.type,
+      baseUrl: row.baseUrl ?? undefined,
+      authConfig: (row.authConfig as Record<string, any>) || {},
+      secretRefs: (row.secretRefs as Record<string, string>) || {},
+      oauthState: row.oauthState as OAuth2State | undefined,
+      defaultHeaders: sanitizeHeaders(row.defaultHeaders),
+      timeoutMs: row.timeoutMs ?? 8000,
+      retries: row.retries ?? 2,
+      backoffMs: row.backoffMs ?? 250,
+      enabled: row.enabled,
+      lastTestedAt: row.lastTestedAt ?? undefined,
+      lastUsedAt: row.lastUsedAt ?? undefined,
+      createdAt: row.createdAt ?? new Date(),
+      updatedAt: row.updatedAt ?? new Date(),
+    };
+  });
 }
 
 /**
@@ -79,17 +129,23 @@ export async function getConnection(
   }
 
   const row = results[0];
+
+  // TYPE SAFETY FIX: Validate connection type on read
+  if (!VALID_CONNECTION_TYPES.includes(row.type)) {
+    logger.warn({ connectionId: row.id, type: row.type }, 'Invalid connection type found in database');
+  }
+
   return {
     id: row.id,
     tenantId: row.tenantId,
     projectId: row.projectId,
     name: row.name,
-    type: row.type as any,
+    type: row.type,
     baseUrl: row.baseUrl ?? undefined,
     authConfig: (row.authConfig as Record<string, any>) || {},
     secretRefs: (row.secretRefs as Record<string, string>) || {},
     oauthState: row.oauthState as OAuth2State | undefined,
-    defaultHeaders: (row.defaultHeaders as Record<string, string>) || {},
+    defaultHeaders: sanitizeHeaders(row.defaultHeaders),
     timeoutMs: row.timeoutMs ?? 8000,
     retries: row.retries ?? 2,
     backoffMs: row.backoffMs ?? 250,
@@ -123,17 +179,23 @@ export async function getConnectionByName(
   }
 
   const row = results[0];
+
+  // TYPE SAFETY FIX: Validate connection type on read
+  if (!VALID_CONNECTION_TYPES.includes(row.type)) {
+    logger.warn({ connectionId: row.id, type: row.type }, 'Invalid connection type found in database');
+  }
+
   return {
     id: row.id,
     tenantId: row.tenantId,
     projectId: row.projectId,
     name: row.name,
-    type: row.type as any,
+    type: row.type,
     baseUrl: row.baseUrl ?? undefined,
     authConfig: (row.authConfig as Record<string, any>) || {},
     secretRefs: (row.secretRefs as Record<string, string>) || {},
     oauthState: row.oauthState as OAuth2State | undefined,
-    defaultHeaders: (row.defaultHeaders as Record<string, string>) || {},
+    defaultHeaders: sanitizeHeaders(row.defaultHeaders),
     timeoutMs: row.timeoutMs ?? 8000,
     retries: row.retries ?? 2,
     backoffMs: row.backoffMs ?? 250,
@@ -151,6 +213,9 @@ export async function getConnectionByName(
 export async function createConnection(
   input: CreateConnectionInput
 ): Promise<Connection> {
+  // TYPE SAFETY FIX: Validate connection type before creating
+  validateConnectionType(input.type);
+
   // Check for name uniqueness
   const existing = await getConnectionByName(input.projectId, input.name);
   if (existing) {
@@ -170,6 +235,9 @@ export async function createConnection(
 
   const tenantId = project[0].tenantId;
 
+  // TYPE SAFETY FIX: Sanitize headers before storing
+  const sanitizedHeaders = sanitizeHeaders(input.defaultHeaders);
+
   // Insert connection
   const result = await db
     .insert(connections)
@@ -179,9 +247,9 @@ export async function createConnection(
       name: input.name,
       type: input.type,
       baseUrl: input.baseUrl,
-      authConfig: input.authConfig as any,
-      secretRefs: input.secretRefs as any,
-      defaultHeaders: input.defaultHeaders as any,
+      authConfig: input.authConfig ?? {},
+      secretRefs: input.secretRefs ?? {},
+      defaultHeaders: sanitizedHeaders,
       timeoutMs: input.timeoutMs ?? 8000,
       retries: input.retries ?? 2,
       backoffMs: input.backoffMs ?? 250,
@@ -214,15 +282,18 @@ export async function updateConnection(
     }
   }
 
+  // TYPE SAFETY FIX: Sanitize headers before updating
+  const sanitizedHeaders = input.defaultHeaders ? sanitizeHeaders(input.defaultHeaders) : undefined;
+
   // Update connection
   await db
     .update(connections)
     .set({
       name: input.name,
       baseUrl: input.baseUrl,
-      authConfig: input.authConfig as any,
-      secretRefs: input.secretRefs as any,
-      defaultHeaders: input.defaultHeaders as any,
+      authConfig: input.authConfig ?? undefined,
+      secretRefs: input.secretRefs ?? undefined,
+      defaultHeaders: sanitizedHeaders,
       timeoutMs: input.timeoutMs,
       retries: input.retries,
       backoffMs: input.backoffMs,

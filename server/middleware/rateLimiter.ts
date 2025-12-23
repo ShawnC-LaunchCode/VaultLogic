@@ -11,9 +11,9 @@ import rateLimit from 'express-rate-limit';
  */
 
 // Get configuration from environment or use defaults
-const windowMs = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'); // 15 minutes
-const maxRequests = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100');
-const strictMax = parseInt(process.env.RATE_LIMIT_STRICT_MAX || '10');
+const windowMs = parseInt(process.env.RATE_LIMIT_WINDOW_MS ?? '900000'); // 15 minutes
+const maxRequests = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS ?? '100');
+const strictMax = parseInt(process.env.RATE_LIMIT_STRICT_MAX ?? '10');
 
 /**
  * General API rate limit (100 requests per 15 minutes)
