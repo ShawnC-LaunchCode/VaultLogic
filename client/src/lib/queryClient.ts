@@ -118,22 +118,31 @@ export async function apiRequest(
   throw lastError || new Error('Request failed after retries');
 }
 
-type UnauthorizedBehavior = "returnNull" | "throw";
+import { fetchAPI } from "./vault-api";
+
+// ... existing imports ...
+
+// ... existing ApiError ...
+
+// ... existing apiRequest (maybe leave as is or update, request isn't used much) ...
+
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
     async ({ queryKey }) => {
-      const res = await fetch(queryKey.join("/") as string, {
-        credentials: "include",
-      });
+      try {
+        const endpoint = queryKey.join("/") as string;
+        // Check if endpoint starts with /api (some keys might not)
+        const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
 
-      if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-        return null;
+        return await fetchAPI<T>(path);
+      } catch (error: any) {
+        if (unauthorizedBehavior === "returnNull" && (error.message.includes('401') || error.message.includes('Unauthorized'))) {
+          return null;
+        }
+        throw error;
       }
-
-      await throwIfResNotOk(res);
-      return await res.json();
     };
 
 export const queryClient = new QueryClient({

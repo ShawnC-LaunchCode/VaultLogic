@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { verifyToken, extractTokenFromHeader, looksLikeJwt, type JWTPayload } from '../services/auth';
 import { createLogger } from '../logger';
 import { userRepository } from '../repositories';
+import type { AppUser } from '../types';
 
 const logger = createLogger({ module: 'auth-middleware' });
 
@@ -165,14 +166,30 @@ export async function hybridAuth(req: Request, res: Response, next: NextFunction
       logger.debug({ path: req.path }, 'Non-JWT token provided, skipping JWT auth');
     }
 
-    // Fallback to session-based authentication (Google OAuth)
-    const sessionUser = req.session?.user || req.user;
+    // Fallback to session-based authentication
+    // Supports both new AppUser structure AND legacy Google structure
+    const sessionUser = req.session?.user as any; // Cast to any to handle both types temporarily
+
+    // Check for standard AppUser (new standard)
+    if (sessionUser?.id) {
+      const authReq = req as AuthRequest;
+      authReq.userId = sessionUser.id;
+      authReq.userEmail = sessionUser.email;
+      authReq.tenantId = sessionUser.tenantId;
+      authReq.userRole = sessionUser.tenantRole;
+
+      logger.debug({ userId: sessionUser.id, path: req.path }, 'Session authentication successful (Standard AppUser)');
+      next();
+      return;
+    }
+
+    // Check for Legacy Google structure (claims.sub)
     if (sessionUser?.claims?.sub) {
       const authReq = req as AuthRequest;
       authReq.userId = sessionUser.claims.sub;
       authReq.userEmail = sessionUser.claims.email;
 
-      // Fetch user from database to get tenant info
+      // Fetch user from database to get tenant info (Legacy behavior)
       try {
         const user = await userRepository.findById(sessionUser.claims.sub);
         if (user) {
@@ -183,7 +200,7 @@ export async function hybridAuth(req: Request, res: Response, next: NextFunction
         logger.warn({ error, userId: sessionUser.claims.sub }, 'Failed to fetch user details');
       }
 
-      logger.debug({ userId: sessionUser.claims.sub, path: req.path }, 'Session authentication successful');
+      logger.debug({ userId: sessionUser.claims.sub, path: req.path }, 'Session authentication successful (Legacy Claims)');
       next();
       return;
     }
@@ -244,7 +261,70 @@ export async function optionalHybridAuth(req: Request, res: Response, next: Next
     }
 
     // Fallback to session-based authentication
-    const sessionUser = req.session?.user || req.user;
+    let sessionUser = req.session?.user as any;
+
+    // Phase 2: Session Rehydration (If session is missing but Refresh Token exists)
+    if (!sessionUser) {
+      // Check for refresh token cookie (HttpOnly)
+      const cookies = req.headers.cookie ? require('cookie').parse(req.headers.cookie) : {};
+      const refreshToken = cookies.refresh_token;
+
+      if (refreshToken) {
+        try {
+          // Dynamic imports to avoid circular dependencies
+          const { authSecurity } = await import('../services/auth-security');
+          const { userRepository } = await import('../repositories');
+
+          const userId = await authSecurity.validateRefreshToken(refreshToken);
+          if (userId) {
+            const user = await userRepository.findById(userId);
+            if (user) {
+              // Rehydrate session
+              const appUser: AppUser = {
+                id: user.id,
+                email: user.email,
+                firstName: user.firstName || undefined,
+                lastName: user.lastName || undefined,
+                fullName: user.fullName || `${user.firstName} ${user.lastName}`,
+                profileImageUrl: user.profileImageUrl || undefined,
+                tenantId: user.tenantId || undefined,
+                tenantRole: (user.tenantRole as any) || undefined,
+                role: (user.role as any) || undefined,
+                emailVerified: user.emailVerified,
+                authProvider: 'local'
+              };
+
+              // Modifying request session directly
+              if (req.session) {
+                req.session.user = appUser;
+                // Note: We don't save to store here to avoid async blocking, 
+                // just in-memory for this request. 
+                // If you want it persistent, you'd need explicit save, but standard flow usually regenerates on login.
+                // This is "Transient Session from Token"
+              }
+              sessionUser = appUser;
+              logger.debug({ userId }, 'Session rehydrated from refresh token');
+            }
+          }
+        } catch (err) {
+          logger.warn({ err }, 'Failed to rehydrate session from refresh token');
+        }
+      }
+    }
+
+    // Standard AppUser
+    if (sessionUser?.id) {
+      const authReq = req as AuthRequest;
+      authReq.userId = sessionUser.id;
+      authReq.userEmail = sessionUser.email;
+      authReq.tenantId = sessionUser.tenantId;
+      authReq.userRole = sessionUser.tenantRole;
+
+      next();
+      return;
+    }
+
+    // Legacy Google Claims
     if (sessionUser?.claims?.sub) {
       const authReq = req as AuthRequest;
       authReq.userId = sessionUser.claims.sub;
@@ -285,8 +365,8 @@ export function getAuthUserId(req: Request): string | undefined {
   }
 
   // Fallback to session authentication
-  const sessionUser = req.session?.user || req.user;
-  return sessionUser?.claims?.sub;
+  const sessionUser = req.session?.user as any;
+  return sessionUser?.id || sessionUser?.claims?.sub;
 }
 
 /**

@@ -49,6 +49,11 @@ import PricingPage from "@/pages/billing/PricingPage";
 import PublicRunner from "@/pages/public/PublicRunner";
 import RunCompletionView from "@/pages/RunCompletionView";
 import OAuthApps from "@/pages/developer/OAuthApps";
+import LoginPage from "@/pages/auth/LoginPage";
+import RegisterPage from "@/pages/auth/RegisterPage";
+import ForgotPasswordPage from "@/pages/auth/ForgotPasswordPage";
+import ResetPasswordPage from "@/pages/auth/ResetPasswordPage";
+import VerifyEmailPage from "@/pages/auth/VerifyEmailPage";
 import PortalLogin from "@/pages/portal/PortalLogin";
 import PortalMagicLink from "@/pages/portal/PortalMagicLink";
 import PortalDashboard from "@/pages/portal/PortalDashboard";
@@ -92,6 +97,13 @@ function Router() {
         {isLoading || !isAuthenticated ? (
           <>
             <Route path="/" component={Landing} />
+            {/* Auth Routes - Public */}
+            <Route path="/auth/login" component={LoginPage} />
+            <Route path="/auth/register" component={RegisterPage} />
+            <Route path="/auth/forgot-password" component={ForgotPasswordPage} />
+            <Route path="/auth/reset-password" component={ResetPasswordPage} />
+            <Route path="/auth/verify-email" component={VerifyEmailPage} />
+
             {/* Redirect all other routes to landing for unauthenticated users */}
             <Route component={Landing} />
           </>

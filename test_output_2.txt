@@ -1,84 +1,111 @@
+npm warn Unknown project config "puppeteer_skip_download". This will stop working in the next major version of npm.
 
-> vault-logic@1.0.0 test
-> vitest run --coverage tests/unit/ScriptEngine.test.ts tests/unit/LifecycleHookService.test.ts tests/unit/HelperLibrary.test.ts
+> ezbuildr@1.0.0 test
+> vitest run --coverage tests/integration/auth-enterprise.test.ts
 
 
-[1m[46m RUN [49m[22m [36mv4.0.5 [39m[90mC:/Users/scoot/poll/VaultLogic[39m
+[1m[46m RUN [49m[22m [36mv4.0.15 [39m[90mC:/Users/scoot/poll/VaultLogic[39m
       [2mCoverage enabled with [22m[33mv8[39m
 
-[90mstdout[2m | tests/unit/HelperLibrary.test.ts
-[22m[39m[dotenv@17.2.3] injecting env (13) from .env -- tip: ΓÜÖ∩╕Å  suppress all logs with { quiet: true }
+[90mstdout[2m | tests/integration/auth-enterprise.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (15) from .env -- tip: ΓÜÖ∩╕Å  suppress all logs with { quiet: true }
 
-[90mstdout[2m | tests/unit/ScriptEngine.test.ts
-[22m[39m[dotenv@17.2.3] injecting env (13) from .env -- tip: ΓÜÖ∩╕Å  enable debug logging with { debug: true }
+[90mstdout[2m | tests/integration/auth-enterprise.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ≡ƒ¢á∩╕Å  run anywhere with `dotenvx run -- yourcommand`
 
-[90mstdout[2m | tests/unit/LifecycleHookService.test.ts
-[22m[39m[dotenv@17.2.3] injecting env (13) from .env -- tip: ΓÜÖ∩╕Å  load multiple .env files with { path: ['.env.local', '.env'] }
-
-[90mstdout[2m | tests/unit/HelperLibrary.test.ts
+[90mstdout[2m | tests/integration/auth-enterprise.test.ts
 [22m[39m≡ƒº¬ Setting up test environment...
 
-[90mstdout[2m | tests/unit/HelperLibrary.test.ts
+[90mstdout[2m | tests/integration/auth-enterprise.test.ts
 [22m[39mΓ£à Database initialized for tests
+≡ƒöä Running test migrations...
 
-[90mstdout[2m | tests/unit/HelperLibrary.test.ts
+{"level":30,"time":1766501457112,"env":"test","module":"file-routes","outputsDir":"C:\\Users\\scoot\\poll\\VaultLogic\\server\\files\\outputs","msg":"Secure file routes registered"}
+{"level":30,"time":1766501457119,"env":"test","msg":"Real-time collaboration server initialized"}
+[90mstdout[2m | tests/integration/auth-enterprise.test.ts[2m > [22m[2mEnterprise Auth Integration Tests
+[22m[39m[Routes] E-Signature routes registered at /api/esign
+
+{"level":30,"time":1766501457113,"env":"test","module":"ai-routes","msg":"AI workflow generation routes registered"}
+{"level":30,"time":1766501457115,"env":"test","module":"documents-routes","msg":"Document routes registered"}
+{"level":30,"time":1766501457118,"env":"test","module":"collab-server","msg":"Initializing WebSocket collaboration server"}
+{"level":40,"time":1766501457119,"env":"test","module":"collab-persistence","msg":"REDIS_URL not configured, multi-instance collab will not work"}
+{"level":30,"time":1766501457119,"env":"test","module":"collab-server","msg":"WebSocket collaboration server attached to main HTTP server path /collab"}
+{"level":30,"time":1766501457119,"env":"test","module":"collab-server","msg":"WebSocket collaboration server initialized"}
+{"level":30,"time":1766501457333,"env":"test","module":"user-credentials-repository","userId":"cercxc1fao7O4jmwgWbgM","msg":"User credentials created"}
+{"level":30,"time":1766501457391,"env":"test","module":"auth-security","userId":"cercxc1fao7O4jmwgWbgM","msg":"Verification email sent"}
+{"level":30,"time":1766501457391,"env":"test","module":"auth-routes","userId":"cercxc1fao7O4jmwgWbgM","email":"auth-test-RjL0-WSEfyrfG9VvNnox2@example.com","msg":"Verification token generated (sent to email)"}
+{"level":30,"time":1766501457443,"env":"test","module":"auth-routes","userId":"cercxc1fao7O4jmwgWbgM","email":"auth-test-RjL0-WSEfyrfG9VvNnox2@example.com","msg":"User registered successfully"}
+{"level":30,"time":1766501457788,"env":"test","module":"auth-routes","userId":"cercxc1fao7O4jmwgWbgM","email":"auth-test-RjL0-WSEfyrfG9VvNnox2@example.com","msg":"User logged in successfully"}
+{"level":30,"time":1766501459084,"env":"test","module":"auth-routes","userId":"cercxc1fao7O4jmwgWbgM","email":"auth-test-RjL0-WSEfyrfG9VvNnox2@example.com","msg":"User logged in successfully"}
+{"level":30,"time":1766501459430,"env":"test","module":"auth-security","email":"auth-test-RjL0-WSEfyrfG9VvNnox2@example.com","msg":"Password reset email sent"}
+{"level":30,"time":1766501459430,"env":"test","module":"auth-routes","email":"auth-test-RjL0-WSEfyrfG9VvNnox2@example.com","msg":"Reset token generated (STUB)"}
+{"level":30,"time":1766501459579,"env":"test","module":"user-credentials-repository","userId":"cercxc1fao7O4jmwgWbgM","msg":"User password updated"}
+{"level":30,"time":1766501460020,"env":"test","module":"auth-routes","userId":"cercxc1fao7O4jmwgWbgM","email":"auth-test-RjL0-WSEfyrfG9VvNnox2@example.com","msg":"User logged in successfully"}
+{"level":30,"time":1766501460214,"env":"test","module":"auth-routes","userId":"cercxc1fao7O4jmwgWbgM","email":"auth-test-RjL0-WSEfyrfG9VvNnox2@example.com","msg":"User logged in successfully"}
+{"level":30,"time":1766501460217,"env":"test","module":"auth","msg":"User logged out"}
+[90mstdout[2m | tests/integration/auth-enterprise.test.ts
 [22m[39m≡ƒº╣ Cleaning up test environment...
 
- [32mΓ£ô[39m tests/unit/HelperLibrary.test.ts [2m([22m[2m60 tests[22m[2m)[22m[32m 39[2mms[22m[39m
-[90mstdout[2m | tests/unit/ScriptEngine.test.ts
-[22m[39m≡ƒº¬ Setting up test environment...
+ [31mΓ¥»[39m tests/integration/auth-enterprise.test.ts [2m([22m[2m7 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 3943[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m 1. Should register a new user and trigger verification email [33m 331[2mms[22m[39m
+       [32mΓ£ô[39m 2. Should verify email with token[32m 147[2mms[22m[39m
+       [32mΓ£ô[39m 3. Should login and receive access token + refresh cookie[32m 191[2mms[22m[39m
+[31m       [31m├ù[31m 4. Should refresh access token[39m[33m 1497[2mms[22m[39m
+       [32mΓ£ô[39m 5. Should initiate password reset[32m 145[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m 6. Should reset password with token [33m 590[2mms[22m[39m
+[31m       [31m├ù[31m 7. Should logout and invalidate refresh token[39m[33m 402[2mms[22m[39m
+Failed to parse file:///C:/Users/scoot/poll/VaultLogic/server/queues/DocumentGenerationWorker.ts. Excluding it from coverage.
+ Error [RollupError]: Expected ',', got ':'
+    at getRollupError (file:///C:/Users/scoot/poll/VaultLogic/node_modules/rollup/dist/es/shared/parseAst.js:401:41)
+    at convertProgram (file:///C:/Users/scoot/poll/VaultLogic/node_modules/rollup/dist/es/shared/parseAst.js:1098:26)
+    at parseAstAsync (file:///C:/Users/scoot/poll/VaultLogic/node_modules/rollup/dist/es/shared/parseAst.js:2084:106)
+    at V8CoverageProvider.remapCoverage (file:///C:/Users/scoot/poll/VaultLogic/node_modules/@vitest/coverage-v8/dist/provider.js:135:10)
+    at file:///C:/Users/scoot/poll/VaultLogic/node_modules/@vitest/coverage-v8/dist/provider.js:121:23
+    at async Promise.all (index 5)
+    at V8CoverageProvider.getCoverageMapForUncoveredFiles (file:///C:/Users/scoot/poll/VaultLogic/node_modules/@vitest/coverage-v8/dist/provider.js:111:4)
+    at V8CoverageProvider.generateCoverage (file:///C:/Users/scoot/poll/VaultLogic/node_modules/@vitest/coverage-v8/dist/provider.js:59:29)
+    at file:///C:/Users/scoot/poll/VaultLogic/node_modules/vitest/dist/chunks/cli-api.C7sYjHmQ.js:12526:23
+    at file:///C:/Users/scoot/poll/VaultLogic/node_modules/vitest/dist/chunks/cli-api.C7sYjHmQ.js:12539:11 {
+  code: 'PARSE_ERROR',
+  pos: 1724
+}
 
-[90mstdout[2m | tests/unit/ScriptEngine.test.ts
-[22m[39mΓ£à Database initialized for tests
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ» Failed Tests 2 ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»
 
-[90mstdout[2m | tests/unit/ScriptEngine.test.ts
-[22m[39m≡ƒº╣ Cleaning up test environment...
+ FAIL  tests/integration/auth-enterprise.test.ts > Enterprise Auth Integration Tests > Full Auth Lifecycle > 4. Should refresh access token
+AssertionError: expected 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ΓÇª' not to be 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ΓÇª' // Object.is equality
+ Γ¥» tests/integration/auth-enterprise.test.ts:117:40
+    115|             expect(res.status).toBe(200);
+    116|             expect(res.body.token).toBeDefined();
+    117|             expect(res.body.token).not.toBe(loginRes.body.token); // SΓÇª
+       |                                        ^
+    118|         });
+    119| 
 
-[90mstdout[2m | tests/unit/LifecycleHookService.test.ts
-[22m[39m≡ƒº¬ Setting up test environment...
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/2]ΓÄ»
 
-[90mstdout[2m | tests/unit/LifecycleHookService.test.ts
-[22m[39mΓ£à Database initialized for tests
+ FAIL  tests/integration/auth-enterprise.test.ts > Enterprise Auth Integration Tests > Full Auth Lifecycle > 7. Should logout and invalidate refresh token
+AssertionError: expected 200 to be 403 // Object.is equality
 
-{"level":40,"time":1765389179481,"env":"test","hookId":"hook-1","hookName":"Hook 1","error":"Test error","msg":"LifecycleHookService: Hook execution failed"}
- [31mΓ¥»[39m tests/unit/ScriptEngine.test.ts [2m([22m[2m26 tests[22m[2m | [22m[31m1 failed[39m[2m | [22m[33m4 skipped[39m[2m)[22m[32m 17[2mms[22m[39m
-         [32mΓ£ô[39m should execute simple JavaScript code[32m 3[2mms[22m[39m
-         [32mΓ£ô[39m should whitelist input keys correctly[32m 0[2mms[22m[39m
-         [32mΓ£ô[39m should inject helpers into execution context[32m 0[2mms[22m[39m
-         [32mΓ£ô[39m should inject context into execution[32m 0[2mms[22m[39m
-         [32mΓ£ô[39m should capture console logs when enabled[32m 0[2mms[22m[39m
-         [32mΓ£ô[39m should handle errors gracefully[32m 0[2mms[22m[39m
-         [32mΓ£ô[39m should enforce timeout[32m 0[2mms[22m[39m
-         [32mΓ£ô[39m should handle missing emit() call[32m 0[2mms[22m[39m
-         [32mΓ£ô[39m should use custom helpers if provided[32m 0[2mms[22m[39m
-         [32mΓ£ô[39m should measure execution duration[32m 0[2mms[22m[39m
-         [32mΓ£ô[39m should execute simple Python code[32m 0[2mms[22m[39m
-         [32mΓ£ô[39m should whitelist input keys in Python[32m 0[2mms[22m[39m
-         [32mΓ£ô[39m should handle Python errors gracefully[32m 0[2mms[22m[39m
-         [2m[90mΓåô[39m[22m should enforce timeout for Python
-         [32mΓ£ô[39m should handle missing emit() in Python[32m 0[2mms[22m[39m
-       [32mΓ£ô[39m should validate JavaScript syntax[32m 0[2mms[22m[39m
-[31m       [31m├ù[31m should reject invalid JavaScript syntax[39m[32m 6[2mms[22m[39m
-       [32mΓ£ô[39m should reject code exceeding size limit[32m 0[2mms[22m[39m
-       [32mΓ£ô[39m should reject empty code[32m 0[2mms[22m[39m
-       [32mΓ£ô[39m should validate Python requires emit()[32m 0[2mms[22m[39m
-       [32mΓ£ô[39m should accept Python code with emit()[32m 0[2mms[22m[39m
-       [2m[90mΓåô[39m[22m should test execute with sample data
-       [2m[90mΓåô[39m[22m should capture console logs in test mode
-       [2m[90mΓåô[39m[22m should use test context
-       [32mΓ£ô[39m should handle unexpected errors gracefully[32m 0[2mms[22m[39m
-       [32mΓ£ô[39m should handle malformed output gracefully[32m 0[2mms[22m[39m
-[90mstdout[2m | tests/unit/LifecycleHookService.test.ts
-[22m[39m≡ƒº╣ Cleaning up test environment...
+- Expected
++ Received
 
-{"level":50,"time":1765389179484,"env":"test","error":{},"workflowId":"workflow-1","runId":"run-1","phase":"beforePage","msg":"LifecycleHookService: Failed to execute hooks for phase"}
-{"level":30,"time":1765389179485,"env":"test","hookId":"hook-1","workflowId":"workflow-1","phase":"beforePage","msg":"LifecycleHookService: Created lifecycle hook"}
-{"level":30,"time":1765389179487,"env":"test","hookId":"hook-1","workflowId":"workflow-1","msg":"LifecycleHookService: Updated lifecycle hook"}
-{"level":30,"time":1765389179488,"env":"test","hookId":"hook-1","workflowId":"workflow-1","msg":"LifecycleHookService: Deleted lifecycle hook"}
- [32mΓ£ô[39m tests/unit/LifecycleHookService.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+- 403
++ 200
 
-[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m2 passed[39m[22m[90m (3)[39m
-[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m98 passed[39m[22m[2m | [22m[33m4 skipped[39m[90m (103)[39m
-[2m   Start at [22m 11:52:57
-[2m   Duration [22m 5.94s[2m (transform 606ms, setup 1.48s, collect 873ms, tests 71ms, environment 1ms, prepare 91ms)[22m
+ Γ¥» tests/integration/auth-enterprise.test.ts:175:39
+    173|                 .set('Cookie', cookies);
+    174| 
+    175|             expect(refreshRes.status).toBe(403); // Or 401
+       |                                       ^
+    176|         });
+    177|     });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[2/2]ΓÄ»
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m5 passed[39m[22m[90m (7)[39m
+[2m   Start at [22m 08:50:50
+[2m   Duration [22m 15.25s[2m (transform 2.60s, setup 90ms, import 5.78s, tests 3.94s, environment 0ms)[22m
 

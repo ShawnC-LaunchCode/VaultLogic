@@ -8,6 +8,7 @@ import { userRepository } from "./repositories";
 import { createLogger } from "./logger";
 import { templateSharingService } from "./services/TemplateSharingService";
 import { createToken } from "./services/auth";
+import type { AppUser } from "./types";
 
 const logger = createLogger({ module: 'auth' });
 
@@ -90,18 +91,7 @@ export function getSession() {
   });
 }
 
-function updateUserSession(user: any, payload: TokenPayload) {
-  user.claims = {
-    sub: payload.sub,
-    email: payload.email,
-    name: payload.name,
-    picture: payload.picture,
-    given_name: payload.given_name,
-    family_name: payload.family_name,
-    exp: payload.exp,
-  };
-  user.expires_at = payload.exp;
-}
+// updateUserSession removed as we build the user object directly
 
 async function upsertUser(payload: TokenPayload) {
   try {
@@ -109,6 +99,7 @@ async function upsertUser(payload: TokenPayload) {
     const { getDb } = await import('./db');
     const { tenants } = await import('@shared/schema');
     const db = getDb();
+    if (!db) throw new Error("Database not initialized");
     const [defaultTenant] = await db.select().from(tenants).limit(1);
 
     if (!defaultTenant) {
@@ -125,6 +116,8 @@ async function upsertUser(payload: TokenPayload) {
       defaultMode: 'easy' as const,
       tenantId: defaultTenant.id, // Assign default tenant to new users
       tenantRole: 'viewer' as const, // Default role for new users
+      emailVerified: true, // Google users are verified
+      lastPasswordChange: null
     };
     logger.debug({ userId: userData.id, email: userData.email, tenantId: defaultTenant.id }, 'Upserting user');
     await userRepository.upsert(userData);
@@ -312,16 +305,25 @@ export async function setupAuth(app: Express) {
         throw new Error('Failed to retrieve user data');
       }
 
-      // Create user session data with both OAuth claims and database fields
-      const user: any = {
+      // Create user session data using standard AppUser interface
+      const user: AppUser = {
         id: dbUser.id,
         email: dbUser.email,
-        tenantId: dbUser.tenantId,
-        tenantRole: dbUser.tenantRole,
-        role: dbUser.role,
-        defaultMode: dbUser.defaultMode,
+        firstName: dbUser.firstName || payload.given_name || undefined,
+        lastName: dbUser.lastName || payload.family_name || undefined,
+        fullName: dbUser.fullName || payload.name || undefined,
+        profileImageUrl: dbUser.profileImageUrl || payload.picture || undefined,
+
+        tenantId: dbUser.tenantId || undefined,
+        tenantRole: (dbUser.tenantRole as any) || undefined,
+        role: (dbUser.role as any) || undefined,
+
+        emailVerified: true,
+        authProvider: 'google',
       };
-      updateUserSession(user, payload);
+
+      // Legacy support: Add claims for strict backwards compatibility if needed, 
+      // but try to move away from it. Middleware now supports both.
 
       // Accept any pending template shares for this user's email
       try {
@@ -339,6 +341,8 @@ export async function setupAuth(app: Express) {
           role: 'creator' as const, // Default role
           createdAt: new Date(),
           updatedAt: new Date(),
+          emailVerified: true,
+          lastPasswordChange: null
         };
         await templateSharingService.acceptPendingOnLogin(userForSharing);
         logger.debug({ email: payload.email }, 'Accepted pending template shares');
@@ -355,7 +359,7 @@ export async function setupAuth(app: Express) {
         }
 
         // Set up the session with new session ID
-        req.user = user;
+        req.user = user as any; // Cast for express type compatibility
         req.session.user = user;
 
         // Save session before responding to avoid race condition
@@ -443,28 +447,11 @@ export async function setupAuth(app: Express) {
     }
   });
 
-  // Logout route
-  app.post("/api/auth/logout", (req, res) => {
-    const user = req.session?.user;
-    req.session.destroy((err) => {
-      if (err) {
-        logger.error({ err }, 'Session destruction failed');
-        return res.status(500).json({ message: "Logout failed" });
-      }
-      logger.info({ email: user?.claims?.email }, 'User logged out');
-      res.clearCookie('survey-session'); // Clear the session cookie
-      res.json({ message: "Logout successful" });
-    });
-  });
+
 }
 
-export interface AppUser extends Express.User {
-  id: string;
-  email: string;
-  tenantId?: string;
-  tenantRole?: string | null;
-  expires_at?: number;
-}
+// Local AppUser removed, using shared one
+// updateUserSession removed, no longer needed
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = (req.session?.user || req.user) as AppUser | undefined;

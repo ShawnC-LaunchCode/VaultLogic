@@ -11,6 +11,8 @@ import {
 import { hybridAuth, optionalHybridAuth, type AuthRequest } from "../middleware/auth";
 import { getCsrfTokenHandler } from "../middleware/csrf";
 import { nanoid } from "nanoid";
+import { authSecurity } from "../services/auth-security";
+import { serialize } from "cookie";
 
 const logger = createLogger({ module: 'auth-routes' });
 
@@ -86,22 +88,73 @@ export function registerAuthRoutes(app: Express): void {
       const passwordHash = await hashPassword(password);
       await userCredentialsRepository.createCredentials(userId, passwordHash);
 
-      // Generate JWT token
+      // Enterprise: Generate Email Verification Token
+      // We pass email to the service so it can send the email
+      const verificationToken = await authSecurity.generateEmailVerificationToken(userId, email);
+      logger.info({ userId, email }, `Verification token generated (sent to email)`);
+
+      // Generate JWT token (Access Token)
       const token = createToken(user);
+
+      // Enterprise: Generate Refresh Token
+      const refreshToken = await authSecurity.createRefreshToken(userId, {
+        ip: req.ip,
+        userAgent: req.headers['user-agent']
+      });
+
+      // Set Refresh Token Cookie
+      res.setHeader('Set-Cookie', serialize('refresh_token', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        path: '/api/auth',
+        maxAge: 60 * 60 * 24 * 30 // 30 days
+      }));
 
       logger.info({ userId: user.id, email: user.email }, 'User registered successfully');
 
-      res.status(201).json({
-        message: 'Registration successful',
-        token,
-        user: {
+      // Initialize session for compatibility with legacy auth
+      req.session.regenerate(async (err) => {
+        if (err) {
+          logger.error({ err }, 'Session regeneration failed during register');
+          return res.status(500).json({ message: 'Session initialization failed' });
+        }
+
+        req.session.user = {
           id: user.id,
           email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          tenantId: user.tenantId,
-          role: user.tenantRole,
-        },
+          firstName: user.firstName || undefined,
+          lastName: user.lastName || undefined,
+          fullName: user.fullName || `${user.firstName} ${user.lastName}` || undefined,
+          profileImageUrl: user.profileImageUrl || undefined,
+
+          tenantId: user.tenantId || undefined,
+          tenantRole: (user.tenantRole as any) || undefined,
+          role: (user.role as any) || undefined,
+
+          emailVerified: user.emailVerified,
+          authProvider: 'local',
+        };
+
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            logger.error({ err: saveErr }, 'Session save failed during register');
+            return res.status(500).json({ message: 'Session save failed' });
+          }
+          res.status(201).json({
+            message: 'Registration successful. Please verify your email.',
+            token,
+            user: {
+              id: user.id,
+              email: user.email,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              tenantId: user.tenantId,
+              role: user.tenantRole,
+              emailVerified: user.emailVerified
+            },
+          });
+        });
       });
     } catch (error) {
       logger.error({ error }, 'Registration failed');
@@ -165,22 +218,68 @@ export function registerAuthRoutes(app: Express): void {
         });
       }
 
-      // Generate JWT token
+      // Generate JWT token (Access Token)
       const token = createToken(user);
+
+      // Enterprise: Generate Refresh Token
+      const refreshToken = await authSecurity.createRefreshToken(user.id, {
+        ip: req.ip,
+        userAgent: req.headers['user-agent']
+      });
+
+      // Set Refresh Token Cookie
+      res.setHeader('Set-Cookie', serialize('refresh_token', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        path: '/api/auth',
+        maxAge: 60 * 60 * 24 * 30 // 30 days
+      }));
 
       logger.info({ userId: user.id, email: user.email }, 'User logged in successfully');
 
-      res.json({
-        message: 'Login successful',
-        token,
-        user: {
+      // Initialize session for compatibility with legacy auth
+      req.session.regenerate(async (err) => {
+        if (err) {
+          logger.error({ err }, 'Session regeneration failed during login');
+          return res.status(500).json({ message: 'Session initialization failed' });
+        }
+
+        req.session.user = {
           id: user.id,
           email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          tenantId: user.tenantId,
-          role: user.tenantRole,
-        },
+          firstName: user.firstName || undefined,
+          lastName: user.lastName || undefined,
+          fullName: user.fullName || `${user.firstName} ${user.lastName}` || undefined,
+          profileImageUrl: user.profileImageUrl || undefined,
+
+          tenantId: user.tenantId || undefined,
+          tenantRole: (user.tenantRole as any) || undefined,
+          role: (user.role as any) || undefined,
+
+          emailVerified: user.emailVerified,
+          authProvider: 'local',
+        };
+
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            logger.error({ err: saveErr }, 'Session save failed during login');
+            return res.status(500).json({ message: 'Session save failed' });
+          }
+          res.json({
+            message: 'Login successful',
+            token,
+            user: {
+              id: user.id,
+              email: user.email,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              tenantId: user.tenantId,
+              role: user.tenantRole,
+              emailVerified: user.emailVerified
+            },
+          });
+        });
       });
     } catch (error) {
       logger.error({ error }, 'Login failed');
@@ -188,6 +287,151 @@ export function registerAuthRoutes(app: Express): void {
         message: 'Login failed',
         error: 'internal_error',
       });
+    }
+  });
+
+  /**
+   * POST /api/auth/refresh-token
+   * Exchange a valid refresh token for a new access token
+   */
+  app.post('/api/auth/refresh-token', async (req: Request, res: Response) => {
+    try {
+      // Parse cookies manually or use a middleware if available (express-session doesn't parse custom cookies by default without cookie-parser)
+      // For simplicity, we'll parsing raw headers if cookie-parser isn't guaranteed
+      const cookieHeader = req.headers.cookie;
+      let refreshToken = "";
+
+      if (cookieHeader) {
+        const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
+          const [name, value] = cookie.trim().split('=');
+          acc[name] = value;
+          return acc;
+        }, {} as Record<string, string>);
+        refreshToken = cookies['refresh_token'];
+      }
+
+      if (!refreshToken) {
+        return res.status(401).json({ message: 'Refresh token missing' });
+      }
+
+      const result = await authSecurity.rotateRefreshToken(refreshToken);
+
+      if (!result) {
+        // Clear invalid cookie
+        res.setHeader('Set-Cookie', serialize('refresh_token', '', {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict',
+          path: '/api/auth',
+          maxAge: 0
+        }));
+        return res.status(401).json({ message: 'Invalid or expired refresh token' });
+      }
+
+      const user = await userRepository.findById(result.userId);
+      if (!user) {
+        return res.status(401).json({ message: 'User not found' });
+      }
+
+      // Generate new Access Token
+      const newAccessToken = createToken(user);
+
+      // Set new Refresh Token Cookie (Rotation)
+      res.setHeader('Set-Cookie', serialize('refresh_token', result.newRefreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        path: '/api/auth',
+        maxAge: 60 * 60 * 24 * 30
+      }));
+
+      res.json({
+        token: newAccessToken,
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.tenantRole
+        }
+      });
+
+    } catch (error) {
+      logger.error({ error }, 'Refresh token failed');
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  /**
+   * POST /api/auth/forgot-password
+   */
+  app.post('/api/auth/forgot-password', async (req: Request, res: Response) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "Email required" });
+
+    try {
+      const token = await authSecurity.generatePasswordResetToken(email);
+      // Always return success to prevent email enumeration
+      if (token) {
+        logger.info({ email, token }, "Reset token generated (STUB)");
+      }
+      res.json({ message: "If an account exists, a reset link has been sent." });
+    } catch (error) {
+      logger.error({ error }, "Forgot password error");
+      res.status(500).json({ message: "Internal error" });
+    }
+  });
+
+  /**
+   * POST /api/auth/reset-password
+   */
+  app.post('/api/auth/reset-password', async (req: Request, res: Response) => {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) return res.status(400).json({ message: "Token and password required" });
+
+    try {
+      const validation = validatePasswordStrength(newPassword);
+      if (!validation.valid) {
+        return res.status(400).json({ message: validation.message });
+      }
+
+      const userId = await authSecurity.verifyPasswordResetToken(token);
+      if (!userId) {
+        return res.status(400).json({ message: "Invalid or expired token" });
+      }
+
+      const passwordHash = await hashPassword(newPassword);
+
+      // Update password
+      await userCredentialsRepository.updatePassword(userId, passwordHash);
+
+      // Revoke all sessions (refresh tokens) for security
+      await authSecurity.revokeAllUserTokens(userId);
+
+      // Mark token used
+      await authSecurity.consumePasswordResetToken(token);
+
+      res.json({ message: "Password updated successfully. Please login." });
+    } catch (error) {
+      logger.error({ error }, "Reset password error");
+      res.status(500).json({ message: "Internal error" });
+    }
+  });
+
+  /**
+   * POST /api/auth/verify-email
+   */
+  app.post('/api/auth/verify-email', async (req: Request, res: Response) => {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ message: "Token required" });
+
+    try {
+      const success = await authSecurity.verifyEmail(token);
+      if (!success) {
+        return res.status(400).json({ message: "Invalid or expired token" });
+      }
+      res.json({ message: "Email verified successfully" });
+    } catch (error) {
+      logger.error({ error }, "Email verification error");
+      res.status(500).json({ message: "Internal error" });
     }
   });
 
@@ -233,9 +477,36 @@ export function registerAuthRoutes(app: Express): void {
    * Logout (currently a no-op for JWT, but included for API consistency)
    * For session-based auth, this would clear the session
    */
-  app.post('/api/auth/logout', (req: Request, res: Response) => {
-    // For JWT, logout is handled client-side by removing the token
-    // For session auth, we destroy the session
+  app.post('/api/auth/logout', async (req: Request, res: Response) => {
+    // 1. Revoke Refresh Token (if present)
+    const cookieHeader = req.headers.cookie;
+    if (cookieHeader) {
+      const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
+        const [name, value] = cookie.trim().split('=');
+        acc[name] = value;
+        return acc;
+      }, {} as Record<string, string>);
+      const refreshToken = cookies['refresh_token'];
+      if (refreshToken) {
+        logger.info({ tokenPrefix: refreshToken.substring(0, 10) }, 'Revoking refresh token on logout');
+        await authSecurity.revokeRefreshToken(refreshToken);
+      } else {
+        logger.warn('No refresh_token found in cookies during logout');
+      }
+    } else {
+      logger.warn('No cookie header found during logout');
+    }
+
+    // 2. Clear Refresh Cookie
+    res.setHeader('Set-Cookie', serialize('refresh_token', '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/api/auth',
+      maxAge: 0
+    }));
+
+    // 3. Destroy Session (for Google/Legacy)
     if (req.session) {
       req.session.destroy((err) => {
         if (err) {
@@ -245,12 +516,10 @@ export function registerAuthRoutes(app: Express): void {
             error: 'session_destruction_failed'
           });
         }
-        logger.info({ email: (req.session as any)?.passport?.user?.email }, 'User logged out');
+        res.clearCookie('survey-session'); // Clear the session cookie
         res.json({ message: 'Logout successful' });
       });
     } else {
-      // No session to destroy (JWT or not logged in)
-      logger.info('User logged out (no session)');
       res.json({ message: 'Logout successful' });
     }
   });
@@ -284,23 +553,30 @@ export function registerAuthRoutes(app: Express): void {
           firstName: "Dev",
           lastName: "User",
           profileImageUrl: null,
+          tenantId: undefined, // Add missing fields
+          tenantRole: undefined,
+          role: undefined,
         };
 
         // Upsert the test user
-        await userRepository.upsert(testUser);
+        // Cast to any because upsert expects more fields than we have here, or assumes partial is fine but TS complains
+        await userRepository.upsert(testUser as any);
 
         // Simulate authentication by setting up the session (Google auth format)
-        const mockAuthUser = {
-          claims: {
-            sub: testUser.id,
-            email: testUser.email,
-            name: `${testUser.firstName} ${testUser.lastName}`,
-            given_name: testUser.firstName,
-            family_name: testUser.lastName,
-            picture: testUser.profileImageUrl || undefined,
-            exp: Math.floor(Date.now() / 1000) + 3600, // Expires in 1 hour
-          },
-          expires_at: Math.floor(Date.now() / 1000) + 3600,
+        const mockAuthUser: AppUser = {
+          id: testUser.id,
+          email: testUser.email,
+          firstName: testUser.firstName || undefined,
+          lastName: testUser.lastName || undefined,
+          fullName: `${testUser.firstName} ${testUser.lastName}`,
+          profileImageUrl: undefined,
+
+          tenantId: testUser.tenantId,
+          tenantRole: testUser.tenantRole as any,
+          role: testUser.role as any,
+
+          emailVerified: true,
+          authProvider: 'local',
         };
 
         // Session fixation protection: regenerate session before login (same as Google auth)
@@ -388,17 +664,17 @@ export function registerAuthRoutes(app: Express): void {
   app.get('/api/auth/token', async (req: Request, res: Response) => {
     try {
       // Check for session-based authentication
-      const sessionUser = req.session?.user || req.user;
-      const userId = sessionUser?.claims?.sub || sessionUser?.id;
+      // Cast to any to handle both possible session structures during migration
+      const sessionUser = (req.session?.user || req.user) as any;
 
-      if (!userId) {
+      const userId = sessionUser?.id || sessionUser?.claims?.sub;
+
+      if (!sessionUser || !userId) {
         return res.status(401).json({
-          message: 'Authentication required',
-          error: 'unauthorized',
+          message: "Authentication required",
+          code: "unauthorized"
         });
       }
-
-      // Fetch full user from database
       const user = await userRepository.findById(userId);
       if (!user) {
         return res.status(404).json({

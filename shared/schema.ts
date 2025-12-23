@@ -195,6 +195,8 @@ export const users = pgTable("users", {
   tenantRole: userTenantRoleEnum("tenant_role"), // New RBAC role for workflows
   authProvider: authProviderEnum("auth_provider").default('local').notNull(),
   defaultMode: text("default_mode").default('easy').notNull(), // 'easy' | 'advanced'
+  emailVerified: boolean("email_verified").default(false).notNull(),
+  lastPasswordChange: timestamp("last_password_change"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
@@ -212,6 +214,45 @@ export const userCredentials = pgTable("user_credentials", {
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
   index("user_credentials_user_idx").on(table.userId),
+]);
+
+// Refresh tokens for long-lived sessions
+export const refreshTokens = pgTable("refresh_tokens", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  token: varchar("token").notNull(), // Hashed token
+  expiresAt: timestamp("expires_at").notNull(),
+  revoked: boolean("revoked").default(false).notNull(),
+  metadata: jsonb("metadata"), // IP, user agent, etc.
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("refresh_token_user_idx").on(table.userId),
+  index("refresh_token_token_idx").on(table.token),
+]);
+
+// Password reset tokens
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  token: varchar("token").notNull(), // Hashed token
+  expiresAt: timestamp("expires_at").notNull(),
+  used: boolean("used").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("pwd_reset_token_idx").on(table.token),
+  index("pwd_reset_user_idx").on(table.userId),
+]);
+
+// Email verification tokens
+export const emailVerificationTokens = pgTable("email_verification_tokens", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  token: varchar("token").notNull(), // Hashed token
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("email_verify_token_idx").on(table.token),
+  index("email_verify_user_idx").on(table.userId),
 ]);
 
 // Anonymous access type enum
@@ -563,8 +604,28 @@ export const userPreferences = pgTable("user_preferences", {
     aiHints: true,
   }).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+// Email Queue for Async Delivery
+export const emailQueueStatusEnum = pgEnum('email_queue_status', ['pending', 'processing', 'completed', 'failed']);
+
+export const emailQueue = pgTable("email_queue", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  to: varchar("to").notNull(),
+  subject: varchar("subject").notNull(),
+  html: text("html").notNull(),
+  status: emailQueueStatusEnum("status").default('pending').notNull(),
+  attempts: integer("attempts").default(0).notNull(),
+  lastError: text("last_error"), // Store last error message
+  nextAttemptAt: timestamp("next_attempt_at").defaultNow(), // For backoff
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("email_queue_status_idx").on(table.status),
+  index("email_queue_next_attempt_idx").on(table.nextAttemptAt),
+]);
 
 // User personalization settings table
 export const userPersonalizationSettings = pgTable("user_personalization_settings", {

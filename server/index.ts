@@ -155,6 +155,10 @@ app.use((req, res, next) => {
         await dbInitPromise;
         console.log('Database initialized.');
 
+        // Start Email Queue Worker
+        const { emailQueueService } = await import('./services/EmailQueueService.js');
+        emailQueueService.startWorker();
+
         // Initialize routes and collaboration server
         logger.debug('Registering routes...');
         console.log('Registering routes...');
@@ -204,6 +208,10 @@ app.use((req, res, next) => {
             // Clean up OAuth2 state cleanup interval
             const { stopOAuth2StateCleanup } = await import('./services/oauth2.js');
             stopOAuth2StateCleanup();
+
+            // Stop Email Queue Worker
+            const { emailQueueService } = await import('./services/EmailQueueService.js');
+            emailQueueService.stopWorker();
 
             // Close server
             server.close(() => {

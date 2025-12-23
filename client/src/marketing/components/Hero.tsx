@@ -32,7 +32,7 @@ export default function Hero() {
 
           <div className="mt-10 flex flex-col sm:flex-row gap-4">
             <Link
-              href="/workflows/new"
+              href="/auth/register"
               className="inline-flex items-center justify-center rounded-xl bg-white text-indigo-700 hover:bg-zinc-50 px-8 py-4 text-lg font-bold transition shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
               Start building <ArrowRight className="h-5 w-5 ml-2" />

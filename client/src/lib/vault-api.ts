@@ -5,7 +5,7 @@
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 
-async function fetchAPI<T>(
+export async function fetchAPI<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
@@ -35,11 +35,30 @@ async function fetchAPI<T>(
     headers["Authorization"] = `Bearer ${runToken}`;
   }
 
-  const response = await fetch(url, {
+  // Initial request
+  let response = await fetch(url, {
     ...options,
     headers,
     credentials: "include", // Include cookies for auth
   });
+
+  // Handle 401 (Unauthorized) - Attempt Refresh
+  if (response.status === 401 && !isRunEndpoint && !endpoint.includes('/api/auth/login')) {
+    // Try to refresh token
+    try {
+      const refreshRes = await fetch(`${API_BASE}/api/auth/refresh-token`, { method: 'POST', credentials: 'include' });
+      if (refreshRes.ok) {
+        // Retry original request
+        response = await fetch(url, {
+          ...options,
+          headers, // Headers might need updating if we were using Bearer tokens, but we rely on cookies here
+          credentials: "include",
+        });
+      }
+    } catch (err) {
+      // Refresh failed, proceed to throw error
+    }
+  }
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: response.statusText }));
@@ -382,6 +401,35 @@ export const variableAPI = {
 
 export const authAPI = {
   getToken: () => fetchAPI<{ token: string; expiresIn: string }>("/api/auth/token"),
+
+  login: (data: any) => fetchAPI<{ message: string; token: string; user: any }>("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify(data)
+  }),
+
+  register: (data: any) => fetchAPI<{ message: string; token: string; user: any }>("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify(data)
+  }),
+
+  logout: () => fetchAPI<{ message: string }>("/api/auth/logout", {
+    method: "POST"
+  }),
+
+  forgotPassword: (email: string) => fetchAPI<{ message: string }>("/api/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email })
+  }),
+
+  resetPassword: (data: any) => fetchAPI<{ message: string }>("/api/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify(data)
+  }),
+
+  verifyEmail: (token: string) => fetchAPI<{ message: string }>("/api/auth/verify-email", {
+    method: "POST",
+    body: JSON.stringify({ token })
+  }),
 };
 
 // ============================================================================

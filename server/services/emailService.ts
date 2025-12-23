@@ -4,59 +4,87 @@
 
 import { logger } from "../logger";
 
+const FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || 'noreply@ezbuildr.com'; // Rebranded from VaultLogic
+
+/**
+ * Send a generic email using SendGrid or fallback to logger
+ */
+import { emailQueueService } from "./EmailQueueService";
+
+/**
+ * Send a generic email using the async queue
+ */
+async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
+  try {
+    await emailQueueService.addToQueue(to, subject, html);
+    return true; // Queued successfully
+  } catch (error) {
+    logger.error({ error, to, subject }, 'Failed to queue email');
+    return false;
+  }
+}
+
+export async function sendPasswordResetEmail(email: string, token: string): Promise<void> {
+  // In production, this should point to the actual frontend URL
+  // For now, we assume it's running on the same host or configured via env
+  const baseUrl = process.env.PUBLIC_URL || 'http://localhost:5000';
+  const resetLink = `${baseUrl}/auth/reset-password?token=${token}`;
+
+  const subject = 'Reset Your Password - ezBuildr';
+  const html = `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>Reset Your Password</h2>
+      <p>You requested to reset your password for your ezBuildr account.</p>
+      <p>Click the button below to reset it:</p>
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${resetLink}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Reset Password</a>
+      </div>
+      <p>Or copy and paste this link into your browser:</p>
+      <p><a href="${resetLink}">${resetLink}</a></p>
+      <p>This link will expire in 1 hour.</p>
+      <p>If you didn't ask to reset your password, you can ignore this email.</p>
+    </div>
+  `;
+
+  await sendEmail(email, subject, html);
+}
+
+export async function sendVerificationEmail(email: string, token: string): Promise<void> {
+  const baseUrl = process.env.PUBLIC_URL || 'http://localhost:5000';
+  const verifyLink = `${baseUrl}/auth/verify-email?token=${token}`;
+
+  const subject = 'Verify Your Email - ezBuildr';
+  const html = `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>Verify Your Email</h2>
+      <p>Welcome to ezBuildr! Please verify your email address to get started.</p>
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${verifyLink}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Verify Email</a>
+      </div>
+      <p>Or copy and paste this link into your browser:</p>
+      <p><a href="${verifyLink}">${verifyLink}</a></p>
+      <p>This link will expire in 24 hours.</p>
+    </div>
+  `;
+
+  await sendEmail(email, subject, html);
+}
+
 export async function sendNotificationEmail(
   recipientEmail: string,
   surveyTitle: string,
   respondentName: string,
   responseViewUrl: string
 ): Promise<void> {
-  try {
-    // Log email details (in production, replace with actual email service)
-    logger.info(`
-=== EMAIL NOTIFICATION ===
-To: ${recipientEmail}
-Subject: New Survey Response Received - ${surveyTitle}
-
-Hello,
-
-You have received a new response for your survey "${surveyTitle}" from ${respondentName}.
-
-View the response: ${responseViewUrl}
-
-Best regards,
-Vault-Logic Team
-==========================
-    `);
-    
-    // In production, implement actual email sending:
-    /*
-    const nodemailer = require('nodemailer');
-    const transporter = nodemailer.createTransporter({
-      service: 'gmail', // or your email service
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      }
-    });
-    
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
-      to: recipientEmail,
-      subject: `New Survey Response Received - ${surveyTitle}`,
-      html: `
-        <h2>New Survey Response</h2>
-        <p>You have received a new response for your survey "<strong>${surveyTitle}</strong>" from <strong>${respondentName}</strong>.</p>
-        <p><a href="${responseViewUrl}">View the response</a></p>
-        <br>
-        <p>Best regards,<br>Vault-Logic Team</p>
-      `
-    });
-    */
-
-  } catch (error) {
-    logger.error({ error }, "Error sending notification email");
-    // Don't throw error to avoid breaking the survey submission flow
-  }
+  const subject = `New Response: ${surveyTitle}`;
+  const html = `
+    <div style="font-family: sans-serif;">
+      <h2>New Survey Response</h2>
+      <p>You have received a new response for <strong>${surveyTitle}</strong> from ${respondentName}.</p>
+      <p><a href="${responseViewUrl}">View Response</a></p>
+    </div>
+  `;
+  await sendEmail(recipientEmail, subject, html);
 }
 
 export async function sendSurveyInvitation(
@@ -65,36 +93,18 @@ export async function sendSurveyInvitation(
   surveyTitle: string,
   surveyUrl: string
 ): Promise<void> {
-  try {
-    logger.info(`
-=== SURVEY INVITATION ===
-To: ${recipientEmail}
-Subject: You're invited to participate in: ${surveyTitle}
-
-Hello ${recipientName},
-
-You have been invited to participate in a survey: "${surveyTitle}".
-
-Click here to start the survey: ${surveyUrl}
-
-Thank you for your time!
-
-Best regards,
-Vault-Logic Team
-=========================
-    `);
-
-    // In production, implement actual email sending similar to above
-
-  } catch (error) {
-    logger.error({ error }, "Error sending survey invitation");
-  }
+  const subject = `Invitation: ${surveyTitle}`;
+  const html = `
+    <div style="font-family: sans-serif;">
+      <h2>Invited to ${surveyTitle}</h2>
+      <p>Hello ${recipientName},</p>
+      <p>You are invited to participate in a survey.</p>
+      <p><a href="${surveyUrl}">Start Survey</a></p>
+    </div>
+  `;
+  await sendEmail(recipientEmail, subject, html);
 }
 
-/**
- * Send intake receipt email (Stage 12.5)
- * Sends confirmation email after successful intake submission
- */
 export interface IntakeReceiptData {
   to: string;
   tenantId: string;
@@ -114,72 +124,37 @@ export async function sendIntakeReceipt(
   try {
     const { to, workflowName, runId, summary, downloadLinks } = data;
 
-    // Format summary for email (limit to non-sensitive fields)
-    let summaryText = "";
+    let summaryHtml = "";
     if (summary && Object.keys(summary).length > 0) {
-      summaryText = "\n\nYour submission:\n";
+      summaryHtml = "<h3>Your Submission</h3><ul>";
       for (const [key, value] of Object.entries(summary)) {
-        // Skip sensitive-looking fields
-        if (key.toLowerCase().includes("password") ||
-            key.toLowerCase().includes("ssn") ||
-            key.toLowerCase().includes("credit")) {
-          continue;
-        }
-        summaryText += `  - ${key}: ${String(value).substring(0, 100)}\n`;
+        if (key.toLowerCase().match(/(password|ssn|credit|card)/)) continue;
+        summaryHtml += `<li><strong>${key}:</strong> ${String(value).substring(0, 100)}</li>`;
       }
+      summaryHtml += "</ul>";
     }
 
-    // Format download links
-    let downloadText = "";
-    if (downloadLinks && (downloadLinks.pdf || downloadLinks.docx)) {
-      downloadText = "\n\nYour documents are ready:\n";
-      if (downloadLinks.pdf) {
-        downloadText += `  - Download PDF: ${downloadLinks.pdf}\n`;
-      }
-      if (downloadLinks.docx) {
-        downloadText += `  - Download DOCX: ${downloadLinks.docx}\n`;
-      }
+    let downloadHtml = "";
+    if (downloadLinks?.pdf || downloadLinks?.docx) {
+      downloadHtml = "<h3>Your Documents</h3>";
+      if (downloadLinks.pdf) downloadHtml += `<p><a href="${downloadLinks.pdf}">Download PDF</a></p>`;
+      if (downloadLinks.docx) downloadHtml += `<p><a href="${downloadLinks.docx}">Download DOCX</a></p>`;
     }
 
-    logger.info(`
-=== INTAKE RECEIPT ===
-To: ${to}
-Subject: Confirmation - ${workflowName}
-
-Thank you for completing "${workflowName}".
-${summaryText}${downloadText}
-
-Reference ID: ${runId}
-
-If you have any questions, please contact us with your reference ID.
-
-Best regards,
-VaultLogic Team
-=====================
-    `);
-
-    // In production, implement actual email sending:
-    /*
-    const sendgrid = require('@sendgrid/mail');
-    sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
-
-    await sendgrid.send({
-      to,
-      from: process.env.SENDGRID_FROM_EMAIL || 'noreply@vaultlogic.com',
-      subject: `Confirmation - ${workflowName}`,
-      html: `
-        <h2>Thank you for your submission</h2>
-        <p>You have successfully completed "<strong>${workflowName}</strong>".</p>
+    const subject = `Confirmation: ${workflowName}`;
+    const html = `
+      <div style="font-family: sans-serif;">
+        <h2>Submission Received</h2>
+        <p>You have successfully completed <strong>${workflowName}</strong>.</p>
         ${summaryHtml}
-        ${downloadLinksHtml}
+        ${downloadHtml}
+        <hr/>
         <p><small>Reference ID: ${runId}</small></p>
-        <br>
-        <p>Best regards,<br>VaultLogic Team</p>
-      `
-    });
-    */
+      </div>
+    `;
 
-    return { success: true };
+    const success = await sendEmail(to, subject, html);
+    return { success };
   } catch (error) {
     logger.error({ error, data }, "Error sending intake receipt email");
     return {

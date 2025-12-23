@@ -24,19 +24,21 @@ export default function LandingPage() {
               />
               <span className="text-2xl font-bold text-white tracking-tight">ezBuildr</span>
             </div>
-            {googleClientId ? (
-              <div className="bg-white rounded-xl shadow-md overflow-hidden">
-                <GoogleLogin data-testid="button-login" />
-              </div>
-            ) : (
+            <div className="flex items-center space-x-4">
               <Button
-                onClick={() => window.location.href = '/api/auth/dev-login'}
-                data-testid="button-dev-login"
-                className="bg-white text-indigo-700 hover:bg-white/90 font-semibold shadow-md"
+                variant="ghost"
+                className="text-gray-600 hover:text-gray-900 font-medium"
+                onClick={() => window.location.href = '/auth/login'}
               >
-                Dev Login
+                Sign In
               </Button>
-            )}
+              <Button
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-md"
+                onClick={() => window.location.href = '/auth/register'}
+              >
+                Get Started
+              </Button>
+            </div>
           </div>
         </div>
       </header>
