@@ -1,90 +1,208 @@
-/**
- * Test Utilities for Parallelization-Safe Testing
- *
- * These utilities help create unique test data that won't collide
- * when tests run in parallel.
- */
-
-import { nanoid } from "nanoid";
+import { db } from "../../server/db";
+import { users, userCredentials, refreshTokens, emailVerificationTokens, mfaSecrets, mfaBackupCodes, trustedDevices, accountLocks, loginAttempts } from "@shared/schema";
+import { eq } from "drizzle-orm";
+import { authService } from "../../server/services/AuthService";
+import speakeasy from "speakeasy";
+import crypto from "crypto";
 
 /**
- * Generate a unique test ID that's safe for parallel execution
- *
- * @param prefix - Optional prefix for readability
- * @returns Unique ID like "test-abc123def456"
+ * Test Helper Utilities
+ * Provides common functions for test setup, teardown, and data creation
  */
-export function uniqueTestId(prefix: string = "test"): string {
-  return `${prefix}-${nanoid(12)}`;
-}
+
+// ============================================================
+// DATABASE CLEANUP
+// ============================================================
 
 /**
- * Generate a unique email for test users
- *
- * @param prefix - Email prefix (e.g., "user", "admin")
- * @returns Unique email like "user-abc123@test.example.com"
+ * Clean all auth-related tables
  */
-export function uniqueTestEmail(prefix: string = "user"): string {
-  return `${prefix}-${nanoid(12)}@test.example.com`;
-}
-
-/**
- * Generate a unique name for test entities
- *
- * @param type - Type of entity (e.g., "Project", "Workflow")
- * @param purpose - Optional purpose (e.g., "Move Test")
- * @returns Unique name like "Project - Move Test - abc123"
- */
-export function uniqueTestName(type: string, purpose?: string): string {
-  const parts = [type];
-  if (purpose) parts.push(purpose);
-  parts.push(nanoid(8));
-  return parts.join(" - ");
-}
-
-/**
- * Sleep for a specified duration (useful for waiting between operations)
- *
- * @param ms - Milliseconds to sleep
- */
-export async function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-/**
- * Retry an async operation with exponential backoff
- *
- * @param fn - Function to retry
- * @param maxRetries - Maximum number of retries
- * @param initialDelay - Initial delay in ms
- * @returns Result of the function
- */
-export async function retryWithBackoff<T>(
-  fn: () => Promise<T>,
-  maxRetries: number = 3,
-  initialDelay: number = 100
-): Promise<T> {
-  let lastError: Error | undefined;
-
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      return await fn();
-    } catch (error) {
-      lastError = error as Error;
-      if (i < maxRetries - 1) {
-        const delay = initialDelay * Math.pow(2, i);
-        await sleep(delay);
-      }
-    }
+export async function cleanAuthTables() {
+  try {
+    await db.delete(loginAttempts);
+    await db.delete(accountLocks);
+    await db.delete(trustedDevices);
+    await db.delete(mfaBackupCodes);
+    await db.delete(mfaSecrets);
+    await db.delete(refreshTokens);
+    await db.delete(emailVerificationTokens);
+    await db.delete(userCredentials);
+  } catch (error) {
+    console.warn("Error cleaning auth tables:", error);
   }
-
-  throw lastError;
 }
 
 /**
- * Generate a unique port number for test servers
- *
- * Returns a random port in the range 30000-60000 to avoid conflicts
+ * Clean specific test user and all related data
  */
-export function uniqueTestPort(): number {
-  return Math.floor(Math.random() * 30000) + 30000;
+export async function cleanTestUser(email: string) {
+  try {
+    const user = await db.query.users.findFirst({
+      where: eq(users.email, email),
+    });
+
+    if (user) {
+      await db.delete(loginAttempts).where(eq(loginAttempts.email, email));
+      await db.delete(accountLocks).where(eq(accountLocks.userId, user.id));
+      await db.delete(trustedDevices).where(eq(trustedDevices.userId, user.id));
+      await db.delete(mfaBackupCodes).where(eq(mfaBackupCodes.userId, user.id));
+      await db.delete(mfaSecrets).where(eq(mfaSecrets.userId, user.id));
+      await db.delete(refreshTokens).where(eq(refreshTokens.userId, user.id));
+      await db.delete(emailVerificationTokens).where(eq(emailVerificationTokens.userId, user.id));
+      await db.delete(userCredentials).where(eq(userCredentials.userId, user.id));
+      await db.delete(users).where(eq(users.id, user.id));
+    }
+  } catch (error) {
+    console.warn("Error cleaning test user:", error);
+  }
+}
+
+export function randomEmail(): string {
+  return `test-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`;
+}
+
+export function randomPassword(): string {
+  const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const lowercase = "abcdefghijklmnopqrstuvwxyz";
+  const numbers = "0123456789";
+
+  const password = [
+    uppercase[Math.floor(Math.random() * uppercase.length)],
+    lowercase[Math.floor(Math.random() * lowercase.length)],
+    numbers[Math.floor(Math.random() * numbers.length)],
+    ...Array(5).fill(null).map(() => {
+      const all = uppercase + lowercase + numbers;
+      return all[Math.floor(Math.random() * all.length)];
+    }),
+  ];
+
+  return password.sort(() => Math.random() - 0.5).join("");
+}
+
+// ============================================================
+// USER CREATION HELPERS
+// ============================================================
+
+/**
+ * Create a test user with credentials
+ */
+export async function createTestUser(options: {
+  email?: string;
+  password?: string;
+  emailVerified?: boolean;
+  mfaEnabled?: boolean;
+} = {}) {
+  const email = options.email || randomEmail();
+  const password = options.password || randomPassword();
+  const passwordHash = await authService.hashPassword(password);
+
+  const userId = crypto.randomBytes(16).toString('hex');
+
+  // Create user
+  await db.insert(users).values({
+    id: userId,
+    email,
+    emailVerified: options.emailVerified ?? false,
+    mfaEnabled: options.mfaEnabled ?? false,
+    firstName: 'Test',
+    lastName: 'User',
+    fullName: 'Test User',
+    authProvider: 'local',
+    role: 'creator',
+    defaultMode: 'easy',
+    createdAt: new Date(),
+  });
+
+  // Create credentials
+  await db.insert(userCredentials).values({
+    userId,
+    passwordHash,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, userId),
+  });
+
+  return {
+    user: user!,
+    password,
+    passwordHash,
+    email,
+    userId,
+  };
+}
+
+/**
+ * Create a verified test user
+ */
+export async function createVerifiedUser(options: {
+  email?: string;
+  password?: string;
+} = {}) {
+  return createTestUser({
+    ...options,
+    emailVerified: true,
+  });
+}
+
+/**
+ * Create a user with MFA enabled
+ */
+export async function createUserWithMfa(options: {
+  email?: string;
+  password?: string;
+} = {}) {
+  const userData = await createVerifiedUser(options);
+
+  // Generate TOTP secret
+  const secret = speakeasy.generateSecret({
+    name: `VaultLogic (${userData.email})`,
+    issuer: 'VaultLogic',
+    length: 32,
+  });
+
+  // Store MFA secret
+  await db.insert(mfaSecrets).values({
+    userId: userData.userId,
+    secret: secret.base32!,
+    enabled: true,
+    enabledAt: new Date(),
+    createdAt: new Date(),
+  });
+
+  // Update user record
+  await db.update(users)
+    .set({ mfaEnabled: true })
+    .where(eq(users.id, userData.userId));
+
+  return {
+    ...userData,
+    totpSecret: secret.base32!,
+  };
+}
+
+/**
+ * Generate a valid TOTP code for a secret
+ */
+export function generateTotpCode(secret: string): string {
+  return speakeasy.totp({
+    secret,
+    encoding: 'base32',
+  });
+}
+
+/**
+ * Create email verification token for user
+ */
+export async function createEmailVerificationToken(userId: string, email: string): Promise<string> {
+  return await authService.generateEmailVerificationToken(userId, email);
+}
+
+/**
+ * Create password reset token for user
+ */
+export async function createPasswordResetToken(email: string): Promise<string | null> {
+  return await authService.generatePasswordResetToken(email);
 }

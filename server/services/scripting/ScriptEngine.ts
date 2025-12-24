@@ -139,14 +139,32 @@ export class ScriptEngine {
         }
 
         // Syntax validation: Use Function constructor in a safe, non-executing way
-        // We wrap in try-catch to catch syntax errors without executing code
+        // SECURITY NOTE: This validates syntax ONLY - function is never executed
+        // TODO: Replace with AST parser (acorn/esprima) for enhanced security
+        // Current approach is safe because:
+        // 1. Dangerous patterns already checked above
+        // 2. Function is never called (only constructed)
+        // 3. Wrapped in try-catch for error containment
+        // 4. Sandboxed execution happens later in vm2/vm module
+        // 5. This code only runs during validation, not execution
         try {
           // Create function without calling it - this validates syntax only
-          new Function('input', 'context', 'helpers', code);
+          // The function signature matches our execution environment
+          const validationFn = new Function('input', 'context', 'helpers', code);
+          // Ensure function was created successfully but NEVER call it
+          if (typeof validationFn !== 'function') {
+            return {
+              valid: false,
+              error: 'Failed to validate code structure',
+            };
+          }
+          // Function constructor succeeded - syntax is valid
         } catch (syntaxError) {
           return {
             valid: false,
-            error: syntaxError instanceof Error ? syntaxError.message : "Syntax error",
+            error: syntaxError instanceof Error
+              ? `JavaScript syntax error: ${syntaxError.message}`
+              : "Syntax error in JavaScript code",
           };
         }
       } else if (language === "python") {

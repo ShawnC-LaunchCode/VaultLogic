@@ -100,7 +100,7 @@ export default function RegisterPage() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="flex justify-center w-full">
-                            <GoogleLogin />
+                            <GoogleLogin onSuccess={() => window.location.href = "/dashboard"} />
                         </div>
 
                         <div className="relative">

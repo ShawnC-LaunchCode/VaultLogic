@@ -150,14 +150,18 @@ app.use((req, res, next) => {
         }
 
         // Ensure database is initialized before starting server
-        console.log('Initializing database...');
+        logger.info('Initializing database...');
         const { dbInitPromise } = await import("./db.js");
         await dbInitPromise;
-        console.log('Database initialized.');
+        logger.info('Database initialized.');
 
         // Start Email Queue Worker
         const { emailQueueService } = await import('./services/EmailQueueService.js');
         emailQueueService.startWorker();
+
+        // Initialize Cron Jobs
+        const { initCronJobs } = await import('./cron.js');
+        initCronJobs();
 
         // Initialize routes and collaboration server
         logger.debug('Registering routes...');

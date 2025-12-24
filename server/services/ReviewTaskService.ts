@@ -1,6 +1,7 @@
 import { reviewTaskRepository, workflowRepository, projectRepository } from "../repositories";
 import type { ReviewTask, InsertReviewTask } from "@shared/schema";
 import { createError } from "../utils/errors";
+import { aclService as defaultAclService } from "./AclService";
 
 /**
  * Service layer for review task-related business logic
@@ -10,15 +11,18 @@ export class ReviewTaskService {
   private reviewTaskRepo: typeof reviewTaskRepository;
   private workflowRepo: typeof workflowRepository;
   private projectRepo: typeof projectRepository;
+  private aclService: typeof defaultAclService;
 
   constructor(
     reviewTaskRepo?: typeof reviewTaskRepository,
     workflowRepo?: typeof workflowRepository,
-    projectRepo?: typeof projectRepository
+    projectRepo?: typeof projectRepository,
+    aclService?: typeof defaultAclService
   ) {
     this.reviewTaskRepo = reviewTaskRepo || reviewTaskRepository;
     this.workflowRepo = workflowRepo || workflowRepository;
     this.projectRepo = projectRepo || projectRepository;
+    this.aclService = aclService || defaultAclService;
   }
 
   /**

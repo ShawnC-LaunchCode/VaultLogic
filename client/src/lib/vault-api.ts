@@ -3,7 +3,20 @@
  * Handles all API calls to the workflow backend
  */
 
+import type { TestResult } from "@/components/templates-test-runner/types";
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
+
+// Global Access Token (Memory Only)
+let globalAccessToken: string | null = null;
+
+export function setAccessToken(token: string | null) {
+  globalAccessToken = token;
+}
+
+export function getAccessToken() {
+  return globalAccessToken;
+}
 
 export async function fetchAPI<T>(
   endpoint: string,
@@ -33,6 +46,9 @@ export async function fetchAPI<T>(
   // Only add bearer token for run endpoints
   if (runToken && isRunEndpoint) {
     headers["Authorization"] = `Bearer ${runToken}`;
+  } else if (globalAccessToken) {
+    // Inject standard Access Token for all other authenticated requests
+    headers["Authorization"] = `Bearer ${globalAccessToken}`;
   }
 
   // Initial request
@@ -429,6 +445,31 @@ export const authAPI = {
   verifyEmail: (token: string) => fetchAPI<{ message: string }>("/api/auth/verify-email", {
     method: "POST",
     body: JSON.stringify({ token })
+  }),
+
+  verifyMfaLogin: (userId: string, token: string, backupCode?: string) => fetchAPI<{ message: string; token: string; user: any }>("/api/auth/mfa/verify-login", {
+    method: "POST",
+    body: JSON.stringify({ userId, token, backupCode })
+  }),
+
+  setupMfa: () => fetchAPI<{ message: string; qrCodeDataUrl: string; backupCodes: string[] }>("/api/auth/mfa/setup", {
+    method: "POST"
+  }),
+
+  verifyMfa: (token: string) => fetchAPI<{ message: string }>("/api/auth/mfa/verify", {
+    method: "POST",
+    body: JSON.stringify({ token })
+  }),
+
+  disableMfa: (password: string) => fetchAPI<{ message: string }>("/api/auth/mfa/disable", {
+    method: "POST",
+    body: JSON.stringify({ password })
+  }),
+
+  getMfaStatus: () => fetchAPI<{ mfaEnabled: boolean; backupCodesRemaining: number }>("/api/auth/mfa/status"),
+
+  regenerateBackupCodes: () => fetchAPI<{ message: string; backupCodes: string[] }>("/api/auth/mfa/backup-codes/regenerate", {
+    method: "POST"
   }),
 };
 

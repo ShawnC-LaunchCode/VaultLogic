@@ -192,13 +192,12 @@ export class IntakeQuestionVisibilityService {
     runId: string,
     recordData?: Record<string, any>
   ): Promise<boolean> {
-    // Load question to get sectionId
-    const questions = await stepRepository.findBySectionIds([questionId]);
-    if (questions.length === 0) {
+    // Load question to get sectionId (FIXED: use findById instead of findBySectionIds)
+    const question = await stepRepository.findById(questionId);
+    if (!question) {
       return false;
     }
 
-    const question = questions[0];
     const visibility = await this.evaluatePageQuestions(question.sectionId, runId, recordData);
 
     return visibility.visibleQuestions.includes(questionId);
@@ -258,6 +257,9 @@ export class IntakeQuestionVisibilityService {
    * When a question becomes hidden, its previously entered value should be cleared
    * to avoid validation issues and data inconsistencies.
    *
+   * PERFORMANCE OPTIMIZED (Dec 2025):
+   * Uses batch query to load all step values once instead of N queries.
+   *
    * @param sectionId - Page (section) ID
    * @param runId - Current run ID
    * @param recordData - Optional collection record data
@@ -271,9 +273,17 @@ export class IntakeQuestionVisibilityService {
     const visibility = await this.evaluatePageQuestions(sectionId, runId, recordData);
     const clearedSteps: string[] = [];
 
+    if (visibility.hiddenQuestions.length === 0) {
+      return clearedSteps;
+    }
+
+    // OPTIMIZATION: Load all step values for this run once (instead of N queries)
+    const allStepValues = await stepValueRepository.findByRunId(runId);
+    const stepValueMap = new Map(allStepValues.map(sv => [sv.stepId, sv]));
+
     // For each hidden question, check if it has a value and clear it
     for (const questionId of visibility.hiddenQuestions) {
-      const existingValue = await stepValueRepository.findByRunAndStep(runId, questionId);
+      const existingValue = stepValueMap.get(questionId);
 
       if (existingValue) {
         await stepValueRepository.delete(existingValue.id);

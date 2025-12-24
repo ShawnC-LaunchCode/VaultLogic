@@ -16,9 +16,10 @@ export function requireProjectRole(
 ): RequestHandler {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const user = req.session?.user || req.user;
+      // Expecting userId to be set by upstream auth middleware (e.g. hybridAuth)
+      const userId = (req as any).userId;
 
-      if (!user?.claims?.sub) {
+      if (!userId) {
         logger.warn({ ip: req.ip }, 'Project access denied: Not authenticated');
         return res.status(401).json({
           success: false,
@@ -26,7 +27,6 @@ export function requireProjectRole(
         });
       }
 
-      const userId = user.claims.sub;
       const projectId = req.params.id || req.params.projectId;
 
       if (!projectId) {
@@ -50,9 +50,6 @@ export function requireProjectRole(
           error: `Forbidden - ${minRole} access required (you have: ${userRole})`,
         });
       }
-
-      // Attach user ID to request for use in route handlers
-      req.userId = userId;
 
       logger.debug(
         { userId, projectId, minRole },
@@ -80,9 +77,9 @@ export function requireWorkflowRole(
 ): RequestHandler {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const user = req.session?.user || req.user;
+      const userId = (req as any).userId;
 
-      if (!user?.claims?.sub) {
+      if (!userId) {
         logger.warn({ ip: req.ip }, 'Workflow access denied: Not authenticated');
         return res.status(401).json({
           success: false,
@@ -90,7 +87,6 @@ export function requireWorkflowRole(
         });
       }
 
-      const userId = user.claims.sub;
       const workflowId = req.params.id || req.params.workflowId;
 
       if (!workflowId) {
@@ -114,9 +110,6 @@ export function requireWorkflowRole(
           error: `Forbidden - ${minRole} access required (you have: ${userRole})`,
         });
       }
-
-      // Attach user ID to request for use in route handlers
-      req.userId = userId;
 
       logger.debug(
         { userId, workflowId, minRole },

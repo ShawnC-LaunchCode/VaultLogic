@@ -9,8 +9,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Settings, Sparkles, Moon, Sun, Lightbulb, RotateCcw, Layers } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Settings, Sparkles, Moon, Sun, Lightbulb, RotateCcw, Layers, Shield, Smartphone, QrCode, Lock } from "lucide-react";
 import type { Mode } from "@/lib/mode";
+import { authAPI } from "@/lib/vault-api";
 
 export default function SettingsPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -20,12 +23,84 @@ export default function SettingsPage() {
   const { toast } = useToast();
   const [localMode, setLocalMode] = useState<Mode>('easy');
 
+  // MFA State
+  const [mfaStatus, setMfaStatus] = useState<{ enabled: boolean; backupCodesRemaining: number } | null>(null);
+  const [isSetupOpen, setIsSetupOpen] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState("");
+  const [backupCodes, setBackupCodes] = useState<string[]>([]);
+  const [verifyCode, setVerifyCode] = useState("");
+  const [setupStep, setSetupStep] = useState<'qr' | 'success'>('qr');
+  const [isDisableOpen, setIsDisableOpen] = useState(false);
+  const [disablePassword, setDisablePassword] = useState("");
+
   // Sync local mode state with fetched account preferences
   useEffect(() => {
     if (accountPrefs) {
       setLocalMode(accountPrefs.defaultMode);
     }
   }, [accountPrefs]);
+
+  // Fetch MFA Status
+  useEffect(() => {
+    if (isAuthenticated) {
+      authAPI.getMfaStatus()
+        .then(res => setMfaStatus({ enabled: res.mfaEnabled, backupCodesRemaining: res.backupCodesRemaining }))
+        .catch(console.error);
+    }
+  }, [isAuthenticated]);
+
+  const startMfaSetup = async () => {
+    try {
+      const res = await authAPI.setupMfa();
+      setQrCodeUrl(res.qrCodeDataUrl);
+      setBackupCodes(res.backupCodes);
+      setSetupStep('qr');
+      setIsSetupOpen(true);
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Setup Failed",
+        description: "Could not initiate MFA setup."
+      });
+    }
+  };
+
+  const finishMfaSetup = async () => {
+    try {
+      await authAPI.verifyMfa(verifyCode);
+      setSetupStep('success');
+      setMfaStatus({ enabled: true, backupCodesRemaining: 10 });
+      toast({
+        title: "MFA Enabled",
+        description: "Two-factor authentication is now active."
+      });
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Verification Failed",
+        description: "Invalid code. Please try again."
+      });
+    }
+  };
+
+  const handleDisableMfa = async () => {
+    try {
+      await authAPI.disableMfa(disablePassword);
+      setMfaStatus({ enabled: false, backupCodesRemaining: 0 });
+      setIsDisableOpen(false);
+      setDisablePassword("");
+      toast({
+        title: "MFA Disabled",
+        description: "Two-factor authentication has been turned off."
+      });
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Disable Failed",
+        description: "Incorrect password or error disabling MFA."
+      });
+    }
+  };
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -145,6 +220,36 @@ export default function SettingsPage() {
                 Reset to Defaults
               </Button>
             </div>
+
+            {/* Account Security (MFA) */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="w-5 h-5" />
+                  Account Security
+                </CardTitle>
+                <CardDescription>
+                  Manage your account security and two-factor authentication
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5 flex-1">
+                    <Label className="text-base font-medium">Two-Factor Authentication (2FA)</Label>
+                    <p className="text-sm text-gray-500">
+                      {mfaStatus?.enabled
+                        ? "Your account is secured with 2FA."
+                        : "Add an extra layer of security to your account."}
+                    </p>
+                  </div>
+                  {mfaStatus?.enabled ? (
+                    <Button variant="destructive" onClick={() => setIsDisableOpen(true)}>Disable 2FA</Button>
+                  ) : (
+                    <Button onClick={startMfaSetup}>Enable 2FA</Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Workflow Mode Settings */}
             <Card>
@@ -300,6 +405,77 @@ export default function SettingsPage() {
             </div>
           </div>
         </main>
+
+        {/* MFA Setup Dialog */}
+        <Dialog open={isSetupOpen} onOpenChange={setIsSetupOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{setupStep === 'qr' ? 'Setup Two-Factor Authentication' : 'MFA Enabled Successfully'}</DialogTitle>
+              <DialogDescription>
+                {setupStep === 'qr'
+                  ? "Scan the QR code with your authenticator app (Authy, Google Authenticator, etc.) to get started."
+                  : "Your backup codes are below. Store them in a safe place."}
+              </DialogDescription>
+            </DialogHeader>
+
+            {setupStep === 'qr' ? (
+              <div className="space-y-4">
+                <div className="flex justify-center p-4 bg-white rounded-lg border">
+                  {qrCodeUrl && <img src={qrCodeUrl} alt="MFA QR Code" className="w-48 h-48" />}
+                </div>
+                <div className="space-y-2">
+                  <Label>Verification Code</Label>
+                  <Input
+                    placeholder="000 000"
+                    value={verifyCode}
+                    onChange={(e) => setVerifyCode(e.target.value)}
+                    maxLength={6}
+                  />
+                  <Button className="w-full" onClick={finishMfaSetup}>Verify & Activate</Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-4 bg-muted rounded-md text-sm font-mono grid grid-cols-2 gap-2">
+                  {backupCodes.map((code, i) => (
+                    <div key={i}>{code}</div>
+                  ))}
+                </div>
+                <p className="text-sm text-red-500">
+                  Warning: If you lose access to your device, these codes are the only way to recover your account.
+                </p>
+                <DialogFooter>
+                  <Button onClick={() => setIsSetupOpen(false)}>Done</Button>
+                </DialogFooter>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* MFA Disable Dialog */}
+        <Dialog open={isDisableOpen} onOpenChange={setIsDisableOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Disable 2FA</DialogTitle>
+              <DialogDescription>
+                Please enter your password to confirm disabling Two-Factor Authentication.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Input
+                type="password"
+                placeholder="Current Password"
+                value={disablePassword}
+                onChange={(e) => setDisablePassword(e.target.value)}
+              />
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsDisableOpen(false)}>Cancel</Button>
+                <Button variant="destructive" onClick={handleDisableMfa}>Disable 2FA</Button>
+              </DialogFooter>
+            </div>
+          </DialogContent>
+        </Dialog>
+
       </div>
     </div>
   );

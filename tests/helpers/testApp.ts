@@ -1,0 +1,28 @@
+import express, { type Express } from 'express';
+import { registerAuthRoutes } from '../../server/routes/auth.routes';
+import { createLogger } from '../../server/logger';
+
+const logger = createLogger({ module: 'test-app' });
+
+/**
+ * Create a test Express app instance
+ * This creates a minimal Express app with auth routes for integration testing
+ */
+export function createTestApp(): Express {
+  const app = express();
+
+  // Middleware
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+
+  // Register auth routes
+  registerAuthRoutes(app);
+
+  // Error handler
+  app.use((err: any, req: any, res: any, next: any) => {
+    logger.error({ error: err }, 'Test app error');
+    res.status(500).json({ message: 'Internal server error', error: err.message });
+  });
+
+  return app;
+}

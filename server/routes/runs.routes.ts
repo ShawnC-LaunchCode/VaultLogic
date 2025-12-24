@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { hybridAuth, type AuthRequest } from '../middleware/auth';
+import { hybridAuth, optionalHybridAuth, type AuthRequest } from '../middleware/auth';
 import { insertWorkflowRunSchema, insertStepValueSchema } from "@shared/schema";
 import { runService } from "../services/RunService";
 import { creatorOrRunTokenAuth, type RunAuthRequest } from "../middleware/runTokenAuth";
@@ -59,7 +59,7 @@ export function registerRunRoutes(app: Express): void {
    *   ...runData
    * }
    */
-  app.post('/api/workflows/:workflowId/runs', async (req: Request, res: Response) => {
+  app.post('/api/workflows/:workflowId/runs', optionalHybridAuth, async (req: Request, res: Response) => {
     try {
       const { workflowId } = req.params;
       const { publicLink } = req.query;
@@ -68,21 +68,15 @@ export function registerRunRoutes(app: Express): void {
       // Check if this is an anonymous run request
       const isAnonymous = !!publicLink;
 
-      // For authenticated runs, require session
+      // For authenticated runs, require user ID from AuthRequest (populated by middleware)
       if (!isAnonymous) {
-        // Check for user in both possible locations
-        const user = req.user || (req.session as any)?.user;
-        if (!user) {
-          return res.status(401).json({
-            success: false,
-            error: "Unauthorized - authentication required for creator runs"
-          });
-        }
-        const userId = user?.claims?.sub;
+        const authReq = req as AuthRequest;
+        const userId = authReq.userId;
+
         if (!userId) {
           return res.status(401).json({
             success: false,
-            error: "Unauthorized - no user ID"
+            error: "Unauthorized - authentication required for creator runs"
           });
         }
 
@@ -192,15 +186,13 @@ export function registerRunRoutes(app: Express): void {
         return res.json({ success: true, data: run });
       }
 
-      // For session auth, we need userId
+      // For session/token auth, we need userId
       if (!userId) {
         logger.warn({
-          hasUser: !!req.user,
-          userStructure: req.user ? Object.keys(req.user) : null,
-          hasClaims: !!(req.user as any)?.claims,
-          claimsStructure: (req.user as any)?.claims ? Object.keys((req.user as any).claims) : null
-        }, "No userId found for session auth");
-        return res.status(401).json({ success: false, error: "Unauthorized - no user ID found in session" });
+          hasUser: !!(req as AuthRequest).userId,
+          path: req.path
+        }, "No userId found for auth");
+        return res.status(401).json({ success: false, error: "Unauthorized - no user ID found" });
       }
 
       const run = await runService.getRunWithValues(runId, userId);

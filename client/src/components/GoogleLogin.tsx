@@ -13,7 +13,7 @@ interface GoogleLoginProps {
 
 export function GoogleLogin({ onSuccess, onError, 'data-testid': testId }: GoogleLoginProps) {
   const { toast } = useToast();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
 
   const handleLoginSuccess = async (credentialResponse: any) => {
     try {
@@ -71,7 +71,7 @@ export function GoogleLogin({ onSuccess, onError, 'data-testid': testId }: Googl
   const handleLoginError = () => {
     const errorMessage = 'Google login was cancelled or failed';
     console.error('Google login error');
-    
+
     toast({
       title: 'Login Failed',
       description: errorMessage,
@@ -83,14 +83,12 @@ export function GoogleLogin({ onSuccess, onError, 'data-testid': testId }: Googl
 
   const handleLogout = async () => {
     try {
-      // Call backend logout endpoint
-      await apiRequest('POST', '/api/auth/logout');
+      // Use centralized logout from useAuth
+      // This handles API call, state clearing, and redirect
+      await logout();
 
-      // Google logout
+      // Also ensure Google session is cleared
       googleLogout();
-
-      // Invalidate auth queries
-      await queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
 
       toast({
         title: 'Signed Out',

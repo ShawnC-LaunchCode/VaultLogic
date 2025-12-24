@@ -77,7 +77,10 @@ export function PreviewRunner({ workflowId, onExit }: PreviewRunnerProps) {
                     setPreviewRunId(data.data.runId);
                     // Set token?
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) {
+                console.error('Failed to create preview run:', e);
+                // Preview mode can continue without run ID (read-only mode)
+            }
         }
         createRun();
     }, [workflowId, previewRunId]);
@@ -138,7 +141,10 @@ export function PreviewRunner({ workflowId, onExit }: PreviewRunnerProps) {
                     if (!section.visibleIf) return true;
                     try {
                         return evaluateConditionExpression(section.visibleIf, values, aliasResolver);
-                    } catch (e) { return true; }
+                    } catch (e) {
+                        console.error('Error evaluating section visibility condition:', section.id, e);
+                        return true; // Fail-safe: show section if evaluation fails
+                    }
                 });
 
                 if (visibleSections.length > 0) {
@@ -172,7 +178,12 @@ export function PreviewRunner({ workflowId, onExit }: PreviewRunnerProps) {
             });
             toast({ title: "Page Filled", description: "Filled current page with random values." });
         } catch (e) {
-            toast({ title: "Error", description: "Failed to generate data", variant: "destructive" });
+            console.error('Failed to generate AI random values:', e);
+            toast({
+                title: "Error",
+                description: e instanceof Error ? e.message : "Failed to generate data",
+                variant: "destructive"
+            });
         } finally {
             setIsAiLoading(false);
         }

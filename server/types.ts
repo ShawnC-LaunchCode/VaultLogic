@@ -18,8 +18,4 @@ export interface AppUser {
     authProvider: 'local' | 'google';
 }
 
-declare module 'express-session' {
-    interface SessionData {
-        user: AppUser;
-    }
-}
+// Session types removed

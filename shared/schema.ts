@@ -196,6 +196,7 @@ export const users = pgTable("users", {
   authProvider: authProviderEnum("auth_provider").default('local').notNull(),
   defaultMode: text("default_mode").default('easy').notNull(), // 'easy' | 'advanced'
   emailVerified: boolean("email_verified").default(false).notNull(),
+  mfaEnabled: boolean("mfa_enabled").default(false).notNull(),
   lastPasswordChange: timestamp("last_password_change"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -224,6 +225,10 @@ export const refreshTokens = pgTable("refresh_tokens", {
   expiresAt: timestamp("expires_at").notNull(),
   revoked: boolean("revoked").default(false).notNull(),
   metadata: jsonb("metadata"), // IP, user agent, etc.
+  deviceName: varchar("device_name", { length: 255 }), // "Chrome on MacBook Pro"
+  ipAddress: varchar("ip_address", { length: 45 }), // IPv6 max length
+  location: varchar("location", { length: 255 }), // "San Francisco, CA, USA"
+  lastUsedAt: timestamp("last_used_at"),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("refresh_token_user_idx").on(table.userId),
@@ -253,6 +258,76 @@ export const emailVerificationTokens = pgTable("email_verification_tokens", {
 }, (table) => [
   index("email_verify_token_idx").on(table.token),
   index("email_verify_user_idx").on(table.userId),
+]);
+
+// Login attempts tracking (for account lockout)
+export const loginAttempts = pgTable("login_attempts", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: varchar("email", { length: 255 }).notNull(),
+  ipAddress: varchar("ip_address", { length: 45 }), // IPv6 max length
+  successful: boolean("successful").notNull().default(false),
+  attemptedAt: timestamp("attempted_at").notNull().defaultNow(),
+}, (table) => [
+  index("login_attempts_email_idx").on(table.email),
+  index("login_attempts_timestamp_idx").on(table.attemptedAt),
+]);
+
+// Account locks (after too many failed attempts)
+export const accountLocks = pgTable("account_locks", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  lockedAt: timestamp("locked_at").notNull().defaultNow(),
+  lockedUntil: timestamp("locked_until").notNull(),
+  reason: varchar("reason", { length: 255 }), // 'too_many_failed_attempts', 'suspicious_activity', etc.
+  unlocked: boolean("unlocked").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("account_locks_user_idx").on(table.userId),
+  index("account_locks_until_idx").on(table.lockedUntil),
+]);
+
+// MFA secrets (TOTP)
+export const mfaSecrets = pgTable("mfa_secrets", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
+  secret: text("secret").notNull(), // Base32 encoded TOTP secret
+  enabled: boolean("enabled").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  enabledAt: timestamp("enabled_at"),
+}, (table) => [
+  index("mfa_secrets_user_idx").on(table.userId),
+]);
+
+// MFA backup codes
+export const mfaBackupCodes = pgTable("mfa_backup_codes", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  codeHash: text("code_hash").notNull(), // bcrypt hash of backup code
+  used: boolean("used").notNull().default(false),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("mfa_backup_codes_user_idx").on(table.userId),
+  index("mfa_backup_codes_hash_idx").on(table.codeHash),
+]);
+
+// Trusted devices (for "Remember this device" functionality)
+export const trustedDevices = pgTable("trusted_devices", {
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  deviceFingerprint: varchar("device_fingerprint", { length: 255 }).notNull(),
+  deviceName: varchar("device_name", { length: 255 }), // "Chrome on MacBook Pro"
+  trustedUntil: timestamp("trusted_until").notNull(), // 30 days from creation
+  ipAddress: varchar("ip_address", { length: 45 }),
+  location: varchar("location", { length: 255 }),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  lastUsedAt: timestamp("last_used_at"),
+  revoked: boolean("revoked").default(false).notNull(),
+}, (table) => [
+  index("trusted_devices_user_idx").on(table.userId),
+  index("trusted_devices_fingerprint_idx").on(table.deviceFingerprint),
+  index("trusted_devices_user_fingerprint_idx").on(table.userId, table.deviceFingerprint),
 ]);
 
 // Anonymous access type enum
@@ -1227,6 +1302,7 @@ export const tenants = pgTable("tenants", {
   name: varchar("name", { length: 255 }).notNull(),
   billingEmail: varchar("billing_email", { length: 255 }),
   plan: tenantPlanEnum("plan").default('free').notNull(),
+  mfaRequired: boolean("mfa_required").default(false).notNull(),
   branding: jsonb("branding"), // Stage 17: Branding customization
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

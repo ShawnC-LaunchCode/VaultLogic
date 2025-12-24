@@ -68,19 +68,21 @@ export function securityHeaders(config: SecurityHeadersConfig = {}) {
           "'self'",
           "'unsafe-inline'", // Required for React/Vite in development
           "'unsafe-eval'",   // Required for some JS libraries (consider removing in prod)
-          'https://accounts.google.com', // Google OAuth
-          'https://www.google.com',      // Google reCAPTCHA
-          'https://www.gstatic.com',     // Google static resources
+          'https://*.google.com',
+          'https://*.gstatic.com',
+          'https://*.googleapis.com',
         ],
         'style-src': [
           "'self'",
           "'unsafe-inline'", // Required for styled-components, Tailwind
-          'https://fonts.googleapis.com',
-          'https://accounts.google.com',
+          'https://*.googleapis.com',
+          'https://*.google.com',
+          'https://*.gstatic.com',
         ],
         'font-src': [
           "'self'",
-          'https://fonts.gstatic.com',
+          'https://*.gstatic.com',
+          'https://*.googleapis.com',
           'data:', // Allow data URIs for fonts
         ],
         'img-src': [
@@ -91,15 +93,16 @@ export function securityHeaders(config: SecurityHeadersConfig = {}) {
         ],
         'connect-src': [
           "'self'",
-          'https://accounts.google.com',
-          'https://www.google.com',
+          'https://*.google.com',
+          'https://*.googleapis.com',
+          'https://*.gstatic.com',
           'wss://localhost:*', // WebSocket for development
           'ws://localhost:*',
         ],
         'frame-src': [
           "'self'",
-          'https://accounts.google.com', // Google OAuth
-          'https://www.google.com',      // Google reCAPTCHA
+          'https://*.google.com',
+          'https://*.firebaseapp.com', // Firebase Auth if used
         ],
         'object-src': ["'none'"],
         'base-uri': ["'self'"],
@@ -154,7 +157,7 @@ export function securityHeaders(config: SecurityHeadersConfig = {}) {
     // 6. Referrer-Policy
     // ===========================================================================
     // Controls how much referrer information is sent with requests
-    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Referrer-Policy', 'no-referrer-when-downgrade');
 
     // ===========================================================================
     // 7. Permissions-Policy (formerly Feature-Policy)
@@ -178,6 +181,13 @@ export function securityHeaders(config: SecurityHeadersConfig = {}) {
     // ===========================================================================
     // Remove default Express header that leaks implementation details
     res.removeHeader('X-Powered-By');
+
+    // ===========================================================================
+    // 9. COOP / COEP (Google Auth Compat)
+    // ===========================================================================
+    // Explicitly allow cross-origin popups for Google Sign-In
+    res.setHeader('Cross-Origin-Opener-Policy', 'unsafe-none');
+    res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
 
     next();
   };

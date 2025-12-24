@@ -6,6 +6,7 @@ import {
 import type { SignatureRequest, InsertSignatureRequest } from "@shared/schema";
 import { createError } from "../utils/errors";
 import { randomBytes } from "crypto";
+import { aclService as defaultAclService } from "./AclService";
 
 /**
  * Service layer for signature request-related business logic
@@ -15,15 +16,18 @@ export class SignatureRequestService {
   private signatureRequestRepo: typeof signatureRequestRepository;
   private workflowRepo: typeof workflowRepository;
   private projectRepo: typeof projectRepository;
+  private aclService: typeof defaultAclService;
 
   constructor(
     signatureRequestRepo?: typeof signatureRequestRepository,
     workflowRepo?: typeof workflowRepository,
-    projectRepo?: typeof projectRepository
+    projectRepo?: typeof projectRepository,
+    aclService?: typeof defaultAclService
   ) {
     this.signatureRequestRepo = signatureRequestRepo || signatureRequestRepository;
     this.workflowRepo = workflowRepo || workflowRepository;
     this.projectRepo = projectRepo || projectRepository;
+    this.aclService = aclService || defaultAclService;
   }
 
   /**

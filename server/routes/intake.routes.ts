@@ -1,5 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { intakeService } from "../services/IntakeService";
+import { optionalHybridAuth, type AuthRequest } from '../middleware/auth';
 import { runService } from "../services/RunService";
 import { CaptchaService } from "../services/CaptchaService.js";
 import { z } from "zod";
@@ -118,13 +119,13 @@ export function registerIntakeRoutes(app: Express): void {
    * Body: { slug, answers?, prefillParams? }
    * Stage 12.5: Supports prefillParams for URL-based prefill
    */
-  app.post('/intake/runs', async (req: Request, res: Response) => {
+  app.post('/intake/runs', optionalHybridAuth, async (req: Request, res: Response) => {
     try {
       const data = createRunSchema.parse(req.body);
 
-      // Get userId from session if authenticated
-      const user = req.user || (req.session as any)?.user;
-      const userId = user?.claims?.sub;
+      // Get userId from AuthRequest if authenticated (via token or cookie)
+      const authReq = req as AuthRequest;
+      const userId = authReq.userId;
 
       const result = await intakeService.createIntakeRun(
         data.slug,

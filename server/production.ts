@@ -103,9 +103,9 @@ app.use(sanitizeInputs);
 
     // Initialize routes and collaboration server
     // CRITICAL: We MUST use the 'server' returned by registerRoutes, as it has the WebSocket instance attached.
-    console.log('[DEBUG] Registering routes...');
+    logger.debug('Registering routes...');
     const server = await registerRoutes(app);
-    console.log('[DEBUG] Routes registered. Server created.');
+    logger.debug('Routes registered. Server created.');
 
     // Register centralized error handler middleware (must be after all routes)
     app.use(errorHandler);

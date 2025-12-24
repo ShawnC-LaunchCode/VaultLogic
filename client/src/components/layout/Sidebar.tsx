@@ -10,17 +10,12 @@ import { Home, Plus, Settings, FileText, BarChart2, Folder, Workflow, ShoppingBa
 
 export default function Sidebar() {
   const [location] = useLocation();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { toast } = useToast();
 
   const handleLogout = async () => {
     try {
-      // Call backend logout endpoint
-      await apiRequest('POST', '/api/auth/logout');
-
-      // Invalidate auth queries
-      await queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
-
+      await logout();
       toast({
         title: 'Signed Out',
         description: 'You have been successfully signed out.',

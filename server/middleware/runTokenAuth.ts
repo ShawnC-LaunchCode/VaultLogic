@@ -99,13 +99,13 @@ export async function creatorOrRunTokenAuth(
   res: Response,
   next: NextFunction
 ): Promise<void> {
-  // Check if user is authenticated via session
-  // The session stores the user object in req.user or req.session.user
-  const sessionUser = req.user || req.session?.user;
-  if (sessionUser) {
-    // Set user on request for consistent access (like isAuthenticated middleware does)
-    req.user = sessionUser;
-    // User is authenticated via session, continue
+  // Check if user is authenticated via hybridAuth (bearer token or cookie)
+  // The hybridAuth middleware should run before this and set req.userId
+  const userId = (req as any).userId;
+
+  if (userId) {
+    // User is authenticated, continue (assuming authorization validation happens in service)
+    // We optionally populate req.user if downstream needs it, but mostly we just need to pass
     return next();
   }
 

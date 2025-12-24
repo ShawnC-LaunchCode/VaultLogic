@@ -3,8 +3,6 @@
  * Augments Express types with custom properties used throughout the application
  */
 
-import "express-session";
-
 declare global {
   namespace Express {
     /**
@@ -36,7 +34,7 @@ declare global {
     interface Request {
       user?: User;
       userId?: string;
-      session?: import("express-session").Session & Partial<import("express-session").SessionData>;
+      // Session removed
       adminUser?: {
         id: string;
         email: string;
@@ -51,8 +49,3 @@ declare global {
   }
 }
 
-declare module "express-session" {
-  interface SessionData {
-    user?: Express.User;
-  }
-}

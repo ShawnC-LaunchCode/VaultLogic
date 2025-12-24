@@ -1,6 +1,6 @@
 import { IncomingMessage } from 'http';
 import { WebSocket } from 'ws';
-import { verifyToken, type JWTPayload } from '../services/auth';
+import { authService, type JWTPayload } from '../services/AuthService';
 import { db } from '../db';
 import { workflows } from '../../shared/schema';
 import { eq, and } from 'drizzle-orm';
@@ -105,7 +105,7 @@ export async function authenticateConnection(
   // Verify JWT
   let payload: JWTPayload;
   try {
-    payload = verifyToken(token);
+    payload = authService.verifyToken(token);
   } catch (error) {
     logger.warn({ error }, 'Invalid JWT token');
     throw new Error('Invalid authentication token');

@@ -4,6 +4,8 @@ import { userRepository } from "../repositories/UserRepository";
 import { WorkflowRepository } from "../repositories/WorkflowRepository";
 import { WorkflowRunRepository } from "../repositories/WorkflowRunRepository";
 import { ActivityLogService } from "../services/ActivityLogService";
+import { accountLockoutService } from "../services/AccountLockoutService";
+import { mfaService } from "../services/MfaService";
 import { createLogger } from "../logger";
 
 const logger = createLogger({ module: 'admin-routes' });
@@ -130,6 +132,113 @@ export function registerAdminRoutes(app: Express): void {
       }
 
       res.status(500).json({ message: "Failed to update user role" });
+    }
+  });
+
+  /**
+   * POST /api/admin/users/:userId/unlock
+   * Unlock a locked user account
+   */
+  app.post('/api/admin/users/:userId/unlock', isAdmin, async (req: Request, res: Response) => {
+    try {
+      if (!req.adminUser) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { userId } = req.params;
+
+      // Verify user exists
+      const user = await userRepository.findById(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Check if account is actually locked
+      const lockStatus = await accountLockoutService.isAccountLocked(userId);
+      if (!lockStatus.locked) {
+        return res.status(400).json({
+          message: "Account is not currently locked"
+        });
+      }
+
+      // Unlock the account
+      await accountLockoutService.unlockAccount(userId);
+
+      logger.info(
+        {
+          adminId: req.adminUser!.id,
+          targetUserId: userId,
+          targetEmail: user.email
+        },
+        'Admin unlocked user account'
+      );
+
+      res.json({
+        message: "Account unlocked successfully",
+        user: {
+          id: user.id,
+          email: user.email
+        }
+      });
+    } catch (error) {
+      logger.error(
+        { err: error, adminId: req.adminUser!.id, userId: req.params.userId },
+        'Error unlocking user account'
+      );
+      res.status(500).json({ message: "Failed to unlock account" });
+    }
+  });
+
+  /**
+   * POST /api/admin/users/:userId/reset-mfa
+   * Reset MFA for a user (for locked out users)
+   */
+  app.post('/api/admin/users/:userId/reset-mfa', isAdmin, async (req: Request, res: Response) => {
+    try {
+      if (!req.adminUser) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { userId } = req.params;
+
+      // Verify user exists
+      const user = await userRepository.findById(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Check if user has MFA enabled
+      if (!user.mfaEnabled) {
+        return res.status(400).json({
+          message: "User does not have MFA enabled"
+        });
+      }
+
+      // Reset MFA (disables and deletes all MFA data)
+      await mfaService.adminResetMfa(userId);
+
+      logger.warn(
+        {
+          adminId: req.adminUser!.id,
+          targetUserId: userId,
+          targetEmail: user.email
+        },
+        'Admin reset user MFA'
+      );
+
+      res.json({
+        message: "MFA reset successfully. User can now log in without MFA.",
+        user: {
+          id: user.id,
+          email: user.email
+        }
+      });
+    } catch (error) {
+      logger.error(
+        { err: error, adminId: req.adminUser!.id, userId: req.params.userId },
+        'Error resetting user MFA'
+      );
+      res.status(500).json({ message: "Failed to reset MFA" });
     }
   });
 
@@ -512,6 +621,60 @@ export function registerAdminRoutes(app: Express): void {
     } catch (error) {
       logger.error({ err: error, adminId: req.adminUser!.id }, 'Error fetching actors');
       res.status(500).json({ message: "Failed to fetch actors" });
+    }
+  });
+
+  // =================================================================
+  // MFA MANAGEMENT
+  // =================================================================
+
+  /**
+   * PUT /api/admin/tenants/:tenantId/mfa-required
+   * Toggle MFA requirement for a tenant
+   */
+  app.put('/api/admin/tenants/:tenantId/mfa-required', isAdmin, async (req: Request, res: Response) => {
+    try {
+      if (!req.adminUser) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { tenantId } = req.params;
+      const { required } = req.body;
+
+      if (typeof required !== 'boolean') {
+        return res.status(400).json({ message: "Required field must be a boolean" });
+      }
+
+      // Note: This implementation assumes you have a TenantRepository
+      // For now, using raw DB query as a placeholder
+      const { db } = await import('../db');
+      const { tenants } = await import('@shared/schema');
+      const { eq } = await import('drizzle-orm');
+
+      await db.update(tenants)
+        .set({ mfaRequired: required })
+        .where(eq(tenants.id, tenantId));
+
+      logger.info(
+        {
+          adminId: req.adminUser!.id,
+          tenantId,
+          mfaRequired: required
+        },
+        `Admin ${required ? 'enabled' : 'disabled'} MFA requirement for tenant`
+      );
+
+      res.json({
+        message: `MFA ${required ? 'enabled' : 'disabled'} for tenant`,
+        tenantId,
+        mfaRequired: required
+      });
+    } catch (error) {
+      logger.error(
+        { err: error, adminId: req.adminUser!.id, tenantId: req.params.tenantId },
+        'Error updating tenant MFA requirement'
+      );
+      res.status(500).json({ message: "Failed to update MFA requirement" });
     }
   });
 }

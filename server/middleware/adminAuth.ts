@@ -9,9 +9,9 @@ const logger = createLogger({ module: 'admin-auth' });
  */
 export const isAdmin: RequestHandler = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = req.session?.user || req.user;
+    const userId = (req as any).userId;
 
-    if (!user?.claims?.sub) {
+    if (!userId) {
       logger.warn({ ip: req.ip }, 'Admin access denied: Not authenticated');
       return res.status(401).json({
         message: "Unauthorized - You must be logged in"
@@ -19,10 +19,10 @@ export const isAdmin: RequestHandler = async (req: Request, res: Response, next:
     }
 
     // Get full user details from database to check role
-    const dbUser = await userRepository.findById(user.claims.sub);
+    const dbUser = await userRepository.findById(userId);
 
     if (!dbUser) {
-      logger.warn({ userId: user.claims.sub }, 'Admin access denied: User not found in database');
+      logger.warn({ userId }, 'Admin access denied: User not found in database');
       return res.status(401).json({
         message: "Unauthorized - User not found"
       });

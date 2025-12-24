@@ -1,49 +1,33 @@
 import { test as base, type Page } from "@playwright/test";
-import { randomUUID } from "crypto";
 
 export type AuthUser = {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
-  role: "admin" | "creator";
+  role: "admin" | "creator" | "owner";
 };
 
 /**
- * Create authenticated session by directly calling the auth API
- * This bypasses Google OAuth for testing purposes
+ * Create authenticated session by hitting the dev-login endpoint.
+ * This sets the real cookies and tokens in the browser context.
  */
 async function createAuthenticatedSession(page: Page): Promise<AuthUser> {
-  // For e2e tests, we'll use a mock Google token approach
-  // In a real scenario, you'd set up a test Google OAuth account or mock the OAuth endpoint
+  // Hit the dev-login endpoint which sets cookies and redirects to /dashboard
+  // We use goto() so it happens in the browser context
+  await page.goto("/api/auth/dev-login");
 
-  // Navigate to the app first to establish cookies
-  await page.goto("/");
+  // Wait for the redirect to dashboard to confirm login
+  await page.waitForURL("**/dashboard");
 
-  // Create a test user via session manipulation
-  // Since we can't easily mock Google OAuth in e2e tests, we'll use localStorage
-  // and a test user endpoint (if available) or direct session setup
-
-  const testUser: AuthUser = {
-    id: `test-user-${randomUUID()}`,
-    email: "e2e-test@example.com",
-    firstName: "E2E",
-    lastName: "Test",
-    role: "creator",
+  // Return the fixed dev user details (matching server/routes/auth.routes.ts)
+  return {
+    id: "dev-user",
+    email: "dev@example.com",
+    firstName: "Dev",
+    lastName: "User",
+    role: "owner"
   };
-
-  // Set up session via direct API call with a test token
-  // Note: This requires a test endpoint or mocked auth in test mode
-  // For now, we'll inject the session directly via page evaluation
-  await page.evaluate((user) => {
-    // Store user in sessionStorage (frontend will check this)
-    sessionStorage.setItem("user", JSON.stringify(user));
-
-    // Also set a flag that we're in test mode
-    sessionStorage.setItem("testMode", "true");
-  }, testUser);
-
-  return testUser;
 }
 
 type AuthFixtures = {
@@ -53,14 +37,6 @@ type AuthFixtures = {
 
 /**
  * Extended Playwright test with authentication fixtures
- *
- * Usage:
- * import { test, expect } from './fixtures/auth';
- *
- * test('my test', async ({ authenticatedPage, testUser }) => {
- *   await authenticatedPage.goto('/dashboard');
- *   // ... test code
- * });
  */
 export const test = base.extend<AuthFixtures>({
   testUser: async ({ page }, use) => {

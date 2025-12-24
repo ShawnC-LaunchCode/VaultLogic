@@ -64,6 +64,8 @@ function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+import { getAccessToken } from "./vault-api";
+
 export async function apiRequest(
   method: string,
   url: string,
@@ -74,9 +76,16 @@ export async function apiRequest(
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
+      const headers: Record<string, string> = data ? { "Content-Type": "application/json" } : {};
+
+      const token = getAccessToken();
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
       const res = await fetch(url, {
         method,
-        headers: data ? { "Content-Type": "application/json" } : {},
+        headers,
         body: data ? JSON.stringify(data) : undefined,
         credentials: "include",
       });
@@ -126,6 +135,9 @@ import { fetchAPI } from "./vault-api";
 
 // ... existing apiRequest (maybe leave as is or update, request isn't used much) ...
 
+// Define behavior for 401 Unauthorized responses
+export type UnauthorizedBehavior = "returnNull" | "throw";
+
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
 }) => QueryFunction<T> =
@@ -136,7 +148,7 @@ export const getQueryFn: <T>(options: {
         // Check if endpoint starts with /api (some keys might not)
         const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
 
-        return await fetchAPI<T>(path);
+        return await fetchAPI<any>(path);
       } catch (error: any) {
         if (unauthorizedBehavior === "returnNull" && (error.message.includes('401') || error.message.includes('Unauthorized'))) {
           return null;

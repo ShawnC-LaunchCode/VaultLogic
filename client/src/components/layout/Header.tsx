@@ -16,14 +16,13 @@ interface HeaderProps {
 
 export default function Header({ title, description, actions }: HeaderProps) {
   const [location] = useLocation();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { toast } = useToast();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
-      await apiRequest('POST', '/api/auth/logout');
-      await queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+      await logout();
       toast({
         title: 'Signed Out',
         description: 'You have been successfully signed out.',

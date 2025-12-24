@@ -1,14 +1,12 @@
 import { OAuth2Client, type TokenPayload } from "google-auth-library";
-import session from "express-session";
-import type { Express, RequestHandler, Request } from "express";
-import connectPg from "connect-pg-simple";
-import createMemoryStore from "memorystore";
+import type { Express } from "express";
 import rateLimit from "express-rate-limit";
 import { userRepository } from "./repositories";
 import { createLogger } from "./logger";
 import { templateSharingService } from "./services/TemplateSharingService";
-import { createToken } from "./services/auth";
+import { authService } from "./services/AuthService";
 import type { AppUser } from "./types";
+import { serialize } from "cookie";
 
 const logger = createLogger({ module: 'auth' });
 
@@ -29,69 +27,6 @@ function getGoogleClient(): OAuth2Client {
 export function __setGoogleClient(client: OAuth2Client | null) {
   googleClient = client;
 }
-
-export function getSession() {
-  // Session lifetime configuration
-  // Note: connect-pg-simple uses TTL in SECONDS, cookie maxAge uses MILLISECONDS
-  const sessionTtlSeconds = 365 * 24 * 60 * 60; // 1 year in seconds (31,536,000)
-
-  // Cookie maxAge must fit in 32-bit signed integer (max 2,147,483,647 ms = ~24.8 days)
-  // Use 24 days as a safe cookie lifetime that fits in 32-bit integer
-  const cookieMaxAgeMs = 24 * 24 * 60 * 60 * 1000; // 24 days in milliseconds (2,073,600,000)
-
-  // Use in-memory session store for tests to avoid database connection issues
-  let sessionStore;
-  if (process.env.NODE_ENV === 'test') {
-    const MemoryStore = createMemoryStore(session);
-    sessionStore = new MemoryStore({
-      checkPeriod: cookieMaxAgeMs, // Use ms for memory store
-    });
-  } else {
-    const pgStore = connectPg(session);
-    sessionStore = new pgStore({
-      conString: process.env.DATABASE_URL,
-      createTableIfMissing: false,
-      ttl: sessionTtlSeconds, // Use SECONDS for pg store
-      tableName: "sessions",
-    });
-  }
-
-  // Detect cross-origin deployment scenario
-  // This occurs when ALLOWED_ORIGIN is set and differs from the current app domain
-  const isCrossOrigin = process.env.NODE_ENV === 'production' &&
-    process.env.ALLOWED_ORIGIN &&
-    !process.env.ALLOWED_ORIGIN.includes('localhost') &&
-    !process.env.ALLOWED_ORIGIN.includes('127.0.0.1') &&
-    !process.env.ALLOWED_ORIGIN.includes('0.0.0.0');
-
-  // SECURITY FIX: When using sameSite='none', secure MUST be true
-  // This is a browser requirement - sameSite=none cookies must be secure
-  const requireSecure = isCrossOrigin || process.env.NODE_ENV === 'production';
-
-  return session({
-    secret: process.env.SESSION_SECRET!,
-    store: sessionStore,
-    resave: false,
-    saveUninitialized: false,
-    name: 'survey-session', // Custom cookie name for additional security
-    cookie: {
-      httpOnly: true,
-      // SECURITY FIX: secure must be true when sameSite='none'
-      secure: requireSecure,
-      // For cross-origin deployments, use SameSite=None to allow cross-origin cookies
-      // For same-origin deployments, use SameSite=lax for CSRF protection
-      sameSite: isCrossOrigin ? 'none' : 'lax',
-      maxAge: cookieMaxAgeMs, // 24 days (fits in 32-bit integer)
-      // Additional cookie settings for cross-origin scenarios
-      ...(isCrossOrigin && {
-        domain: undefined, // Let browser determine the correct domain
-        path: '/'  // Ensure cookie is available site-wide
-      })
-    },
-  });
-}
-
-// updateUserSession removed as we build the user object directly
 
 async function upsertUser(payload: TokenPayload) {
   try {
@@ -114,23 +49,16 @@ async function upsertUser(payload: TokenPayload) {
       lastName: payload.family_name || "",
       profileImageUrl: payload.picture || null,
       defaultMode: 'easy' as const,
-      tenantId: defaultTenant.id, // Assign default tenant to new users
-      tenantRole: 'viewer' as const, // Default role for new users
-      emailVerified: true, // Google users are verified
+      tenantId: defaultTenant.id,
+      tenantRole: 'viewer' as const,
+      emailVerified: true,
       lastPasswordChange: null
     };
     logger.debug({ userId: userData.id, email: userData.email, tenantId: defaultTenant.id }, 'Upserting user');
     await userRepository.upsert(userData);
-    logger.info({ userId: userData.id }, 'User upserted successfully');
+    return userData;
   } catch (error) {
-    logger.error(
-      {
-        err: error,
-        userId: payload.sub,
-        userEmail: payload.email,
-      },
-      'Failed to upsert user during authentication'
-    );
+    logger.error({ err: error, userId: payload.sub }, 'Failed to upsert user during authentication');
     throw new Error("Failed to create or update user account");
   }
 }
@@ -138,7 +66,6 @@ async function upsertUser(payload: TokenPayload) {
 export async function verifyGoogleToken(token: string): Promise<TokenPayload> {
   try {
     const client = getGoogleClient();
-
     logger.debug({ tokenLength: token?.length }, 'Verifying Google token');
 
     const ticket = await client.verifyIdToken({
@@ -147,97 +74,50 @@ export async function verifyGoogleToken(token: string): Promise<TokenPayload> {
     });
 
     const payload = ticket.getPayload();
-    if (!payload) {
-      logger.error('Token verification failed: Empty payload');
-      throw new Error("Invalid token payload");
-    }
+    if (!payload) throw new Error("Invalid token payload");
 
-    logger.debug(
-      {
-        email: payload.email,
-        emailVerified: payload.email_verified,
-        audience: payload.aud,
-        issuer: payload.iss,
-      },
-      'Token payload received'
-    );
-
-    // Check if email is verified for additional security
     if (!payload.email_verified) {
       logger.warn({ email: payload.email }, 'Email not verified by Google');
       throw new Error("Email not verified by Google");
     }
 
-    logger.info({ email: payload.email }, 'Token verified successfully');
     return payload;
   } catch (error) {
-    const errorContext: any = { err: error };
-
-    // Add hints for common errors
-    if (error instanceof Error) {
-      if (error.message.includes('audience')) {
-        errorContext.hint = 'Token audience mismatch - check GOOGLE_CLIENT_ID configuration';
-      } else if (error.message.includes('expired')) {
-        errorContext.hint = 'Token expired - user needs to re-authenticate';
-      } else if (error.message.includes('issuer')) {
-        errorContext.hint = 'Invalid issuer - token may not be from Google';
-      }
-    }
-
-    logger.error(errorContext, 'Google token verification failed');
+    logger.error({ err: error }, 'Google token verification failed');
     throw error;
   }
 }
 
 // Rate limiting for authentication endpoint
-// Disable rate limiting in test mode to allow integration tests to run
 const authRateLimit = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'test' ? 1000 : 10, // much higher limit in test mode
-  message: {
-    message: 'Too many authentication attempts, please try again later.'
-  },
+  windowMs: 15 * 60 * 1000,
+  max: process.env.NODE_ENV === 'test' ? 1000 : 10,
+  message: { message: 'Too many authentication attempts, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
-// Helper function to validate Origin/Referer for CSRF protection
+// Helper function to validate Origin/Referer
 function validateOrigin(req: any): boolean {
   const origin = req.get('Origin') || req.get('Referer');
   if (!origin) return false;
 
   try {
     const originUrl = new URL(origin);
-    const allowedHosts = [
-      'localhost',
-      '127.0.0.1',
-      '0.0.0.0'
-    ];
+    const allowedHosts = ['localhost', '127.0.0.1', '0.0.0.0'];
 
-    // Add ALLOWED_ORIGIN environment variable (expecting hostname-only format)
     if (process.env.ALLOWED_ORIGIN) {
-      // Split by comma for multiple allowed origins and normalize to hostnames
       const allowedOrigins = process.env.ALLOWED_ORIGIN.split(',').map(origin => {
-        const trimmed = origin.trim();
         try {
-          // If it contains protocol, extract hostname
-          if (trimmed.includes('://')) {
-            return new URL(trimmed).hostname;
-          }
-          // Otherwise treat as hostname
-          return trimmed;
-        } catch {
-          // If URL parsing fails, treat as hostname
-          return trimmed;
-        }
+          return origin.includes('://') ? new URL(origin).hostname : origin.trim();
+        } catch { return origin.trim(); }
       });
       allowedHosts.push(...allowedOrigins);
     }
 
-    // Remove falsy values and check against origin hostname
     const validHosts = allowedHosts.filter(Boolean);
     return validHosts.some(host =>
-      originUrl.hostname === host || originUrl.hostname.endsWith(`.${host} `)
+      originUrl.hostname === host || originUrl.hostname.endsWith(`.${host}`)
     );
   } catch {
     return false;
@@ -246,255 +126,71 @@ function validateOrigin(req: any): boolean {
 
 export async function setupAuth(app: Express) {
   app.set("trust proxy", 1);
-  app.use(getSession());
+  // Session middleware REMOVED
 
   // Google OAuth2 login route - accepts ID token from frontend
   app.post("/api/auth/google", authRateLimit, async (req, res) => {
     try {
       const { token, idToken } = req.body;
-      const googleToken = token || idToken; // Accept both 'token' and 'idToken' for compatibility
-
-      logger.info(
-        {
-          hasToken: !!googleToken,
-          origin: req.get('Origin'),
-          ip: req.ip,
-        },
-        'OAuth2 login attempt'
-      );
+      const googleToken = token || idToken;
 
       if (!googleToken) {
-        logger.warn('OAuth2 login failed: No token provided');
-        return res.status(400).json({
-          message: "ID token is required",
-          error: "missing_token"
-        });
+        return res.status(400).json({ message: "ID token is required", error: "missing_token" });
       }
 
       // CSRF Protection: Validate Origin/Referer
       if (!validateOrigin(req)) {
-        logger.warn(
-          {
-            origin: req.get('Origin'),
-            referer: req.get('Referer'),
-          },
-          'OAuth2 login failed: Invalid origin'
-        );
-        return res.status(403).json({
-          message: "Invalid request origin",
-          error: "invalid_origin",
-          details: {
-            receivedOrigin: req.get('Origin'),
-            receivedReferer: req.get('Referer'),
-            allowedOrigins: process.env.ALLOWED_ORIGIN
-          }
-        });
+        return res.status(403).json({ message: "Invalid request origin", error: "invalid_origin" });
       }
 
-      // Verify the Google ID token
+      // Verify and Upsert
       const payload = await verifyGoogleToken(googleToken);
-
-      // Upsert user in database
       await upsertUser(payload);
 
-      // Fetch full user data from database (includes tenantId)
       const dbUser = await userRepository.findById(payload.sub!);
+      if (!dbUser) throw new Error('User not found after upsert');
 
-      if (!dbUser) {
-        logger.error({ userId: payload.sub }, 'User not found after upsert');
-        throw new Error('Failed to retrieve user data');
-      }
-
-      // Create user session data using standard AppUser interface
-      const user: AppUser = {
-        id: dbUser.id,
-        email: dbUser.email,
-        firstName: dbUser.firstName || payload.given_name || undefined,
-        lastName: dbUser.lastName || payload.family_name || undefined,
-        fullName: dbUser.fullName || payload.name || undefined,
-        profileImageUrl: dbUser.profileImageUrl || payload.picture || undefined,
-
-        tenantId: dbUser.tenantId || undefined,
-        tenantRole: (dbUser.tenantRole as any) || undefined,
-        role: (dbUser.role as any) || undefined,
-
-        emailVerified: true,
-        authProvider: 'google',
-      };
-
-      // Legacy support: Add claims for strict backwards compatibility if needed, 
-      // but try to move away from it. Middleware now supports both.
-
-      // Accept any pending template shares for this user's email
+      // Accept pending shares
       try {
-        const userForSharing = {
-          id: payload.sub!,
-          email: payload.email!,
-          fullName: payload.name || null,
-          firstName: payload.given_name || null,
-          lastName: payload.family_name || null,
-          profileImageUrl: payload.picture || null,
-          tenantId: null,
-          tenantRole: null,
-          authProvider: 'google' as const,
-          defaultMode: 'easy' as const,
-          role: 'creator' as const, // Default role
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          emailVerified: true,
-          lastPasswordChange: null
-        };
-        await templateSharingService.acceptPendingOnLogin(userForSharing);
-        logger.debug({ email: payload.email }, 'Accepted pending template shares');
-      } catch (error) {
-        // Don't fail login if this fails
-        logger.warn({ err: error, email: payload.email }, 'Failed to accept pending template shares');
+        await templateSharingService.acceptPendingOnLogin({ ...dbUser, authProvider: 'google' } as AppUser);
+      } catch (e) {
+        logger.warn('Failed to accept pending template shares');
       }
 
-      // Session fixation protection: regenerate session before login
-      req.session.regenerate((err) => {
-        if (err) {
-          logger.error({ err }, 'Session regeneration failed');
-          return res.status(500).json({ message: "Session creation failed" });
+      // Generate Tokens using AuthService
+      const jwtToken = authService.createToken(dbUser);
+      const refreshToken = await authService.createRefreshToken(dbUser.id, {
+        ip: req.ip,
+        userAgent: req.headers['user-agent']
+      });
+
+      // Set Refresh Token Cookie
+      res.setHeader('Set-Cookie', serialize('refresh_token', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 30 // 30 days
+      }));
+
+      logger.info({ email: payload.email }, 'OAuth2 login successful');
+      res.json({
+        message: "Authentication successful",
+        token: jwtToken,
+        user: {
+          id: payload.sub,
+          email: payload.email,
+          firstName: payload.given_name,
+          lastName: payload.family_name,
+          profileImageUrl: payload.picture,
+          tenantId: dbUser.tenantId,
+          role: dbUser.role,
+          tenantRole: dbUser.tenantRole,
         }
-
-        // Set up the session with new session ID
-        req.user = user as any; // Cast for express type compatibility
-        req.session.user = user;
-
-        // Save session before responding to avoid race condition
-        req.session.save((saveErr) => {
-          if (saveErr) {
-            logger.error({ err: saveErr }, 'Session save failed');
-            return res.status(500).json({ message: "Session save failed" });
-          }
-
-          // Generate JWT for WebSocket/API authentication
-          let jwtToken: string | undefined;
-          try {
-            jwtToken = createToken(dbUser);
-            logger.debug({ userId: dbUser.id }, 'JWT token generated for OAuth user');
-          } catch (error) {
-            // Log but don't fail login - JWT is optional for session-based auth
-            logger.warn({ err: error, userId: dbUser.id }, 'Failed to generate JWT token');
-          }
-
-          logger.info({ email: payload.email }, 'OAuth2 login successful');
-          res.json({
-            message: "Authentication successful",
-            token: jwtToken, // JWT for WebSocket/API auth
-            user: {
-              id: payload.sub,
-              email: payload.email,
-              firstName: payload.given_name,
-              lastName: payload.family_name,
-              profileImageUrl: payload.picture,
-              tenantId: dbUser.tenantId,
-              tenantRole: dbUser.tenantRole,
-            }
-          });
-        });
       });
     } catch (error) {
-      // Enhanced error logging with full details
-      let errorCode = "unknown_error";
-      let errorMessage = "Authentication failed";
-      let statusCode = 401;
-
-      if (error instanceof Error) {
-        errorMessage = error.message;
-
-        // Categorize errors for better debugging
-        if (error.message.includes('Token used too late') || error.message.includes('expired')) {
-          errorCode = "token_expired";
-          errorMessage = "Google token has expired. Please try signing in again.";
-        } else if (error.message.includes('Invalid token signature') || error.message.includes('Invalid token')) {
-          errorCode = "invalid_token_signature";
-          errorMessage = "Invalid Google token. Please try signing in again.";
-        } else if (error.message.includes('Wrong number of segments in token') || error.message.includes('JWT')) {
-          errorCode = "malformed_token";
-          errorMessage = "Malformed Google token. Please try signing in again.";
-        } else if (error.message.includes('audience')) {
-          errorCode = "audience_mismatch";
-          errorMessage = "Token audience mismatch. Please ensure your Google OAuth Client ID is correctly configured.";
-          statusCode = 500; // This is a configuration error
-        } else if (error.message.includes('issuer')) {
-          errorCode = "invalid_issuer";
-          errorMessage = "Token issuer invalid. The token may not be from Google.";
-        } else if (error.message.includes('Email not verified')) {
-          errorCode = "email_not_verified";
-          errorMessage = "Your Google account email is not verified. Please verify your email with Google first.";
-          statusCode = 403;
-        }
-      }
-
-      logger.error(
-        {
-          err: error,
-          errorCode,
-          origin: req.get('Origin'),
-        },
-        'Google authentication failed'
-      );
-
-      res.status(statusCode).json({
-        message: errorMessage,
-        error: errorCode,
-        ...((process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') && {
-          details: error instanceof Error ? error.message : String(error)
-        })
-      });
+      logger.error({ err: error }, 'Google authentication failed');
+      res.status(401).json({ message: "Authentication failed", error: "auth_failed" });
     }
   });
-
-
-}
-
-// Local AppUser removed, using shared one
-// updateUserSession removed, no longer needed
-
-export const isAuthenticated: RequestHandler = async (req, res, next) => {
-  const user = (req.session?.user || req.user) as AppUser | undefined;
-
-  if (!user) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
-
-  // Auto-populate missing tenantId from database (for legacy sessions)
-  if (!user.tenantId && user.id) {
-    try {
-      const dbUser = await userRepository.findById(user.id);
-      if (dbUser?.tenantId) {
-        logger.info(
-          { userId: user.id, email: user.email },
-          'Auto-populating missing tenantId from database into session'
-        );
-        user.tenantId = dbUser.tenantId;
-        user.tenantRole = dbUser.tenantRole;
-        // Update session to persist the fix
-        if (req.session) {
-          req.session.user = user;
-        }
-      } else {
-        logger.error(
-          { userId: user.id, email: user.email },
-          'User missing tenantId in database - cannot auto-populate'
-        );
-      }
-    } catch (error) {
-      logger.error(
-        { err: error, userId: user.id },
-        'Failed to auto-populate tenantId from database'
-      );
-    }
-  }
-
-  // Set user on request for backward compatibility
-  req.user = user;
-  next();
-};
-
-// Helper function to get authenticated user from request
-export function getAuthenticatedUser(req: Request): AppUser | undefined {
-  return (req.session?.user || req.user) as AppUser | undefined;
 }

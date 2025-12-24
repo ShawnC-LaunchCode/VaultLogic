@@ -119,13 +119,24 @@ export class WorkflowService {
 
   /**
    * Get workflow by ID with full details (sections, steps, rules)
+   *
+   * PERFORMANCE OPTIMIZED (Dec 2025):
+   * - Uses Map for O(n) step grouping instead of O(n*m) filter
+   * - Batch loads all data in parallel where possible
    */
   async getWorkflowWithDetails(workflowId: string, userId: string) {
     const workflow = await this.verifyAccess(workflowId, userId, 'view');
-    const sections = await this.sectionRepo.findByWorkflowId(workflowId);
+
+    // OPTIMIZATION: Run independent queries in parallel
+    const [sections, logicRules] = await Promise.all([
+      this.sectionRepo.findByWorkflowId(workflowId),
+      this.logicRuleRepo.findByWorkflowId(workflowId),
+    ]);
+
     const sectionIds = sections.map((s) => s.id);
-    const steps = await this.stepRepo.findBySectionIds(sectionIds);
-    const logicRules = await this.logicRuleRepo.findByWorkflowId(workflowId);
+    const steps = sectionIds.length > 0
+      ? await this.stepRepo.findBySectionIds(sectionIds)
+      : [];
 
     // Debug logging for preview issue
     logger.info({
@@ -136,24 +147,31 @@ export class WorkflowService {
       logicRulesCount: logicRules.length
     }, 'getWorkflowWithDetails called');
 
-    // Group steps by section
+    // OPTIMIZATION: Group steps by section using Map (O(n) instead of O(n*m))
+    const stepsBySectionMap = new Map<string, Step[]>();
+    for (const step of steps) {
+      if (!stepsBySectionMap.has(step.sectionId)) {
+        stepsBySectionMap.set(step.sectionId, []);
+      }
+      stepsBySectionMap.get(step.sectionId)!.push(step);
+    }
+
     const sectionsWithSteps = sections.map((section) => ({
       ...section,
-      steps: steps.filter((step) => step.sectionId === section.id),
+      steps: stepsBySectionMap.get(section.id) || [],
     }));
 
+    // OPTIMIZATION: Single query for current version (if exists)
     let currentVersion = null;
-    if (workflow.currentVersionId) {
+    if (workflow.currentVersionId || workflow.status === 'draft') {
       currentVersion = await db.query.workflowVersions.findFirst({
-        where: eq(workflowVersions.id, workflow.currentVersionId)
+        where: workflow.currentVersionId
+          ? eq(workflowVersions.id, workflow.currentVersionId)
+          : eq(workflowVersions.workflowId, workflowId),
+        orderBy: workflow.currentVersionId
+          ? undefined
+          : (v: any, { desc }: any) => [desc(v.versionNumber)],
       });
-    } else if (workflow.status === 'draft') {
-      // Fallback: Try to find the latest draft version if currentVersionId is not set
-      const latestDraft = await db.query.workflowVersions.findFirst({
-        where: eq(workflowVersions.workflowId, workflowId),
-        orderBy: (v: any, { desc }: any) => [desc(v.versionNumber)],
-      });
-      if (latestDraft) currentVersion = latestDraft;
     }
 
     return {
