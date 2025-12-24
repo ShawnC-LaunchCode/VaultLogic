@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { AuthService } from "../../../server/services/AuthService";
+import { AuthService } from "@server/services/AuthService";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import type { User } from "@shared/schema";
-import { db } from "../../../server/db";
+import { db } from "@server/db";
 
 // Mock database and external dependencies
-vi.mock("../../../server/db", () => ({
+vi.mock("@server/db", () => ({
   db: {
     query: {
       users: { findFirst: vi.fn() },

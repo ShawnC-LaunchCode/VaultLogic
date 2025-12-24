@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { AccountLockoutService } from "../../../server/services/AccountLockoutService";
+import { AccountLockoutService } from "@server/services/AccountLockoutService";
 
 // Mock dependencies
-vi.mock("../../../server/db", () => ({
+vi.mock("@server/db", () => ({
   db: {
     query: {
       loginAttempts: {
@@ -44,7 +44,7 @@ describe("AccountLockoutService", () => {
   beforeEach(async () => {
     accountLockoutService = new AccountLockoutService();
 
-    const dbModule = await import("../../../server/db");
+    const dbModule = await import("@server/db");
     mockDb = dbModule.db;
 
     // Reset all mocks
