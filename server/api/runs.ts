@@ -66,7 +66,7 @@ router.post(
       }
 
       // Verify tenant access
-      if (workflow.project.tenantId !== tenantId) {
+      if (!workflow.project || workflow.project.tenantId !== tenantId) {
         throw createError.forbidden('Access denied to this workflow');
       }
 
@@ -260,20 +260,20 @@ router.get(
 
       // Apply tenant filtering + additional filters in-memory (since complex joins)
       let filteredRuns = runs.filter(
-        (run: RunWithRelations) => run.workflowVersion.workflow.project.tenantId === tenantId
+        (run: RunWithRelations) => run.workflowVersion?.workflow?.project?.tenantId === tenantId
       );
 
       // Stage 8: Filter by workflow
       if (workflowId) {
         filteredRuns = filteredRuns.filter(
-          (run: RunWithRelations) => run.workflowVersion.workflow.id === workflowId
+          (run: RunWithRelations) => run.workflowVersion?.workflow?.id === workflowId
         );
       }
 
       // Stage 8: Filter by project
       if (projectId) {
         filteredRuns = filteredRuns.filter(
-          (run: RunWithRelations) => run.workflowVersion.workflow.projectId === projectId
+          (run: RunWithRelations) => run.workflowVersion?.workflow?.projectId === projectId
         );
       }
 
@@ -477,8 +477,8 @@ router.get(
       }
 
       const [projectA, projectB] = await Promise.all([
-        db.query.projects.findFirst({ where: eq(schema.projects.id, workflowA.projectId) }),
-        db.query.projects.findFirst({ where: eq(schema.projects.id, workflowB.projectId) }),
+        workflowA.projectId ? db.query.projects.findFirst({ where: eq(schema.projects.id, workflowA.projectId) }) : null,
+        workflowB.projectId ? db.query.projects.findFirst({ where: eq(schema.projects.id, workflowB.projectId) }) : null,
       ]);
 
       if (!projectA || projectA.tenantId !== tenantId) {
@@ -573,6 +573,10 @@ router.get(
         throw createError.notFound('Run workflow');
       }
 
+      if (!workflow.projectId) {
+        throw createError.forbidden('Access denied (unfiled workflow)');
+      }
+
       const project = await db.query.projects.findFirst({
         where: eq(schema.projects.id, workflow.projectId),
       });
@@ -618,6 +622,10 @@ router.get(
       const workflow = run.workflowVersion?.workflow;
       if (!workflow) {
         throw createError.notFound('Run workflow');
+      }
+
+      if (!workflow.projectId) {
+        throw createError.forbidden('Access denied (unfiled workflow)');
       }
 
       const project = await db.query.projects.findFirst({
@@ -688,6 +696,10 @@ router.get(
       const workflow = run.workflowVersion?.workflow;
       if (!workflow) {
         throw createError.notFound('Run workflow');
+      }
+
+      if (!workflow.projectId) {
+        throw createError.forbidden('Access denied (unfiled workflow)');
       }
 
       const project = await db.query.projects.findFirst({
@@ -783,6 +795,10 @@ router.post(
       const workflow = originalRun.workflowVersion?.workflow;
       if (!workflow) {
         throw createError.notFound('Run workflow');
+      }
+
+      if (!workflow.projectId) {
+        throw createError.forbidden('Access denied (unfiled workflow)');
       }
 
       const project = await db.query.projects.findFirst({
@@ -1065,6 +1081,10 @@ router.get(
         const workflow = run.workflowVersion?.workflow;
         if (!workflow) {
           throw createError.notFound('Run workflow');
+        }
+
+        if (!workflow.projectId) {
+          throw createError.forbidden('Access denied (unfiled workflow)');
         }
 
         const project = await db.query.projects.findFirst({

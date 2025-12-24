@@ -22,7 +22,7 @@ export class PortalService {
                             id: true,
                             title: true,
                             name: true, // Legacy/New
-                            accessSettings: true
+                            // publicSettings: true
                         }
                     }
                 }

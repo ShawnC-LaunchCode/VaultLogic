@@ -98,7 +98,7 @@ export class AuthService {
             };
 
             const options: SignOptions = {
-                expiresIn: JWT_EXPIRY,
+                expiresIn: JWT_EXPIRY as any,
                 algorithm: 'HS256',
             };
 
@@ -298,7 +298,7 @@ export class AuthService {
             .where(eq(refreshTokens.id, storedToken.id));
 
         // Issue a new refresh token
-        const newRefreshToken = await this.createRefreshToken(storedToken.userId, storedToken.metadata);
+        const newRefreshToken = await this.createRefreshToken(storedToken.userId, storedToken.metadata as any);
 
         return {
             userId: storedToken.userId,

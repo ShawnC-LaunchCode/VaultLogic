@@ -80,7 +80,9 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // SECURITY: Comprehensive security headers (CSP, HSTS, X-Frame-Options, etc.)
-const { securityHeaders } = await import("./middleware/securityHeaders.js");
+// SECURITY: Comprehensive security headers (CSP, HSTS, X-Frame-Options, etc.)
+// Moved to async block or static import
+import { securityHeaders } from "./middleware/securityHeaders.js";
 app.use(securityHeaders());
 
 // SECURITY FIX: Add payload size limits to prevent DoS attacks
@@ -93,7 +95,9 @@ app.use(express.urlencoded({ extended: false, limit: maxRequestSize }));
 app.use(sanitizeInputs);
 
 // SECURITY FIX: Request timeout protection (30s default, configurable)
-const { requestTimeout } = await import("./middleware/timeout.js");
+// SECURITY FIX: Request timeout protection (30s default, configurable)
+// Moved to async block or static import
+import { requestTimeout } from "./middleware/timeout.js";
 app.use(requestTimeout);
 
 // =====================================================================

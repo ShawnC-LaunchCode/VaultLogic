@@ -281,7 +281,7 @@ export function evaluateExpression(
         if (opCount > MAX_OPERATIONS) {
           throw new Error(`Expression exceeded maximum operations (${MAX_OPERATIONS})`);
         }
-        return fn(...(args as any));
+        return (fn as any)(...args);
       };
     }
 

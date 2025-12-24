@@ -152,7 +152,7 @@ export async function setupAuth(app: Express) {
 
       // Accept pending shares
       try {
-        await templateSharingService.acceptPendingOnLogin({ ...dbUser, authProvider: 'google' } as AppUser);
+        await templateSharingService.acceptPendingOnLogin({ ...dbUser, authProvider: 'google' } as any);
       } catch (e) {
         logger.warn('Failed to accept pending template shares');
       }

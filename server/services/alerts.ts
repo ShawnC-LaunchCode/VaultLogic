@@ -297,7 +297,7 @@ export async function batchEvaluateAlerts(): Promise<void> {
       WHERE bucket_start >= NOW() - INTERVAL '7 days'
     `;
 
-    const result = await db.execute({ sql: query, args: [] });
+    const result = await db.execute({ sql: query, args: [] } as any) as any;
 
     for (const row of result.rows as any[]) {
       try {

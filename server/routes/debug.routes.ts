@@ -70,7 +70,7 @@ export function registerDebugRoutes(app: Express): void {
     res.json({
       userId: authReq.userId,
       tenantId: authReq.tenantId,
-      session: authReq.session?.user,
+      session: (authReq as any).session?.user,
     });
   });
 }

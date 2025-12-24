@@ -24,7 +24,7 @@ export class EmailTemplateMetadataService {
         .from(emailTemplateMetadata);
 
       logger.debug({ count: templates.length }, 'Listed email templates');
-      return templates;
+      return templates as unknown as EmailTemplateMetadata[];
     } catch (error) {
       logger.error({ error }, 'Failed to list email templates');
       throw error;
@@ -46,7 +46,7 @@ export class EmailTemplateMetadataService {
         return null;
       }
 
-      return template;
+      return template as unknown as EmailTemplateMetadata;
     } catch (error) {
       logger.error({ error, templateId }, 'Failed to get template');
       throw error;
@@ -68,7 +68,7 @@ export class EmailTemplateMetadataService {
         return null;
       }
 
-      return template;
+      return template as unknown as EmailTemplateMetadata;
     } catch (error) {
       logger.error({ error, templateKey }, 'Failed to get template by key');
       throw error;
@@ -109,7 +109,7 @@ export class EmailTemplateMetadataService {
       }
 
       logger.info({ templateId, metadata }, 'Template metadata updated');
-      return updatedTemplate;
+      return updatedTemplate as unknown as EmailTemplateMetadata;
     } catch (error) {
       logger.error({ error, templateId, metadata }, 'Failed to update template metadata');
       throw error;
@@ -135,12 +135,12 @@ export class EmailTemplateMetadataService {
           name: data.name,
           description: data.description || null,
           subjectPreview: data.subjectPreview || null,
-          brandingTokens: data.brandingTokens || null,
+          brandingTokens: (data.brandingTokens || null) as any,
         })
         .returning();
 
       logger.info({ templateKey: data.templateKey }, 'Email template created');
-      return newTemplate;
+      return newTemplate as unknown as EmailTemplateMetadata;
     } catch (error: any) {
       // Check for unique constraint violation
       if (error?.code === '23505') {

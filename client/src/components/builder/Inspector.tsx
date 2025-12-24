@@ -5,6 +5,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useWorkflowBuilder } from "@/store/workflow-builder";
 import { BlocksPanel } from "./BlocksPanel";
+// const BlocksPanel = ({ workflowId }: { workflowId: string }) => <div className="p-4 text-sm text-muted-foreground">Blocks Panel is currently unavailable.</div>;
 import { TransformBlocksPanel } from "./TransformBlocksPanel";
 import { StepPropertiesPanel } from "./StepPropertiesPanel";
 import { LogicPanel } from "./LogicPanel";

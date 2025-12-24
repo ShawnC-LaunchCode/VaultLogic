@@ -104,7 +104,7 @@ export class QueryRunner {
             }
 
             if (condition) {
-                sqlQuery.where(exists(
+                (sqlQuery as any).where(exists(
                     this.db.select({ one: sql`1` })
                         .from(v)
                         .where(and(

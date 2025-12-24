@@ -281,43 +281,43 @@ export class IntakeService {
           const stepMap = new Map(allSteps.map((s: any) => [s.id, s]));
           const emailStep = allSteps.find((s: any) => s.alias === intakeConfig.receiptEmailVar);
 
-        if (emailStep) {
-          const emailValue = stepValues.find(sv => sv.stepId === emailStep.id);
+          if (emailStep) {
+            const emailValue = stepValues.find(sv => sv.stepId === emailStep.id);
 
-          if (emailValue && typeof emailValue.value === "string") {
-            const email = emailValue.value;
+            if (emailValue && typeof emailValue.value === "string") {
+              const email = emailValue.value;
 
-            // Build summary (non-sensitive fields only) - O(N) instead of O(N²)
-            const summary: Record<string, any> = {};
-            for (const stepValue of stepValues) {
-              const step = stepMap.get(stepValue.stepId);
-              if (step?.alias && !this.isSensitiveField(step.alias)) {
-                summary[step.alias] = stepValue.value;
+              // Build summary (non-sensitive fields only) - O(N) instead of O(N²)
+              const summary: Record<string, any> = {};
+              for (const stepValue of stepValues) {
+                const step = stepMap.get(stepValue.stepId) as any;
+                if (step?.alias && !this.isSensitiveField(step.alias as string)) {
+                  summary[step.alias] = stepValue.value;
+                }
               }
+
+              // Send receipt
+              const emailResult = await sendIntakeReceipt({
+                to: email,
+                tenantId: workflow.projectId || "default",
+                workflowId: workflow.id,
+                workflowName: workflow.title,
+                runId: run.id,
+                summary,
+              });
+
+              result.emailReceipt = {
+                attempted: true,
+                to: email,
+                success: emailResult.success,
+                error: emailResult.error,
+              };
+
+              logger.info({ runId: run.id, email, success: emailResult.success }, "Sent intake receipt");
+            } else {
+              logger.warn({ runId: run.id, receiptEmailVar: intakeConfig.receiptEmailVar }, "Email field not found or invalid");
             }
-
-            // Send receipt
-            const emailResult = await sendIntakeReceipt({
-              to: email,
-              tenantId: workflow.projectId || "default",
-              workflowId: workflow.id,
-              workflowName: workflow.title,
-              runId: run.id,
-              summary,
-            });
-
-            result.emailReceipt = {
-              attempted: true,
-              to: email,
-              success: emailResult.success,
-              error: emailResult.error,
-            };
-
-            logger.info({ runId: run.id, email, success: emailResult.success }, "Sent intake receipt");
-          } else {
-            logger.warn({ runId: run.id, receiptEmailVar: intakeConfig.receiptEmailVar }, "Email field not found or invalid");
           }
-        }
         } // Close the else block for successful Promise.allSettled results
       }
 

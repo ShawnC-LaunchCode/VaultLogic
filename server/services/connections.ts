@@ -242,7 +242,7 @@ export async function createConnection(
   const result = await db
     .insert(connections)
     .values({
-      tenantId,
+      tenantId: tenantId!,
       projectId: input.projectId,
       name: input.name,
       type: input.type,
@@ -254,7 +254,7 @@ export async function createConnection(
       retries: input.retries ?? 2,
       backoffMs: input.backoffMs ?? 250,
       enabled: true,
-    })
+    } as any)
     .returning();
 
   return getConnection(input.projectId, result[0].id) as Promise<Connection>;

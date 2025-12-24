@@ -269,8 +269,8 @@ export class TemplateVersionService {
       const fields2 = new Set(v2.metadata.fields.map((f: any) => f.name));
 
       comparison.changes.fieldChanges = {
-        added: Array.from(fields2).filter((f) => !fields1.has(f)),
-        removed: Array.from(fields1).filter((f) => !fields2.has(f)),
+        added: Array.from(fields2).filter((f) => !fields1.has(f)) as string[],
+        removed: Array.from(fields1).filter((f) => !fields2.has(f)) as string[],
         modified: [], // TODO: Detect modified fields by comparing field properties
       };
     }

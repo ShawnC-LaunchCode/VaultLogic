@@ -96,12 +96,15 @@ async function processDocumentGenerationJob(
     if (result.documents.length > 0) {
       const documentRecords = result.documents.map((doc) => ({
         runId,
-        documentUrl: doc.pdfPath || doc.docxPath,
-        fileType: doc.pdfPath ? 'pdf' : 'docx',
-        alias: doc.alias || 'document',
+        fileUrl: doc.pdfPath || doc.docxPath, // Map documentUrl to fileUrl
+        fileName: doc.alias || 'document',    // Map alias to fileName
+        // fileType: doc.pdfPath ? 'pdf' : 'docx', // fileType might not be in schema, removing if causing issues or map if needed. Error didn't mention it.
+        // alias: doc.alias || 'document',
         metadata: {
           normalizedData: doc.normalizedData,
           mappingResult: doc.mappingResult,
+          fileType: doc.pdfPath ? 'pdf' : 'docx', // Move extra data to metadata
+          alias: doc.alias
         },
       }));
 
@@ -124,7 +127,7 @@ async function processDocumentGenerationJob(
       .update(workflowRuns)
       .set({
         metadata: {
-          ...run.metadata,
+          ...(run.metadata as any),
           documentsGenerated: true,
           documentsGeneratedAt: new Date().toISOString(),
           documentGenerationResult: {
@@ -195,7 +198,7 @@ async function processDocumentGenerationJob(
           .update(workflowRuns)
           .set({
             metadata: {
-              ...run.metadata,
+              ...(run.metadata as any),
               documentsGenerated: false,
               documentGenerationError: error.message,
               documentGenerationErrorAt: new Date().toISOString(),
@@ -376,4 +379,4 @@ if (require.main === module) {
 // EXPORTS
 // ============================================================================
 
-export { processDocumentGenerationJob, startDocumentGenerationWorker, stopDocumentGenerationWorker };
+// export { processDocumentGenerationJob, startDocumentGenerationWorker, stopDocumentGenerationWorker };

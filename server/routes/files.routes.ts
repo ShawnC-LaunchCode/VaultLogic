@@ -54,7 +54,7 @@ export function registerFileRoutes(app: Express): void {
       // SECURITY FIX: Verify user has access to this document
       // Look up document in database and verify ownership/access
       const documentRecord = await db.query.runGeneratedDocuments.findFirst({
-        where: eq(runGeneratedDocuments.documentUrl, filename)
+        where: eq(runGeneratedDocuments.fileUrl, filename)
       });
 
       if (!documentRecord) {
@@ -84,11 +84,16 @@ export function registerFileRoutes(app: Express): void {
         }
 
         // Check ACL permissions
-        const hasAccess = await aclService.hasWorkflowAccess(userId, run.workflowId);
-
-        if (!hasAccess) {
-          logger.warn({ filename, userId, runId: run.id, workflowId: run.workflowId }, 'User lacks access to file');
-          throw createError.forbidden('Access denied to this file');
+        if (!workflow.projectId) {
+          if (workflow.creatorId !== userId) {
+            throw createError.forbidden('Access denied to unfiled workflow');
+          }
+        } else {
+          const hasAccess = await aclService.hasProjectRole(userId, workflow.projectId, 'view');
+          if (!hasAccess) {
+            logger.warn({ filename, userId, runId: run.id, workflowId: run.workflowId }, 'User lacks access to file');
+            throw createError.forbidden('Access denied to this file');
+          }
         }
       }
 

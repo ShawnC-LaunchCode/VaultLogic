@@ -180,7 +180,7 @@ export async function getOrCreateConfig(params: {
   }
 
   const defaultConfig: InsertSliConfig = {
-    tenantId: project.tenantId,
+    tenantId: project.tenantId!,
     projectId: params.projectId,
     workflowId: params.workflowId || null,
     targetSuccessPct: 99,

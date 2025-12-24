@@ -41,7 +41,7 @@ export class WebhookDispatcher {
                 }).returning();
 
                 // 3. Trigger Async Delivery (Fire and forget or queue)
-                this.deliver(eventRecord.id, sub.url, sub.secret, event, payload);
+                void this.deliver(eventRecord.id, sub.targetUrl, sub.secret as string, event, payload);
             }
 
         } catch (err) {

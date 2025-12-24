@@ -941,9 +941,9 @@ export class BlockRunner {
       const result = await recordService.findByFilters(
         tenantId,
         config.collectionId,
-        config.filters,
+        (config.filters || []) as any[],
         { page: 1, limit: config.limit || 1 }
-      );
+      ) as any;
 
       // NULL CHECK FIX: Validate result structure before accessing properties
       if (!result || !result.records || !Array.isArray(result.records)) {
@@ -1524,9 +1524,9 @@ export class BlockRunner {
         } else {
           const columnPath = `data->>'${params.sort.columnId}'`;
           if (params.sort.direction === 'asc') {
-            query = query.orderBy(sql`${sql.raw(columnPath)} ASC`);
+            query = (query as any).orderBy(sql`${sql.raw(columnPath)} ASC`);
           } else {
-            query = query.orderBy(sql`${sql.raw(columnPath)} DESC`);
+            query = (query as any).orderBy(sql`${sql.raw(columnPath)} DESC`);
           }
         }
       }

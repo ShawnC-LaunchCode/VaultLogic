@@ -130,7 +130,7 @@ export function getDocumentGenerationQueue(): Queue<DocumentGenerationJobData> {
       logger.info({ jobId: job.id, runId: job.data.runId }, 'Job started processing');
     });
 
-    queueInstance.on('completed', (job, result) => {
+    queueInstance.on('completed', (job: Job, result: any) => {
       logger.info(
         {
           jobId: job.id,
@@ -143,7 +143,7 @@ export function getDocumentGenerationQueue(): Queue<DocumentGenerationJobData> {
       );
     });
 
-    queueInstance.on('failed', (job, error) => {
+    queueInstance.on('failed', (job: Job, error: Error) => {
       logger.error(
         {
           jobId: job?.id,
@@ -156,7 +156,7 @@ export function getDocumentGenerationQueue(): Queue<DocumentGenerationJobData> {
       );
     });
 
-    queueInstance.on('stalled', (job) => {
+    queueInstance.on('stalled', (job: Job) => {
       logger.warn({ jobId: job.id, runId: job.data.runId }, 'Job stalled');
     });
 
@@ -235,7 +235,7 @@ export async function getJobByRunId(
   // Search for job with this run ID
   const jobs = await queue.getJobs(['waiting', 'active', 'completed', 'failed', 'delayed']);
 
-  return jobs.find((job) => job.data.runId === runId) || null;
+  return jobs.find((job: Job<DocumentGenerationJobData>) => job.data.runId === runId) || null;
 }
 
 /**
@@ -330,4 +330,4 @@ export async function closeQueue(): Promise<void> {
 // ============================================================================
 
 export { Queue, Job };
-export type { DocumentGenerationJobData, DocumentGenerationJobResult };
+// export type { DocumentGenerationJobData, DocumentGenerationJobResult };

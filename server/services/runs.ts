@@ -199,7 +199,7 @@ export async function resumeRunFromNode(
       // No more nodes to execute - mark as success
       return await updateRun(runId, {
         status: 'success',
-        durationMs: Date.now() - new Date(run.createdAt).getTime(),
+        durationMs: Date.now() - (run.createdAt ? new Date(run.createdAt).getTime() : 0),
       });
     } else {
       // There are more nodes - for MVP, just mark as success
@@ -213,7 +213,7 @@ export async function resumeRunFromNode(
 
       return await updateRun(runId, {
         status: 'success',
-        durationMs: Date.now() - new Date(run.createdAt).getTime(),
+        durationMs: Date.now() - (run.createdAt ? new Date(run.createdAt).getTime() : 0),
       });
     }
   } catch (error) {

@@ -33,7 +33,7 @@ router.post("/", async (req: ExternalAuthRequest, res) => {
 
         const [sub] = await db.insert(webhookSubscriptions).values({
             workspaceId,
-            url,
+            targetUrl: url,
             events: events, // array
             secret: secret || "whsec_" + Math.random().toString(36).substr(2),
             enabled: true

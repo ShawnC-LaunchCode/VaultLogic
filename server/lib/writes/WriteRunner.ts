@@ -196,9 +196,10 @@ export class WriteRunner {
         columnId: string,
         value: any,
         tenantId: string,
-        tx: DbTransaction
+        tx: DbTransaction,
+        forUpdate: boolean = false
     ): Promise<string | null> {
-        return await datavaultRowsRepository.findRowByColumnValue(tableId, columnId, value, tenantId, tx);
+        return await datavaultRowsRepository.findRowByColumnValue(tableId, columnId, value, tenantId, tx, forUpdate);
     }
 
     /**

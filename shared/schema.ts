@@ -679,7 +679,7 @@ export const userPreferences = pgTable("user_preferences", {
     aiHints: true,
   }).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
-  createdAt: timestamp("created_at").defaultNow(),
+
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 

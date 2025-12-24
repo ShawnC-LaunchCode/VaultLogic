@@ -24,7 +24,7 @@ export class WorkflowQueriesRepository extends BaseRepository<typeof workflowQue
             .select()
             .from(workflowQueries)
             .where(eq(workflowQueries.workflowId, workflowId))
-            .orderBy(desc(workflowQueries.updatedAt));
+            .orderBy(desc(workflowQueries.updatedAt)) as any;
     }
 }
 

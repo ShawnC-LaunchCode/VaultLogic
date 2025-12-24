@@ -150,7 +150,7 @@ export function registerDocumentRoutes(app: Express): void {
         id: document.id,
         name: document.name,
         type: document.type || 'docx',
-        uploadedAt: document.uploadedAt,
+        uploadedAt: document.createdAt,
         fileRef: document.fileRef,
         projectId: document.projectId,
       });

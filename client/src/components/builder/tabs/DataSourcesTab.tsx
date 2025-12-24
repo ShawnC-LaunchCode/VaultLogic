@@ -126,7 +126,7 @@ export function DataSourcesTab({ workflowId, onCollectionsClick }: DataSourcesTa
                     <CardHeader className="pb-3">
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-lg ${source.type === 'native' || source.type === 'native_table' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
+                          <div className={`p-2 rounded-lg ${(source as any).type === 'native' || (source as any).type === 'native_table' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'}`}>
                             <Icon className="w-5 h-5" />
                           </div>
                           <div>
@@ -136,7 +136,7 @@ export function DataSourcesTab({ workflowId, onCollectionsClick }: DataSourcesTa
                             </div>
                             <div className="flex items-center gap-2 mt-1">
                               <Badge variant="outline" className="text-xs font-normal">
-                                {source.type === 'native' || source.type === 'native_table' ? 'Native Table' : source.type === 'google_sheets' ? 'Google Sheets' : 'External API'}
+                                {(source as any).type === 'native' || (source as any).type === 'native_table' ? 'Native Table' : (source as any).type === 'google_sheets' ? 'Google Sheets' : 'External API'}
                               </Badge>
                               {/* Capability Badges */}
                               <div className="flex gap-1">
@@ -152,7 +152,7 @@ export function DataSourcesTab({ workflowId, onCollectionsClick }: DataSourcesTa
                       <CardDescription className="line-clamp-2">{source.description || "No description provided."}</CardDescription>
                       <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
                         <code>ID: {source.id.slice(0, 8)}...</code>
-                        {(source.type === 'native' || source.type === 'native_table') && <span>PostgreSQL</span>}
+                        {((source as any).type === 'native' || (source as any).type === 'native_table') && <span>PostgreSQL</span>}
                       </div>
                     </CardContent>
                     <CardFooter className="pt-0 flex gap-2">

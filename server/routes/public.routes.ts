@@ -63,7 +63,7 @@ router.post("/w/:slug/complete", async (req, res) => {
 
     if (workflow) {
         // Trigger Webhook
-        await WebhookDispatcher.dispatch(workflow.workspaceId, 'run.completed', {
+        await WebhookDispatcher.dispatch(workflow.workspaceId!, 'run.completed', {
             event: 'run.completed',
             workflowId: workflow.id,
             runId: runId,

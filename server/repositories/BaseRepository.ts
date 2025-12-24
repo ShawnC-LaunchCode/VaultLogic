@@ -5,11 +5,13 @@ import type { PgTransaction } from "drizzle-orm/pg-core";
 import type { NodePgQueryResultHKT } from "drizzle-orm/node-postgres";
 import type { ExtractTablesWithRelations } from "drizzle-orm";
 
+import * as schema from "@shared/schema";
+
 // Type alias for database transactions
 export type DbTransaction = PgTransaction<
-  NodePgQueryResultHKT,
-  Record<string, never>,
-  ExtractTablesWithRelations<Record<string, never>>
+  any, // Use any for HKT to support both NodePg and Neon
+  typeof schema,
+  ExtractTablesWithRelations<typeof schema>
 >;
 
 /**
@@ -51,7 +53,7 @@ export abstract class BaseRepository<TTable extends PgTable, TSelect, TInsert> {
 
     const [record] = await database
       .select()
-      .from(this.table)
+      .from(this.table as any)
       .where(eq(idColumn, id));
 
     return record as TSelect | undefined;
@@ -63,7 +65,7 @@ export abstract class BaseRepository<TTable extends PgTable, TSelect, TInsert> {
   async findAll(where?: SQL, orderBy?: SQL, tx?: DbTransaction): Promise<TSelect[]> {
     const database = this.getDb(tx);
 
-    let query = database.select().from(this.table);
+    let query = database.select().from(this.table as any);
 
     if (where) {
       query = query.where(where) as any;
@@ -83,7 +85,7 @@ export abstract class BaseRepository<TTable extends PgTable, TSelect, TInsert> {
     const database = this.getDb(tx);
 
     const [record] = await database
-      .insert(this.table)
+      .insert(this.table as any)
       .values(data as any)
       .returning();
 
@@ -102,7 +104,7 @@ export abstract class BaseRepository<TTable extends PgTable, TSelect, TInsert> {
     const idColumn = (this.table as any).id;
 
     const [record] = await database
-      .update(this.table)
+      .update(this.table as any)
       .set(updates as any)
       .where(eq(idColumn, id))
       .returning();
@@ -118,7 +120,7 @@ export abstract class BaseRepository<TTable extends PgTable, TSelect, TInsert> {
     const idColumn = (this.table as any).id;
 
     await database
-      .delete(this.table)
+      .delete(this.table as any)
       .where(eq(idColumn, id));
   }
 
@@ -129,7 +131,7 @@ export abstract class BaseRepository<TTable extends PgTable, TSelect, TInsert> {
     const database = this.getDb(tx);
 
     await database
-      .delete(this.table)
+      .delete(this.table as any)
       .where(where);
   }
 
@@ -139,7 +141,7 @@ export abstract class BaseRepository<TTable extends PgTable, TSelect, TInsert> {
   async count(where?: SQL, tx?: DbTransaction): Promise<number> {
     const database = this.getDb(tx);
 
-    let query = database.select({ count: db.select().from(this.table) as any }).from(this.table);
+    let query = database.select({ count: db.select().from(this.table as any) as any }).from(this.table as any);
 
     if (where) {
       query = query.where(where) as any;

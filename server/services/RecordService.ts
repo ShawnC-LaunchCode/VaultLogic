@@ -328,6 +328,48 @@ export class RecordService {
   }
 
   /**
+   * Find records by filters (Array style) with pagination
+   * Used by BlockRunner
+   */
+  async findByFilters(
+    tenantId: string,
+    collectionId: string,
+    filters: any[],
+    options: { page?: number; limit?: number } = {},
+    tx?: DbTransaction
+  ): Promise<{ records: CollectionRecord[]; total: number }> {
+    const collection = await this.collectionRepo.findById(collectionId, tx);
+    if (!collection || collection.tenantId !== tenantId) {
+      throw new Error("Collection not found or access denied");
+    }
+
+    // Convert array filters to object filters if simple equality
+    // OR if repo supports array filters, pass them.
+    // Assuming repo supports array queries for now or mapping specific logic.
+    // For MVP, handling simple equality from array filters:
+    const filterObj: Record<string, any> = {};
+    if (Array.isArray(filters)) {
+      for (const f of filters) {
+        if (f.operator === 'equals') {
+          filterObj[f.field] = f.value;
+        }
+      }
+    }
+
+    const records = await this.recordRepo.findByFilters(collectionId, filterObj, tx);
+    // Simulate pagination if repo doesn't support it in findByFilters
+    const limit = options.limit || 100;
+    const page = options.page || 1;
+    const start = (page - 1) * limit;
+    const end = start + limit;
+
+    return {
+      records: records.slice(start, end),
+      total: records.length
+    };
+  }
+
+  /**
    * Bulk create records
    */
   async bulkCreateRecords(

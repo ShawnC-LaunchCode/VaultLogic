@@ -145,13 +145,13 @@ export function BlockCard({ item, workflowId, sectionId, isExpanded = false, onT
     if (type === 'read_table') {
       return !!(config?.tableId && config?.outputKey);
     }
-    if (type === 'write' || type === 'send_table') {
+    if ((type as string) === 'write' || (type as string) === 'send_table') {
       return !!(config?.tableId && config?.mode);
     }
     return true; // Other blocks considered configured by default for this styling purpose
   };
 
-  const isReadTableOrWrite = item.kind === 'block' && ['read_table', 'write', 'send_table'].includes(item.data.type);
+  const isReadTableOrWrite = item.kind === 'block' && ['read_table', 'write', 'send_table'].includes((item.data as any).type);
   const isNotConfigured = !isReadWriteConfigured();
 
   const handleClick = () => {

@@ -85,7 +85,7 @@ const db = new Proxy({} as DrizzleDB, {
     if (!_db) {
       throw new Error("Database not initialized. Call await initializeDatabase() first.");
     }
-    _db[prop] = value;
+    (_db as any)[prop] = value;
     return true;
   }
 });

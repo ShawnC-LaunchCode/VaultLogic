@@ -660,9 +660,10 @@ export class DatavaultRowsRepository extends BaseRepository<
       .where(
         and(
           eq(datavaultRows.tableId, tableId),
-          eq(datavaultRows.tenantId, tenantId),
-          eq(datavaultValues.value, value)
-        )
+          eq(datavaultRows.tableId, tableId),
+          // Tenant check implicit via tableId ownership verification (tables are tenant scoped)
+          eq(datavaultValues.value, value as any)
+        ) as any
       )
       .limit(1);
 

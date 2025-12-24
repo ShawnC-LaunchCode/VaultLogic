@@ -44,6 +44,7 @@ export interface ValidationError {
   message: string;
   field?: string;
   details?: any;
+  suggestion?: string;
 }
 
 export interface ValidationWarning {
@@ -169,9 +170,9 @@ export class MappingValidator {
         report.dryRunOutput = mappingResult.data;
 
         // Step 6: Type compatibility check
-        if (template.metadata && template.metadata.fields) {
+        if (template.metadata && (template.metadata as any).fields) {
           const typeMismatches = this.checkTypeCompatibility(
-            template.metadata.fields,
+            (template.metadata as any).fields,
             mappingResult.data
           );
           report.typeMismatches = typeMismatches;
@@ -266,7 +267,7 @@ export class MappingValidator {
     }
 
     // Validate each mapping entry
-    for (const [target, config] of Object.entries(mapping)) {
+    for (const [target, config] of Object.entries(mapping || {})) {
       if (!config || typeof config !== 'object') {
         errors.push({
           type: 'invalid_mapping_entry',
@@ -328,7 +329,7 @@ export class MappingValidator {
   ): CoverageStats {
     const templateFields =
       template.metadata?.fields?.map((f: any) => f.name) || [];
-    const mappedFields = Object.keys(mapping);
+    const mappedFields = Object.keys(mapping || {});
 
     const unmappedFields = templateFields.filter(
       (field: string) => !mappedFields.includes(field)
@@ -359,7 +360,7 @@ export class MappingValidator {
     const warnings: ValidationWarning[] = [];
     const normalized = normalizeVariables(testStepValues);
 
-    for (const [target, config] of Object.entries(mapping)) {
+    for (const [target, config] of Object.entries(mapping || {})) {
       if (config.type === 'variable' && config.source) {
         if (!(config.source in normalized)) {
           warnings.push({

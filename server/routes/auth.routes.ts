@@ -685,9 +685,9 @@ export function registerAuthRoutes(app: Express): void {
 
       const enrichedSessions = sessions.map((session) => ({
         id: session.id,
-        deviceName: session.deviceName || parseDeviceName(session.metadata?.userAgent),
-        location: session.location || getLocationFromIP(session.ipAddress || session.metadata?.ip),
-        ipAddress: session.ipAddress || session.metadata?.ip || 'Unknown',
+        deviceName: session.deviceName || parseDeviceName((session.metadata as any)?.userAgent),
+        location: session.location || getLocationFromIP(session.ipAddress || (session.metadata as any)?.ip),
+        ipAddress: session.ipAddress || (session.metadata as any)?.ip || 'Unknown',
         lastUsedAt: session.lastUsedAt || session.createdAt,
         createdAt: session.createdAt,
         current: currentRefreshToken ? session.token === currentRefreshToken : false

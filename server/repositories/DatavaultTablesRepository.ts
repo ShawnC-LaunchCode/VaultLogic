@@ -90,7 +90,7 @@ export class DatavaultTablesRepository extends BaseRepository<
       .where(and(eq(datavaultTables.tenantId, tenantId), eq(datavaultTables.slug, slug)));
 
     if (excludeId) {
-      query = query.where(sql`${datavaultTables.id} != ${excludeId}`) as any;
+      query = (query as any).where(sql`${datavaultTables.id} != ${excludeId}`) as any;
     }
 
     const [result] = await query.limit(1);

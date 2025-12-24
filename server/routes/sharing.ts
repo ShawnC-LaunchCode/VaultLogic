@@ -83,7 +83,7 @@ router.post("/invite", enforce(ACTION.MANAGE_MEMBERS), async (req, res) => {
             token,
             invitedBy: inviterId,
             expiresAt
-        });
+        } as any);
 
         // In a real app, send email here
 

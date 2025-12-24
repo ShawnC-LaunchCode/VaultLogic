@@ -3,6 +3,9 @@
  * Augments Express types with custom properties used throughout the application
  */
 
+export { };
+
+
 declare global {
   namespace Express {
     /**

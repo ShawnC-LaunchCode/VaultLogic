@@ -43,8 +43,8 @@ export function registerAdminRoutes(app: Express): void {
       // Group workflows by creator ID
       const workflowsByCreator = new Map<string, number>();
       for (const workflow of allWorkflows) {
-        const count = workflowsByCreator.get(workflow.createdBy) || 0;
-        workflowsByCreator.set(workflow.createdBy, count + 1);
+        const count = workflowsByCreator.get(workflow.creatorId) || 0;
+        workflowsByCreator.set(workflow.creatorId, count + 1);
       }
 
       // Return users with workflow count
