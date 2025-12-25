@@ -10,11 +10,17 @@ const LOCKOUT_DURATION_MINUTES = 15;
 const ATTEMPT_WINDOW_MINUTES = 15;
 
 export class AccountLockoutService {
+    private db: typeof db;
+
+    constructor(database = db) {
+        this.db = database;
+    }
+
     /**
      * Record a login attempt
      */
     async recordAttempt(email: string, ipAddress: string | undefined, successful: boolean): Promise<void> {
-        await db.insert(loginAttempts).values({
+        await this.db.insert(loginAttempts).values({
             email,
             ipAddress,
             successful,
@@ -35,7 +41,7 @@ export class AccountLockoutService {
     async checkAndLockAccount(email: string): Promise<void> {
         const windowStart = new Date(Date.now() - ATTEMPT_WINDOW_MINUTES * 60 * 1000);
 
-        const recentFailedAttempts = await db.query.loginAttempts.findMany({
+        const recentFailedAttempts = await this.db.query.loginAttempts.findMany({
             where: and(
                 eq(loginAttempts.email, email),
                 eq(loginAttempts.successful, false),
@@ -44,14 +50,14 @@ export class AccountLockoutService {
         });
 
         if (recentFailedAttempts.length >= MAX_FAILED_ATTEMPTS) {
-            const user = await db.query.users.findFirst({
+            const user = await this.db.query.users.findFirst({
                 where: eq(users.email, email)
             });
 
             if (user) {
                 const lockedUntil = new Date(Date.now() + LOCKOUT_DURATION_MINUTES * 60 * 1000);
 
-                await db.insert(accountLocks).values({
+                await this.db.insert(accountLocks).values({
                     userId: user.id,
                     lockedAt: new Date(),
                     lockedUntil,
@@ -70,7 +76,7 @@ export class AccountLockoutService {
     async isAccountLocked(userId: string): Promise<{ locked: boolean; lockedUntil?: Date }> {
         const now = new Date();
 
-        const activeLock = await db.query.accountLocks.findFirst({
+        const activeLock = await this.db.query.accountLocks.findFirst({
             where: and(
                 eq(accountLocks.userId, userId),
                 eq(accountLocks.unlocked, false),
@@ -90,7 +96,7 @@ export class AccountLockoutService {
      * Manually unlock an account (admin action)
      */
     async unlockAccount(userId: string): Promise<void> {
-        await db.update(accountLocks)
+        await this.db.update(accountLocks)
             .set({ unlocked: true })
             .where(eq(accountLocks.userId, userId));
 
@@ -103,7 +109,7 @@ export class AccountLockoutService {
     async cleanupOldAttempts(): Promise<void> {
         const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-        await db.delete(loginAttempts)
+        await this.db.delete(loginAttempts)
             .where(lt(loginAttempts.attemptedAt, thirtyDaysAgo));
 
         log.info('Cleaned up old login attempts');

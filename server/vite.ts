@@ -2,7 +2,7 @@ import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { createServer as createViteServer, createLogger } from "vite";
+import { createServer as createViteServer, createLogger, type ViteDevServer } from "vite";
 import { type Server } from "http";
 import viteConfig from "../vite.config";
 import { nanoid } from "nanoid";
@@ -60,7 +60,14 @@ export async function setupVite(app: Express, server: Server) {
     appType: "custom",
   });
 
-  const vite = await Promise.race([vitePromise, timeout]) as any;
+  const result = await Promise.race([vitePromise, timeout]);
+
+  // Type guard to check if result is ViteDevServer (not timeout error)
+  if (!result || typeof result !== 'object' || !('middlewares' in result)) {
+    throw new Error('Failed to create Vite server - timeout or invalid result');
+  }
+
+  const vite = result as ViteDevServer;
   log("📝 setupVite: Vite server created successfully");
 
   log("📝 setupVite: Mounting Vite middlewares...");

@@ -76,6 +76,11 @@ export interface JWTPayload {
 }
 
 export class AuthService {
+    private db: typeof db;
+
+    constructor(database = db) {
+        this.db = database;
+    }
 
     // =================================================================
     // JWT & CRYPTO CORE
@@ -248,7 +253,7 @@ export class AuthService {
         const ipAddress = metadata.ip || null;
         const location = ipAddress ? getLocationFromIP(ipAddress) : null;
 
-        await db.insert(refreshTokens).values({
+        await this.db.insert(refreshTokens).values({
             userId,
             token: tokenHash,
             expiresAt,
@@ -270,7 +275,7 @@ export class AuthService {
         const tokenHash = hashToken(plainToken);
 
         // Find token purely by hash to detect state
-        const storedToken = await db.query.refreshTokens.findFirst({
+        const storedToken = await this.db.query.refreshTokens.findFirst({
             where: eq(refreshTokens.token, tokenHash)
         });
 
@@ -293,7 +298,7 @@ export class AuthService {
         }
 
         // Valid token -> Rotate it
-        await db.update(refreshTokens)
+        await this.db.update(refreshTokens)
             .set({ revoked: true })
             .where(eq(refreshTokens.id, storedToken.id));
 
@@ -308,13 +313,13 @@ export class AuthService {
 
     async revokeRefreshToken(plainToken: string): Promise<void> {
         const tokenHash = hashToken(plainToken);
-        await db.update(refreshTokens)
+        await this.db.update(refreshTokens)
             .set({ revoked: true })
             .where(eq(refreshTokens.token, tokenHash));
     }
 
     async revokeAllUserTokens(userId: string): Promise<void> {
-        await db.update(refreshTokens)
+        await this.db.update(refreshTokens)
             .set({ revoked: true })
             .where(eq(refreshTokens.userId, userId));
     }
@@ -322,7 +327,7 @@ export class AuthService {
     async validateRefreshToken(plainToken: string): Promise<string | null> {
         const tokenHash = hashToken(plainToken);
 
-        const storedToken = await db.query.refreshTokens.findFirst({
+        const storedToken = await this.db.query.refreshTokens.findFirst({
             where: and(
                 eq(refreshTokens.token, tokenHash),
                 eq(refreshTokens.revoked, false),
@@ -338,7 +343,7 @@ export class AuthService {
     // =================================================================
 
     async generatePasswordResetToken(email: string): Promise<string | null> {
-        const user = await db.query.users.findFirst({
+        const user = await this.db.query.users.findFirst({
             where: eq(users.email, email)
         });
 
@@ -348,11 +353,11 @@ export class AuthService {
         const tokenHash = hashToken(plainToken);
         const expiresAt = new Date(Date.now() + 1000 * 60 * 60); // 1 hour
 
-        await db.update(passwordResetTokens)
+        await this.db.update(passwordResetTokens)
             .set({ used: true })
             .where(eq(passwordResetTokens.userId, user.id));
 
-        await db.insert(passwordResetTokens).values({
+        await this.db.insert(passwordResetTokens).values({
             userId: user.id,
             token: tokenHash,
             expiresAt,
@@ -368,7 +373,7 @@ export class AuthService {
     async verifyPasswordResetToken(plainToken: string): Promise<string | null> {
         const tokenHash = hashToken(plainToken);
 
-        const storedToken = await db.query.passwordResetTokens.findFirst({
+        const storedToken = await this.db.query.passwordResetTokens.findFirst({
             where: and(
                 eq(passwordResetTokens.token, tokenHash),
                 eq(passwordResetTokens.used, false),
@@ -382,7 +387,7 @@ export class AuthService {
 
     async consumePasswordResetToken(plainToken: string): Promise<void> {
         const tokenHash = hashToken(plainToken);
-        await db.update(passwordResetTokens)
+        await this.db.update(passwordResetTokens)
             .set({ used: true })
             .where(eq(passwordResetTokens.token, tokenHash));
     }
@@ -396,7 +401,7 @@ export class AuthService {
         const tokenHash = hashToken(plainToken);
         const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24); // 24 hours
 
-        await db.insert(emailVerificationTokens).values({
+        await this.db.insert(emailVerificationTokens).values({
             userId,
             token: tokenHash,
             expiresAt
@@ -410,7 +415,7 @@ export class AuthService {
     async verifyEmail(plainToken: string): Promise<boolean> {
         const tokenHash = hashToken(plainToken);
 
-        const storedToken = await db.query.emailVerificationTokens.findFirst({
+        const storedToken = await this.db.query.emailVerificationTokens.findFirst({
             where: and(
                 eq(emailVerificationTokens.token, tokenHash),
                 gt(emailVerificationTokens.expiresAt, new Date())
@@ -419,11 +424,11 @@ export class AuthService {
 
         if (!storedToken) return false;
 
-        await db.update(users)
+        await this.db.update(users)
             .set({ emailVerified: true })
             .where(eq(users.id, storedToken.userId));
 
-        await db.delete(emailVerificationTokens)
+        await this.db.delete(emailVerificationTokens)
             .where(eq(emailVerificationTokens.id, storedToken.id));
 
         return true;
@@ -431,7 +436,7 @@ export class AuthService {
     async cleanupExpiredTokens(): Promise<void> {
         const now = new Date();
 
-        await db.delete(refreshTokens)
+        await this.db.delete(refreshTokens)
             .where(and(
                 eq(refreshTokens.revoked, true),
                 gt(refreshTokens.expiresAt, now) // Mistake in audit? actually checking if expired. So lt.
@@ -441,13 +446,13 @@ export class AuthService {
         // Audit said: clean expired refresh tokens (revoked ones).
         // Let's stick to safe cleanup: Delete if expired.
 
-        await db.delete(refreshTokens)
+        await this.db.delete(refreshTokens)
             .where(lt(refreshTokens.expiresAt, now));
 
-        await db.delete(passwordResetTokens)
+        await this.db.delete(passwordResetTokens)
             .where(lt(passwordResetTokens.expiresAt, now));
 
-        await db.delete(emailVerificationTokens)
+        await this.db.delete(emailVerificationTokens)
             .where(lt(emailVerificationTokens.expiresAt, now));
 
         // Cleanup old login attempts (30 days retention)

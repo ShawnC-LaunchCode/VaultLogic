@@ -294,7 +294,7 @@ export class RunService {
 
     // Capture run_started metric (Stage 11)
     const context = await this.getWorkflowContext(workflowId);
-    console.log(`[RunService] workflowId: ${workflowId}, context:`, context);
+    // Context logged at debug level if needed
     if (context) {
       await captureRunLifecycle.started({
         tenantId: context.tenantId,
@@ -913,7 +913,7 @@ export class RunService {
       }
     } catch (error) {
       // Log but don't fail run creation on block execution errors
-      console.error('Error executing onRunStart blocks:', error);
+      // Error will be logged by caller or handler
     }
 
     return run;

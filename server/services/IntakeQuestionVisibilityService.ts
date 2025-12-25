@@ -6,7 +6,7 @@
  * displayed within a page.
  */
 
-import { stepRepository, stepValueRepository } from "../repositories";
+import * as repositories from "@server/repositories";
 import { evaluateVisibility } from "../workflows/conditionAdapter";
 import type { Step } from "@shared/schema";
 import { createLogger } from "../logger";
@@ -36,8 +36,21 @@ export interface QuestionValidationFilter {
 }
 
 export class IntakeQuestionVisibilityService {
+  // PERFORMANCE OPTIMIZATION (Dec 2025): Visibility result cache to prevent N+1 queries
+  // Cache key: `${runId}-${sectionId}`, expires after 30 seconds
+  private visibilityCache = new Map<string, { result: QuestionVisibilityResult; timestamp: number }>();
+  private readonly CACHE_TTL = 30000; // 30 seconds
+
+  constructor(
+    private readonly stepRepo = repositories.stepRepository,
+    private readonly stepValueRepo = repositories.stepValueRepository
+  ) { }
+
   /**
    * Evaluates question visibility for a specific page
+   *
+   * PERFORMANCE OPTIMIZED (Dec 2025):
+   * Uses in-memory cache to prevent repeated evaluations within same run/section
    *
    * @param sectionId - Page (section) ID
    * @param runId - Current run ID
@@ -49,14 +62,25 @@ export class IntakeQuestionVisibilityService {
     runId: string,
     recordData?: Record<string, any>
   ): Promise<QuestionVisibilityResult> {
+    // OPTIMIZATION: Check cache first (unless recordData is provided, as it affects evaluation)
+    if (!recordData) {
+      const cacheKey = `${runId}-${sectionId}`;
+      const cached = this.visibilityCache.get(cacheKey);
+
+      if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+        logger.debug({ runId, sectionId }, "Visibility cache hit");
+        return cached.result;
+      }
+    }
     // Load all questions for this page
-    const allQuestions = await stepRepository.findBySectionIds([sectionId]);
+    const allQuestions = await this.stepRepo.findBySectionIds([sectionId]);
+    console.log(`[DEBUG] evaluatePageQuestions sectionId=${sectionId} allQuestions=${JSON.stringify(allQuestions)}`);
     const sortedQuestions = allQuestions
       .filter(q => !q.isVirtual) // Exclude virtual steps (transform block outputs)
       .sort((a, b) => a.order - b.order);
 
     // Load all step values for this run to build context
-    const stepValues = await stepValueRepository.findByRunId(runId);
+    const stepValues = await this.stepValueRepo.findByRunId(runId);
 
     // Load all steps to map stepId -> alias (for variable resolution)
     const workflowId = allQuestions[0]?.sectionId; // Get workflow via section
@@ -124,12 +148,21 @@ export class IntakeQuestionVisibilityService {
       visibilityReasons.set(question.id, reason);
     }
 
-    return {
+    const result: QuestionVisibilityResult = {
       allQuestions: sortedQuestions.map(q => q.id),
       visibleQuestions,
       hiddenQuestions,
       visibilityReasons,
     };
+
+    // OPTIMIZATION: Cache result (only if no recordData, as it makes result dynamic)
+    if (!recordData) {
+      const cacheKey = `${runId}-${sectionId}`;
+      this.visibilityCache.set(cacheKey, { result, timestamp: Date.now() });
+      logger.debug({ runId, sectionId }, "Visibility result cached");
+    }
+
+    return result;
   }
 
   /**
@@ -151,7 +184,7 @@ export class IntakeQuestionVisibilityService {
     const visibility = await this.evaluatePageQuestions(sectionId, runId, recordData);
 
     // Load question details to check required status
-    const questions = await stepRepository.findBySectionIds([sectionId]);
+    const questions = await this.stepRepo.findBySectionIds([sectionId]);
     const questionMap = new Map(questions.map(q => [q.id, q]));
 
     const requiredQuestions: string[] = [];
@@ -182,6 +215,9 @@ export class IntakeQuestionVisibilityService {
   /**
    * Checks if a specific question is currently visible
    *
+   * PERFORMANCE OPTIMIZED (Dec 2025):
+   * Reuses cached evaluatePageQuestions result instead of re-evaluating
+   *
    * @param questionId - Question (step) ID
    * @param runId - Current run ID
    * @param recordData - Optional collection record data
@@ -193,11 +229,12 @@ export class IntakeQuestionVisibilityService {
     recordData?: Record<string, any>
   ): Promise<boolean> {
     // Load question to get sectionId (FIXED: use findById instead of findBySectionIds)
-    const question = await stepRepository.findById(questionId);
+    const question = await this.stepRepo.findById(questionId);
     if (!question) {
       return false;
     }
 
+    // OPTIMIZATION: evaluatePageQuestions now uses internal cache
     const visibility = await this.evaluatePageQuestions(question.sectionId, runId, recordData);
 
     return visibility.visibleQuestions.includes(questionId);
@@ -229,7 +266,7 @@ export class IntakeQuestionVisibilityService {
    */
   async validateQuestionConditions(sectionId: string): Promise<string[]> {
     const warnings: string[] = [];
-    const questions = await stepRepository.findBySectionIds([sectionId]);
+    const questions = await this.stepRepo.findBySectionIds([sectionId]);
 
     for (const question of questions) {
       // Warn if required question has visibility condition (could be confusing)
@@ -278,7 +315,7 @@ export class IntakeQuestionVisibilityService {
     }
 
     // OPTIMIZATION: Load all step values for this run once (instead of N queries)
-    const allStepValues = await stepValueRepository.findByRunId(runId);
+    const allStepValues = await this.stepValueRepo.findByRunId(runId);
     const stepValueMap = new Map(allStepValues.map(sv => [sv.stepId, sv]));
 
     // For each hidden question, check if it has a value and clear it
@@ -286,7 +323,7 @@ export class IntakeQuestionVisibilityService {
       const existingValue = stepValueMap.get(questionId);
 
       if (existingValue) {
-        await stepValueRepository.delete(existingValue.id);
+        await this.stepValueRepo.delete(existingValue.id);
         clearedSteps.push(questionId);
         logger.debug(
           { runId, questionId },
@@ -296,6 +333,51 @@ export class IntakeQuestionVisibilityService {
     }
 
     return clearedSteps;
+  }
+
+  /**
+   * Clear visibility cache for a specific run or all runs
+   * Call this after step values are updated to ensure fresh evaluation
+   *
+   * PERFORMANCE OPTIMIZATION (Dec 2025):
+   * Allows explicit cache invalidation when data changes
+   *
+   * @param runId - Optional run ID to clear (clears all if not provided)
+   */
+  clearCache(runId?: string): void {
+    if (runId) {
+      // Clear all cache entries for this run
+      for (const key of this.visibilityCache.keys()) {
+        if (key.startsWith(`${runId}-`)) {
+          this.visibilityCache.delete(key);
+        }
+      }
+      logger.debug({ runId }, "Visibility cache cleared for run");
+    } else {
+      // Clear entire cache
+      this.visibilityCache.clear();
+      logger.debug("Visibility cache fully cleared");
+    }
+  }
+
+  /**
+   * Get cache statistics for monitoring/debugging
+   *
+   * @returns Cache size and oldest entry age
+   */
+  getCacheStats(): { size: number; oldestEntryAgeMs: number | null } {
+    let oldestTimestamp: number | null = null;
+
+    for (const entry of this.visibilityCache.values()) {
+      if (oldestTimestamp === null || entry.timestamp < oldestTimestamp) {
+        oldestTimestamp = entry.timestamp;
+      }
+    }
+
+    return {
+      size: this.visibilityCache.size,
+      oldestEntryAgeMs: oldestTimestamp ? Date.now() - oldestTimestamp : null,
+    };
   }
 }
 

@@ -14,16 +14,16 @@ import { dbInitPromise } from "./db";
 dotenv.config();
 
 // Diagnostic logging for startup
-console.log("------------------------------------------");
-console.log("🚀 Starting Server Initialization");
-console.log("Time:", new Date().toISOString());
-console.log("Environment:", {
+logger.info("------------------------------------------");
+logger.info("🚀 Starting Server Initialization");
+logger.info({ time: new Date().toISOString() }, "Server start time");
+logger.info({
   NODE_ENV: process.env.NODE_ENV,
   PORT: process.env.PORT,
   DATABASE_URL_SET: !!process.env.DATABASE_URL,
   PWD: process.cwd()
-});
-console.log("------------------------------------------");
+}, "Environment configuration");
+logger.info("------------------------------------------");
 
 const app = express();
 
@@ -88,7 +88,7 @@ app.use(express.urlencoded({ extended: false }));
 
 // Simple health check that doesn't depend on DB
 app.get('/healthz', (_req, res) => {
-  console.log('[Healthz] Check received from:', _req.ip);
+  logger.debug({ ip: _req.ip }, 'Healthz check received');
   res.status(200).send('OK');
 });
 
@@ -103,9 +103,9 @@ app.use(sanitizeInputs);
 
     // Initialize routes and collaboration server
     // CRITICAL: We MUST use the 'server' returned by registerRoutes, as it has the WebSocket instance attached.
-    logger.debug('Registering routes...');
+    logger.info('Registering routes...');
     const server = await registerRoutes(app);
-    logger.debug('Routes registered. Server created.');
+    logger.info('Routes registered. Server created.');
 
     // Register centralized error handler middleware (must be after all routes)
     app.use(errorHandler);
@@ -116,7 +116,6 @@ app.use(sanitizeInputs);
       serveStatic(app);
     } catch (err: any) {
       logger.error({ err }, "Failed to serve static files (continuing to allow API access)");
-      console.error("WARNING: Failed to serve static files:", err.message);
     }
 
     // Start server
@@ -130,7 +129,6 @@ app.use(sanitizeInputs);
     });
 
   } catch (error) {
-    console.error("FATAL: Failed to start server:", error);
     logger.fatal({ error }, "FATAL: Failed to start server");
     process.exit(1);
   }

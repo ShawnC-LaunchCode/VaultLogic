@@ -1,10 +1,11 @@
 /**
  * Security Headers Middleware
  *
- * Implements comprehensive security headers to protect against common web vulnerabilities.
- * Based on OWASP recommendations and modern security best practices.
+ * Implements comprehensive security headers using Helmet middleware to protect
+ * against common web vulnerabilities. Based on OWASP recommendations and modern
+ * security best practices.
  *
- * Headers implemented:
+ * Headers implemented via Helmet:
  * - Content Security Policy (CSP) - Prevents XSS, code injection
  * - Strict-Transport-Security (HSTS) - Forces HTTPS
  * - X-Content-Type-Options - Prevents MIME sniffing
@@ -12,11 +13,16 @@
  * - X-XSS-Protection - Legacy XSS protection (for older browsers)
  * - Referrer-Policy - Controls referrer information
  * - Permissions-Policy - Controls browser features
+ * - X-DNS-Prefetch-Control - Controls DNS prefetching
+ * - X-Download-Options - Prevents IE from executing downloads
+ * - X-Permitted-Cross-Domain-Policies - Controls cross-domain policies
  *
  * Created: December 22, 2025
+ * Updated: December 25, 2025 - Migrated to Helmet middleware
  * Security Audit Fix
  */
 
+import helmet from 'helmet';
 import type { Request, Response, NextFunction } from 'express';
 import { createLogger } from '../logger.js';
 
@@ -39,7 +45,7 @@ interface SecurityHeadersConfig {
 }
 
 /**
- * Default security headers middleware
+ * Default security headers middleware using Helmet
  *
  * Usage:
  * ```typescript
@@ -56,141 +62,118 @@ export function securityHeaders(config: SecurityHeadersConfig = {}) {
     cspDirectives = {},
   } = config;
 
-  return (req: Request, res: Response, next: NextFunction) => {
-    // ===========================================================================
-    // 1. Content Security Policy (CSP)
-    // ===========================================================================
-    if (enableCSP) {
-      // Base CSP directives (strict but functional)
-      const defaultDirectives: Record<string, string[]> = {
-        'default-src': ["'self'"],
-        'script-src': [
-          "'self'",
-          "'unsafe-inline'", // Required for React/Vite in development
-          "'unsafe-eval'",   // Required for some JS libraries (consider removing in prod)
-          'https://*.google.com',
-          'https://*.gstatic.com',
-          'https://*.googleapis.com',
-        ],
-        'style-src': [
-          "'self'",
-          "'unsafe-inline'", // Required for styled-components, Tailwind
-          'https://*.googleapis.com',
-          'https://*.google.com',
-          'https://*.gstatic.com',
-        ],
-        'font-src': [
-          "'self'",
-          'https://*.gstatic.com',
-          'https://*.googleapis.com',
-          'data:', // Allow data URIs for fonts
-        ],
-        'img-src': [
-          "'self'",
-          'data:',       // Data URIs for inline images
-          'blob:',       // Blob URLs for generated images
-          'https:',      // Allow HTTPS images (consider restricting)
-        ],
-        'connect-src': [
-          "'self'",
-          'https://*.google.com',
-          'https://*.googleapis.com',
-          'https://*.gstatic.com',
-          'wss://localhost:*', // WebSocket for development
-          'ws://localhost:*',
-        ],
-        'frame-src': [
-          "'self'",
-          'https://*.google.com',
-          'https://*.firebaseapp.com', // Firebase Auth if used
-        ],
-        'object-src': ["'none'"],
-        'base-uri': ["'self'"],
-        'form-action': ["'self'"],
-        'frame-ancestors': ["'none'"], // Prevent framing (redundant with X-Frame-Options)
-        'upgrade-insecure-requests': [], // Upgrade HTTP to HTTPS
-      };
-
-      // Merge with custom directives
-      const mergedDirectives = { ...defaultDirectives, ...cspDirectives };
-
-      // Build CSP header value
-      const cspValue = Object.entries(mergedDirectives)
-        .map(([key, values]) => {
-          if (values.length === 0) return key; // Directive without value
-          return `${key} ${values.join(' ')}`;
-        })
-        .join('; ');
-
-      res.setHeader('Content-Security-Policy', cspValue);
-    }
-
-    // ===========================================================================
-    // 2. HTTP Strict Transport Security (HSTS)
-    // ===========================================================================
-    if (enableHSTS) {
-      res.setHeader(
-        'Strict-Transport-Security',
-        `max-age=${hstsMaxAge}; includeSubDomains; preload`
-      );
-    }
-
-    // ===========================================================================
-    // 3. X-Content-Type-Options
-    // ===========================================================================
-    // Prevents MIME type sniffing, forces browser to respect Content-Type
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-
-    // ===========================================================================
-    // 4. X-Frame-Options
-    // ===========================================================================
-    // Prevents clickjacking attacks by controlling framing
-    res.setHeader('X-Frame-Options', allowFraming);
-
-    // ===========================================================================
-    // 5. X-XSS-Protection (Legacy, but still useful for older browsers)
-    // ===========================================================================
-    // Modern browsers rely on CSP, but this helps older browsers
-    res.setHeader('X-XSS-Protection', '1; mode=block');
-
-    // ===========================================================================
-    // 6. Referrer-Policy
-    // ===========================================================================
-    // Controls how much referrer information is sent with requests
-    res.setHeader('Referrer-Policy', 'no-referrer-when-downgrade');
-
-    // ===========================================================================
-    // 7. Permissions-Policy (formerly Feature-Policy)
-    // ===========================================================================
-    // Disable potentially dangerous browser features
-    const permissionsPolicy = [
-      'geolocation=()',       // Disable geolocation
-      'microphone=()',        // Disable microphone
-      'camera=()',            // Disable camera
-      'payment=()',           // Disable payment APIs
-      'usb=()',               // Disable USB access
-      'magnetometer=()',      // Disable magnetometer
-      'gyroscope=()',         // Disable gyroscope
-      'accelerometer=()',     // Disable accelerometer
-    ].join(', ');
-
-    res.setHeader('Permissions-Policy', permissionsPolicy);
-
-    // ===========================================================================
-    // 8. X-Powered-By (Remove)
-    // ===========================================================================
-    // Remove default Express header that leaks implementation details
-    res.removeHeader('X-Powered-By');
-
-    // ===========================================================================
-    // 9. COOP / COEP (Google Auth Compat)
-    // ===========================================================================
-    // Explicitly allow cross-origin popups for Google Sign-In
-    res.setHeader('Cross-Origin-Opener-Policy', 'unsafe-none');
-    res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
-
-    next();
+  // Base CSP directives (strict but functional)
+  const defaultDirectives: Record<string, string[]> = {
+    'default-src': ["'self'"],
+    'script-src': [
+      "'self'",
+      "'unsafe-inline'", // Required for React/Vite in development
+      "'unsafe-eval'",   // Required for some JS libraries (consider removing in prod)
+      'https://*.google.com',
+      'https://*.gstatic.com',
+      'https://*.googleapis.com',
+    ],
+    'style-src': [
+      "'self'",
+      "'unsafe-inline'", // Required for styled-components, Tailwind
+      'https://*.googleapis.com',
+      'https://*.google.com',
+      'https://*.gstatic.com',
+    ],
+    'font-src': [
+      "'self'",
+      'https://*.gstatic.com',
+      'https://*.googleapis.com',
+      'data:', // Allow data URIs for fonts
+    ],
+    'img-src': [
+      "'self'",
+      'data:',       // Data URIs for inline images
+      'blob:',       // Blob URLs for generated images
+      'https:',      // Allow HTTPS images (consider restricting)
+    ],
+    'connect-src': [
+      "'self'",
+      'https://*.google.com',
+      'https://*.googleapis.com',
+      'https://*.gstatic.com',
+      'wss://localhost:*', // WebSocket for development
+      'ws://localhost:*',
+    ],
+    'frame-src': [
+      "'self'",
+      'https://*.google.com',
+      'https://*.firebaseapp.com', // Firebase Auth if used
+    ],
+    'object-src': ["'none'"],
+    'base-uri': ["'self'"],
+    'form-action': ["'self'"],
+    'frame-ancestors': ["'none'"], // Prevent framing (redundant with X-Frame-Options)
+    'upgrade-insecure-requests': [], // Upgrade HTTP to HTTPS
   };
+
+  // Merge with custom directives
+  const mergedDirectives = { ...defaultDirectives, ...cspDirectives };
+
+  // Convert directives to Helmet format
+  const helmetCSPDirectives: Record<string, string[]> = {};
+  for (const [key, values] of Object.entries(mergedDirectives)) {
+    helmetCSPDirectives[key] = values;
+  }
+
+  // Configure Helmet with all security headers
+  return helmet({
+    // Content Security Policy
+    contentSecurityPolicy: enableCSP ? {
+      directives: helmetCSPDirectives,
+    } : false,
+
+    // HTTP Strict Transport Security
+    hsts: enableHSTS ? {
+      maxAge: hstsMaxAge,
+      includeSubDomains: true,
+      preload: true,
+    } : false,
+
+    // X-Frame-Options (clickjacking protection)
+    frameguard: {
+      action: allowFraming.toLowerCase() as 'deny' | 'sameorigin',
+    },
+
+    // X-Content-Type-Options (MIME sniffing protection)
+    noSniff: true,
+
+    // X-XSS-Protection (legacy XSS protection for older browsers)
+    xssFilter: true,
+
+    // Referrer-Policy
+    referrerPolicy: {
+      policy: 'no-referrer-when-downgrade',
+    },
+
+    // X-DNS-Prefetch-Control (controls DNS prefetching)
+    dnsPrefetchControl: {
+      allow: false,
+    },
+
+    // X-Download-Options (prevents IE from executing downloads in site context)
+    ieNoOpen: true,
+
+    // Hide X-Powered-By header
+    hidePoweredBy: true,
+
+    // Permissions-Policy (controls browser features)
+    permittedCrossDomainPolicies: {
+      permittedPolicies: 'none',
+    },
+
+    // Cross-Origin-Opener-Policy and Cross-Origin-Embedder-Policy
+    // Set to unsafe-none for Google OAuth compatibility
+    crossOriginOpenerPolicy: {
+      policy: 'unsafe-none',
+    },
+    crossOriginEmbedderPolicy: false,
+  });
 }
 
 /**
@@ -200,6 +183,7 @@ export function securityHeaders(config: SecurityHeadersConfig = {}) {
  * NEVER use in production!
  */
 export function relaxedSecurityHeaders() {
+  logger.warn('Using relaxed security headers - NOT suitable for production');
   return securityHeaders({
     enableCSP: false,
     enableHSTS: false,
@@ -211,15 +195,17 @@ export function relaxedSecurityHeaders() {
  * Maximum security headers for production
  *
  * Strictest possible configuration. Use this in production.
+ * Removes unsafe-inline and unsafe-eval from CSP directives.
  */
 export function strictSecurityHeaders() {
+  logger.info('Using strict security headers - production configuration');
   return securityHeaders({
     enableCSP: true,
     enableHSTS: true,
     hstsMaxAge: 63072000, // 2 years
     allowFraming: 'DENY',
     cspDirectives: {
-      // Remove unsafe-eval and unsafe-inline in production
+      // Override with strict directives (no unsafe-inline, no unsafe-eval)
       'script-src': [
         "'self'",
         'https://accounts.google.com',

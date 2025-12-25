@@ -54,12 +54,12 @@ describe("Auth Middleware", () => {
         authorization: `Bearer ${token}`,
       };
 
-      await requireAuth(mockReq as Request, mockRes as Response, mockNext);
+      await requireAuth(mockReq as unknown as Request, mockRes as unknown as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalled();
       expect(statusMock).not.toHaveBeenCalled();
 
-      const authReq = mockReq as AuthRequest;
+      const authReq = mockReq as unknown as AuthRequest;
       expect(authReq.userId).toBe(user.id);
       expect(authReq.userEmail).toBe(user.email);
     });
@@ -67,7 +67,7 @@ describe("Auth Middleware", () => {
     it("should return 401 for missing token", async () => {
       mockReq.headers = {};
 
-      await requireAuth(mockReq as Request, mockRes as Response, mockNext);
+      await requireAuth(mockReq as unknown as Request, mockRes as unknown as Response, mockNext);
 
       expect(mockNext).not.toHaveBeenCalled();
       expect(statusMock).toHaveBeenCalledWith(401);
@@ -84,7 +84,7 @@ describe("Auth Middleware", () => {
         authorization: 'Bearer invalid-token',
       };
 
-      await requireAuth(mockReq as Request, mockRes as Response, mockNext);
+      await requireAuth(mockReq as unknown as Request, mockRes as unknown as Response, mockNext);
 
       expect(mockNext).not.toHaveBeenCalled();
       expect(statusMock).toHaveBeenCalledWith(401);
@@ -108,7 +108,7 @@ describe("Auth Middleware", () => {
         authorization: `Bearer ${expiredToken}`,
       };
 
-      await requireAuth(mockReq as Request, mockRes as Response, mockNext);
+      await requireAuth(mockReq as unknown as Request, mockRes as unknown as Response, mockNext);
 
       expect(mockNext).not.toHaveBeenCalled();
       expect(statusMock).toHaveBeenCalledWith(401);
@@ -122,10 +122,10 @@ describe("Auth Middleware", () => {
         authorization: token, // No Bearer prefix
       };
 
-      await requireAuth(mockReq as Request, mockRes as Response, mockNext);
+      await requireAuth(mockReq as unknown as Request, mockRes as unknown as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalled();
-      const authReq = mockReq as AuthRequest;
+      const authReq = mockReq as unknown as AuthRequest;
       expect(authReq.userId).toBe(user.id);
     });
   });
@@ -139,20 +139,20 @@ describe("Auth Middleware", () => {
         authorization: `Bearer ${token}`,
       };
 
-      await optionalAuth(mockReq as Request, mockRes as Response, mockNext);
+      await optionalAuth(mockReq as unknown as Request, mockRes as unknown as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalled();
-      const authReq = mockReq as AuthRequest;
+      const authReq = mockReq as unknown as AuthRequest;
       expect(authReq.userId).toBe(user.id);
     });
 
     it("should proceed without auth when no token provided", async () => {
       mockReq.headers = {};
 
-      await optionalAuth(mockReq as Request, mockRes as Response, mockNext);
+      await optionalAuth(mockReq as unknown as Request, mockRes as unknown as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalled();
-      const authReq = mockReq as AuthRequest;
+      const authReq = mockReq as unknown as AuthRequest;
       expect(authReq.userId).toBeUndefined();
     });
 
@@ -161,10 +161,10 @@ describe("Auth Middleware", () => {
         authorization: 'Bearer invalid-token',
       };
 
-      await optionalAuth(mockReq as Request, mockRes as Response, mockNext);
+      await optionalAuth(mockReq as unknown as Request, mockRes as unknown as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalled();
-      const authReq = mockReq as AuthRequest;
+      const authReq = mockReq as unknown as AuthRequest;
       expect(authReq.userId).toBeUndefined();
     });
   });
@@ -179,10 +179,10 @@ describe("Auth Middleware", () => {
       };
       mockReq.method = 'POST';
 
-      await hybridAuth(mockReq as Request, mockRes as Response, mockNext);
+      await hybridAuth(mockReq as unknown as Request, mockRes as unknown as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalled();
-      const authReq = mockReq as AuthRequest;
+      const authReq = mockReq as unknown as AuthRequest;
       expect(authReq.userId).toBe(user.id);
     });
 
@@ -195,10 +195,10 @@ describe("Auth Middleware", () => {
       };
       mockReq.method = 'GET';
 
-      await hybridAuth(mockReq as Request, mockRes as Response, mockNext);
+      await hybridAuth(mockReq as unknown as Request, mockRes as unknown as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalled();
-      const authReq = mockReq as AuthRequest;
+      const authReq = mockReq as unknown as AuthRequest;
       expect(authReq.userId).toBe(user.id);
     });
 
@@ -211,7 +211,7 @@ describe("Auth Middleware", () => {
       };
       mockReq.method = 'POST'; // Mutation method
 
-      await hybridAuth(mockReq as Request, mockRes as Response, mockNext);
+      await hybridAuth(mockReq as unknown as Request, mockRes as unknown as Response, mockNext);
 
       expect(mockNext).not.toHaveBeenCalled();
       expect(statusMock).toHaveBeenCalledWith(401);
@@ -230,10 +230,10 @@ describe("Auth Middleware", () => {
       };
       mockReq.method = 'GET';
 
-      await hybridAuth(mockReq as Request, mockRes as Response, mockNext);
+      await hybridAuth(mockReq as unknown as Request, mockRes as unknown as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalled();
-      const authReq = mockReq as AuthRequest;
+      const authReq = mockReq as unknown as AuthRequest;
       // Should use JWT (user1), not cookie (user2)
       expect(authReq.userId).toBe(user1.id);
     });
@@ -255,7 +255,7 @@ describe("Auth Middleware", () => {
         const res = { ...mockRes };
         const next = vi.fn();
 
-        await hybridAuth(req as Request, res as Response, next);
+        await hybridAuth(req as unknown as Request, res as unknown as Response, next);
         expect(next).toHaveBeenCalled();
       }
 
@@ -271,7 +271,7 @@ describe("Auth Middleware", () => {
         };
         const next = vi.fn();
 
-        await hybridAuth(req as Request, res as Response, next);
+        await hybridAuth(req as unknown as Request, res as unknown as Response, next);
         expect(next).not.toHaveBeenCalled();
         expect(res.status).toHaveBeenCalledWith(401);
       }
@@ -280,7 +280,7 @@ describe("Auth Middleware", () => {
     it("should return 401 when no auth provided", async () => {
       mockReq.headers = {};
 
-      await hybridAuth(mockReq as Request, mockRes as Response, mockNext);
+      await hybridAuth(mockReq as unknown as Request, mockRes as unknown as Response, mockNext);
 
       expect(mockNext).not.toHaveBeenCalled();
       expect(statusMock).toHaveBeenCalledWith(401);
@@ -296,10 +296,10 @@ describe("Auth Middleware", () => {
         authorization: `Bearer ${token}`,
       };
 
-      await optionalHybridAuth(mockReq as Request, mockRes as Response, mockNext);
+      await optionalHybridAuth(mockReq as unknown as Request, mockRes as unknown as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalled();
-      const authReq = mockReq as AuthRequest;
+      const authReq = mockReq as unknown as AuthRequest;
       expect(authReq.userId).toBe(user.id);
     });
 
@@ -312,20 +312,20 @@ describe("Auth Middleware", () => {
       };
       mockReq.method = 'GET';
 
-      await optionalHybridAuth(mockReq as Request, mockRes as Response, mockNext);
+      await optionalHybridAuth(mockReq as unknown as Request, mockRes as unknown as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalled();
-      const authReq = mockReq as AuthRequest;
+      const authReq = mockReq as unknown as AuthRequest;
       expect(authReq.userId).toBeDefined();
     });
 
     it("should proceed without auth when none provided", async () => {
       mockReq.headers = {};
 
-      await optionalHybridAuth(mockReq as Request, mockRes as Response, mockNext);
+      await optionalHybridAuth(mockReq as unknown as Request, mockRes as unknown as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalled();
-      const authReq = mockReq as AuthRequest;
+      const authReq = mockReq as unknown as AuthRequest;
       expect(authReq.userId).toBeUndefined();
     });
 
@@ -334,10 +334,10 @@ describe("Auth Middleware", () => {
         authorization: 'Bearer invalid',
       };
 
-      await optionalHybridAuth(mockReq as Request, mockRes as Response, mockNext);
+      await optionalHybridAuth(mockReq as unknown as Request, mockRes as unknown as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalled();
-      const authReq = mockReq as AuthRequest;
+      const authReq = mockReq as unknown as AuthRequest;
       expect(authReq.userId).toBeUndefined();
     });
   });
@@ -354,7 +354,7 @@ describe("Auth Middleware", () => {
         authorization: `Bearer ${tamperedToken}`,
       };
 
-      await requireAuth(mockReq as Request, mockRes as Response, mockNext);
+      await requireAuth(mockReq as unknown as Request, mockRes as unknown as Response, mockNext);
 
       expect(mockNext).not.toHaveBeenCalled();
       expect(statusMock).toHaveBeenCalledWith(401);
@@ -377,7 +377,7 @@ describe("Auth Middleware", () => {
         };
         const next = vi.fn();
 
-        await hybridAuth(req as Request, res as Response, next);
+        await hybridAuth(req as unknown as Request, res as unknown as Response, next);
 
         expect(next).not.toHaveBeenCalled();
         expect(res.status).toHaveBeenCalledWith(401);
@@ -389,7 +389,7 @@ describe("Auth Middleware", () => {
         authorization: 'Bearer not.a.valid.token',
       };
 
-      await requireAuth(mockReq as Request, mockRes as Response, mockNext);
+      await requireAuth(mockReq as unknown as Request, mockRes as unknown as Response, mockNext);
 
       expect(mockNext).not.toHaveBeenCalled();
       expect(statusMock).toHaveBeenCalledWith(401);
@@ -398,7 +398,7 @@ describe("Auth Middleware", () => {
     it("should handle missing authorization header gracefully", async () => {
       mockReq.headers = {}; // No authorization header
 
-      await requireAuth(mockReq as Request, mockRes as Response, mockNext);
+      await requireAuth(mockReq as unknown as Request, mockRes as unknown as Response, mockNext);
 
       expect(mockNext).not.toHaveBeenCalled();
       expect(statusMock).toHaveBeenCalledWith(401);

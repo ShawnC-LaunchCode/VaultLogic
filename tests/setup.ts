@@ -1,6 +1,7 @@
 ﻿import { beforeAll, afterAll, beforeEach, afterEach, vi } from "vitest";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import dotenv from "dotenv";
+import "@testing-library/jest-dom";
 
 // Load environment variables immediately
 dotenv.config();

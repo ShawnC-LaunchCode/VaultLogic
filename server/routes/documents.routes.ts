@@ -48,6 +48,15 @@ export function registerDocumentRoutes(app: Express): void {
 
       const { projectId } = req.query;
 
+      let filteredDocs: Array<{
+        id: string;
+        name: string;
+        type: string | null;
+        uploadedAt: Date | null;
+        fileRef: string | null;
+        projectId: string | null;
+      }> = [];
+
       // If projectId is specified, verify user has access to that project
       if (projectId && typeof projectId === 'string') {
         const hasAccess = await aclService.hasProjectRole(userId, projectId, 'view');
@@ -55,35 +64,24 @@ export function registerDocumentRoutes(app: Express): void {
           logger.warn({ userId, projectId }, 'User denied access to project documents');
           return res.status(403).json({ message: 'Forbidden - insufficient permissions for this project' });
         }
+
+        // Fetch only documents for the specified project (Dec 2025 - Security fix)
+        filteredDocs = await db.select({
+          id: templates.id,
+          name: templates.name,
+          type: templates.type,
+          uploadedAt: templates.createdAt,
+          fileRef: templates.fileRef,
+          projectId: templates.projectId,
+        }).from(templates)
+          .where(eq(templates.projectId, projectId));
+      } else {
+        // No projectId specified - this is a security concern as it could expose documents
+        // from other projects. We should require projectId for security.
+        // Return empty array instead of all documents (Dec 2025 - Security fix)
+        logger.warn({ userId }, 'GET /api/documents called without projectId - returning empty array for security');
+        filteredDocs = [];
       }
-
-      // Build query
-      let query = db.select({
-        id: templates.id,
-        name: templates.name,
-        type: templates.type,
-        uploadedAt: templates.createdAt,
-        fileRef: templates.fileRef,
-        projectId: templates.projectId,
-      }).from(templates);
-
-      // Filter by project if specified
-      if (projectId && typeof projectId === 'string') {
-        query = query.where(eq(templates.projectId, projectId)) as any;
-      }
-
-      const documents = await query;
-
-      // Filter documents to only include those from projects user has access to
-      const accessibleDocs = await Promise.all(
-        documents.map(async (doc) => {
-          if (!doc.projectId) return doc;
-          const hasAccess = await aclService.hasProjectRole(userId, doc.projectId, 'view');
-          return hasAccess ? doc : null;
-        })
-      );
-
-      const filteredDocs = accessibleDocs.filter((doc): doc is NonNullable<typeof doc> => doc !== null);
 
       // Format response
       const formattedDocs = filteredDocs.map((doc) => ({

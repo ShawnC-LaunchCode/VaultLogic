@@ -42,10 +42,16 @@ vi.mock("../../../server/utils/deviceFingerprint", () => ({
  */
 describe("AuthService", () => {
   let authService: AuthService;
+  let mockDb: any;
   const originalEnv = process.env;
 
-  beforeEach(() => {
-    authService = new AuthService();
+  beforeEach(async () => {
+    const dbModule = await import("../../../server/db");
+    mockDb = dbModule.db;
+
+    // Create service with mocked database
+    authService = new AuthService(mockDb);
+
     process.env = { ...originalEnv };
     process.env.JWT_SECRET = "test-secret-key-for-testing-only-32chars";
     process.env.JWT_EXPIRY = "15m";

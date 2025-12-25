@@ -6,6 +6,38 @@ import type { ConditionExpression } from "../types/conditions"; // Import Condit
 import type { ValidateRule, ConditionalRequiredRule, CompareRule, ForEachRule, WhenCondition, ComparisonOperator } from "../types/blocks";
 
 /**
+ * Type guards for ValidateRule types
+ */
+interface RuleWithLeft {
+    left: string;
+}
+
+interface RuleWithListKey {
+    listKey: string;
+}
+
+interface LegacySubRule {
+    assert?: {
+        key: string;
+        op: string;
+        value: any;
+    };
+    message?: string;
+}
+
+function hasLeftProperty(rule: unknown): rule is RuleWithLeft {
+    return typeof rule === 'object' && rule !== null && 'left' in rule;
+}
+
+function hasListKeyProperty(rule: unknown): rule is RuleWithListKey {
+    return typeof rule === 'object' && rule !== null && 'listKey' in rule;
+}
+
+function isLegacySubRule(rule: unknown): rule is LegacySubRule {
+    return typeof rule === 'object' && rule !== null && !('type' in rule);
+}
+
+/**
  * Validates a map of block values against their schemas.
  */
 export async function validatePage({
@@ -60,8 +92,13 @@ export async function validatePage({
                 continue;
             }
 
-            // Generic fallback
-            const target = ('left' in rule) ? (rule as any).left : (('listKey' in rule) ? (rule as any).listKey : "_general");
+            // Generic fallback - determine which field to attach error to
+            let target = "_general";
+            if (hasLeftProperty(rule)) {
+                target = rule.left;
+            } else if (hasListKeyProperty(rule)) {
+                target = rule.listKey;
+            }
             if (!blockErrors[target]) blockErrors[target] = [];
             blockErrors[target].push(error);
             valid = false;
@@ -107,13 +144,10 @@ async function validatePageRule(rule: ValidateRule, values: Record<string, any>)
 
                 for (const subRule of r.rules) {
                     // Check legacy inner rules
-                    if (!('type' in subRule)) {
-                        const assert = (subRule as any).assert;
-                        if (assert) {
-                            const val = resolvePath(assert.key, itemContext);
-                            if (!checkOp(val, assert.op, assert.value)) {
-                                return (subRule.message || "Invalid item") + ` (Item ${i + 1})`;
-                            }
+                    if (isLegacySubRule(subRule) && subRule.assert) {
+                        const val = resolvePath(subRule.assert.key, itemContext);
+                        if (!checkOp(val, subRule.assert.op, subRule.assert.value)) {
+                            return (subRule.message || "Invalid item") + ` (Item ${i + 1})`;
                         }
                     }
                 }

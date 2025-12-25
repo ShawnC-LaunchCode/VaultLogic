@@ -6,7 +6,7 @@
  * PR 9: Added infinite scroll row loading
  */
 
-import { useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { datavaultAPI } from "@/lib/datavault-api";
 import { datavaultQueryKeys } from "@/lib/datavault-hooks";
@@ -209,57 +209,57 @@ export function TableGridView({ tableId }: TableGridViewProps) {
               </tr>
             </thead>
 
-          <tbody>
-            {allRows.map((row) => (
-              <tr key={row.row.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                {sortedColumns.map((col) => (
-                  <td
-                    key={col.id}
-                    className="px-3 py-2 border-b cursor-pointer"
-                    onDoubleClick={() => setEditingCell({ rowId: row.row.id, colId: col.id })}
-                  >
-                    <CellRenderer
-                      row={row}
-                      column={col}
-                      editing={editingCell?.rowId === row.row.id && editingCell?.colId === col.id}
-                      onCommit={(value) => handleCellUpdate(row.row.id, col, value)}
-                      onCancel={() => setEditingCell(null)}
-                      batchReferencesData={batchReferencesData}
+            <tbody>
+              {allRows.map((row) => (
+                <tr key={row.row.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                  {sortedColumns.map((col) => (
+                    <td
+                      key={col.id}
+                      className="px-3 py-2 border-b cursor-pointer"
+                      onDoubleClick={() => setEditingCell({ rowId: row.row.id, colId: col.id })}
+                    >
+                      <CellRenderer
+                        row={row}
+                        column={col}
+                        editing={editingCell?.rowId === row.row.id && editingCell?.colId === col.id}
+                        onCommit={(value) => handleCellUpdate(row.row.id, col, value)}
+                        onCancel={() => setEditingCell(null)}
+                        batchReferencesData={batchReferencesData}
+                      />
+                    </td>
+                  ))}
+                  <td className="px-2 py-2 border-b text-right">
+                    <DeleteRowButton
+                      tableId={tableId}
+                      rowId={row.row.id}
+                      onDelete={() => queryClient.invalidateQueries({ queryKey: datavaultQueryKeys.tableRows(tableId) })}
                     />
                   </td>
-                ))}
-                <td className="px-2 py-2 border-b text-right">
-                  <DeleteRowButton
-                    tableId={tableId}
-                    rowId={row.row.id}
-                    onDelete={() => queryClient.invalidateQueries({ queryKey: datavaultQueryKeys.tableRows(tableId) })}
-                  />
-                </td>
-              </tr>
-            ))}
+                </tr>
+              ))}
 
-            {allRows.length === 0 && !rowsLoading && (
-              <tr>
-                <td
-                  colSpan={sortedColumns.length + 1}
-                  className="px-3 py-8 text-center text-muted-foreground"
-                >
-                  No rows yet. Click "Add Row" to create your first row.
-                </td>
-              </tr>
-            )}
+              {allRows.length === 0 && !rowsLoading && (
+                <tr>
+                  <td
+                    colSpan={sortedColumns.length + 1}
+                    className="px-3 py-8 text-center text-muted-foreground"
+                  >
+                    No rows yet. Click "Add Row" to create your first row.
+                  </td>
+                </tr>
+              )}
 
-            {/* Infinite scroll sentinel element */}
-            {hasNextPage && (
-              <tr ref={loadMoreRef}>
-                <td colSpan={sortedColumns.length + 1} className="h-12 text-center">
-                  {isFetchingNextPage && (
-                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground inline-block" />
-                  )}
-                </td>
-              </tr>
-            )}
-          </tbody>
+              {/* Infinite scroll sentinel element */}
+              {hasNextPage && (
+                <tr ref={loadMoreRef}>
+                  <td colSpan={sortedColumns.length + 1} className="h-12 text-center">
+                    {isFetchingNextPage && (
+                      <Loader2 className="w-5 h-5 animate-spin text-muted-foreground inline-block" />
+                    )}
+                  </td>
+                </tr>
+              )}
+            </tbody>
           </table>
         </DndContext>
       </div>

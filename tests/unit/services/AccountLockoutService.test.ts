@@ -43,10 +43,11 @@ describe("AccountLockoutService", () => {
   let mockDb: any;
 
   beforeEach(async () => {
-    accountLockoutService = new AccountLockoutService();
-
     const dbModule = await import("../../../server/db");
     mockDb = dbModule.db;
+
+    // Create service with mocked database
+    accountLockoutService = new AccountLockoutService(mockDb);
 
     // Reset all mocks
     vi.clearAllMocks();

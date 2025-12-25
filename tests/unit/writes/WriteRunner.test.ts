@@ -1,4 +1,4 @@
-import { WriteRunner } from "../../../server/services/writes/WriteRunner";
+import { WriteRunner } from "../../../server/lib/writes/WriteRunner";
 import { datavaultRowsRepository, datavaultColumnsRepository, datavaultTablesRepository } from "../../../server/repositories";
 import { datavaultTablesService } from "../../../server/services/DatavaultTablesService";
 import { datavaultRowsService } from "../../../server/services/DatavaultRowsService";

@@ -7,6 +7,7 @@
 import type { Express, Request, Response } from 'express';
 import { hybridAuth, type AuthRequest } from '../middleware/auth';
 import { requireProjectRole } from '../middleware/aclAuth';
+import { aclService } from '../services/AclService';
 import { z } from 'zod';
 import { logger } from '../logger';
 import {
@@ -57,6 +58,13 @@ export function registerSecretsRoutes(app: Express): void {
       }
 
       const { projectId } = req.params;
+
+      // Defense-in-depth: Explicit ACL check for edit access (Dec 2025 - Security fix)
+      const hasAccess = await aclService.hasProjectRole(userId, projectId, 'edit');
+      if (!hasAccess) {
+        logger.warn({ userId, projectId }, 'User denied access to project secrets');
+        return res.status(403).json({ message: 'Forbidden - insufficient permissions for this project' });
+      }
 
       const secrets = await listSecrets(projectId);
       res.json(secrets);

@@ -111,12 +111,11 @@ app.use((req, res, next) => {
     const path = req.path;
     let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
-    const originalResJson = res.json;
-    res.json = function (bodyJson: any, ...args: any[]) {
+    const originalResJson = res.json.bind(res);
+    res.json = function (bodyJson: any) {
         capturedJsonResponse = bodyJson;
-        // Use assertion to silence TypeScript error about spread arguments in apply
-        return originalResJson.apply(res, [bodyJson, ...args] as any);
-    } as any; // Cast back to any after definition
+        return originalResJson(bodyJson);
+    };
 
     res.on("finish", () => {
         const duration = Date.now() - start;
@@ -169,10 +168,8 @@ app.use((req, res, next) => {
 
         // Initialize routes and collaboration server
         logger.debug('Registering routes...');
-        console.log('Registering routes...');
         const server = await registerRoutes(app);
         logger.debug('Routes registered. Server created.');
-        console.log('Routes registered.');
 
         // Register centralized error handler middleware (must be after all routes)
         app.use(errorHandler);
@@ -237,7 +234,6 @@ app.use((req, res, next) => {
         process.on('SIGTERM', () => shutdown('SIGTERM'));
         process.on('SIGINT', () => shutdown('SIGINT'));
     } catch (error) {
-        console.error('FATAL STARTUP ERROR:', error);
         logger.fatal({ error }, "FATAL: Failed to start server");
         process.exit(1);
     }

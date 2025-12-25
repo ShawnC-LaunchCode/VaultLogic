@@ -8,14 +8,15 @@ import { registerAiRoutes } from '@server/routes/ai.routes';
 const mockReviseWorkflow = vi.fn();
 
 // Mock dependencies
-vi.mock('../server/services/AIService', () => ({
+// Mock dependencies
+vi.mock('@server/services/AIService', () => ({
     AIService: vi.fn(), // Constructor
     createAIServiceFromEnv: vi.fn(() => ({
         reviseWorkflow: mockReviseWorkflow
     }))
 }));
 
-vi.mock('../server/services/WorkflowService', () => ({
+vi.mock('@server/services/WorkflowService', () => ({
     workflowService: {
         verifyOwnership: vi.fn().mockResolvedValue(true),
         getWorkflowWithDetails: vi.fn().mockResolvedValue({ sections: [] }),
@@ -24,19 +25,19 @@ vi.mock('../server/services/WorkflowService', () => ({
 }));
 
 // Mock both authentication files
-vi.mock('../server/middleware/auth', () => ({
+vi.mock('@server/middleware/auth', () => ({
     hybridAuth: (req, res, next) => next(),
     requireAuth: (req, res, next) => { req.userId = 'user-123'; next(); }
 }));
 
-vi.mock('../server/middleware/aclAuth', () => ({
+vi.mock('@server/middleware/aclAuth', () => ({
     requireAuth: (req, res, next) => { req.userId = 'user-123'; next(); },
     requireProjectRole: () => (req, res, next) => next(),
     requireWorkflowRole: () => (req, res, next) => next(),
 }));
 
 // Mock RBAC
-vi.mock('../server/middleware/rbac', () => ({
+vi.mock('@server/middleware/rbac', () => ({
     requireBuilder: (req, res, next) => next()
 }));
 

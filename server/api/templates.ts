@@ -69,7 +69,7 @@ router.get(
   requirePermission('template:view'),
   async (req: Request, res: Response) => {
     try {
-      console.log(`[Templates] Downloading template ${req.params.id}`);
+      logger.debug({ templateId: req.params.id }, 'Downloading template');
       const authReq = req as AuthRequest;
       const tenantId = authReq.tenantId!;
 
@@ -85,13 +85,13 @@ router.get(
       });
 
       if (!template) {
-        console.error(`[Templates] Template not found: ${params.id}`);
+        logger.error({ templateId: params.id }, 'Template not found');
         throw createError.notFound('Template', params.id);
       }
 
       // Verify tenant access
       if (template.project.tenantId !== tenantId) {
-        console.error(`[Templates] Access denied for tenant ${tenantId} to template ${template.id}`);
+        logger.error({ tenantId, templateId: template.id }, 'Access denied to template');
         throw createError.forbidden('Access denied to this template');
       }
 
@@ -103,11 +103,11 @@ router.get(
       const fs = await import('fs');
 
       if (!fs.existsSync(filePath)) {
-        console.error(`[Templates] File missing at path: ${filePath}`);
+        logger.error({ filePath }, 'Template file missing at path');
         throw createError.notFound('Template file', template.fileRef);
       }
 
-      console.log(`[Templates] Serving file: ${filePath}`);
+      logger.debug({ filePath }, 'Serving template file');
 
       // Set headers
       res.setHeader('Content-Disposition', `attachment; filename="${template.name}.${template.type === 'pdf' ? 'pdf' : 'docx'}"`);
@@ -123,7 +123,7 @@ router.get(
       stream.pipe(res);
 
     } catch (error) {
-      console.error(`[Templates] Download error:`, error);
+      logger.error({ error }, 'Template download error');
       // If headers sent, we can't send error json
       if (res.headersSent) {
         return;
@@ -146,7 +146,7 @@ router.get(
   requirePermission('template:view'),
   async (req: Request, res: Response) => {
     try {
-      console.log(`[Templates] Downloading template ${req.params.id}`);
+      logger.debug({ templateId: req.params.id }, 'Downloading template');
       const authReq = req as AuthRequest;
       const tenantId = authReq.tenantId!;
 
@@ -162,13 +162,13 @@ router.get(
       });
 
       if (!template) {
-        console.error(`[Templates] Template not found: ${params.id}`);
+        logger.error({ templateId: params.id }, 'Template not found');
         throw createError.notFound('Template', params.id);
       }
 
       // Verify tenant access
       if (template.project.tenantId !== tenantId) {
-        console.error(`[Templates] Access denied for tenant ${tenantId} to template ${template.id}`);
+        logger.error({ tenantId, templateId: template.id }, 'Access denied to template');
         throw createError.forbidden('Access denied to this template');
       }
 
@@ -180,11 +180,11 @@ router.get(
       const fs = await import('fs');
 
       if (!fs.existsSync(filePath)) {
-        console.error(`[Templates] File missing at path: ${filePath}`);
+        logger.error({ filePath }, 'Template file missing at path');
         throw createError.notFound('Template file', template.fileRef);
       }
 
-      console.log(`[Templates] Serving file: ${filePath}`);
+      logger.debug({ filePath }, 'Serving template file');
 
       // Set headers
       res.setHeader('Content-Disposition', `attachment; filename="${template.name}.${template.type === 'pdf' ? 'pdf' : 'docx'}"`);
@@ -200,7 +200,7 @@ router.get(
       stream.pipe(res);
 
     } catch (error) {
-      console.error(`[Templates] Download error:`, error);
+      logger.error({ error }, 'Template download error');
       // If headers sent, we can't send error json
       if (res.headersSent) {
         return;

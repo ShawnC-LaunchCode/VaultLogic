@@ -253,10 +253,12 @@ export function useBlockOperations(surveyId: string) {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleUpdateQuestion = useCallback((questionId: string, data: Partial<Question>) => {
-    console.log('[useBlockOperations] handleUpdateQuestion called', {
-      questionId,
-      data
-    });
+    if (import.meta.env.DEV) {
+      console.log('[useBlockOperations] handleUpdateQuestion called', {
+        questionId,
+        data
+      });
+    }
     updateQuestionMutation.mutate({ questionId, data });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

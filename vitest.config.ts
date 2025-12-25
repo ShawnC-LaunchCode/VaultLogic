@@ -12,6 +12,11 @@ export default defineConfig({
     setupFiles: ["./tests/setup.ts"],
     include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
     exclude: ["tests/e2e/**/*", "node_modules/**/*"],
+    alias: {
+      "@": path.resolve(__dirname, "./client/src"),
+      "@server": path.resolve(__dirname, "./server"),
+      "@shared": path.resolve(__dirname, "./shared"),
+    },
     server: {
       deps: {
         inline: ["multer"], // Force multer to be processed by Vite/Vitest

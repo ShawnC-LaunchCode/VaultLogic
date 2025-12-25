@@ -1,7 +1,7 @@
 import type { WorkflowVersion } from '@shared/schema';
 import { renderTemplate } from '../services/templates';
 import { createError } from '../utils/errors';
-import type { EvalContext } from './expr';
+import { type EvalContext, evaluateExpression } from './expr';
 import { validateGraph, validateNodeConditions, topologicalSort, type GraphJson } from './validate';
 import { executeNode, type Node, type NodeOutput } from './registry';
 import type { ExecutionStep, VariableLineage, WorkflowTrace } from '@shared/types/debug';
@@ -195,6 +195,82 @@ export async function runGraph(input: RunGraphInput): Promise<RunGraphOutput> {
 
         try {
           const nodeStartTime = Date.now();
+          const config = node.config as any;
+
+          // SNAPSHOT EFFICIENCY: Skip blocks with already satisfied outputs (Part 5)
+          if (context.executionMode === 'snapshot' && config.outputKey && context.vars[config.outputKey] !== undefined) {
+            // ... existing snapshot logic ...
+            const stepIndex = executionSteps.length;
+            executionSteps.push({
+              stepNumber: stepIndex,
+              blockId: nodeId,
+              blockType: node.type,
+              timestamp: new Date(),
+              status: 'skipped',
+              skippedReason: 'snapshot satisfied (cached output)',
+              inputs: {},
+              outputs: { [config.outputKey]: context.vars[config.outputKey] },
+              durationMs: 0,
+              metrics: { totalTimeMs: 0 }
+            });
+            continue; // Skip actual execution
+          }
+
+          // check for condition
+          if (config.condition) {
+            try {
+              const conditionResult = evaluateExpression(config.condition, context);
+              if (options.debug) {
+                // Debug logging removed - use logger if needed
+              }
+
+              if (!conditionResult) {
+                const stepIndex = executionSteps.length;
+
+                // Push skipped step
+                executionSteps.push({
+                  stepNumber: stepIndex,
+                  blockId: nodeId,
+                  blockType: node.type,
+                  timestamp: new Date(),
+                  status: 'skipped',
+                  skippedReason: 'condition false',
+                  inputs: {},
+                  outputs: {},
+                  durationMs: 0,
+                  metrics: { totalTimeMs: 0 }
+                });
+
+                // Push legacy trace (for tests)
+                trace.push({
+                  nodeId,
+                  type: node.type,
+                  status: 'skipped',
+                  condition: config.condition,
+                  conditionResult: false,
+                  timestamp: new Date()
+                });
+
+                logs.push({
+                  level: 'info',
+                  message: `Skipped node ${nodeId} (condition false)`,
+                  nodeId,
+                  timestamp: new Date()
+                });
+
+                continue;
+              } else {
+                // Log condition true (optional, maybe debug only)
+                // Add condition result to trace if executed?
+                // The existing legacy trace might expect it.
+              }
+            } catch (condError) {
+              // If condition evaluation fails, treat as error? Or fail closed (skip)?
+              // Usually treat as error.
+              throw new Error(`Condition evaluation failed for node ${nodeId}: ${condError instanceof Error ? condError.message : String(condError)}`);
+            }
+          }
+
           // Execute node
           const nodeOutput = await executeNode({
             node,
@@ -210,6 +286,10 @@ export async function runGraph(input: RunGraphInput): Promise<RunGraphOutput> {
 
           if (nodeOutput.status === 'executed' && 'varName' in nodeOutput && nodeOutput.varName) {
             outputsDelta[nodeOutput.varName] = nodeOutput.varValue;
+            // CRITICAL: Update context variables for subsequent nodes
+            context.vars[nodeOutput.varName] = nodeOutput.varValue;
+            // Debug logging removed - use logger if needed
+
             variableLineage[nodeOutput.varName] = {
               variableName: nodeOutput.varName,
               sourceType: mapNodeToSourceType(node.type),
@@ -255,8 +335,24 @@ export async function runGraph(input: RunGraphInput): Promise<RunGraphOutput> {
             outputsDelta: outputsDelta,
             sideEffects: 'sideEffects' in nodeOutput ? nodeOutput.sideEffects : undefined,
             error: 'error' in nodeOutput ? nodeOutput.error : undefined,
-            timestamp: new Date()
+            timestamp: new Date(),
+            conditionResult: config.condition ? true : undefined
           });
+
+          // Log execution (required for tests)
+          if (nodeOutput.status === 'executed') {
+            logs.push({
+              level: 'info',
+              message: `Executed node ${nodeId}`,
+              nodeId,
+              timestamp: new Date()
+            });
+          } else if (nodeOutput.status === 'skipped') {
+            // Already logged in condition check? Or here?
+            // If skipped by executeNode (e.g. internal logic), log here.
+            // But my manual condition check logs it earlier.
+            // Check duplicates? The set logic relies on string includes.
+          }
 
           // STOP EXECUTION if Final Block is reached
           if (node.type === 'final' && nodeOutput.status === 'executed') {

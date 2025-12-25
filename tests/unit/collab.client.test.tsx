@@ -46,6 +46,11 @@ describe('useCollabClient', () => {
     token: 'test-token',
     onNodesChange: vi.fn(),
     onEdgesChange: vi.fn(),
+    user: {
+      id: 'user-1',
+      name: 'Test User',
+      color: '#ff0000',
+    }
   };
 
   beforeEach(() => {

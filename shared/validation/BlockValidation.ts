@@ -29,6 +29,38 @@ export interface StepLike {
 }
 
 /**
+ * Type guard helpers for config validation
+ */
+interface SimpleTextConfig {
+    minLength?: number;
+    maxLength?: number;
+}
+
+interface SimpleNumberConfig {
+    min?: number;
+    max?: number;
+}
+
+interface SimpleChoiceConfig {
+    min?: number;
+    max?: number;
+    minSelections?: number;
+    maxSelections?: number;
+}
+
+function hasTextConstraints(config: unknown): config is SimpleTextConfig {
+    return typeof config === 'object' && config !== null;
+}
+
+function hasNumberConstraints(config: unknown): config is SimpleNumberConfig {
+    return typeof config === 'object' && config !== null;
+}
+
+function hasChoiceConstraints(config: unknown): config is SimpleChoiceConfig {
+    return typeof config === 'object' && config !== null;
+}
+
+/**
  * Generates a runtime ValidationSchema from a step's type and configuration.
  */
 export function getValidationSchema(step: StepLike): ValidationSchema {
@@ -66,9 +98,10 @@ export function getValidationSchema(step: StepLike): ValidationSchema {
         case "short_text":
         case "long_text": {
             // Legacy or simple types
-            const c = config as any;
-            if (c.minLength) rules.push({ type: "minLength", value: c.minLength });
-            if (c.maxLength) rules.push({ type: "maxLength", value: c.maxLength });
+            if (hasTextConstraints(config)) {
+                if (config.minLength) rules.push({ type: "minLength", value: config.minLength });
+                if (config.maxLength) rules.push({ type: "maxLength", value: config.maxLength });
+            }
             break;
         }
 
@@ -80,11 +113,10 @@ export function getValidationSchema(step: StepLike): ValidationSchema {
                     const adv = config as NumberAdvancedConfig;
                     if (adv.validation?.min !== undefined) rules.push({ type: "minValue", value: adv.validation.min });
                     if (adv.validation?.max !== undefined) rules.push({ type: "maxValue", value: adv.validation.max });
-                } else {
+                } else if (hasNumberConstraints(config)) {
                     // Simple config (min/max at root)
-                    const simple = config as any; // Cast to access potential simple props
-                    if (simple.min !== undefined) rules.push({ type: "minValue", value: simple.min });
-                    if (simple.max !== undefined) rules.push({ type: "maxValue", value: simple.max });
+                    if (config.min !== undefined) rules.push({ type: "minValue", value: config.min });
+                    if (config.max !== undefined) rules.push({ type: "maxValue", value: config.max });
                 }
             }
             break;
@@ -111,11 +143,12 @@ export function getValidationSchema(step: StepLike): ValidationSchema {
         case "choice":
         case "multiple_choice": {
             // Check for min/max selections
-            const c = config as any;
-            if (c.min) rules.push({ type: "minLength", value: c.min });
-            if (c.max) rules.push({ type: "maxLength", value: c.max });
-            if (c.minSelections) rules.push({ type: "minLength", value: c.minSelections });
-            if (c.maxSelections) rules.push({ type: "maxLength", value: c.maxSelections });
+            if (hasChoiceConstraints(config)) {
+                if (config.min) rules.push({ type: "minLength", value: config.min });
+                if (config.max) rules.push({ type: "maxLength", value: config.max });
+                if (config.minSelections) rules.push({ type: "minLength", value: config.minSelections });
+                if (config.maxSelections) rules.push({ type: "maxLength", value: config.maxSelections });
+            }
             break;
         }
     }

@@ -75,6 +75,7 @@ export async function executeQuestionNode(
 
     // Store in context
     context.vars[config.key] = value;
+    console.error(`[DEBUG Question] Node ${nodeId} executed. Key: ${config.key}, Value: ${value}. Context keys: ${Object.keys(context.vars).length}`);
 
     return {
       status: 'executed',

@@ -33,6 +33,32 @@ import type { DatavaultColumn } from "@shared/schema";
 import { OptionsEditor } from "./OptionsEditor";
 import type { SelectOption } from "@/lib/types/datavault";
 
+/**
+ * Type guard to safely convert unknown jsonb data to SelectOption array
+ */
+function isSelectOptionArray(value: unknown): value is SelectOption[] {
+  if (!Array.isArray(value)) return false;
+  return value.every(
+    (item) =>
+      typeof item === 'object' &&
+      item !== null &&
+      'label' in item &&
+      'value' in item &&
+      typeof item.label === 'string' &&
+      typeof item.value === 'string'
+  );
+}
+
+/**
+ * Safely extracts SelectOption array from unknown jsonb column data
+ */
+function extractSelectOptions(options: unknown): SelectOption[] {
+  if (isSelectOptionArray(options)) {
+    return options;
+  }
+  return [];
+}
+
 interface ColumnManagerProps {
   columns: DatavaultColumn[];
   onAddColumn: (data: { name: string; type: string; required: boolean; options?: SelectOption[] }) => Promise<void>;
@@ -117,16 +143,17 @@ export function ColumnManager({
   };
 
   const openEditDialog = (column: DatavaultColumn) => {
+    const options = extractSelectOptions(column.options);
     setEditDialog({
       id: column.id,
       name: column.name,
       required: column.required,
       type: column.type,
-      options: (column.options as unknown as SelectOption[]) || null
+      options: options.length > 0 ? options : null
     });
     setEditColumnName(column.name);
     setEditColumnRequired(column.required);
-    setEditColumnOptions((column.options as unknown as SelectOption[]) || []);
+    setEditColumnOptions(options);
   };
 
   return (

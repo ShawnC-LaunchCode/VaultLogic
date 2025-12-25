@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import WebSocket from 'ws';
 import * as Y from 'yjs';
-import { createToken } from '@server/services/auth';
+import { authService } from '@server/services/AuthService';
 import type { User } from '@shared/schema';
 
 const WS_URL = 'ws://localhost:5174/collab'; // Test server port
@@ -52,10 +52,10 @@ describeWithCollabServer('Collaboration Server [requires collab server]', () => 
 
   beforeAll(() => {
     // Generate JWT tokens for testing
-    ownerToken = createToken(ownerUser as User);
-    builderToken = createToken(builderUser as User);
-    viewerToken = createToken(viewerUser as User);
-    crossTenantToken = createToken(crossTenantUser as User);
+    ownerToken = authService.createToken(ownerUser as User);
+    builderToken = authService.createToken(builderUser as User);
+    viewerToken = authService.createToken(viewerUser as User);
+    crossTenantToken = authService.createToken(crossTenantUser as User);
   });
 
   describe('Authentication', () => {
