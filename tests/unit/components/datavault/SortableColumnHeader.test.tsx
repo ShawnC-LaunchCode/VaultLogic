@@ -3,6 +3,8 @@
  * Tests for draggable column headers with type icons
  */
 
+// @vitest-environment jsdom
+
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { SortableColumnHeader } from '@/components/datavault/SortableColumnHeader';

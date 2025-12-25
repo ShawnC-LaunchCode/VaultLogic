@@ -5,7 +5,7 @@ import {
   Helpers,
   AllowedHelperNames,
   type EvalContext,
-} from '../server/engine/expr';
+} from '@server/engine/expr';
 
 describe('Expression Evaluator', () => {
   describe('validateExpression', () => {

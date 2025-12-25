@@ -21,13 +21,15 @@ describe('DatavaultTablesService', () => {
     vi.clearAllMocks();
 
     mockTablesRepo = {
+      findByTenant: vi.fn(),
+      findByTenantAndUser: vi.fn(),
       findById: vi.fn(),
-      findByTenantId: vi.fn(),
       slugExists: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
       countByTenantId: vi.fn(),
+
     };
 
     mockColumnsRepo = {
@@ -58,12 +60,12 @@ describe('DatavaultTablesService', () => {
         },
       ];
 
-      mockTablesRepo.findByTenantId.mockResolvedValue(mockTables);
+      mockTablesRepo.findByTenantAndUser.mockResolvedValue(mockTables);
 
-      const result = await service.listTables(mockTenantId);
+      const result = await service.listTables(mockTenantId, mockUserId);
 
       expect(result).toEqual(mockTables);
-      expect(mockTablesRepo.findByTenantId).toHaveBeenCalledWith(mockTenantId, undefined);
+      expect(mockTablesRepo.findByTenantAndUser).toHaveBeenCalledWith(mockTenantId, mockUserId, undefined);
     });
   });
 
@@ -82,7 +84,7 @@ describe('DatavaultTablesService', () => {
         },
       ];
 
-      mockTablesRepo.findByTenantId.mockResolvedValue(mockTables);
+      mockTablesRepo.findByTenantAndUser.mockResolvedValue(mockTables);
       mockColumnsRepo.countByTableId.mockResolvedValue(2);
       mockRowsRepo.countByTableId.mockResolvedValue(42);
 

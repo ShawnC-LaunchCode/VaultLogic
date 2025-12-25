@@ -16,6 +16,7 @@ import * as repositories from '../../../server/repositories';
 vi.mock('../../../server/repositories', () => ({
   stepRepository: {
     findBySectionIds: vi.fn(),
+    findById: vi.fn(),
   },
   stepValueRepository: {
     findByRunId: vi.fn(),

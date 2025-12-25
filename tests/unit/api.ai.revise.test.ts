@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import express from 'express';
 import request from 'supertest';
-import { registerAiRoutes } from '../server/routes/ai.routes';
+import { registerAiRoutes } from '@server/routes/ai.routes';
 
 // Define the mock revision function outside to reference it
 const mockReviseWorkflow = vi.fn();

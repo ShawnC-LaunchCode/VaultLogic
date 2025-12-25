@@ -21,6 +21,7 @@ process.env.GEMINI_API_KEY = "dummy-key-for-tests";
 process.env.SESSION_SECRET = process.env.SESSION_SECRET || "test-secret-key-for-testing-only";
 process.env.GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "test-google-client-id";
 process.env.VITE_GOOGLE_CLIENT_ID = process.env.VITE_GOOGLE_CLIENT_ID || "test-google-client-id";
+process.env.JWT_SECRET = "test-jwt-secret";
 
 // Enforce usage of TEST_DATABASE_URL if available
 if (process.env.TEST_DATABASE_URL) {

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, beforeAll, vi } from "vitest";
 import type { Request, Response, NextFunction } from "express";
 import {
   requireAuth,
@@ -21,6 +21,11 @@ describe("Auth Middleware", () => {
   let mockNext: NextFunction;
   let jsonMock: ReturnType<typeof vi.fn>;
   let statusMock: ReturnType<typeof vi.fn>;
+
+  beforeAll(() => {
+    vi.stubEnv('JWT_SECRET', 'test-secret');
+    vi.clearAllMocks();
+  });
 
   beforeEach(() => {
     jsonMock = vi.fn();

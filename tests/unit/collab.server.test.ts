@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import WebSocket from 'ws';
 import * as Y from 'yjs';
-import { createToken } from '../server/services/auth';
-import type { User } from '../shared/schema';
+import { createToken } from '@server/services/auth';
+import type { User } from '@shared/schema';
 
 const WS_URL = 'ws://localhost:5174/collab'; // Test server port
 

@@ -1,12 +1,14 @@
+// @vitest-environment jsdom
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { useCollabClient } from '../client/src/hooks/collab/useCollabClient';
-import { useComments } from '../client/src/hooks/collab/useComments';
-import { PresenceAvatars } from '../client/src/components/collab/PresenceAvatars';
-import { CommentsPanel } from '../client/src/components/collab/CommentsPanel';
-import type { CollabUser } from '../client/src/hooks/collab/useCollabClient';
-import type { Comment } from '../client/src/hooks/collab/useComments';
+import { useCollabClient } from "@/hooks/collab/useCollabClient";
+import { useComments } from "@/hooks/collab/useComments";
+import { PresenceAvatars } from "@/components/collab/PresenceAvatars";
+import { CommentsPanel } from "@/components/collab/CommentsPanel";
+import type { CollabUser } from '@/hooks/collab/useCollabClient';
+import type { Comment } from '@/hooks/collab/useComments';
 import * as Y from 'yjs';
 
 // Mock WebSocket
@@ -198,7 +200,7 @@ describe('PresenceAvatars', () => {
   it('should render user avatars', () => {
     render(<PresenceAvatars users={mockUsers} />);
 
-    expect(screen.getByText('2 online')).toBeInTheDocument();
+    expect(screen.getByText('2 online')).toBeTruthy();
   });
 
   it('should show hidden count when exceeds max', () => {
@@ -212,7 +214,7 @@ describe('PresenceAvatars', () => {
 
     render(<PresenceAvatars users={manyUsers} maxVisible={5} />);
 
-    expect(screen.getByText('+5')).toBeInTheDocument();
+    expect(screen.getByText('+5')).toBeTruthy();
   });
 });
 
@@ -248,8 +250,8 @@ describe('CommentsPanel', () => {
       />
     );
 
-    expect(screen.getByText('This is a test comment')).toBeInTheDocument();
-    expect(screen.getByText('John Doe')).toBeInTheDocument();
+    expect(screen.getByText('This is a test comment')).toBeTruthy();
+    expect(screen.getByText('John Doe')).toBeTruthy();
   });
 
   it('should show empty state when no comments', () => {
@@ -262,7 +264,7 @@ describe('CommentsPanel', () => {
       />
     );
 
-    expect(screen.getByText('No comments yet')).toBeInTheDocument();
+    expect(screen.getByText('No comments yet')).toBeTruthy();
   });
 
   it('should add a comment', async () => {
@@ -313,6 +315,6 @@ describe('CommentsPanel', () => {
     );
 
     const deleteButton = screen.queryByRole('button', { name: /Delete/i });
-    expect(deleteButton).not.toBeInTheDocument();
+    expect(deleteButton).toBeNull();
   });
 });

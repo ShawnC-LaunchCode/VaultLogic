@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { runGraph, type RunGraphInput } from '../server/engine/index';
-import { validateNodeConditions, validateGraph, type GraphJson } from '../server/engine/validate';
-import type { Node } from '../server/engine/registry';
+import { runGraph, type RunGraphInput } from '@server/engine/index';
+import { validateNodeConditions, validateGraph, type GraphJson } from '@server/engine/validation';
+import type { Node } from '@server/engine/registry';
 import type { WorkflowVersion } from '@shared/schema';
 
 describe('Engine - Conditional Execution', () => {

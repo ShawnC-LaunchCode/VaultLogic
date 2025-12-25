@@ -2,14 +2,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import express from 'express';
 import request from 'supertest';
-import { registerAiRoutes } from '../server/routes/ai.routes';
+import { registerAiRoutes } from '@server/routes/ai.routes';
 
 // Mock AIService
 const mockGenerateLogic = vi.fn();
 const mockDebugLogic = vi.fn();
 const mockVisualizeLogic = vi.fn();
 
-vi.mock('../server/services/AIService', () => ({
+vi.mock('../../server/services/AIService', () => ({
     AIService: vi.fn(),
     createAIServiceFromEnv: vi.fn(() => ({
         generateLogic: mockGenerateLogic,
@@ -19,7 +19,7 @@ vi.mock('../server/services/AIService', () => ({
 }));
 
 // Mock WorkflowService
-vi.mock('../server/services/WorkflowService', () => ({
+vi.mock('../../server/services/WorkflowService', () => ({
     workflowService: {
         verifyOwnership: vi.fn().mockResolvedValue(true),
         verifyAccess: vi.fn().mockResolvedValue(true)
@@ -27,12 +27,12 @@ vi.mock('../server/services/WorkflowService', () => ({
 }));
 
 // Mock Auth Middleware
-vi.mock('../server/middleware/auth', () => ({
+vi.mock('../../server/middleware/auth', () => ({
     hybridAuth: (req: any, res: any, next: any) => next(),
     requireAuth: (req: any, res: any, next: any) => { req.userId = 'user-123'; next(); }
 }));
 
-vi.mock('../server/middleware/rbac', () => ({
+vi.mock('../../server/middleware/rbac', () => ({
     requireBuilder: (req: any, res: any, next: any) => next()
 }));
 
