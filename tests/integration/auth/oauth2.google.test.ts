@@ -8,7 +8,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vites
 import request from 'supertest';
 import type { Express } from 'express';
 import express from 'express';
-import { setupAuth, __setGoogleClient, verifyGoogleToken } from '../../../server/googleAuth';
+import { setupAuth, _testOnly_setGoogleClient, verifyGoogleToken } from '../../../server/googleAuth';
 import { db } from '../../../server/db';
 import { users, tenants, refreshTokens } from '@shared/schema';
 import { eq } from 'drizzle-orm';
@@ -42,7 +42,7 @@ describe('OAuth2 Google Authentication Flow', () => {
     mockGoogleClient = {
       verifyIdToken: vi.fn(),
     };
-    __setGoogleClient(mockGoogleClient);
+    _testOnly_setGoogleClient(mockGoogleClient);
 
     // Clean up test users
     await db.delete(users).where(eq(users.email, 'testuser@example.com'));
@@ -53,7 +53,7 @@ describe('OAuth2 Google Authentication Flow', () => {
     if (testTenantId) {
       await db.delete(tenants).where(eq(tenants.id, testTenantId));
     }
-    __setGoogleClient(null);
+    _testOnly_setGoogleClient(null);
   });
 
   describe('POST /api/auth/google - Google OAuth2 Login', () => {
@@ -105,7 +105,8 @@ describe('OAuth2 Google Authentication Flow', () => {
       // Verify refresh token cookie is set
       const cookies = response.headers['set-cookie'];
       expect(cookies).toBeDefined();
-      expect(cookies.some((c: string) => c.startsWith('refresh_token='))).toBe(true);
+      expect(Array.isArray(cookies)).toBe(true);
+      expect((cookies as unknown as string[]).some((c: string) => c.startsWith('refresh_token='))).toBe(true);
 
       // Verify user was created in database
       const dbUser = await db.query.users.findFirst({

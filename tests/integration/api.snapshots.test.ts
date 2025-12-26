@@ -21,7 +21,7 @@ describe("Stage 13: Workflow Snapshots & Versioning", () => {
 
     // Mock setupAuth to allow backdoor login
     vi.mock("../../server/googleAuth", async (importOriginal) => {
-        const actual = await importOriginal();
+        const actual = await importOriginal<any>();
         return {
             ...actual,
             setupAuth: (app: Express) => {
@@ -29,21 +29,23 @@ describe("Stage 13: Workflow Snapshots & Versioning", () => {
 
                 // Debug middleware to log cookies and session AND restore req.user
                 app.use((req, res, next) => {
-                    if (req.session && req.session.user) {
+                    const r = req as any;
+                    if (r.session && r.session.user) {
                         // Restore req.user from session (mimic passport)
-                        req.user = req.session.user;
-                        req.isAuthenticated = () => true;
+                        r.user = r.session.user;
+                        r.isAuthenticated = () => true;
                     } else {
-                        req.isAuthenticated = () => false;
+                        r.isAuthenticated = () => false;
                     }
                     next();
                 });
 
                 app.post("/api/auth/google", (req, res) => {
+                    const r = req as any;
                     // Backdoor login: accept user object directly
                     if (req.body.user) {
-                        req.session.user = req.body.user;
-                        req.user = req.body.user;
+                        r.session.user = req.body.user;
+                        r.user = req.body.user;
                         return res.json({ message: "Logged in via backdoor", user: req.body.user });
                     }
                     res.status(400).json({ error: "No user provided" });
@@ -160,9 +162,9 @@ describe("Stage 13: Workflow Snapshots & Versioning", () => {
             published: true,
             publishedAt: new Date(),
             publishedBy: userId,
-            version: 1,
+            versionNumber: 1,
             createdBy: userId,
-        }).returning();
+        } as any).returning();
 
         // 3. Create Run on Version 1
         const run1Data = createGraphRun(version1.id, { createdBy: userId });
@@ -180,9 +182,9 @@ describe("Stage 13: Workflow Snapshots & Versioning", () => {
             published: true,
             publishedAt: new Date(),
             publishedBy: userId,
-            version: 2,
+            versionNumber: 2,
             createdBy: userId,
-        }).returning();
+        } as any).returning();
 
         // 6. Create Run on Version 2
         const run2Data = createGraphRun(version2.id, { createdBy: userId });

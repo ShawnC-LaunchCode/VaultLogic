@@ -43,7 +43,7 @@ describe('TableGridView', () => {
     vi.clearAllMocks();
   });
 
-  const mockSchema = {
+  const mockSchema: any = {
     columns: [
       {
         id: 'col-1',
@@ -64,7 +64,7 @@ describe('TableGridView', () => {
     ],
   };
 
-  const mockRows = {
+  const mockRows: any = {
     rows: [
       {
         row: { id: 'row-1', tableId: 'table-1', createdAt: new Date().toISOString() },
@@ -228,7 +228,7 @@ describe('TableGridView', () => {
   });
 
   it('sorts columns by orderIndex', async () => {
-    const unsortedSchema = {
+    const unsortedSchema: any = {
       columns: [
         { ...mockSchema.columns[1], orderIndex: 0 },
         { ...mockSchema.columns[0], orderIndex: 1 },

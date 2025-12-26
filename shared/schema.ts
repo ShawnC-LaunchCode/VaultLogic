@@ -141,7 +141,7 @@ export const workspaceInvitations = pgTable("workspace_invitations", {
 // Audit Logs
 export const auditLogs = pgTable("audit_logs", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
-  workspaceId: uuid("workspace_id").references(() => workspaces.id, { onDelete: 'cascade' }).notNull(),
+  workspaceId: uuid("workspace_id").references(() => workspaces.id, { onDelete: 'cascade' }),
   userId: varchar("user_id").references(() => users.id), // Nullable for system actions or deleted users
   action: varchar("action").notNull(), // e.g. 'workflow.create', 'member.add'
   resourceType: varchar("resource_type").notNull(), // 'workflow', 'user', 'settings'
@@ -2109,6 +2109,8 @@ export const workflowRuns = pgTable("workflow_runs", {
   index("workflow_runs_run_token_idx").on(table.runToken),
   index("workflow_runs_share_token_idx").on(table.shareToken),
   index("workflow_runs_current_section_idx").on(table.currentSectionId),
+  // Added Dec 2025: Optimization for list runs query
+  index("workflow_runs_created_at_idx").on(table.createdAt),
 ]);
 
 // Step values table (captured values per step in a run)

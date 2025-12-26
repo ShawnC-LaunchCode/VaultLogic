@@ -30,7 +30,7 @@ describe('Expression Evaluator', () => {
     it('should reject unknown identifiers', () => {
       const result = validateExpression('ammount + 100', ['amount']);
       expect(result.ok).toBe(false);
-      expect(result.error).toContain('ammount');
+      expect((result as any).error).toContain('ammount');
     });
 
     it('should reject forbidden identifiers', () => {
@@ -39,14 +39,14 @@ describe('Expression Evaluator', () => {
       for (const id of forbiddenIds) {
         const result = validateExpression(id, []);
         expect(result.ok).toBe(false);
-        expect(result.error).toContain('Forbidden');
+        expect((result as any).error).toContain('Forbidden');
       }
     });
 
     it('should handle syntax errors gracefully', () => {
       const result = validateExpression('amount +', ['amount']);
       expect(result.ok).toBe(false);
-      expect(result.error).toBeTruthy();
+      expect((result as any).error).toBeTruthy();
     });
 
     it('should validate boolean expressions', () => {

@@ -75,7 +75,11 @@ export async function runTokenAuth(
 
     next();
   } catch (error) {
-    logger.error({ err: error }, "Error in runTokenAuth middleware");
+    logger.error({
+      err: error,
+      cause: error instanceof Error ? error.cause : undefined,
+      stack: error instanceof Error ? error.stack : undefined
+    }, "Error in runTokenAuth middleware");
     res.status(500).json({
       success: false,
       error: "Internal server error during authentication",
@@ -154,7 +158,11 @@ export async function creatorOrRunTokenAuth(
 
     next();
   } catch (error) {
-    logger.error({ err: error }, "Error in creatorOrRunTokenAuth middleware");
+    logger.error({
+      err: error,
+      cause: error instanceof Error ? error.cause : undefined,
+      stack: error instanceof Error ? error.stack : undefined
+    }, "Error in creatorOrRunTokenAuth middleware");
     res.status(500).json({
       success: false,
       error: "Internal server error during authentication",

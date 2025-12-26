@@ -43,7 +43,7 @@ export class IntakeService {
     const sections = await sectionRepository.findByWorkflowId(workflow.id);
 
     // Parse intakeConfig (JSONB field)
-    const intakeConfig: IntakeConfig = (workflow.intakeConfig as any) || {};
+    const intakeConfig: IntakeConfig = (workflow.intakeConfig as unknown as IntakeConfig) || {};
 
     // Get tenant branding (if projectId exists)
     let tenantBranding;
@@ -93,7 +93,7 @@ export class IntakeService {
     }
 
     // Parse intakeConfig
-    const intakeConfig: IntakeConfig = (workflow.intakeConfig as any) || {};
+    const intakeConfig: IntakeConfig = (workflow.intakeConfig as unknown as IntakeConfig) || {};
 
     // Generate run token
     const runToken = randomUUID();
@@ -108,12 +108,12 @@ export class IntakeService {
         intake: true,
         slug,
       },
-    } as any);
+    });
 
     // Handle prefill from URL parameters (Stage 12.5)
     if (prefillParams && intakeConfig.allowPrefill && intakeConfig.allowedPrefillKeys) {
       // Get all steps to map aliases to stepIds
-      const allSteps = await (stepRepository as any).findByWorkflowId(workflow.id);
+      const allSteps = await stepRepository.findByWorkflowIdWithAliases(workflow.id);
       const aliasToStepId = new Map<string, string>();
       for (const step of allSteps) {
         if (step.alias) {
@@ -214,7 +214,7 @@ export class IntakeService {
       throw new Error("Workflow not found");
     }
 
-    const intakeConfig: IntakeConfig = (workflow.intakeConfig as any) || {};
+    const intakeConfig: IntakeConfig = (workflow.intakeConfig as unknown as IntakeConfig) || {};
 
     // Stage 12.5: Validate CAPTCHA if required
     if (intakeConfig.requireCaptcha) {
@@ -261,7 +261,7 @@ export class IntakeService {
         // ERROR ISOLATION FIX: Use Promise.allSettled instead of Promise.all
         // This prevents independent operations from failing together
         const results = await Promise.allSettled([
-          (stepRepository as any).findByWorkflowId(workflow.id),
+          stepRepository.findByWorkflowIdWithAliases(workflow.id),
           stepValueRepository.findByRunId(run.id)
         ]);
 
@@ -290,7 +290,7 @@ export class IntakeService {
               // Build summary (non-sensitive fields only) - O(N) instead of O(N²)
               const summary: Record<string, any> = {};
               for (const stepValue of stepValues) {
-                const step = stepMap.get(stepValue.stepId) as any;
+                const step = stepMap.get(stepValue.stepId);
                 if (step?.alias && !this.isSensitiveField(step.alias as string)) {
                   summary[step.alias] = stepValue.value;
                 }

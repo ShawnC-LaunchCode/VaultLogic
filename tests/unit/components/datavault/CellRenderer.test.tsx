@@ -11,12 +11,12 @@ import userEvent from '@testing-library/user-event';
 import { CellRenderer } from '@/components/datavault/CellRenderer';
 
 describe('CellRenderer', () => {
-  const mockRow = {
+  const mockRow: any = {
     row: { id: 'row-1', tableId: 'table-1', createdAt: new Date().toISOString() },
     values: {},
   };
 
-  const mockColumn = {
+  const mockColumn: any = {
     id: 'col-1',
     name: 'Test Column',
     type: 'text',

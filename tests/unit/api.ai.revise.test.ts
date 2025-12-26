@@ -26,19 +26,19 @@ vi.mock('@server/services/WorkflowService', () => ({
 
 // Mock both authentication files
 vi.mock('@server/middleware/auth', () => ({
-    hybridAuth: (req, res, next) => next(),
-    requireAuth: (req, res, next) => { req.userId = 'user-123'; next(); }
+    hybridAuth: (req: any, res: any, next: any) => next(),
+    requireAuth: (req: any, res: any, next: any) => { req.userId = 'user-123'; next(); }
 }));
 
 vi.mock('@server/middleware/aclAuth', () => ({
-    requireAuth: (req, res, next) => { req.userId = 'user-123'; next(); },
-    requireProjectRole: () => (req, res, next) => next(),
-    requireWorkflowRole: () => (req, res, next) => next(),
+    requireAuth: (req: any, res: any, next: any) => { req.userId = 'user-123'; next(); },
+    requireProjectRole: () => (req: any, res: any, next: any) => next(),
+    requireWorkflowRole: () => (req: any, res: any, next: any) => next(),
 }));
 
 // Mock RBAC
 vi.mock('@server/middleware/rbac', () => ({
-    requireBuilder: (req, res, next) => next()
+    requireBuilder: (req: any, res: any, next: any) => next()
 }));
 
 describe('AI Routes Integration', () => {

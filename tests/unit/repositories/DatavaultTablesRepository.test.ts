@@ -23,7 +23,7 @@ describe('DatavaultTablesRepository', () => {
       select: vi.fn().mockReturnThis(),
       from: vi.fn().mockReturnThis(),
       where: vi.fn().mockReturnThis(),
-      orderBy: vi.fn(function(this: any) {
+      orderBy: vi.fn(function (this: any) {
         return Promise.resolve(mockReturnValue);
       }),
       insert: vi.fn().mockReturnThis(),
@@ -32,7 +32,7 @@ describe('DatavaultTablesRepository', () => {
       update: vi.fn().mockReturnThis(),
       set: vi.fn().mockReturnThis(),
       delete: vi.fn().mockReturnThis(),
-      limit: vi.fn(function(this: any) {
+      limit: vi.fn(function (this: any) {
         return Promise.resolve(mockReturnValue);
       }),
       then: vi.fn((resolve) => resolve(mockReturnValue)),
@@ -55,6 +55,7 @@ describe('DatavaultTablesRepository', () => {
           description: 'Test description',
           createdAt: new Date(),
           updatedAt: new Date(),
+          databaseId: null,
         },
       ];
 
@@ -88,6 +89,7 @@ describe('DatavaultTablesRepository', () => {
         description: 'Test description',
         createdAt: new Date(),
         updatedAt: new Date(),
+        databaseId: null,
       };
 
       mockDb._setMockReturnValue([mockTable]);
@@ -146,8 +148,12 @@ describe('DatavaultTablesRepository', () => {
       const createdTable: DatavaultTable = {
         id: mockTableId,
         ...insertData,
+        ownerUserId: mockUserId,
+        description: insertData.description!,
+        slug: insertData.slug!,
         createdAt: new Date(),
         updatedAt: new Date(),
+        databaseId: null,
       };
 
       mockDb.returning.mockResolvedValue([createdTable]);
@@ -175,6 +181,7 @@ describe('DatavaultTablesRepository', () => {
         ...updateData,
         createdAt: new Date(),
         updatedAt: new Date(),
+        databaseId: null,
       };
 
       mockDb.returning.mockResolvedValue([updatedTable]);

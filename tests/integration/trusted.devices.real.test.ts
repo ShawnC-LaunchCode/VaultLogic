@@ -79,7 +79,9 @@ describe("Trusted Devices Integration Tests (REAL)", () => {
 
       const response = await request(app)
         .post("/api/auth/trust-device")
-        .set("Authorization", `Bearer ${mfaLoginResponse.body.token}`);
+        .set("Authorization", `Bearer ${mfaLoginResponse.body.token}`)
+        .set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+        .set("X-Forwarded-For", "192.168.1.100");
 
       const trustedUntil = new Date(response.body.trustedUntil);
       const now = new Date();
@@ -103,12 +105,14 @@ describe("Trusted Devices Integration Tests (REAL)", () => {
 
       const token = mfaLoginResponse.body.token;
       const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)";
+      const ipAddress = "192.168.1.100";
 
       // Trust device first time
       const response1 = await request(app)
         .post("/api/auth/trust-device")
         .set("Authorization", `Bearer ${token}`)
-        .set("User-Agent", userAgent);
+        .set("User-Agent", userAgent)
+        .set("X-Forwarded-For", ipAddress);
 
       const firstExpiry = new Date(response1.body.trustedUntil);
 
@@ -119,7 +123,8 @@ describe("Trusted Devices Integration Tests (REAL)", () => {
       const response2 = await request(app)
         .post("/api/auth/trust-device")
         .set("Authorization", `Bearer ${token}`)
-        .set("User-Agent", userAgent);
+        .set("User-Agent", userAgent)
+        .set("X-Forwarded-For", ipAddress);
 
       const secondExpiry = new Date(response2.body.trustedUntil);
 
@@ -154,7 +159,8 @@ describe("Trusted Devices Integration Tests (REAL)", () => {
         "Mozilla/5.0 (iPhone; CPU iPhone OS 14_0)",
       ];
 
-      for (const ua of userAgents) {
+      for (let i = 0; i < userAgents.length; i++) {
+        const ua = userAgents[i];
         await request(app).post("/api/auth/login").send({ email, password });
 
         const totpCode = generateTotpCode(totpSecret);
@@ -166,7 +172,8 @@ describe("Trusted Devices Integration Tests (REAL)", () => {
         await request(app)
           .post("/api/auth/trust-device")
           .set("Authorization", `Bearer ${mfaLoginResponse.body.token}`)
-          .set("User-Agent", ua);
+          .set("User-Agent", ua)
+          .set("X-Forwarded-For", `192.168.1.${100 + i}`);
       }
 
       // Get last token
@@ -216,13 +223,15 @@ describe("Trusted Devices Integration Tests (REAL)", () => {
       await request(app)
         .post("/api/auth/trust-device")
         .set("Authorization", `Bearer ${mfaLoginResponse.body.token}`)
-        .set("User-Agent", userAgent);
+        .set("User-Agent", userAgent)
+        .set("X-Forwarded-For", "192.168.1.100");
 
-      // List devices with same user agent
+      // List devices with same user agent and IP
       const response = await request(app)
         .get("/api/auth/trusted-devices")
         .set("Authorization", `Bearer ${mfaLoginResponse.body.token}`)
-        .set("User-Agent", userAgent);
+        .set("User-Agent", userAgent)
+        .set("X-Forwarded-For", "192.168.1.100");
 
       const currentDevice = response.body.devices.find((d: any) => d.current);
       expect(currentDevice).toBeDefined();
@@ -242,7 +251,9 @@ describe("Trusted Devices Integration Tests (REAL)", () => {
 
       await request(app)
         .post("/api/auth/trust-device")
-        .set("Authorization", `Bearer ${mfaLoginResponse.body.token}`);
+        .set("Authorization", `Bearer ${mfaLoginResponse.body.token}`)
+        .set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+        .set("X-Forwarded-For", "192.168.1.100");
 
       // Manually revoke device
       await db
@@ -272,7 +283,9 @@ describe("Trusted Devices Integration Tests (REAL)", () => {
 
       await request(app)
         .post("/api/auth/trust-device")
-        .set("Authorization", `Bearer ${mfaLoginResponse.body.token}`);
+        .set("Authorization", `Bearer ${mfaLoginResponse.body.token}`)
+        .set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+        .set("X-Forwarded-For", "192.168.1.100");
 
       // Manually expire device
       const pastDate = new Date(Date.now() - 1000); // 1 second ago
@@ -307,7 +320,9 @@ describe("Trusted Devices Integration Tests (REAL)", () => {
 
       await request(app)
         .post("/api/auth/trust-device")
-        .set("Authorization", `Bearer ${token}`);
+        .set("Authorization", `Bearer ${token}`)
+        .set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+        .set("X-Forwarded-For", "192.168.1.100");
 
       // Get device ID
       const devicesResponse = await request(app)
@@ -373,7 +388,9 @@ describe("Trusted Devices Integration Tests (REAL)", () => {
 
       await request(app)
         .post("/api/auth/trust-device")
-        .set("Authorization", `Bearer ${mfaLogin1.body.token}`);
+        .set("Authorization", `Bearer ${mfaLogin1.body.token}`)
+        .set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+        .set("X-Forwarded-For", "192.168.1.100");
 
       const devices1 = await request(app)
         .get("/api/auth/trusted-devices")
@@ -419,15 +436,17 @@ describe("Trusted Devices Integration Tests (REAL)", () => {
       await request(app)
         .post("/api/auth/trust-device")
         .set("Authorization", `Bearer ${mfaLoginResponse.body.token}`)
-        .set("User-Agent", userAgent);
+        .set("User-Agent", userAgent)
+        .set("X-Forwarded-For", "192.168.1.100");
 
       // Logout
       await request(app).post("/api/auth/logout");
 
-      // Login again from same "device" (same user agent)
+      // Login again from same "device" (same user agent and IP)
       const secondLoginResponse = await request(app)
         .post("/api/auth/login")
         .set("User-Agent", userAgent)
+        .set("X-Forwarded-For", "192.168.1.100")
         .send({ email, password });
 
       // Should not require MFA
@@ -483,7 +502,8 @@ describe("Trusted Devices Integration Tests (REAL)", () => {
       await request(app)
         .post("/api/auth/trust-device")
         .set("Authorization", `Bearer ${mfaLoginResponse.body.token}`)
-        .set("User-Agent", userAgent);
+        .set("User-Agent", userAgent)
+        .set("X-Forwarded-For", "192.168.1.100");
 
       const device1 = await db.query.trustedDevices.findFirst({
         where: eq(trustedDevices.userId, userId),
@@ -494,10 +514,11 @@ describe("Trusted Devices Integration Tests (REAL)", () => {
       // Wait a bit
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      // Login again
+      // Login again with same device fingerprint
       await request(app)
         .post("/api/auth/login")
         .set("User-Agent", userAgent)
+        .set("X-Forwarded-For", "192.168.1.100")
         .send({ email, password });
 
       const device2 = await db.query.trustedDevices.findFirst({

@@ -42,7 +42,7 @@ describe("Variable Schema Safety & Resolution", () => {
             id: tenantId,
             name: "Variable Safety Tenant",
             slug: `safety - ${uuidv4()} `,
-        });
+        } as any);
 
         userId = uuidv4();
         await db.insert(usersSchema).values({
@@ -53,7 +53,7 @@ describe("Variable Schema Safety & Resolution", () => {
             tenantRole: "owner",
             name: "Safety Tester",
             authProvider: "local",
-        });
+        } as any);
 
         // 2. Setup Project & Workflow
         projectId = uuidv4();
@@ -64,7 +64,7 @@ describe("Variable Schema Safety & Resolution", () => {
             tenantId,
             creatorId: userId,
             ownerId: userId,
-        });
+        } as any);
 
         workflowId = uuidv4();
         versionId = uuidv4();
@@ -75,7 +75,7 @@ describe("Variable Schema Safety & Resolution", () => {
             creatorId: userId,
             ownerId: userId,
             currentVersionId: versionId,
-        });
+        } as any);
 
         await db.insert(workflowVersionsSchema).values({
             id: versionId,
@@ -83,7 +83,7 @@ describe("Variable Schema Safety & Resolution", () => {
             versionNumber: 1,
             graphJson: {},
             createdBy: userId,
-        });
+        } as any);
 
         // 3. Setup Section & Step
         sectionId = uuidv4();
@@ -92,7 +92,7 @@ describe("Variable Schema Safety & Resolution", () => {
             workflowId,
             title: "Main Section",
             order: 1,
-        });
+        } as any);
 
         await db.insert(stepsSchema).values({
             id: stepId1,
@@ -101,7 +101,7 @@ describe("Variable Schema Safety & Resolution", () => {
             title: "My Step",
             alias: stepAlias1, // "input_variable"
             order: 1,
-        });
+        } as any);
 
         // 4. Create Run
         runId = uuidv4();
@@ -113,7 +113,7 @@ describe("Variable Schema Safety & Resolution", () => {
             runToken,
             createdBy: `creator:${userId} `,
             status: "pending",
-        });
+        } as any);
     }, TEST_TIMEOUT);
 
     afterAll(async () => {

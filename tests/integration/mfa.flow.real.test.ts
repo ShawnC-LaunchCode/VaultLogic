@@ -9,7 +9,7 @@ import {
   generateTotpCode,
 } from "../helpers/testUtils";
 import { db } from "../../server/db";
-import { mfaSecrets, mfaBackupCodes, users } from "@shared/schema";
+import { mfaSecrets, mfaBackupCodes, users, tenants } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
 /**
@@ -37,8 +37,8 @@ describe("MFA Flow Integration Tests (REAL)", () => {
         .post("/api/auth/login")
         .send({ email, password });
 
-      const token = loginResponse.body.token;
-      expect(loginResponse.body.user.mfaEnabled).toBe(false);
+      const token = (loginResponse.body as any).token;
+      expect((loginResponse.body as any).user.mfaEnabled).toBe(false);
 
       // Step 2: Setup MFA
       const setupResponse = await request(app)
@@ -46,13 +46,13 @@ describe("MFA Flow Integration Tests (REAL)", () => {
         .set("Authorization", `Bearer ${token}`);
 
       expect(setupResponse.status).toBe(200);
-      expect(setupResponse.body.qrCodeDataUrl).toBeDefined();
-      expect(setupResponse.body.qrCodeDataUrl).toContain("data:image/png");
-      expect(setupResponse.body.backupCodes).toBeDefined();
-      expect(setupResponse.body.backupCodes).toHaveLength(10);
+      expect((setupResponse.body as any).qrCodeDataUrl).toBeDefined();
+      expect((setupResponse.body as any).qrCodeDataUrl).toContain("data:image/png");
+      expect((setupResponse.body as any).backupCodes).toBeDefined();
+      expect((setupResponse.body as any).backupCodes).toHaveLength(10);
 
       // Verify backup codes format (XXXX-XXXX)
-      setupResponse.body.backupCodes.forEach((code: string) => {
+      (setupResponse.body as any).backupCodes.forEach((code: string) => {
         expect(code).toMatch(/^[A-Z0-9]{4}-[A-Z0-9]{4}$/);
       });
 
@@ -77,7 +77,7 @@ describe("MFA Flow Integration Tests (REAL)", () => {
         .send({ token: totpCode });
 
       expect(verifyResponse.status).toBe(200);
-      expect(verifyResponse.body.message).toContain("enabled");
+      expect((verifyResponse.body as any).message).toContain("enabled");
 
       // Step 5: Verify MFA is now enabled
       const updatedSecret = await db.query.mfaSecrets.findFirst({
@@ -224,7 +224,7 @@ describe("MFA Flow Integration Tests (REAL)", () => {
       expect(mfaResponse.body.user.mfaEnabled).toBe(true);
 
       // Verify refresh token cookie is set
-      const cookies = mfaResponse.headers["set-cookie"] as string[];
+      const cookies = mfaResponse.headers["set-cookie"] as unknown as string[];
       const refreshTokenCookie = cookies.find((c) =>
         c.startsWith("refresh_token=")
       );
@@ -611,6 +611,37 @@ describe("MFA Flow Integration Tests (REAL)", () => {
 
       expect(response.status).toBe(400);
       expect(response.body.message).toContain("not enabled");
+    });
+  });
+  describe("Tenant-Level MFA Enforcement", () => {
+    it("should enforce MFA for tenant users when required by tenant", async () => {
+      // 1. Create a tenant with mfaRequired = true
+      const tenantId = crypto.randomUUID();
+      await db.insert(tenants).values({
+        id: tenantId,
+        name: "MFA Enforced Tenant",
+
+        mfaRequired: true,
+      });
+
+      // 2. Create user in that tenant (without MFA enabled individually)
+      const { email, password, userId } = await createVerifiedUser();
+      await db.update(users)
+        .set({ tenantId: tenantId, tenantRole: 'viewer' })
+        .where(eq(users.id, userId));
+
+      // 3. Login - should REQUIRE MFA because of tenant setting
+      const loginResponse = await request(app)
+        .post("/api/auth/login")
+        .send({ email, password });
+
+      expect(loginResponse.status).toBe(200);
+      expect(loginResponse.body.requiresMfa).toBe(true);
+      expect(loginResponse.body.userId).toBe(userId);
+      expect(loginResponse.body.message).toContain("MFA required");
+
+      // Cleanup tenant
+      await db.delete(tenants).where(eq(tenants.id, tenantId));
     });
   });
 });

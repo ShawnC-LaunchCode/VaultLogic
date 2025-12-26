@@ -200,20 +200,20 @@ describe("AuthService", () => {
     });
   });
 
-  describe("Password Strength Validation", () => {
+  describe("Password Strength Validation (zxcvbn)", () => {
     describe("validatePasswordStrength()", () => {
       it("should accept valid strong passwords", () => {
         const validPasswords = [
-          "Password123",
-          "MyP@ssw0rd!",
-          "Test1234Pass",
-          "Abcd1234",
+          "MyP@ssw0rd!2024",
+          "Test1234Pass!word",
+          "Correct-Horse-Battery-Staple",
+          "UnguessableP@ssw0rd123",
         ];
 
         validPasswords.forEach((password) => {
           const result = authService.validatePasswordStrength(password);
           expect(result.valid).toBe(true);
-          expect(result.message).toBeUndefined();
+          expect(result.score).toBeGreaterThanOrEqual(3);
         });
       });
 
@@ -230,33 +230,63 @@ describe("AuthService", () => {
         expect(result.message).toBe("Password must be at most 128 characters long");
       });
 
-      it("should reject passwords without uppercase letter", () => {
+      it("should reject weak passwords with zxcvbn score < 3", () => {
+        const weakPasswords = [
+          "password123",
+          "Password123",
+          "qwerty123",
+        ];
+
+        weakPasswords.forEach((password) => {
+          const result = authService.validatePasswordStrength(password);
+          expect(result.valid).toBe(false);
+          expect(result.score).toBeDefined();
+          expect(result.score).toBeLessThan(3);
+          expect(result.message).toBeTruthy();
+        });
+      });
+
+      it("should provide helpful feedback for weak passwords", () => {
         const result = authService.validatePasswordStrength("password123");
         expect(result.valid).toBe(false);
-        expect(result.message).toBe("Password must contain at least one uppercase letter");
+        expect(result.message).toBeTruthy();
+        expect(result.feedback).toBeDefined();
       });
 
-      it("should reject passwords without lowercase letter", () => {
-        const result = authService.validatePasswordStrength("PASSWORD123");
+      it("should reject password containing user's email", () => {
+        const email = "john@example.com";
+        const password = "john12345678";
+        const result = authService.validatePasswordStrength(password, [email, "john"]);
         expect(result.valid).toBe(false);
-        expect(result.message).toBe("Password must contain at least one lowercase letter");
       });
 
-      it("should reject passwords without number", () => {
-        const result = authService.validatePasswordStrength("PasswordABC");
+      it("should reject password containing user's name", () => {
+        const result = authService.validatePasswordStrength("JohnSmith123", ["john@example.com", "John", "Smith"]);
         expect(result.valid).toBe(false);
-        expect(result.message).toBe("Password must contain at least one number");
       });
 
-      it("should accept password with exactly 8 characters", () => {
-        const result = authService.validatePasswordStrength("Pass1234");
+      it("should accept strong password even with user inputs provided", () => {
+        const result = authService.validatePasswordStrength("Correct-Horse-Battery-Staple", ["john@example.com", "John", "Smith"]);
+        expect(result.valid).toBe(true);
+        expect(result.score).toBeGreaterThanOrEqual(3);
+      });
+
+      it("should accept password with exactly 8 characters if strong enough", () => {
+        const result = authService.validatePasswordStrength("Tr0ub4dor");
         expect(result.valid).toBe(true);
       });
 
-      it("should accept password with exactly 128 characters", () => {
-        const password = "A1a" + "a".repeat(125);
+      it("should accept password with exactly 128 characters if strong", () => {
+        const password = "Correct-Horse-Battery-Staple-" + "x".repeat(93);
         const result = authService.validatePasswordStrength(password);
         expect(result.valid).toBe(true);
+      });
+
+      it("should return score in result object", () => {
+        const result = authService.validatePasswordStrength("MyP@ssw0rd!2024");
+        expect(result.score).toBeDefined();
+        expect(result.score).toBeGreaterThanOrEqual(0);
+        expect(result.score).toBeLessThanOrEqual(4);
       });
     });
   });
@@ -1059,23 +1089,21 @@ describe("AuthService", () => {
     });
 
     describe("Email Edge Cases", () => {
-      it("should accept email with unicode domain (simple validation)", () => {
-        // The simple regex validation accepts unicode characters
-        // In production, punycode conversion would be needed for actual use
+      it("should reject email with unicode domain (security fix)", () => {
+        // SECURITY FIX: Reject unicode domains to prevent homograph attacks
+        // Punycode conversion should be done client-side if needed
         const result = authService.validateEmail("user@тест.com");
-        expect(result).toBe(true); // Current implementation accepts this
+        expect(result).toBe(false); // Now correctly rejects unicode domains
       });
 
-      it("should accept email starting with dot (simple validation)", () => {
-        // The current regex validation allows this
-        // Stricter RFC 5321 validation would reject it
-        expect(authService.validateEmail(".user@example.com")).toBe(true);
+      it("should reject email starting with dot (security fix)", () => {
+        // SECURITY FIX: RFC 5321 compliance - local part cannot start with dot
+        expect(authService.validateEmail(".user@example.com")).toBe(false);
       });
 
-      it("should accept email ending with dot before @", () => {
-        // The current regex validation allows this
-        // Stricter RFC 5321 validation would reject it
-        expect(authService.validateEmail("user.@example.com")).toBe(true);
+      it("should reject email ending with dot before @ (security fix)", () => {
+        // SECURITY FIX: RFC 5321 compliance - local part cannot end with dot
+        expect(authService.validateEmail("user.@example.com")).toBe(false);
       });
 
       it("should handle email with plus addressing", () => {

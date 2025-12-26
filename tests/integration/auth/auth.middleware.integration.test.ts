@@ -70,7 +70,7 @@ describe.sequential("Auth Middleware Integration Tests", () => {
             .expect(200);
 
         userToken = loginRes.body.token;
-        refreshCookie = loginRes.headers['set-cookie'];
+        refreshCookie = loginRes.headers['set-cookie'] as unknown as string[];
     });
 
     describe("requireAuth Middleware", () => {

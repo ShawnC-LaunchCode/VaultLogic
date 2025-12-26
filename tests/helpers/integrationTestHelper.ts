@@ -34,7 +34,7 @@ export interface SetupOptions {
   tenantName?: string;
   createProject?: boolean;
   projectName?: string;
-  userRole?: 'admin' | 'creator' | 'viewer';
+  userRole?: 'admin' | 'creator';
   tenantRole?: 'owner' | 'builder' | 'viewer';
 }
 
@@ -96,7 +96,7 @@ export async function setupIntegrationTest(
     .post('/api/auth/register')
     .send({
       email,
-      password: 'TestPassword123',
+      password: 'TestUser123!@#SecurePass',
       firstName: 'Test',
       lastName: 'User',
     });

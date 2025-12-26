@@ -81,7 +81,7 @@ describe("Session Management Integration Tests (REAL)", () => {
         .send({ email, password });
 
       const token = login2.body.token;
-      const cookies = login2.headers["set-cookie"] as string[];
+      const cookies = (login2.headers as any)["set-cookie"] as string[];
       const cookie = cookies.find((c) => c.startsWith("refresh_token="));
 
       // List sessions with cookie (should identify current session)
@@ -245,7 +245,7 @@ describe("Session Management Integration Tests (REAL)", () => {
         .send({ email, password });
 
       const token = login.body.token;
-      const cookies = login.headers["set-cookie"] as string[];
+      const cookies = (login.headers as any)["set-cookie"] as string[];
       const cookie = cookies.find((c) => c.startsWith("refresh_token="));
 
       // Get sessions
@@ -325,7 +325,7 @@ describe("Session Management Integration Tests (REAL)", () => {
         .send({ email, password });
 
       const token = currentLogin.body.token;
-      const cookies = currentLogin.headers["set-cookie"] as string[];
+      const cookies = (currentLogin.headers as any)["set-cookie"] as string[];
       const cookie = cookies.find((c) => c.startsWith("refresh_token="));
 
       // Revoke all except current
@@ -356,7 +356,7 @@ describe("Session Management Integration Tests (REAL)", () => {
         .send({ email, password });
 
       const token = currentLogin.body.token;
-      const cookies = currentLogin.headers["set-cookie"] as string[];
+      const cookies = (currentLogin.headers as any)["set-cookie"] as string[];
       const cookie = cookies.find((c) => c.startsWith("refresh_token="));
 
       // Revoke all others
@@ -406,7 +406,7 @@ describe("Session Management Integration Tests (REAL)", () => {
         .send({ email, password });
 
       const token = login.body.token;
-      const cookies = login.headers["set-cookie"] as string[];
+      const cookies = (login.headers as any)["set-cookie"] as string[];
       const cookie = cookies.find((c) => c.startsWith("refresh_token="));
 
       // Trust a device
@@ -437,7 +437,7 @@ describe("Session Management Integration Tests (REAL)", () => {
         .send({ email, password });
 
       const token = login.body.token;
-      const cookies = login.headers["set-cookie"] as string[];
+      const cookies = (login.headers as any)["set-cookie"] as string[];
       const cookie = cookies.find((c) => c.startsWith("refresh_token="));
 
       // Revoke all (but only one exists)

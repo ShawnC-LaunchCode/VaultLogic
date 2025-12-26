@@ -231,7 +231,7 @@ test.describe("Token-Based Workflow Access", () => {
     ];
 
     for (const headers of variations) {
-      const response = await page.request.get("/api/auth/me", { headers });
+      const response = await page.request.get("/api/auth/me", { headers: headers as any });
 
       // Should handle case-insensitively (depends on implementation)
       expect(response).toBeTruthy();

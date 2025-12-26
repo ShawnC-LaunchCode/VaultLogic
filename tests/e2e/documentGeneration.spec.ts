@@ -194,14 +194,14 @@ test.describe('Document Generation End-to-End', () => {
       // Download DOCX
       const [docxDownload] = await Promise.all([
         page.waitForEvent('download'),
-        page.click('button:has-text("Download")').first(),
+        page.locator('button:has-text("Download")').first().click(),
       ]);
       expect(docxDownload.suggestedFilename()).toContain('.docx');
 
       // Download PDF
       const [pdfDownload] = await Promise.all([
         page.waitForEvent('download'),
-        page.click('button:has-text("Download")').nth(1),
+        page.locator('button:has-text("Download")').nth(1).click(),
       ]);
       expect(pdfDownload.suggestedFilename()).toContain('.pdf');
     });

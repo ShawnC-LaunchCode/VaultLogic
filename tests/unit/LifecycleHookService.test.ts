@@ -374,7 +374,7 @@ describe('LifecycleHookService', () => {
     });
 
     it('should reject creation for non-existent workflow', async () => {
-      vi.mocked(workflowRepository.findById).mockResolvedValue(null);
+      vi.mocked(workflowRepository.findById).mockResolvedValue(undefined);
 
       await expect(
         lifecycleHookService.createHook('workflow-1', 'user-1', {

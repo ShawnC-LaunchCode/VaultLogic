@@ -72,8 +72,10 @@ describe('OAuth2 3-Legged Flow - Callback Handling', () => {
     authToken = authService.createToken(user);
 
     const [project] = await db.insert(projects).values({
+      title: 'OAuth Test Project',
       name: 'OAuth Test Project',
-      createdBy: testUserId,
+      creatorId: testUserId,
+      ownerId: testUserId,
       tenantId: testTenantId,
     }).returning();
     testProjectId = project.id;

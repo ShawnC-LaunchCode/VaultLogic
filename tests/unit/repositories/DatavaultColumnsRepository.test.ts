@@ -63,7 +63,7 @@ describe('DatavaultColumnsRepository', () => {
           createdAt: new Date(),
           updatedAt: new Date(),
         },
-      ];
+      ] as any[];
 
       mockDb._setMockReturnValue(mockColumns);
 
@@ -96,7 +96,7 @@ describe('DatavaultColumnsRepository', () => {
         orderIndex: 0,
         createdAt: new Date(),
         updatedAt: new Date(),
-      };
+      } as any;
 
       mockDb._setMockReturnValue([mockColumn]);
 
@@ -156,7 +156,7 @@ describe('DatavaultColumnsRepository', () => {
         ...insertData,
         createdAt: new Date(),
         updatedAt: new Date(),
-      };
+      } as any;
 
       mockDb.returning.mockResolvedValue([createdColumn]);
 
@@ -183,7 +183,7 @@ describe('DatavaultColumnsRepository', () => {
         ...updateData,
         createdAt: new Date(),
         updatedAt: new Date(),
-      };
+      } as any;
 
       mockDb.returning.mockResolvedValue([updatedColumn]);
 

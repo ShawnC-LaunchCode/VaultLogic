@@ -21,7 +21,7 @@ describe('Dynamic Options Integration Flow', () => {
         const [tenant] = await db.insert(tenants).values({
             name: 'Integration Test Tenant',
             slug: `test-tenant-${uuidv4()}`,
-        }).returning();
+        } as any).returning();
         tenantId = tenant.id;
 
         const [user] = await db.insert(users).values({
@@ -31,14 +31,14 @@ describe('Dynamic Options Integration Flow', () => {
             tenantId: tenant.id,
             passwordHash: 'hash',
             role: 'admin',
-        }).returning();
+        } as any).returning();
         userId = user.id;
 
         // Create Workflow
         const workflow = await workflowService.createWorkflow({
             title: 'Dynamic Options Test',
             description: 'Testing read -> choice flow',
-        }, userId);
+        } as any, userId);
         workflowId = workflow.id;
 
         // Get default section
@@ -64,7 +64,7 @@ describe('Dynamic Options Integration Flow', () => {
                 tableId: 'users', // Read users table itself for simplicity
                 outputKey: 'userList',
                 resultMode: 'list',
-            }
+            } as any
         });
 
         expect(readBlock).toBeDefined();
@@ -100,7 +100,7 @@ describe('Dynamic Options Integration Flow', () => {
         expect(choiceStep).toBeDefined();
         // The step stores the config in the 'options' column
         const storedOptions = choiceStep.options as unknown as ChoiceAdvancedConfig;
-        expect(storedOptions.options.type).toBe('list');
+        expect((storedOptions.options as any).type).toBe('list');
         expect((storedOptions.options as any).listVariable).toBe('userList');
     });
 

@@ -65,8 +65,8 @@ describeWithDb('WorkflowTemplateRepository', () => {
       .insert(workflowVersions)
       .values({
         workflowId: testWorkflowId,
-        version: '1.0.0',
-        status: 'draft',
+        versionNumber: 1,
+        isDraft: true,
         changelog: 'Initial version',
         createdBy: testUserId,
         graphJson: {},
@@ -301,8 +301,8 @@ describeWithDb('WorkflowTemplateRepository', () => {
         .insert(workflowVersions)
         .values({
           workflowId: testWorkflowId,
-          version: '1.0.1',
-          status: 'draft',
+          versionNumber: 1,
+          isDraft: true,
           changelog: 'Another version',
           createdBy: testUserId,
           graphJson: {},

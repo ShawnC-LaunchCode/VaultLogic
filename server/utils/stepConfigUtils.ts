@@ -285,7 +285,7 @@ function sanitizeAddressValue(value: any, config?: any): AddressValue {
   for (const field of fields) {
     const fieldKey = typeof field === 'string' ? field : field.key;
     if (value[fieldKey]) {
-      (address as any)[fieldKey] = String(value[fieldKey]).trim();
+      (address as Record<string, string>)[fieldKey] = String(value[fieldKey]).trim();
     }
   }
 

@@ -112,6 +112,7 @@ export async function runGraph(input: RunGraphInput): Promise<RunGraphOutput> {
     let ivm: any;
     let isolate: any;
     try {
+      // @ts-ignore
       ivm = await import("isolated-vm");
       isolate = new ivm.Isolate({ memoryLimit: 128 });
     } catch (e) {

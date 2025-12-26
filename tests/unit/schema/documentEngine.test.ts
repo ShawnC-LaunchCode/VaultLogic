@@ -366,6 +366,10 @@ describe('Document Engine 2.0 Schema', () => {
         fileRef: 'templates/engagement-letter.docx',
         type: 'docx',
         helpersVersion: 1,
+        metadata: {},
+        mapping: {},
+        currentVersion: 1,
+        lastModifiedBy: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       };

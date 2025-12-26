@@ -48,14 +48,14 @@ export async function beginTestTransaction(): Promise<any> {
     'Use runInTransaction() instead. See TESTING_STRATEGY.md for migration guide.'
   );
 
-  const db = getDb();
+  const db = getDb() as any;
 
   // This pattern is fundamentally flawed - uses never-resolving promise
   return new Promise((resolve, reject) => {
     db.transaction(async (tx: any) => {
       resolve(tx);
       // Never resolves - keeps transaction open (anti-pattern)
-      await new Promise(() => {});
+      await new Promise(() => { });
     }).catch((error: any) => {
       if (error?.message?.includes('rollback') || error?.code === '25P02') {
         resolve(undefined);
@@ -150,7 +150,7 @@ export async function releaseSavepoint(tx: any, name: string): Promise<void> {
 export async function runInTransaction<T>(
   testFn: (tx: any) => Promise<T>
 ): Promise<T> {
-  const db = getDb();
+  const db = getDb() as any;
   let result: T;
 
   try {
@@ -177,7 +177,7 @@ export async function runInTransaction<T>(
  * This is useful for integration tests that need a clean slate
  */
 export async function truncateAllTables(): Promise<void> {
-  const db = getDb();
+  const db = getDb() as any;
 
   // Disable foreign key checks temporarily
   await db.execute('SET session_replication_role = replica;');

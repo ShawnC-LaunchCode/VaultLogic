@@ -38,6 +38,10 @@ describe('DocumentTemplateService', () => {
         helpersVersion: 1,
         createdAt: new Date(),
         updatedAt: new Date(),
+        metadata: {},
+        mapping: {},
+        currentVersion: 1,
+        lastModifiedBy: null,
       };
 
       vi.spyOn(documentTemplateRepository, 'existsByNameInProject').mockResolvedValue(false);
@@ -134,6 +138,10 @@ describe('DocumentTemplateService', () => {
         helpersVersion: 1,
         createdAt: new Date(),
         updatedAt: new Date(),
+        metadata: {},
+        mapping: {},
+        currentVersion: 1,
+        lastModifiedBy: null,
       };
 
       vi.spyOn(documentTemplateRepository, 'findByIdAndProjectId').mockResolvedValue(mockTemplate);
@@ -164,6 +172,10 @@ describe('DocumentTemplateService', () => {
         helpersVersion: 1,
         createdAt: new Date(),
         updatedAt: new Date(),
+        metadata: {},
+        mapping: {},
+        currentVersion: 1,
+        lastModifiedBy: null,
       };
 
       vi.spyOn(documentTemplateRepository, 'findByIdAndProjectId').mockResolvedValue(mockTemplate);
@@ -177,7 +189,7 @@ describe('DocumentTemplateService', () => {
 
   describe('listTemplates', () => {
     it('should list all templates for a project', async () => {
-      const mockTemplates: Template[] = [
+      const mockTemplates: any[] = [
         {
           id: 'tpl-1',
           projectId: 'proj-123',
@@ -223,6 +235,10 @@ describe('DocumentTemplateService', () => {
         helpersVersion: 1,
         createdAt: new Date(),
         updatedAt: new Date(),
+        metadata: {},
+        mapping: {},
+        currentVersion: 1,
+        lastModifiedBy: null,
       };
 
       const mockUpdated: Template = {
@@ -264,6 +280,10 @@ describe('DocumentTemplateService', () => {
         helpersVersion: 1,
         createdAt: new Date(),
         updatedAt: new Date(),
+        metadata: {},
+        mapping: {},
+        currentVersion: 1,
+        lastModifiedBy: null,
       };
 
       vi.spyOn(documentTemplateRepository, 'findByIdAndProjectId').mockResolvedValue(mockTemplate);
@@ -290,6 +310,10 @@ describe('DocumentTemplateService', () => {
         helpersVersion: 1,
         createdAt: new Date(),
         updatedAt: new Date(),
+        metadata: {},
+        mapping: {},
+        currentVersion: 1,
+        lastModifiedBy: null,
       };
 
       vi.spyOn(documentTemplateRepository, 'findByIdAndProjectId').mockResolvedValue(mockTemplate);
@@ -328,6 +352,10 @@ describe('DocumentTemplateService', () => {
         helpersVersion: 1,
         createdAt: new Date(),
         updatedAt: new Date(),
+        metadata: {},
+        mapping: {},
+        currentVersion: 1,
+        lastModifiedBy: null,
       };
 
       const mockUpdated: Template = {
@@ -364,6 +392,10 @@ describe('DocumentTemplateService', () => {
         helpersVersion: 1,
         createdAt: new Date(),
         updatedAt: new Date(),
+        metadata: {},
+        mapping: {},
+        currentVersion: 1,
+        lastModifiedBy: null,
       };
 
       vi.spyOn(documentTemplateRepository, 'findByIdAndProjectId').mockResolvedValue(mockTemplate);

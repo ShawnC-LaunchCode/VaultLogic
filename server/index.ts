@@ -1,15 +1,24 @@
 import dotenv from "dotenv";
+
+// Load environment variables from .env file FIRST
+dotenv.config();
+
+// CRITICAL: Initialize OpenTelemetry BEFORE any other imports
+// This ensures auto-instrumentation can hook into all modules
+import { initTelemetry } from "./observability/telemetry";
+initTelemetry();
+
 import express, { type Request, Response, NextFunction } from "express";
 import cors from "cors";
+import helmet from "helmet";
 import { registerRoutes } from "./routes";
 import { log } from "./utils";
 import { serveStatic } from "./static";
 import { errorHandler } from "./middleware/errorHandler";
 import { logger } from "./logger";
 import { sanitizeInputs } from "./utils/sanitize";
-
-// Load environment variables from .env file
-dotenv.config();
+import { requestIdMiddleware } from "./middleware/requestId";
+import { globalLimiter, authLimiter } from "./middleware/rateLimiting";
 
 const app = express();
 
@@ -17,7 +26,44 @@ const app = express();
 // to avoid duplicate middleware registration
 
 // =====================================================================
-// 💡 CORS CONFIGURATION
+// 1️⃣ REQUEST ID TRACKING (FIRST - needed for logging)
+// =====================================================================
+app.use(requestIdMiddleware);
+
+// =====================================================================
+// 2️⃣ HELMET SECURITY HEADERS (SECOND - before content processing)
+// =====================================================================
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Required for Vite in dev
+            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+            fontSrc: ["'self'", "https://fonts.gstatic.com"],
+            imgSrc: ["'self'", "data:", "https:", "blob:"],
+            connectSrc: ["'self'", "https://accounts.google.com", "wss:", "ws:"],
+            frameSrc: ["'self'", "https://accounts.google.com"],
+            objectSrc: ["'none'"],
+            upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null,
+        },
+    },
+    hsts: {
+        maxAge: 31536000, // 1 year
+        includeSubDomains: true,
+        preload: true,
+    },
+    frameguard: {
+        action: 'deny', // Prevent clickjacking
+    },
+    noSniff: true, // Prevent MIME type sniffing
+    xssFilter: true, // Enable XSS filter
+    referrerPolicy: {
+        policy: 'strict-origin-when-cross-origin',
+    },
+}));
+
+// =====================================================================
+// 3️⃣ CORS CONFIGURATION
 // Dynamically determines allowed origins based on environment
 const corsOptions = {
     origin: function (
@@ -79,62 +125,38 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// SECURITY: Comprehensive security headers (CSP, HSTS, X-Frame-Options, etc.)
-// SECURITY: Comprehensive security headers (CSP, HSTS, X-Frame-Options, etc.)
-// Moved to async block or static import
-import { securityHeaders } from "./middleware/securityHeaders.js";
-app.use(securityHeaders());
-
-// SECURITY FIX: Add payload size limits to prevent DoS attacks
-// Limits JSON and URL-encoded payloads to 10MB (configurable via MAX_REQUEST_SIZE env var)
+// =====================================================================
+// 4️⃣ PAYLOAD SIZE LIMITS (DoS Protection)
+// =====================================================================
 const maxRequestSize = process.env.MAX_REQUEST_SIZE || '10mb';
 app.use(express.json({ limit: maxRequestSize }));
 app.use(express.urlencoded({ extended: false, limit: maxRequestSize }));
 
-// XSS Protection: Sanitize all string inputs
+// =====================================================================
+// 5️⃣ XSS PROTECTION (Input Sanitization)
+// =====================================================================
 app.use(sanitizeInputs);
 
-// SECURITY FIX: Request timeout protection (30s default, configurable)
-// SECURITY FIX: Request timeout protection (30s default, configurable)
-// Moved to async block or static import
+// =====================================================================
+// 6️⃣ REQUEST TIMEOUT PROTECTION
+// =====================================================================
 import { requestTimeout } from "./middleware/timeout.js";
 app.use(requestTimeout);
 
 // =====================================================================
+// 7️⃣ GLOBAL RATE LIMITING (Apply before routes)
+// =====================================================================
+// Note: This is a baseline. Specific routes may apply stricter limits.
+app.use('/api', globalLimiter);
+
+// =====================================================================
 // 💡 REQUEST LOGGING MIDDLEWARE
 // Logs API requests and responses with timing information
-app.use((req, res, next) => {
-    // Note: COOP header removed - it blocks Google OAuth window.postMessage communication
-    // Google OAuth works fine with the default COOP policy (unsafe-none)
-
-    const start = Date.now();
-    const path = req.path;
-    let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-    const originalResJson = res.json.bind(res);
-    res.json = function (bodyJson: any) {
-        capturedJsonResponse = bodyJson;
-        return originalResJson(bodyJson);
-    };
-
-    res.on("finish", () => {
-        const duration = Date.now() - start;
-        if (path.startsWith("/api")) {
-            let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-            if (capturedJsonResponse) {
-                logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-            }
-
-            if (logLine.length > 80) {
-                logLine = logLine.slice(0, 79) + "…";
-            }
-
-            log(logLine);
-        }
-    });
-
-    next();
-});
+// =====================================================================
+// 💡 REQUEST LOGGING MIDDLEWARE
+// =====================================================================
+import { requestLogger } from "./logger";
+app.use(requestLogger);
 // =====================================================================
 
 
@@ -209,6 +231,10 @@ app.use((req, res, next) => {
         // RESOURCE LEAK FIX: Graceful shutdown handlers
         const shutdown = async (signal: string) => {
             logger.info({ signal }, 'Shutdown signal received, cleaning up...');
+
+            // Shutdown OpenTelemetry
+            const { shutdownTelemetry } = await import('./observability/telemetry.js');
+            await shutdownTelemetry();
 
             // Clean up OAuth2 state cleanup interval
             const { stopOAuth2StateCleanup } = await import('./services/oauth2.js');

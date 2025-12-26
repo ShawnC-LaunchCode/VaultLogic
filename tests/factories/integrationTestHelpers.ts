@@ -17,7 +17,7 @@ import type { User } from "@shared/schema";
 export async function createAuthenticatedAgent(
   app: Application,
   user?: User
-): Promise<request.SuperAgentTest> {
+): Promise<any> {
   // Create an agent
   const agent = request.agent(app);
 

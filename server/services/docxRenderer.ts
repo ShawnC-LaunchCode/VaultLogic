@@ -143,7 +143,7 @@ export async function renderDocx(options: RenderOptions): Promise<RenderResult> 
  * 2. System LibreOffice command line
  * 3. Fallback: return undefined (PDF not available)
  */
-async function convertDocxToPdf(docxPath: string): Promise<string> {
+export async function convertDocxToPdf(docxPath: string): Promise<string> {
   const pdfPath = docxPath.replace(/\.docx$/i, '.pdf');
 
   // Method 1: Try libreoffice-convert package
@@ -152,7 +152,13 @@ async function convertDocxToPdf(docxPath: string): Promise<string> {
     const docxBuffer = await fs.readFile(docxPath);
 
     const pdfBuffer = await new Promise<Buffer>((resolve, reject) => {
-      (libre.default as any)(docxBuffer, '.pdf', undefined, (err: Error | null, result: Buffer) => {
+      const convert = (libre.default as unknown as (
+        input: Buffer,
+        format: string,
+        filter: undefined,
+        callback: (err: Error | null, result: Buffer) => void
+      ) => void);
+      convert(docxBuffer, '.pdf', undefined, (err: Error | null, result: Buffer) => {
         if (err) reject(err);
         else resolve(result);
       });

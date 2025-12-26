@@ -13,7 +13,7 @@ import * as Y from 'yjs';
 
 // Mock WebSocket
 class MockWebSocket {
-  public readyState = WebSocket.OPEN;
+  public readyState: number = WebSocket.OPEN;
   public url: string;
   public onopen: any = null;
   public onmessage: any = null;

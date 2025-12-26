@@ -3,10 +3,10 @@
  * Comprehensive tests for all v4 features: select/multiselect, autonumber, notes, history, API tokens, permissions
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import request from 'supertest';
 import express, { type Express } from 'express';
-import { setupAuth, __setGoogleClient } from '../../server/googleAuth';
+import { setupAuth, _testOnly_setGoogleClient } from '../../server/googleAuth';
 import { registerRoutes } from '../../server/routes';
 import { db } from '../../server/db';
 import { datavaultTables, datavaultColumns, datavaultRows, datavaultRowNotes, datavaultApiTokens, datavaultTablePermissions, tenants, datavaultDatabases, users } from '../../shared/schema';
@@ -65,7 +65,7 @@ describe('DataVault v4 Regression Tests', () => {
         };
       }),
     } as any;
-    __setGoogleClient(mockOAuth2Client);
+    _testOnly_setGoogleClient(mockOAuth2Client);
 
     // Setup app
     app = express();
@@ -78,7 +78,7 @@ describe('DataVault v4 Regression Tests', () => {
     const [tenant] = await db.insert(tenants).values({
       name: 'Test Tenant',
       slug: 'test-tenant-' + Date.now(),
-    }).returning();
+    } as any).returning();
     testTenantId = tenant.id;
 
     // Create test user manually with correct tenant and admin role
@@ -90,7 +90,7 @@ describe('DataVault v4 Regression Tests', () => {
       tenantRole: 'owner',  // ✅ Owner for tenant-level permissions
       role: 'admin',        // ✅ Admin for full API permissions (not creator!)
       authProvider: 'google',
-    }).onConflictDoUpdate({
+    } as any).onConflictDoUpdate({
       target: users.id,
       set: {
         tenantId: testTenantId,
@@ -110,7 +110,7 @@ describe('DataVault v4 Regression Tests', () => {
       tenantRole: 'builder',
       role: 'creator',
       authProvider: 'google',
-    }).onConflictDoUpdate({
+    } as any).onConflictDoUpdate({
       target: users.id,
       set: {
         tenantId: testTenantId,
@@ -161,7 +161,7 @@ describe('DataVault v4 Regression Tests', () => {
       tenantRole: 'owner',
       role: 'admin',
       authProvider: 'google',
-    }).onConflictDoUpdate({
+    } as any).onConflictDoUpdate({
       target: users.id,
       set: {
         tenantId: testTenantId,
@@ -175,9 +175,8 @@ describe('DataVault v4 Regression Tests', () => {
     const [database] = await db.insert(datavaultDatabases).values({
       name: 'Test Database',
       // slug: 'test-database-' + uniqueSuffix, // Not in schema
-      // createdBy: testUserId, // Not in schema
       tenantId: testTenantId,
-    }).returning();
+    } as any).returning();
     testDatabaseId = database.id;
 
     const [table] = await db.insert(datavaultTables).values({
@@ -186,7 +185,7 @@ describe('DataVault v4 Regression Tests', () => {
       ownerUserId: testUserId, // Correct column name
       tenantId: testTenantId,
       databaseId: testDatabaseId,
-    }).returning();
+    } as any).returning();
     testTableId = table.id;
   });
 
@@ -386,7 +385,7 @@ describe('DataVault v4 Regression Tests', () => {
         tableId: testTableId,
         values: {},
         createdBy: testUserId,
-      }).returning();
+      } as any).returning();
       testRowId = row.id;
     });
 
@@ -693,7 +692,7 @@ describe('DataVault v4 Regression Tests', () => {
             tableId: testTableId,
             values: {},
             createdBy: testUserId,
-          })
+          } as any)
         );
       }
       await Promise.all(rowPromises);

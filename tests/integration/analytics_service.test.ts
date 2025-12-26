@@ -13,14 +13,14 @@ describe("Analytics Service Integration", () => {
     let version: any;
 
     beforeAll(async () => {
-        const [tenant] = await db.insert(tenants).values({ name: "Service Test Tenant", plan: "pro" }).returning();
+        const [tenant] = await db.insert(tenants).values({ name: "Service Test Tenant", plan: "pro" } as any).returning();
         tenantId = tenant.id;
         userId = `user-${nanoid()}`;
-        await db.insert(users).values({ id: userId, email: `${userId}@test.com`, passwordHash: "x", tenantId, tenantRole: "owner", role: "admin" });
-        const [p] = await db.insert(projects).values({ title: "P", name: "P", tenantId, creatorId: userId, ownerId: userId }).returning();
+        await db.insert(users).values({ id: userId, email: `${userId}@test.com`, passwordHash: "x", tenantId, tenantRole: "owner", role: "admin" } as any);
+        const [p] = await db.insert(projects).values({ title: "P", name: "P", tenantId, creatorId: userId, ownerId: userId } as any).returning();
 
         const { workflow: w, version: v } = createGraphWorkflow({ projectId: p.id, creatorId: userId, status: "active", isPublic: true });
-        const [wfRes] = await db.insert(workflows).values(w).returning();
+        const [wfRes] = await db.insert(workflows).values(w as any).returning();
         workflow = wfRes;
 
         const [vRes] = await db.insert(workflowVersions).values({
@@ -29,7 +29,7 @@ describe("Analytics Service Integration", () => {
             published: true,
             publishedAt: new Date(),
             publishedBy: userId
-        }).returning();
+        } as any).returning();
         version = vRes;
     });
 
@@ -39,7 +39,7 @@ describe("Analytics Service Integration", () => {
         // Actually RunService.createRun(workflowId, inputData, queryParams, ...)
         // Looking at RunService signature: createRun(workflowId: string, options: ...)
 
-        const run = await runService.createRun(workflow.id, undefined, { participantId: "anon" });
+        const run = await runService.createRun(workflow.id, undefined, { participantId: "anon" } as any);
         const runId = run.id;
         const runToken = run.runToken;
         expect(runId).toBeDefined();
@@ -59,7 +59,7 @@ describe("Analytics Service Integration", () => {
         };
 
         // We'll call completeRun directly.
-        await runService.completeRun(runId, { someOutput: "test" });
+        await runService.completeRun(runId, { someOutput: "test" } as any);
 
         // 4. Verify Events (workflow.complete)
         const events = await db.select().from(workflowRunEvents).where(eq(workflowRunEvents.runId, runId));

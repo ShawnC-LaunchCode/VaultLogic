@@ -56,6 +56,11 @@ describe.sequential("Session Management Integration Tests", () => {
         await db.update(users)
             .set({ emailVerified: true })
             .where(eq(users.id, userId));
+
+        // Clean up registration session (tests expect only explicit logins to create sessions)
+        await db.update(refreshTokens)
+            .set({ revoked: true })
+            .where(eq(refreshTokens.userId, userId));
     });
 
     describe("Session Creation and Tracking", () => {
@@ -72,7 +77,10 @@ describe.sequential("Session Management Integration Tests", () => {
 
             // Verify refresh token in database
             const tokens = await db.query.refreshTokens.findMany({
-                where: eq(refreshTokens.userId, userId),
+                where: and(
+                    eq(refreshTokens.userId, userId),
+                    eq(refreshTokens.revoked, false)
+                ),
             });
 
             expect(tokens.length).toBeGreaterThan(0);
@@ -266,7 +274,7 @@ describe.sequential("Session Management Integration Tests", () => {
         it("should order sessions by last used (most recent first)", async () => {
             const session1 = await request(ctx.baseURL)
                 .post("/api/auth/login")
-                .set("User-Agent", "Chrome/120.0")
+                .set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36")
                 .send({
                     email: testUser.email,
                     password: testUser.password,
@@ -277,7 +285,7 @@ describe.sequential("Session Management Integration Tests", () => {
 
             const session2 = await request(ctx.baseURL)
                 .post("/api/auth/login")
-                .set("User-Agent", "Firefox/121.0")
+                .set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0")
                 .send({
                     email: testUser.email,
                     password: testUser.password,
@@ -288,7 +296,7 @@ describe.sequential("Session Management Integration Tests", () => {
 
             const session3 = await request(ctx.baseURL)
                 .post("/api/auth/login")
-                .set("User-Agent", "Safari/17.0")
+                .set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15")
                 .send({
                     email: testUser.email,
                     password: testUser.password,
@@ -555,9 +563,12 @@ describe.sequential("Session Management Integration Tests", () => {
                 })
                 .expect(200);
 
-            // Get the refresh token from database
+            // Get the refresh token from database (non-revoked only)
             const tokens = await db.query.refreshTokens.findMany({
-                where: eq(refreshTokens.userId, userId),
+                where: and(
+                    eq(refreshTokens.userId, userId),
+                    eq(refreshTokens.revoked, false)
+                ),
             });
 
             const token = tokens[0];
@@ -628,16 +639,17 @@ describe.sequential("Session Management Integration Tests", () => {
                 .expect(200);
 
             // Second concurrent refresh with old cookie should fail
+            // This triggers token reuse detection, which revokes ALL user sessions for security
             await request(ctx.baseURL)
                 .post("/api/auth/refresh-token")
                 .set("Cookie", cookies)
                 .expect(401);
 
-            // Third refresh with new cookie should succeed
+            // Third refresh with new cookie should also fail (all sessions revoked for security)
             await request(ctx.baseURL)
                 .post("/api/auth/refresh-token")
                 .set("Cookie", refresh1.headers['set-cookie'])
-                .expect(200);
+                .expect(401);
         });
     });
 });

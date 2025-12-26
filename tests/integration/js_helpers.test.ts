@@ -17,19 +17,21 @@ vi.mock("../../server/googleAuth", async (importOriginal: any) => {
         setupAuth: (app: Express) => {
             app.use(actual.getSession());
             app.use((req, res, next) => {
-                if (req.session && req.session.user) {
-                    req.user = req.session.user;
-                    req.isAuthenticated = () => true;
+                const r = req as any;
+                if (r.session && r.session.user) {
+                    r.user = r.session.user;
+                    r.isAuthenticated = () => true;
                 } else {
-                    req.isAuthenticated = () => false;
+                    r.isAuthenticated = () => false;
                 }
                 next();
             });
 
             app.post("/api/auth/mock-login", (req, res) => {
+                const r = req as any;
                 if (req.body.user) {
-                    req.session.user = req.body.user;
-                    req.user = req.body.user;
+                    r.session.user = req.body.user;
+                    r.user = req.body.user;
                     return res.json({ message: "Logged in", user: req.body.user });
                 }
                 res.status(400).json({ error: "No user provided" });
@@ -56,7 +58,7 @@ describe("Detailed Verification: JS Helper Availability", () => {
         const [tenant] = await db.insert(tenants).values({
             name: "Helper Test Tenant",
             plan: "pro"
-        }).returning();
+        } as any).returning();
         tenantId = tenant.id;
 
         // Setup User
@@ -66,7 +68,7 @@ describe("Detailed Verification: JS Helper Availability", () => {
             role: "admin",
             passwordHash: "mock",
             tenantRole: "owner"
-        }).returning();
+        } as any).returning();
         userId = user.id;
 
         // Login
@@ -89,7 +91,7 @@ describe("Detailed Verification: JS Helper Availability", () => {
             published: true,
             version: 1,
             definition: {}
-        }).returning();
+        } as any).returning();
         workflowId = workflow.id;
     });
 
@@ -99,7 +101,7 @@ describe("Detailed Verification: JS Helper Availability", () => {
             workflowId,
             title: "JS Section",
             order: 1
-        }).returning();
+        } as any).returning();
 
         // 2. Create JS Step using helpers
         // We will test: helpers.date.now(), helpers.number.round(), helpers.string.upper()
@@ -127,7 +129,7 @@ describe("Detailed Verification: JS Helper Availability", () => {
                 outputKey: "helperResult",
                 timeoutMs: 2000
             }
-        }).returning();
+        } as any).returning();
 
         // 3. Create a Run
         const runRes = await agent.post(`/api/workflows/${workflowId}/runs`).send({});

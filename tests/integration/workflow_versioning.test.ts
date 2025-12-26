@@ -43,13 +43,12 @@ describe("Workflow Versioning & Lineage", () => {
 
         // Create Workflow
         const [workflow] = await db.insert(workflows).values({
+
+
             creatorId: userId,
             ownerId: userId,
             title: "Versioning Test Workflow",
-            slug: `versioning-test-${Date.now()}`,
-            status: "draft",
-            projectId: projectId,
-            tenantId: tenantId
+
         }).returning();
         workflowId = workflow.id;
     });

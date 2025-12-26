@@ -26,7 +26,7 @@ vi.mock('@dnd-kit/sortable', () => ({
 }));
 
 describe('SortableColumnHeader', () => {
-  const mockColumn = {
+  const mockColumn: any = {
     id: 'col-1',
     name: 'Test Column',
     type: 'text',

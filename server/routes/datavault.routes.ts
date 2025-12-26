@@ -805,7 +805,7 @@ export function registerDatavaultRoutes(app: Express): void {
       res.status(201).json(result);
     } catch (error) {
       logger.error({ error }, 'Error creating DataVault row');
-      if (error instanceof Error) console.log('Row creation error message:', error.message);
+      if (error instanceof Error) logger.debug({ error: error.message }, 'Row creation error message');
 
       if (error instanceof z.ZodError) {
         return res.status(400).json({
@@ -1265,10 +1265,10 @@ export function registerDatavaultRoutes(app: Express): void {
         }
       );
 
-      console.log('Grant permission success, sending 201. Permission:', JSON.stringify(permission));
+      logger.debug({ permission }, 'Grant permission success');
       res.status(201).json(permission);
     } catch (error) {
-      console.log('Grant permission catch block entered', error);
+
       logger.error({ error }, 'Error granting table permission');
       const message = error instanceof Error ? error.message : 'Failed to grant permission';
 

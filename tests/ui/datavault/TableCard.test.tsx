@@ -18,7 +18,7 @@ describe('TableCard Component', () => {
     rowCount: 42,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-02'),
-  };
+  } as any;
 
   it('should render table name and description', () => {
     render(<TableCard table={mockTable} onClick={vi.fn()} onDelete={vi.fn()} />);

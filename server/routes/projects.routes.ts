@@ -1,5 +1,7 @@
 import type { Express, Request, Response } from "express";
-import { hybridAuth, type AuthRequest } from '../middleware/auth';
+import { hybridAuth } from '../middleware/auth';
+import { requireUser, type UserRequest } from '../middleware/requireUser';
+import { validateProjectId } from '../middleware/validateId';
 import { insertProjectSchema } from "@shared/schema";
 import { projectService } from "../services/ProjectService";
 import { z } from "zod";
@@ -14,19 +16,10 @@ export function registerProjectRoutes(app: Express): void {
    * POST /api/projects
    * Create a new project
    */
-  app.post('/api/projects', hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/projects', hybridAuth, requireUser, async (req: Request, res: Response) => {
     try {
-      const userId = (req as AuthRequest).userId;
-      if (!userId) {
-        return res.status(401).json({ message: "Unauthorized - no user ID" });
-      }
+      const user = (req as UserRequest).user;
 
-      // Get user's tenantId from database
-      const { userRepository } = await import('../repositories');
-      const user = await userRepository.findById(userId);
-      if (!user) {
-        return res.status(401).json({ message: "User not found" });
-      }
       if (!user.tenantId) {
         return res.status(400).json({ message: "User does not have a tenant assigned" });
       }
@@ -34,13 +27,13 @@ export function registerProjectRoutes(app: Express): void {
       const projectData = insertProjectSchema.parse({
         ...req.body,
         title: req.body.name || req.body.title || 'Untitled Project', // Legacy field
-        creatorId: userId, // Legacy field
-        createdBy: userId, // New field (Stage 24)
-        ownerId: userId, // Creator is also the initial owner
+        creatorId: user.id, // Legacy field
+        createdBy: user.id, // New field (Stage 24)
+        ownerId: user.id, // Creator is also the initial owner
         tenantId: user.tenantId, // Use user's tenant ID
       });
 
-      const project = await projectService.createProject(projectData, userId);
+      const project = await projectService.createProject(projectData, user.id);
       res.status(201).json(project);
     } catch (error) {
       logger.error({ error }, "Error creating project");
@@ -55,17 +48,14 @@ export function registerProjectRoutes(app: Express): void {
    * GET /api/projects
    * Get all projects for the authenticated user
    */
-  app.get('/api/projects', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/projects', hybridAuth, requireUser, async (req: Request, res: Response) => {
     try {
-      const userId = (req as AuthRequest).userId;
-      if (!userId) {
-        return res.status(401).json({ message: "Unauthorized - no user ID" });
-      }
+      const user = (req as UserRequest).user;
 
       const activeOnly = req.query.active === 'true';
       const projects = activeOnly
-        ? await projectService.listActiveProjects(userId)
-        : await projectService.listProjects(userId);
+        ? await projectService.listActiveProjects(user.id)
+        : await projectService.listProjects(user.id);
 
       res.json(projects);
     } catch (error) {
@@ -78,15 +68,12 @@ export function registerProjectRoutes(app: Express): void {
    * GET /api/projects/:projectId
    * Get a single project with contained workflows
    */
-  app.get('/api/projects/:projectId', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/projects/:projectId', hybridAuth, requireUser, validateProjectId(), async (req: Request, res: Response) => {
     try {
-      const userId = (req as AuthRequest).userId;
-      if (!userId) {
-        return res.status(401).json({ message: "Unauthorized - no user ID" });
-      }
-
+      const user = (req as UserRequest).user;
       const { projectId } = req.params;
-      const project = await projectService.getProjectWithWorkflows(projectId, userId);
+
+      const project = await projectService.getProjectWithWorkflows(projectId, user.id);
       res.json(project);
     } catch (error) {
       logger.error({ error }, "Error fetching project");
@@ -100,15 +87,12 @@ export function registerProjectRoutes(app: Express): void {
    * GET /api/projects/:projectId/workflows
    * Get all workflows in a project
    */
-  app.get('/api/projects/:projectId/workflows', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/projects/:projectId/workflows', hybridAuth, requireUser, validateProjectId(), async (req: Request, res: Response) => {
     try {
-      const userId = (req as AuthRequest).userId;
-      if (!userId) {
-        return res.status(401).json({ message: "Unauthorized - no user ID" });
-      }
-
+      const user = (req as UserRequest).user;
       const { projectId } = req.params;
-      const workflows = await projectService.getProjectWorkflows(projectId, userId);
+
+      const workflows = await projectService.getProjectWorkflows(projectId, user.id);
       res.json(workflows);
     } catch (error) {
       logger.error({ error }, "Error fetching project workflows");
@@ -122,21 +106,18 @@ export function registerProjectRoutes(app: Express): void {
    * PUT /api/projects/:projectId
    * Update a project
    */
-  app.put('/api/projects/:projectId', hybridAuth, async (req: Request, res: Response) => {
+  app.put('/api/projects/:projectId', hybridAuth, requireUser, validateProjectId(), async (req: Request, res: Response) => {
     try {
-      const userId = (req as AuthRequest).userId;
-      if (!userId) {
-        return res.status(401).json({ message: "Unauthorized - no user ID" });
-      }
-
+      const user = (req as UserRequest).user;
       const { projectId } = req.params;
+
       const updateData = z.object({
         title: z.string().optional(),
         description: z.string().optional(),
         status: z.enum(['active', 'archived']).optional(),
       }).parse(req.body);
 
-      const project = await projectService.updateProject(projectId, userId, updateData);
+      const project = await projectService.updateProject(projectId, user.id, updateData);
       res.json(project);
     } catch (error) {
       logger.error({ error }, "Error updating project");
@@ -150,15 +131,12 @@ export function registerProjectRoutes(app: Express): void {
    * PUT /api/projects/:projectId/archive
    * Archive a project (soft delete)
    */
-  app.put('/api/projects/:projectId/archive', hybridAuth, async (req: Request, res: Response) => {
+  app.put('/api/projects/:projectId/archive', hybridAuth, requireUser, validateProjectId(), async (req: Request, res: Response) => {
     try {
-      const userId = (req as AuthRequest).userId;
-      if (!userId) {
-        return res.status(401).json({ message: "Unauthorized - no user ID" });
-      }
-
+      const user = (req as UserRequest).user;
       const { projectId } = req.params;
-      const project = await projectService.archiveProject(projectId, userId);
+
+      const project = await projectService.archiveProject(projectId, user.id);
       res.json(project);
     } catch (error) {
       logger.error({ error }, "Error archiving project");
@@ -172,15 +150,12 @@ export function registerProjectRoutes(app: Express): void {
    * PUT /api/projects/:projectId/unarchive
    * Unarchive a project
    */
-  app.put('/api/projects/:projectId/unarchive', hybridAuth, async (req: Request, res: Response) => {
+  app.put('/api/projects/:projectId/unarchive', hybridAuth, requireUser, validateProjectId(), async (req: Request, res: Response) => {
     try {
-      const userId = (req as AuthRequest).userId;
-      if (!userId) {
-        return res.status(401).json({ message: "Unauthorized - no user ID" });
-      }
-
+      const user = (req as UserRequest).user;
       const { projectId } = req.params;
-      const project = await projectService.unarchiveProject(projectId, userId);
+
+      const project = await projectService.unarchiveProject(projectId, user.id);
       res.json(project);
     } catch (error) {
       logger.error({ error }, "Error unarchiving project");
@@ -195,15 +170,12 @@ export function registerProjectRoutes(app: Express): void {
    * Delete a project (hard delete)
    * Note: Workflows in the project will have their projectId set to null
    */
-  app.delete('/api/projects/:projectId', hybridAuth, async (req: Request, res: Response) => {
+  app.delete('/api/projects/:projectId', hybridAuth, requireUser, validateProjectId(), async (req: Request, res: Response) => {
     try {
-      const userId = (req as AuthRequest).userId;
-      if (!userId) {
-        return res.status(401).json({ message: "Unauthorized - no user ID" });
-      }
-
+      const user = (req as UserRequest).user;
       const { projectId } = req.params;
-      await projectService.deleteProject(projectId, userId);
+
+      await projectService.deleteProject(projectId, user.id);
       res.status(204).send();
     } catch (error) {
       logger.error({ error }, "Error deleting project");
@@ -221,15 +193,12 @@ export function registerProjectRoutes(app: Express): void {
    * GET /api/projects/:projectId/access
    * Get all ACL entries for a project
    */
-  app.get('/api/projects/:projectId/access', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/projects/:projectId/access', hybridAuth, requireUser, validateProjectId(), async (req: Request, res: Response) => {
     try {
-      const userId = (req as AuthRequest).userId;
-      if (!userId) {
-        return res.status(401).json({ success: false, error: "Unauthorized - no user ID" });
-      }
-
+      const user = (req as UserRequest).user;
       const { projectId } = req.params;
-      const access = await projectService.getProjectAccess(projectId, userId);
+
+      const access = await projectService.getProjectAccess(projectId, user.id);
       res.json({ success: true, data: access });
     } catch (error) {
       logger.error({ error }, "Error fetching project access");
@@ -244,13 +213,9 @@ export function registerProjectRoutes(app: Express): void {
    * Grant or update access to a project
    * Body: { entries: [{ principalType: 'user' | 'team', principalId: string, role: 'view' | 'edit' | 'owner' }] }
    */
-  app.put('/api/projects/:projectId/access', hybridAuth, async (req: Request, res: Response) => {
+  app.put('/api/projects/:projectId/access', hybridAuth, requireUser, validateProjectId(), async (req: Request, res: Response) => {
     try {
-      const userId = (req as AuthRequest).userId;
-      if (!userId) {
-        return res.status(401).json({ success: false, error: "Unauthorized - no user ID" });
-      }
-
+      const user = (req as UserRequest).user;
       const { projectId } = req.params;
 
       const schema = z.object({
@@ -262,7 +227,7 @@ export function registerProjectRoutes(app: Express): void {
       });
 
       const { entries } = schema.parse(req.body);
-      const access = await projectService.grantProjectAccess(projectId, userId, entries);
+      const access = await projectService.grantProjectAccess(projectId, user.id, entries);
       res.json({ success: true, data: access });
     } catch (error) {
       logger.error({ error }, "Error granting project access");
@@ -286,13 +251,9 @@ export function registerProjectRoutes(app: Express): void {
    * Revoke access from a project
    * Body: { entries: [{ principalType: 'user' | 'team', principalId: string }] }
    */
-  app.delete('/api/projects/:projectId/access', hybridAuth, async (req: Request, res: Response) => {
+  app.delete('/api/projects/:projectId/access', hybridAuth, requireUser, validateProjectId(), async (req: Request, res: Response) => {
     try {
-      const userId = (req as AuthRequest).userId;
-      if (!userId) {
-        return res.status(401).json({ success: false, error: "Unauthorized - no user ID" });
-      }
-
+      const user = (req as UserRequest).user;
       const { projectId } = req.params;
 
       const schema = z.object({
@@ -303,7 +264,7 @@ export function registerProjectRoutes(app: Express): void {
       });
 
       const { entries } = schema.parse(req.body);
-      await projectService.revokeProjectAccess(projectId, userId, entries);
+      await projectService.revokeProjectAccess(projectId, user.id, entries);
       res.json({ success: true, message: "Access revoked successfully" });
     } catch (error) {
       logger.error({ error }, "Error revoking project access");
@@ -327,13 +288,9 @@ export function registerProjectRoutes(app: Express): void {
    * Transfer project ownership
    * Body: { userId: string }
    */
-  app.put('/api/projects/:projectId/owner', hybridAuth, async (req: Request, res: Response) => {
+  app.put('/api/projects/:projectId/owner', hybridAuth, requireUser, validateProjectId(), async (req: Request, res: Response) => {
     try {
-      const currentOwnerId = (req as AuthRequest).userId;
-      if (!currentOwnerId) {
-        return res.status(401).json({ success: false, error: "Unauthorized - no user ID" });
-      }
-
+      const user = (req as UserRequest).user;
       const { projectId } = req.params;
 
       const schema = z.object({
@@ -341,7 +298,7 @@ export function registerProjectRoutes(app: Express): void {
       });
 
       const { userId: newOwnerId } = schema.parse(req.body);
-      const project = await projectService.transferProjectOwnership(projectId, currentOwnerId, newOwnerId);
+      const project = await projectService.transferProjectOwnership(projectId, user.id, newOwnerId);
       res.json({ success: true, data: project });
     } catch (error) {
       logger.error({ error }, "Error transferring project ownership");

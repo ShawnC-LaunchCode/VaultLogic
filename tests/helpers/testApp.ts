@@ -11,6 +11,9 @@ const logger = createLogger({ module: 'test-app' });
 export function createTestApp(): Express {
   const app = express();
 
+  // Enable trust proxy for X-Forwarded-For header support
+  app.set('trust proxy', true);
+
   // Middleware
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));

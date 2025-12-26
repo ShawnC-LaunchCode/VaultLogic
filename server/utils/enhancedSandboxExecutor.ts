@@ -51,6 +51,7 @@ async function runJsWithHelpers(
 
   let ivm: any;
   try {
+    // @ts-ignore
     ivm = await import("isolated-vm");
   } catch (error) {
     logger.error({ error }, "Failed to load isolated-vm");
@@ -138,7 +139,7 @@ async function runJsWithHelpers(
 
       let target: any = actualHelpers;
       // Debug log
-      // console.log(`[Bridge Path] ${path.join('.')}`);
+      // logger.debug({ path: path.join('.') }, 'Bridge Path');
 
       for (const key of path) {
         if (!target) {

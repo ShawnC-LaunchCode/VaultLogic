@@ -5,7 +5,7 @@ import {
     tenants, projects, workflows, sections, steps, blocks,
     users, workspaces, externalDestinations, workflowVersions,
     type InsertTenant, type InsertProject, type InsertWorkflow,
-    type InsertSection, type InsertStep, type InsertBlock, type InsertUser, type InsertExternalDestination
+    type InsertSection, type InsertStep, type InsertBlock, type InsertExternalDestination
 } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
@@ -30,7 +30,7 @@ describe('External Send Block Integration', () => {
 
     beforeAll(async () => {
         // 1. Setup Tenant & User
-        const [tenant] = await db.insert(tenants).values({ name: 'External Send Tenant', slug: `ext-tenant-${Date.now()}` }).returning();
+        const [tenant] = await db.insert(tenants).values({ name: 'External Send Tenant', slug: `ext-tenant-${Date.now()}` } as any).returning();
         tenantId = tenant.id;
 
         const [user] = await db.insert(users).values({
@@ -41,7 +41,7 @@ describe('External Send Block Integration', () => {
             authProvider: 'local', // Must be 'local' or 'google'
             role: 'admin',
             tenantRole: 'owner'
-        }).returning();
+        } as any).returning();
         userId = user.id;
 
         // 2. Setup Workspace (required)
@@ -49,7 +49,7 @@ describe('External Send Block Integration', () => {
             const [ws] = await db.insert(workspaces as any).values({
                 title: 'Test Workspace',
                 tenantId
-            } as any).returning();
+            } as any).returning() as any[];
             workspaceId = ws.id;
         } catch (e) {
             workspaceId = uuidv4(); // Dummy
@@ -63,7 +63,7 @@ describe('External Send Block Integration', () => {
             workspaceId, // Might be required
             creatorId: userId,
             ownerId: userId
-        }).returning();
+        } as any).returning();
         projectId = project.id;
     });
 
@@ -90,7 +90,7 @@ describe('External Send Block Integration', () => {
             creatorId: userId,
             ownerId: userId,
             version: 1
-        }).returning();
+        } as any).returning();
         workflowId = workflow.id;
 
         const [version] = await db.insert(workflowVersions).values({
@@ -99,7 +99,7 @@ describe('External Send Block Integration', () => {
             graphJson: {},
             createdBy: userId,
             published: true
-        }).returning();
+        } as any).returning();
         workflowVersionId = version.id;
 
         // Update workflow current version
@@ -109,7 +109,7 @@ describe('External Send Block Integration', () => {
             workflowId,
             title: 'Send Section',
             order: 0
-        }).returning();
+        } as any).returning();
         sectionId = section.id;
 
         // 5. Setup External Destination
@@ -118,7 +118,7 @@ describe('External Send Block Integration', () => {
             type: 'webhook',
             name: 'Test Webhook',
             config: { url: testUrl, method: 'POST' }
-        }).returning();
+        } as any).returning();
         destinationId = dest.id;
     });
 
@@ -131,7 +131,7 @@ describe('External Send Block Integration', () => {
             type: 'short_text',
             title: 'Input',
             order: 0
-        });
+        } as any);
 
         // 2. Create External Send Block
         const blockId = uuidv4();
@@ -148,7 +148,7 @@ describe('External Send Block Integration', () => {
                 ]
             },
             order: 1
-        });
+        } as any);
 
         // 3. Create Run & Submit (PREVIEW)
         const runId = uuidv4();
@@ -160,7 +160,7 @@ describe('External Send Block Integration', () => {
             completed: false,
             status: 'pending',
             runToken: uuidv4() // Add runToken
-        });
+        } as any);
 
         const context: ExecutionContext = {
             workflowId,
@@ -188,7 +188,7 @@ describe('External Send Block Integration', () => {
             type: 'short_text',
             title: 'Input',
             order: 0
-        });
+        } as any);
 
         // 2. Create External Send Block
         const blockId = uuidv4();
@@ -205,7 +205,7 @@ describe('External Send Block Integration', () => {
                 ]
             },
             order: 1
-        });
+        } as any);
 
         // 3. Create Run & Submit (LIVE)
         const runId = uuidv4();
@@ -217,7 +217,7 @@ describe('External Send Block Integration', () => {
             completed: false,
             status: 'pending',
             runToken: uuidv4() // Add runToken
-        });
+        } as any);
 
         const context: ExecutionContext = {
             workflowId,

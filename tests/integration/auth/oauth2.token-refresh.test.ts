@@ -100,7 +100,7 @@ describe('OAuth2 Token Refresh Flow', () => {
       // Verify new refresh token is set in cookie
       const cookies = response.headers['set-cookie'];
       expect(cookies).toBeDefined();
-      expect(cookies.some((c: string) => c.startsWith('refresh_token='))).toBe(true);
+      expect((cookies as unknown as string[]).some((c: string) => c.startsWith('refresh_token='))).toBe(true);
     });
 
     it('should rotate refresh token after use', async () => {
@@ -309,7 +309,7 @@ describe('OAuth2 Token Refresh Flow', () => {
       // Verify refresh token cookie is set
       const cookies = response.headers['set-cookie'];
       expect(cookies).toBeDefined();
-      expect(cookies.some((c: string) => c.startsWith('refresh_token='))).toBe(true);
+      expect((cookies as unknown as string[]).some((c: string) => c.startsWith('refresh_token='))).toBe(true);
 
       // Verify refresh token exists in database
       const tokenCount = await db.select().from(refreshTokens)

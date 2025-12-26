@@ -443,7 +443,7 @@ describe('RecordService', () => {
         mockUserId
       );
 
-      expect(result.data.email).toBe('new@example.com');
+      expect((result.data as any).email).toBe('new@example.com');
     });
 
     it('should merge updates with existing data', async () => {

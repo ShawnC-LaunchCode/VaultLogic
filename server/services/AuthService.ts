@@ -14,11 +14,25 @@ import bcrypt from 'bcrypt';
 import { hashToken } from "../utils/encryption";
 import { sendPasswordResetEmail, sendVerificationEmail } from "./emailService";
 import { accountLockoutService } from "./AccountLockoutService";
+import {
+  InvalidTokenError,
+  TokenExpiredError,
+  InvalidCredentialsError
+} from "../errors/AuthErrors";
+import {
+  PASSWORD_CONFIG,
+  JWT_CONFIG,
+  REFRESH_TOKEN_CONFIG,
+  PASSWORD_RESET_CONFIG,
+  EMAIL_VERIFICATION_CONFIG,
+  PASSWORD_POLICY
+} from "../config/auth";
+import zxcvbn from 'zxcvbn';
 
 const log = createLogger({ module: 'auth-service' });
 
-// Configuration constants
-const SALT_ROUNDS = 12; // OWASP recommendation for sensitive data (2025)
+// Configuration constants (using centralized config)
+const SALT_ROUNDS = PASSWORD_CONFIG.SALT_ROUNDS;
 const JWT_EXPIRY = process.env.JWT_EXPIRY || '15m'; // Short expiry (15m) to mitigating revocation gaps
 
 /**
@@ -110,12 +124,42 @@ export class AuthService {
             return jwt.sign(payload, JWT_SECRET, options);
         } catch (error) {
             log.error({ error, userId: user.id }, 'Failed to create JWT token');
-            throw new Error('Token creation failed');
+            throw new Error('Token creation failed', { cause: error });
         }
     }
 
     /**
-     * Verify and decode a JWT token
+     * Verify and decode a JWT access token
+     *
+     * Validates the JWT signature using HS256 algorithm and returns the decoded payload.
+     * Automatically checks token expiration and throws descriptive errors.
+     *
+     * @param token - The JWT token to verify (without "Bearer " prefix)
+     * @returns {JWTPayload} The decoded token payload containing userId, email, tenantId, and role
+     *
+     * @throws {Error} 'JWT not configured' if JWT_SECRET is not set
+     * @throws {Error} 'Token expired' if the token has passed its expiration time
+     * @throws {Error} 'Invalid token' for signature mismatch or malformed tokens
+     *
+     * @security
+     * - Uses HS256 (HMAC-SHA256) for signature verification
+     * - Enforces algorithm whitelist (only HS256 accepted)
+     * - Automatic expiration validation via jwt library
+     *
+     * @example
+     * ```typescript
+     * try {
+     *   const payload = authService.verifyToken(token);
+     *   console.log('User ID:', payload.userId);
+     *   console.log('Email:', payload.email);
+     * } catch (error) {
+     *   if (error.message === 'Token expired') {
+     *     // Refresh token flow
+     *   } else {
+     *     // Invalid token - force re-authentication
+     *   }
+     * }
+     * ```
      */
     verifyToken(token: string): JWTPayload {
         if (!JWT_SECRET) throw new Error('JWT not configured');
@@ -124,9 +168,9 @@ export class AuthService {
             return jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }) as JWTPayload;
         } catch (error) {
             if (error instanceof jwt.TokenExpiredError) {
-                throw new Error('Token expired');
+                throw new TokenExpiredError('Token has expired');
             }
-            throw new Error('Invalid token');
+            throw new InvalidTokenError('Invalid or malformed token');
         }
     }
 
@@ -191,13 +235,46 @@ export class AuthService {
     // VALIDATION HELPER
     // =================================================================
 
-    validatePasswordStrength(password: string): { valid: boolean; message?: string } {
-        if (password.length < 8) return { valid: false, message: 'Password must be at least 8 characters long' };
-        if (password.length > 128) return { valid: false, message: 'Password must be at most 128 characters long' };
-        if (!/[A-Z]/.test(password)) return { valid: false, message: 'Password must contain at least one uppercase letter' };
-        if (!/[a-z]/.test(password)) return { valid: false, message: 'Password must contain at least one lowercase letter' };
-        if (!/[0-9]/.test(password)) return { valid: false, message: 'Password must contain at least one number' };
-        return { valid: true };
+    /**
+     * Validate password strength using zxcvbn
+     *
+     * @param password - The password to validate
+     * @param userInputs - Optional user information (email, firstName, lastName) to prevent personal info in password
+     * @returns {valid: boolean, message?: string, score?: number, feedback?: object}
+     */
+    validatePasswordStrength(password: string, userInputs?: string[]): { valid: boolean; message?: string; score?: number; feedback?: any } {
+        // Check length first (before expensive zxcvbn check)
+        if (password.length < PASSWORD_POLICY.MIN_LENGTH) {
+            return { valid: false, message: `Password must be at least ${PASSWORD_POLICY.MIN_LENGTH} characters long` };
+        }
+        if (password.length > PASSWORD_POLICY.MAX_LENGTH) {
+            return { valid: false, message: `Password must be at most ${PASSWORD_POLICY.MAX_LENGTH} characters long` };
+        }
+
+        // Use zxcvbn for strength scoring (0-4 scale)
+        const result = zxcvbn(password, userInputs || []);
+
+        // Require score of 3 or higher (strong password)
+        // 0: too guessable (risky password)
+        // 1: very guessable (protection from throttled online attacks)
+        // 2: somewhat guessable (protection from unthrottled online attacks)
+        // 3: safely unguessable (moderate protection from offline slow-hash scenario)
+        // 4: very unguessable (strong protection from offline slow-hash scenario)
+        const minScore = PASSWORD_POLICY.MIN_STRENGTH_SCORE || 3;
+
+        if (result.score < minScore) {
+            // Provide helpful feedback from zxcvbn
+            const suggestions = result.feedback.suggestions.join(' ') || 'Try a stronger password.';
+            const warning = result.feedback.warning ? `${result.feedback.warning}. ` : '';
+            return {
+                valid: false,
+                message: `${warning}${suggestions}`,
+                score: result.score,
+                feedback: result.feedback
+            };
+        }
+
+        return { valid: true, score: result.score };
     }
 
     validateEmail(email: string): boolean {
@@ -207,8 +284,8 @@ export class AuthService {
         }
 
         // Stricter regex: local-part@domain.tld
-        // - Local part: 1-64 chars, no spaces
-        // - Domain: 1-255 chars, no spaces
+        // - Local part: 1-64 chars, no spaces, cannot start or end with dot
+        // - Domain: 1-255 chars, no spaces, ASCII only (no unicode)
         // - TLD: at least 2 chars
         const emailRegex = /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{2,}$/;
 
@@ -218,6 +295,11 @@ export class AuthService {
 
         // Split for additional validation
         const [localPart, domain] = email.split('@');
+
+        // SECURITY FIX: Reject emails starting or ending with dot in local part
+        if (localPart.startsWith('.') || localPart.endsWith('.')) {
+            return false;
+        }
 
         // No consecutive dots
         if (email.includes('..')) {
@@ -229,6 +311,13 @@ export class AuthService {
             return false;
         }
 
+        // SECURITY FIX: Reject unicode domains (or convert to punycode)
+        // This prevents homograph attacks and ensures ASCII-only domains
+        // eslint-disable-next-line no-control-regex
+        if (/[^\x00-\x7F]/.test(domain)) {
+            return false; // Reject non-ASCII characters in domain
+        }
+
         return true;
     }
 
@@ -238,6 +327,36 @@ export class AuthService {
 
     /**
      * Create a new refresh token for a user
+     *
+     * Generates a cryptographically secure random refresh token (80 hex characters),
+     * hashes it with SHA-256, and stores it in the database with a 30-day expiration.
+     * The plain token is returned to the client for use in HTTP-only cookies.
+     *
+     * @param userId - The user ID to associate the token with
+     * @param metadata - Optional metadata including IP address and user agent for device tracking
+     * @returns {Promise<string>} The plain (unhashed) refresh token to be sent to the client
+     *
+     * @throws {Error} If database insertion fails
+     *
+     * @security
+     * - Token is 40 bytes (80 hex chars) providing 160 bits of entropy
+     * - SHA-256 hash stored in database (prevents token theft via database breach)
+     * - Tokens expire after 30 days
+     * - Device fingerprinting via IP/User-Agent for suspicious activity detection
+     *
+     * @example
+     * ```typescript
+     * const refreshToken = await authService.createRefreshToken('user-123', {
+     *   ip: '192.168.1.1',
+     *   userAgent: 'Mozilla/5.0...'
+     * });
+     * // Set in HTTP-only cookie
+     * res.setHeader('Set-Cookie', serialize('refresh_token', refreshToken, {
+     *   httpOnly: true,
+     *   secure: true,
+     *   sameSite: 'strict'
+     * }));
+     * ```
      */
     async createRefreshToken(userId: string, metadata: RefreshTokenMetadata = {}): Promise<string> {
         const plainToken = crypto.randomBytes(40).toString('hex');
@@ -269,7 +388,37 @@ export class AuthService {
     }
 
     /**
-     * Verify and rotate a refresh token
+     * Verify and rotate a refresh token (automatic token rotation)
+     *
+     * Implements automatic refresh token rotation as recommended by OAuth 2.0 Security Best Practices (RFC 8252).
+     * When a refresh token is used, it is immediately revoked and a new one is issued. This limits the
+     * window of opportunity for token theft and enables detection of token reuse attacks.
+     *
+     * @param plainToken - The plain (unhashed) refresh token from the client
+     * @returns {Promise<object|null>} Object containing userId and newRefreshToken if valid, null if invalid/expired
+     *
+     * @throws {Error} If database operations fail
+     *
+     * @security
+     * - **Reuse Detection**: If a revoked token is used, ALL user sessions are revoked (indicates token theft)
+     * - **Single Use**: Each refresh token can only be used once (automatic rotation)
+     * - **Expiration Check**: Tokens are validated against expiration timestamp
+     * - **Hash Comparison**: Only hashed tokens are stored/compared (prevents database breach impact)
+     *
+     * @example
+     * ```typescript
+     * const result = await authService.rotateRefreshToken(oldToken);
+     * if (result) {
+     *   // Generate new access token
+     *   const accessToken = authService.createToken(user);
+     *   // Set new refresh token in cookie
+     *   res.setHeader('Set-Cookie', serialize('refresh_token', result.newRefreshToken, { ... }));
+     *   res.json({ token: accessToken });
+     * } else {
+     *   // Invalid/expired/reused token - force login
+     *   res.status(401).json({ message: 'Invalid refresh token' });
+     * }
+     * ```
      */
     async rotateRefreshToken(plainToken: string): Promise<{ userId: string, newRefreshToken: string } | null> {
         const tokenHash = hashToken(plainToken);
@@ -351,7 +500,7 @@ export class AuthService {
 
         const plainToken = crypto.randomBytes(32).toString('hex');
         const tokenHash = hashToken(plainToken);
-        const expiresAt = new Date(Date.now() + 1000 * 60 * 60); // 1 hour
+        const expiresAt = new Date(Date.now() + PASSWORD_RESET_CONFIG.TOKEN_EXPIRY_MS);
 
         await this.db.update(passwordResetTokens)
             .set({ used: true })
@@ -399,7 +548,7 @@ export class AuthService {
     async generateEmailVerificationToken(userId: string, email: string): Promise<string> {
         const plainToken = crypto.randomBytes(32).toString('hex');
         const tokenHash = hashToken(plainToken);
-        const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24); // 24 hours
+        const expiresAt = new Date(Date.now() + EMAIL_VERIFICATION_CONFIG.TOKEN_EXPIRY_MS);
 
         await this.db.insert(emailVerificationTokens).values({
             userId,
@@ -436,16 +585,8 @@ export class AuthService {
     async cleanupExpiredTokens(): Promise<void> {
         const now = new Date();
 
-        await this.db.delete(refreshTokens)
-            .where(and(
-                eq(refreshTokens.revoked, true),
-                gt(refreshTokens.expiresAt, now) // Mistake in audit? actually checking if expired. So lt.
-            ));
-
-        // Correct logic: Delete if EXPIRED (< now) OR (REVOKED AND EXPIRED? No, usually keep revoked for audit, but audit said delete revoked ones).
-        // Audit said: clean expired refresh tokens (revoked ones).
-        // Let's stick to safe cleanup: Delete if expired.
-
+        // SECURITY FIX: Delete tokens that are (revoked AND expired) OR just expired
+        // Using OR logic to consolidate cleanup in one query
         await this.db.delete(refreshTokens)
             .where(lt(refreshTokens.expiresAt, now));
 

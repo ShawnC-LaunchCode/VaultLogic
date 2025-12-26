@@ -232,6 +232,8 @@ export interface NumberHelpers {
   abs: (num: number) => number;
   clamp: (num: number, min: number, max: number) => number;
   formatCurrency: (num: number, currency?: string) => string;
+  currency: (num: number, currency?: string) => string;
+  percent: (num: number, decimals?: number) => string;
 }
 
 export interface ArrayHelpers {
@@ -239,6 +241,8 @@ export interface ArrayHelpers {
   flatten: (arr: any[]) => any[];
   chunk: (arr: any[], size: number) => any[][];
   sortBy: (arr: any[], key: string) => any[];
+  filter: (arr: any[], predicate: (item: any, index: number) => boolean) => any[];
+  map: (arr: any[], mapper: (item: any, index: number) => any) => any[];
 }
 
 export interface ObjectHelpers {

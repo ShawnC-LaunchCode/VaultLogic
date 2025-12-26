@@ -16,7 +16,10 @@
  */
 
 import type { ApiStep } from '@/lib/vault-api';
+import { createLogger } from '../logger';
 import { generateRandomValueForBlock } from './randomFill';
+
+const logger = createLogger({ module: 'AIRandomFill' });
 
 // ============================================================================
 // TYPES
@@ -104,7 +107,7 @@ async function requestAIRandomValues(
     return data.values || {};
 
   } catch (error) {
-    console.error('[AIRandomFill] AI request failed:', error);
+    logger.error('AI request failed:', error);
     return {};
   }
 }
@@ -232,7 +235,7 @@ function sanitizeAIValue(value: any, step: ApiStep): any {
     }
 
   } catch (error) {
-    console.error('[AIRandomFill] Error sanitizing value for step:', step.id, error);
+    logger.error('Error sanitizing value for step:', step.id, error);
     return undefined;
   }
 }
@@ -293,11 +296,11 @@ export async function generateAIRandomValues(
   workflowId: string,
   workflowTitle?: string
 ): Promise<Record<string, any>> {
-  console.log('[AIRandomFill] Starting AI random value generation');
+  logger.info('Starting AI random value generation');
 
   // Check if AI is available
   if (!isAIRandomAvailable()) {
-    console.log('[AIRandomFill] AI not available, using synthetic random');
+    logger.info('AI not available, using synthetic random');
     // Use synthetic random directly
     const syntheticValues: Record<string, any> = {};
     for (const step of steps) {
@@ -311,20 +314,20 @@ export async function generateAIRandomValues(
 
   try {
     // Request AI values
-    console.log('[AIRandomFill] Requesting AI values for', steps.length, 'steps');
+    logger.info('Requesting AI values for', steps.length, 'steps');
     const aiValues = await requestAIRandomValues(steps, workflowId, workflowTitle);
 
-    console.log('[AIRandomFill] Received AI values:', Object.keys(aiValues).length, 'values');
+    logger.info('Received AI values:', Object.keys(aiValues).length, 'values');
 
     // Merge with synthetic defaults
     const mergedValues = mergeWithSyntheticDefaults(steps, aiValues);
 
-    console.log('[AIRandomFill] Final merged values:', Object.keys(mergedValues).length, 'values');
+    logger.info('Final merged values:', Object.keys(mergedValues).length, 'values');
 
     return mergedValues;
 
   } catch (error) {
-    console.error('[AIRandomFill] Error generating AI values, falling back to synthetic:', error);
+    logger.error('Error generating AI values, falling back to synthetic:', error);
 
     // Fallback to pure synthetic
     const syntheticValues: Record<string, any> = {};

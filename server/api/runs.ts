@@ -203,101 +203,110 @@ router.get(
       const query = listRunsQuerySchema.parse(req.query);
       const { cursor, limit, workflowId, projectId, status, from, to, q } = query;
 
-      // Build where conditions for runs
-      const whereConditions: any[] = [];
+      // Build query with joins for correct filtering
+      // Stage 8: Scalable filtering via SQL joins
+      let baseQuery = db.select({
+        run: schema.runs,
+        // We select enough to reconstruct the basic view or join relations
+        // For simple listing, we mainly need the run and its user
+        user: {
+          id: schema.users.id,
+          email: schema.users.email,
+          fullName: schema.users.fullName,
+        },
+        workflow: {
+          id: schema.workflows.id,
+          name: schema.workflows.name,
+          projectId: schema.workflows.projectId,
+        },
+        workflowVersion: {
+          id: schema.workflowVersions.id,
+          version: schema.workflowVersions.versionNumber,
+        },
+        project: {
+          id: schema.projects.id,
+          name: schema.projects.name,
+        }
+      })
+        .from(schema.runs)
+        .innerJoin(schema.workflowVersions, eq(schema.runs.workflowVersionId, schema.workflowVersions.id))
+        .innerJoin(schema.workflows, eq(schema.workflowVersions.workflowId, schema.workflows.id))
+        .leftJoin(schema.projects, eq(schema.workflows.projectId, schema.projects.id))
+        .leftJoin(schema.users, eq(schema.runs.createdBy, schema.users.id));
 
-      // Stage 8: Filter by status
-      if (status) {
-        whereConditions.push(eq(schema.runs.status, status));
+      const conditions: any[] = [];
+
+      // 1. Tenant Isolation (CRITICAL)
+      // We must only show runs from projects in the user's tenant
+      if (tenantId) {
+        conditions.push(eq(schema.projects.tenantId, tenantId));
       }
 
-      // Stage 8: Filter by date range
+      // 2. Status Filter
+      if (status) {
+        conditions.push(eq(schema.runs.status, status));
+      }
+
+      // 3. Date Range
       if (from) {
-        whereConditions.push(
-          sql`${schema.runs.createdAt} >= ${new Date(from)}`
-        );
+        conditions.push(sql`${schema.runs.createdAt} >= ${new Date(from)}`);
       }
       if (to) {
-        whereConditions.push(
-          sql`${schema.runs.createdAt} <= ${new Date(to)}`
+        conditions.push(sql`${schema.runs.createdAt} <= ${new Date(to)}`);
+      }
+
+      // 4. Workflow ID
+      if (workflowId) {
+        conditions.push(eq(schema.workflows.id, workflowId));
+      }
+
+      // 5. Project ID
+      if (projectId) {
+        conditions.push(eq(schema.workflows.projectId, projectId));
+      }
+
+      // 6. Search Query
+      if (q) {
+        const lowerQ = `%${q.toLowerCase()}%`;
+        conditions.push(
+          sql`(${schema.runs.id} ILIKE ${lowerQ} OR ${schema.users.email} ILIKE ${lowerQ} OR ${schema.projects.name} ILIKE ${lowerQ} OR ${schema.workflows.name} ILIKE ${lowerQ})`
         );
       }
 
-      // Add cursor condition
+      // 7. Cursor Pagination
       if (cursor) {
         const decoded = decodeCursor(cursor);
         if (decoded) {
-          whereConditions.push(lt(schema.runs.createdAt, new Date(decoded.timestamp)));
+          conditions.push(lt(schema.runs.createdAt, new Date(decoded.timestamp)));
         }
       }
 
-      // Fetch runs with all relations
-      const runs = await db.query.runs.findMany({
-        where: whereConditions.length > 0 ? and(...whereConditions) : undefined,
-        orderBy: [desc(schema.runs.createdAt)],
-        limit: limit + 1,
-        with: {
-          workflowVersion: {
-            with: {
-              workflow: {
-                with: {
-                  project: true,
-                },
-              },
-            },
-          },
-          createdByUser: {
-            columns: {
-              id: true,
-              email: true,
-              fullName: true,
-            },
-          },
-        },
-      });
-
-      type RunWithRelations = typeof runs[number];
-
-      // Apply tenant filtering + additional filters in-memory (since complex joins)
-      let filteredRuns = runs.filter(
-        (run: RunWithRelations) => run.workflowVersion?.workflow?.project?.tenantId === tenantId
-      );
-
-      // Stage 8: Filter by workflow
-      if (workflowId) {
-        filteredRuns = filteredRuns.filter(
-          (run: RunWithRelations) => run.workflowVersion?.workflow?.id === workflowId
-        );
+      // Apply conditions
+      if (conditions.length > 0) {
+        // @ts-ignore
+        baseQuery = baseQuery.where(and(...conditions));
       }
 
-      // Stage 8: Filter by project
-      if (projectId) {
-        filteredRuns = filteredRuns.filter(
-          (run: RunWithRelations) => run.workflowVersion?.workflow?.projectId === projectId
-        );
-      }
+      // Apply ordering and limit
+      const results = await baseQuery
+        .orderBy(desc(schema.runs.createdAt))
+        .limit(limit + 1);
 
-      // Stage 8: Search query (runId, createdBy email, or simple input JSON match)
-      if (q) {
-        const lowerQ = q.toLowerCase();
-        filteredRuns = filteredRuns.filter((run: RunWithRelations) => {
-          // Match run ID
-          if (run.id.toLowerCase().includes(lowerQ)) return true;
-
-          // Match creator email
-          if (run.createdByUser?.email?.toLowerCase().includes(lowerQ)) return true;
-
-          // Match input JSON (simple stringify check)
-          if (run.inputJson && JSON.stringify(run.inputJson).toLowerCase().includes(lowerQ)) {
-            return true;
+      // Map to response format
+      const formattedRuns = results.map(row => ({
+        ...row.run,
+        workflowVersion: {
+          ...row.workflowVersion,
+          workflow: {
+            ...row.workflow,
+            project: row.project // Include project info
           }
-
-          return false;
-        });
-      }
+        },
+        createdByUser: row.user
+      }));
 
       // Create paginated response
-      const response = createPaginatedResponse(filteredRuns, limit);
+      const response = createPaginatedResponse(formattedRuns, limit);
 
       res.json(response);
     } catch (error) {

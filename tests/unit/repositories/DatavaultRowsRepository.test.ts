@@ -69,6 +69,9 @@ describe('DatavaultRowsRepository', () => {
           tableId: mockTableId,
           createdAt: new Date(),
           updatedAt: new Date(),
+          createdBy: null,
+          updatedBy: null,
+          deletedAt: null,
         },
       ];
 
@@ -98,6 +101,9 @@ describe('DatavaultRowsRepository', () => {
         tableId: mockTableId,
         createdAt: new Date(),
         updatedAt: new Date(),
+        createdBy: null,
+        updatedBy: null,
+        deletedAt: null,
       };
 
       mockDb._setMockReturnValue([mockRow]);
@@ -127,6 +133,9 @@ describe('DatavaultRowsRepository', () => {
         ...insertData,
         createdAt: new Date(),
         updatedAt: new Date(),
+        createdBy: null,
+        updatedBy: null,
+        deletedAt: null,
       };
 
       mockDb.returning.mockResolvedValue([createdRow]);
@@ -181,6 +190,9 @@ describe('DatavaultRowsRepository', () => {
         ...rowData,
         createdAt: new Date(),
         updatedAt: new Date(),
+        createdBy: null,
+        updatedBy: null,
+        deletedAt: null,
       };
 
       const createdValues: DatavaultValue[] = [
@@ -214,6 +226,9 @@ describe('DatavaultRowsRepository', () => {
         ...rowData,
         createdAt: new Date(),
         updatedAt: new Date(),
+        createdBy: null,
+        updatedBy: null,
+        deletedAt: null,
       };
 
       mockDb.returning.mockResolvedValue([createdRow]);
@@ -232,6 +247,9 @@ describe('DatavaultRowsRepository', () => {
         tableId: mockTableId,
         createdAt: new Date(),
         updatedAt: new Date(),
+        createdBy: null,
+        updatedBy: null,
+        deletedAt: null,
       };
 
       const mockValues = [

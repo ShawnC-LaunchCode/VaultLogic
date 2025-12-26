@@ -242,7 +242,7 @@ export class RunService {
 
       const snapshotValues = await snapshotService.getSnapshotValues(options.snapshotId);
       initialValues = { ...initialValues, ...snapshotValues };
-      snapshotValueMap = snapshot.values as any;
+      snapshotValueMap = snapshot.values as Record<string, { value: any; stepId: string; stepUpdatedAt: string }>;
     }
 
     // Generate random values if randomize is true
@@ -256,9 +256,7 @@ export class RunService {
         key: step.alias || step.id,
         type: step.type,
         label: step.title,
-        options: (step as any).config && typeof (step as any).config === 'object' && 'options' in (step as any).config
-          ? ((step as any).config as any).options
-          : undefined,
+        options: step.options as any[] | undefined,
         description: step.description || undefined,
       }));
 

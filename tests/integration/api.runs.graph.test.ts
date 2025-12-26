@@ -49,8 +49,8 @@ describe("Stage 8: Runs API Integration Tests", () => {
         app.post("/api/auth/google", (req, res) => {
           // Backdoor login: accept user object directly
           if (req.body.user) {
-            req.session.user = req.body.user;
-            req.user = req.body.user;
+            (req as any).session.user = req.body.user;
+            (req as any).user = req.body.user;
             return res.json({ message: "Logged in via backdoor", user: req.body.user });
           }
           res.status(400).json({ error: "No user provided" });
@@ -96,7 +96,7 @@ describe("Stage 8: Runs API Integration Tests", () => {
       tenantId,
       tenantRole: "owner",
       role: "admin", // ✅ Admin for full API permissions
-    }).onConflictDoUpdate({
+    } as any).onConflictDoUpdate({
       target: schema.users.id,
       set: {
         tenantId: tenantId,
@@ -128,7 +128,7 @@ describe("Stage 8: Runs API Integration Tests", () => {
       tenantId,
       creatorId: userId,
       ownerId: userId,
-    }).returning();
+    } as any).returning();
     projectId = project.id;
 
     // Create workflow using Factory
@@ -137,9 +137,9 @@ describe("Stage 8: Runs API Integration Tests", () => {
       createdBy: userId,
       name: "Test Workflow",
       status: "active",
-    });
+    } as any);
 
-    const [workflow] = await db.insert(schema.workflows).values(wfData).returning();
+    const [workflow] = await db.insert(schema.workflows).values(wfData as any).returning();
     workflowId = workflow.id;
 
     const [version] = await db.insert(schema.workflowVersions).values({
@@ -148,8 +148,10 @@ describe("Stage 8: Runs API Integration Tests", () => {
       published: true,
       publishedAt: new Date(),
       publishedBy: userId,
-      publishedBy: userId,
-    }).returning();
+
+      versionNumber: 1, // Fix: use versionNumber
+      createdBy: userId, // Fix: remove duplicate publishedBy if needed, but schema allows
+    } as any).returning();
     workflowVersionId = version.id;
 
     // Create test runs using Factory
@@ -197,7 +199,7 @@ describe("Stage 8: Runs API Integration Tests", () => {
       durationMs: 500,
       createdBy: userId,
     });
-    await db.insert(schema.runs).values(failedRunData);
+    await db.insert(schema.runs).values(failedRunData as any);
 
     // Create run logs
     await db.insert(schema.runLogs).values([
@@ -220,7 +222,7 @@ describe("Stage 8: Runs API Integration Tests", () => {
     try {
       if (tenantId) {
         // Clean up workflows first (cascades to workflow_versions and runs)
-        await db.delete(schema.workflows).where(eq(schema.workflows.tenantId, tenantId));
+        await db.delete(schema.workflows).where(eq((schema.workflows as any).tenantId, tenantId));
 
         // Delete tenant (cascades to projects, users, etc.)
         await db.delete(schema.tenants).where(eq(schema.tenants.id, tenantId));
@@ -496,7 +498,7 @@ describe("Stage 8: Runs API Integration Tests", () => {
       const [otherTenant] = await db.insert(schema.tenants).values({
         name: "Other Tenant",
         plan: "free",
-      }).returning();
+      } as any).returning();
 
       // Create user in other tenant
       const [otherUser] = await db.insert(schema.users).values({
@@ -504,7 +506,7 @@ describe("Stage 8: Runs API Integration Tests", () => {
         passwordHash: "hashed_password",
         tenantId: otherTenant.id,
         tenantRole: "owner",
-      }).returning();
+      } as any).returning();
 
       // Create project and workflow in other tenant
       const [otherProject] = await db.insert(schema.projects).values({
@@ -513,7 +515,7 @@ describe("Stage 8: Runs API Integration Tests", () => {
         tenantId: otherTenant.id,
         creatorId: otherUser.id,
         ownerId: otherUser.id,
-      }).returning();
+      } as any).returning();
 
       const [otherWorkflow] = await db.insert(schema.workflows).values({
         name: "Other Workflow",
@@ -523,7 +525,7 @@ describe("Stage 8: Runs API Integration Tests", () => {
         ownerId: otherUser.id,
         status: "active",
         graphJson: { nodes: [], edges: [] },
-      }).returning();
+      } as any).returning();
 
       const [otherVersion] = await db.insert(schema.workflowVersions).values({
         workflowId: otherWorkflow.id,
@@ -532,9 +534,9 @@ describe("Stage 8: Runs API Integration Tests", () => {
         published: true,
         publishedAt: new Date(),
         publishedBy: otherUser.id,
-        version: 1,
+        versionNumber: 1,
         createdBy: otherUser.id,
-      }).returning();
+      } as any).returning();
 
       // Create run in other tenant
       await db.insert(schema.runs).values({
@@ -542,7 +544,7 @@ describe("Stage 8: Runs API Integration Tests", () => {
         inputJson: { data: "other tenant data" },
         status: "success",
         createdBy: otherUser.id,
-      });
+      } as any);
 
       // List runs as original user (should not see other tenant's runs)
       const response = await agent

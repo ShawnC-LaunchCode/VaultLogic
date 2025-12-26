@@ -82,8 +82,8 @@ describeWithDb('Template Node - Multi-Template Support', () => {
     // Create test workflow with version
     const { workflow, version } = await factory.createWorkflow(project.id, user.id, {
       version: {
-        version: '1.0.0',
-        status: 'draft',
+        versionNumber: 1,
+
         changelog: 'Initial version',
         createdBy: user.id,
         graphJson: {},

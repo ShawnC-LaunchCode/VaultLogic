@@ -6,16 +6,168 @@ import { createLogger } from "../logger";
 import { authService } from "../services/AuthService";
 import { accountLockoutService } from "../services/AccountLockoutService";
 import { mfaService } from "../services/MfaService";
+import { auditLogService } from "../services/AuditLogService";
+import { metricsService } from "../services/MetricsService";
 import { hybridAuth, optionalHybridAuth, type AuthRequest } from "../middleware/auth";
 import { parseCookies } from "../utils/cookies"; // Import parseCookies
 import { generateDeviceFingerprint, parseDeviceName, getLocationFromIP } from "../utils/deviceFingerprint";
+import { hashToken } from "../utils/encryption"; // Import hashToken for session comparison
 import { nanoid } from "nanoid";
 import { serialize } from "cookie";
 import { db } from "../db";
-import { refreshTokens, trustedDevices } from "@shared/schema";
+import { refreshTokens, trustedDevices, tenants } from "@shared/schema";
 import { eq, and, gt, ne, desc } from "drizzle-orm";
+import {
+  InvalidCredentialsError,
+  AccountLockedError,
+  EmailNotVerifiedError,
+  MfaRequiredError,
+  UnauthorizedError
+} from "../errors/AuthErrors";
+import { send, sendErrorResponse, sendSuccessResponse } from "../utils/responses";
+import { RATE_LIMIT_CONFIG, LOCKOUT_CONFIG } from "../config/auth";
 
 const logger = createLogger({ module: 'auth-routes' });
+
+// =================================================================
+// LOGIN HANDLER HELPERS
+// =================================================================
+
+/**
+ * Validates user credentials (email/password)
+ * @returns User object if valid
+ * @throws Custom error classes (InvalidCredentialsError, AccountLockedError, EmailNotVerifiedError)
+ */
+async function validateCredentials(email: string, password: string, req: Request): Promise<User> {
+  const user = await userRepository.findByEmail(email);
+  if (!user) {
+    // Record failed attempt even if user doesn't exist (prevents enumeration)
+    await accountLockoutService.recordAttempt(email, req.ip, false);
+    throw new InvalidCredentialsError();
+  }
+
+  // CHECK ACCOUNT LOCK
+  const lockStatus = await accountLockoutService.isAccountLocked(user.id);
+  if (lockStatus.locked) {
+    logger.warn({ userId: user.id, email }, 'Login blocked: account locked');
+    throw new AccountLockedError(lockStatus.lockedUntil);
+  }
+
+  if (user.authProvider !== 'local') {
+    throw new Error(`Please sign in with ${user.authProvider}`);
+  }
+
+  const credentials = await userCredentialsRepository.findByUserId(user.id);
+  if (!credentials) {
+    await accountLockoutService.recordAttempt(email, req.ip, false);
+    throw new InvalidCredentialsError();
+  }
+
+  const isMatch = await authService.comparePassword(password, credentials.passwordHash);
+  if (!isMatch) {
+    await accountLockoutService.recordAttempt(email, req.ip, false);
+    throw new InvalidCredentialsError();
+  }
+
+  // Email verification enforcement
+  if (!user.emailVerified) {
+    logger.warn({ userId: user.id, email: user.email }, 'Login blocked: email not verified');
+    throw new EmailNotVerifiedError('Please verify your email before logging in. Check your inbox for the verification link.');
+  }
+
+  // RECORD SUCCESSFUL ATTEMPT
+  await accountLockoutService.recordAttempt(email, req.ip, true);
+
+  return user;
+}
+
+/**
+ * Checks if MFA is required for this login attempt
+ * @returns true if MFA is required, false if trusted device
+ */
+async function checkMfaRequirement(user: User, req: Request): Promise<boolean> {
+  let tenantRequired = false;
+
+  // Check tenant-level enforcement
+  if (user.tenantId) {
+    const tenant = await db.query.tenants.findFirst({
+      where: eq(tenants.id, user.tenantId)
+    });
+    if (tenant?.mfaRequired) {
+      tenantRequired = true;
+    }
+  }
+
+  if (!user.mfaEnabled && !tenantRequired) {
+    return false; // MFA not enabled and not required by tenant
+  }
+
+  const deviceFingerprint = generateDeviceFingerprint(req);
+
+  // Check if device is trusted
+  const trustedDevice = await db.query.trustedDevices.findFirst({
+    where: and(
+      eq(trustedDevices.userId, user.id),
+      eq(trustedDevices.deviceFingerprint, deviceFingerprint),
+      eq(trustedDevices.revoked, false),
+      gt(trustedDevices.trustedUntil, new Date())
+    )
+  });
+
+  if (trustedDevice) {
+    // Update last used timestamp
+    await db.update(trustedDevices)
+      .set({ lastUsedAt: new Date() })
+      .where(eq(trustedDevices.id, trustedDevice.id));
+
+    logger.info({ userId: user.id }, 'Login from trusted device - MFA skipped');
+    return false; // MFA not required
+  }
+
+  logger.info({ userId: user.id }, 'Login requires MFA verification');
+  return true; // MFA required
+}
+
+/**
+ * Issues authentication tokens and sets cookies
+ * @returns Object with token and user info
+ */
+async function issueTokens(user: User, req: Request, res: Response) {
+  const token = authService.createToken(user);
+  const refreshToken = await authService.createRefreshToken(user.id, {
+    ip: req.ip,
+    userAgent: req.headers['user-agent']
+  });
+
+  res.setHeader('Set-Cookie', serialize('refresh_token', refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    path: '/',
+    maxAge: 60 * 60 * 24 * 30
+  }));
+
+  logger.info({ userId: user.id }, 'User logged in successfully');
+
+  return {
+    message: 'Login successful',
+    token,
+    user: {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      tenantId: user.tenantId,
+      role: user.tenantRole,
+      emailVerified: user.emailVerified,
+      mfaEnabled: user.mfaEnabled
+    }
+  };
+}
+
+// =================================================================
+// RATE LIMITING
+// =================================================================
 
 // SECURITY FIX: Rate limiting for password-based authentication
 // Disable rate limiting in test environment to prevent flaky tests
@@ -24,8 +176,8 @@ const isTest = process.env.NODE_ENV === 'test';
 const authRateLimit = isTest ?
   (req: Request, res: Response, next: any) => next() :
   rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 10, // Limit each IP to 10 requests per windowMs
+    windowMs: RATE_LIMIT_CONFIG.LOGIN.WINDOW_MS,
+    max: RATE_LIMIT_CONFIG.LOGIN.MAX_REQUESTS,
     message: { message: "Too many login/register attempts, please try again later." },
     standardHeaders: true,
     legacyHeaders: false,
@@ -46,7 +198,9 @@ export function registerAuthRoutes(app: Express): void {
       if (!email || !password) return res.status(400).json({ message: 'Email and password required', error: 'missing_fields' });
       if (!authService.validateEmail(email)) return res.status(400).json({ message: 'Invalid email format', error: 'invalid_email' });
 
-      const pwdValidation = authService.validatePasswordStrength(password);
+      // Pass user inputs to prevent personal info in password
+      const userInputs = [email, firstName, lastName].filter(Boolean);
+      const pwdValidation = authService.validatePasswordStrength(password, userInputs);
       if (!pwdValidation.valid) return res.status(400).json({ message: pwdValidation.message, error: 'weak_password' });
 
       const existingUser = await userRepository.findByEmail(email);
@@ -107,124 +261,87 @@ export function registerAuthRoutes(app: Express): void {
 
   /**
    * POST /api/auth/login
+   * Refactored with helper functions for better readability and maintainability
    */
   app.post('/api/auth/login', authRateLimit, async (req: Request, res: Response) => {
+    const startTime = Date.now();
+
     try {
       const { email, password } = req.body;
-      if (!email || !password) return res.status(400).json({ message: 'Email and password required', error: 'missing_fields' });
 
-      const user = await userRepository.findByEmail(email);
-      if (!user) {
-        // Record failed attempt even if user doesn't exist (prevents enumeration)
-        await accountLockoutService.recordAttempt(email, req.ip, false);
-        return res.status(401).json({ message: 'Invalid credentials', error: 'invalid_credentials' });
-      }
-
-      // CHECK ACCOUNT LOCK
-      const lockStatus = await accountLockoutService.isAccountLocked(user.id);
-      if (lockStatus.locked) {
-        const minutesRemaining = Math.ceil((lockStatus.lockedUntil!.getTime() - Date.now()) / 60000);
-        logger.warn({ userId: user.id, email }, 'Login blocked: account locked');
-        return res.status(423).json({
-          message: `Account temporarily locked due to too many failed login attempts. Try again in ${minutesRemaining} minutes.`,
-          error: 'account_locked',
-          lockedUntil: lockStatus.lockedUntil
+      // Validate required fields
+      if (!email || !password) {
+        metricsService.recordAuthLatency(startTime, 'login', 400);
+        return res.status(400).json({
+          message: 'Email and password required',
+          error: 'missing_fields'
         });
       }
 
-      if (user.authProvider !== 'local') {
-        return res.status(400).json({ message: `Please sign in with ${user.authProvider}`, error: 'wrong_auth_provider' });
-      }
+      // Step 1: Validate credentials (handles all authentication checks)
+      const user = await validateCredentials(email, password, req);
 
-      const credentials = await userCredentialsRepository.findByUserId(user.id);
-      if (!credentials) {
-        await accountLockoutService.recordAttempt(email, req.ip, false);
-        return res.status(401).json({ message: 'Invalid credentials', error: 'invalid_credentials' });
-      }
+      // Step 2: Check MFA requirement
+      const requiresMfa = await checkMfaRequirement(user, req);
 
-      const isMatch = await authService.comparePassword(password, credentials.passwordHash);
-      if (!isMatch) {
-        // RECORD FAILED ATTEMPT
-        await accountLockoutService.recordAttempt(email, req.ip, false);
-        return res.status(401).json({ message: 'Invalid credentials', error: 'invalid_credentials' });
-      }
+      if (requiresMfa) {
+        const mfaError = new MfaRequiredError(undefined, 'MFA required');
+        metricsService.recordLoginAttempt('mfa_required', 'local');
+        metricsService.recordAuthLatency(startTime, 'login', 200);
 
-      // Email verification enforcement
-      if (!user.emailVerified) {
-        logger.warn({ userId: user.id, email: user.email }, 'Login blocked: email not verified');
-        return res.status(403).json({
-          message: 'Please verify your email before logging in. Check your inbox for the verification link.',
-          error: 'email_not_verified',
-          email: user.email
+        return res.status(200).json({
+          message: mfaError.message,
+          requiresMfa: true,
+          userId: user.id, // Client needs this to verify MFA
+          error: mfaError.code
         });
       }
 
-      // RECORD SUCCESSFUL ATTEMPT
-      await accountLockoutService.recordAttempt(email, req.ip, true);
+      // Step 3: Issue tokens
+      const response = await issueTokens(user, req, res);
 
-      // MFA CHECK: If user has MFA enabled, check if device is trusted
-      if (user.mfaEnabled) {
-        const deviceFingerprint = generateDeviceFingerprint(req);
+      // Audit log: Successful login
+      await auditLogService.logLoginAttempt(
+        user.id,
+        true,
+        req.ip,
+        req.headers['user-agent']
+      );
 
-        // Check if device is trusted
-        const trustedDevice = await db.query.trustedDevices.findFirst({
-          where: and(
-            eq(trustedDevices.userId, user.id),
-            eq(trustedDevices.deviceFingerprint, deviceFingerprint),
-            eq(trustedDevices.revoked, false),
-            gt(trustedDevices.trustedUntil, new Date())
-          )
-        });
+      // Metrics: Record successful login
+      metricsService.recordLoginAttempt('success', 'local');
+      metricsService.recordSessionOperation('created', user.id);
+      metricsService.recordAuthLatency(startTime, 'login', 200);
 
-        if (trustedDevice) {
-          // Update last used timestamp
-          await db.update(trustedDevices)
-            .set({ lastUsedAt: new Date() })
-            .where(eq(trustedDevices.id, trustedDevice.id));
+      res.json(response);
 
-          logger.info({ userId: user.id }, 'Login from trusted device - MFA skipped');
-        } else {
-          // Device not trusted - require MFA
-          logger.info({ userId: user.id }, 'Login requires MFA verification');
-          return res.status(200).json({
-            message: 'MFA required',
-            requiresMfa: true,
-            userId: user.id, // Client needs this to verify MFA
-            error: 'mfa_required'
-          });
-        }
-      }
-
-      const token = authService.createToken(user);
-      const refreshToken = await authService.createRefreshToken(user.id, { ip: req.ip, userAgent: req.headers['user-agent'] });
-
-      res.setHeader('Set-Cookie', serialize('refresh_token', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        path: '/',
-        maxAge: 60 * 60 * 24 * 30
-      }));
-
-      logger.info({ userId: user.id }, 'User logged in successfully');
-
-      res.json({
-        message: 'Login successful',
-        token,
-        user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          tenantId: user.tenantId,
-          role: user.tenantRole,
-          emailVerified: user.emailVerified,
-          mfaEnabled: user.mfaEnabled
-        },
-      });
     } catch (error) {
       logger.error({ error }, 'Login failed');
-      res.status(500).json({ message: 'Login failed', error: 'internal_error' });
+
+      // Audit log: Failed login (if we have user context)
+      if (error instanceof Error && 'userId' in error && typeof (error as any).userId === 'string') {
+        await auditLogService.logLoginAttempt(
+          (error as any).userId,
+          false,
+          req.ip,
+          req.headers['user-agent'],
+          error.message
+        );
+      }
+
+      // Metrics: Record failed login based on error type
+      if (error instanceof InvalidCredentialsError) {
+        metricsService.recordLoginAttempt('failure', 'local');
+      } else if (error instanceof AccountLockedError) {
+        metricsService.recordLoginAttempt('account_locked', 'local');
+      } else if (error instanceof EmailNotVerifiedError) {
+        metricsService.recordLoginAttempt('email_not_verified', 'local');
+      } else {
+        metricsService.recordLoginAttempt('error', 'local');
+      }
+
+      metricsService.recordAuthLatency(startTime, 'login', 'error');
+      sendErrorResponse(res, error as Error);
     }
   });
 
@@ -232,21 +349,31 @@ export function registerAuthRoutes(app: Express): void {
    * POST /api/auth/refresh-token
    */
   app.post('/api/auth/refresh-token', async (req: Request, res: Response) => {
+    const startTime = Date.now();
+
     try {
       const cookies = parseCookies(req.headers.cookie);
       const refreshToken = cookies['refresh_token'];
 
-      if (!refreshToken) return res.status(401).json({ message: 'Refresh token missing' });
+      if (!refreshToken) {
+        metricsService.recordAuthLatency(startTime, 'refresh', 401);
+        return res.status(401).json({ message: 'Refresh token missing' });
+      }
 
       const result = await authService.rotateRefreshToken(refreshToken);
 
       if (!result) {
         res.setHeader('Set-Cookie', serialize('refresh_token', '', { path: '/', maxAge: 0 }));
+        metricsService.recordSessionOperation('expired');
+        metricsService.recordAuthLatency(startTime, 'refresh', 401);
         return res.status(401).json({ message: 'Invalid refresh token' });
       }
 
       const user = await userRepository.findById(result.userId);
-      if (!user) return res.status(401).json({ message: 'User not found' });
+      if (!user) {
+        metricsService.recordAuthLatency(startTime, 'refresh', 401);
+        return res.status(401).json({ message: 'User not found' });
+      }
 
       const newAccessToken = authService.createToken(user);
 
@@ -258,12 +385,16 @@ export function registerAuthRoutes(app: Express): void {
         maxAge: 60 * 60 * 24 * 30
       }));
 
+      metricsService.recordSessionOperation('refreshed', user.id);
+      metricsService.recordAuthLatency(startTime, 'refresh', 200);
+
       res.json({
         token: newAccessToken,
         user: { id: user.id, email: user.email, role: user.tenantRole }
       });
     } catch (error) {
       logger.error({ error }, 'Refresh token failed');
+      metricsService.recordAuthLatency(startTime, 'refresh', 'error');
       res.status(500).json({ message: 'Internal server error' });
     }
   });
@@ -292,16 +423,24 @@ export function registerAuthRoutes(app: Express): void {
     if (!token || !newPassword) return res.status(400).json({ message: "Token and password required" });
 
     try {
-      const pwdValidation = authService.validatePasswordStrength(newPassword);
-      if (!pwdValidation.valid) return res.status(400).json({ message: pwdValidation.message });
-
+      // Verify token first to get user info
       const userId = await authService.verifyPasswordResetToken(token);
       if (!userId) return res.status(400).json({ message: "Invalid token" });
+
+      // Get user to pass email to password validation
+      const user = await userRepository.findById(userId);
+      const userInputs = user ? [user.email, user.firstName, user.lastName].filter(Boolean) as string[] : [];
+
+      const pwdValidation = authService.validatePasswordStrength(newPassword, userInputs);
+      if (!pwdValidation.valid) return res.status(400).json({ message: pwdValidation.message });
 
       const passwordHash = await authService.hashPassword(newPassword);
       await userCredentialsRepository.updatePassword(userId, passwordHash);
       await authService.revokeAllUserTokens(userId);
       await authService.consumePasswordResetToken(token);
+
+      // Audit log: Password reset
+      await auditLogService.logPasswordReset(userId, req.ip, req.headers['user-agent']);
 
       res.json({ message: "Password updated successfully." });
     } catch (error) {
@@ -388,11 +527,19 @@ export function registerAuthRoutes(app: Express): void {
   /**
    * POST /api/auth/logout
    */
-  app.post('/api/auth/logout', async (req: Request, res: Response) => {
+  app.post('/api/auth/logout', optionalHybridAuth, async (req: Request, res: Response) => {
     const cookies = parseCookies(req.headers.cookie);
     const refreshToken = cookies['refresh_token'];
 
     if (refreshToken) await authService.revokeRefreshToken(refreshToken);
+
+    // Audit log: Logout (if user is authenticated)
+    const userId = (req as AuthRequest).userId;
+    if (userId) {
+      await auditLogService.logLogout(userId, req.ip, req.headers['user-agent']);
+      // Metrics: Session revoked
+      metricsService.recordSessionOperation('revoked', userId);
+    }
 
     res.setHeader('Set-Cookie', serialize('refresh_token', '', {
       httpOnly: true,
@@ -405,8 +552,14 @@ export function registerAuthRoutes(app: Express): void {
     res.json({ message: 'Logout successful' });
   });
 
-  // CSRF Deprecation Stub
+  /**
+   * DEPRECATED: CSRF Token Endpoint (No Longer Needed)
+   * This endpoint is deprecated as of v1.7.0.
+   * CSRF protection is now handled via Origin/Referer validation.
+   * This stub remains for backward compatibility but will be removed in v2.0.
+   */
   app.get('/api/auth/csrf-token', (req, res) => {
+    logger.warn({ ip: req.ip, userAgent: req.headers['user-agent'] }, 'DEPRECATED: CSRF token endpoint called. Update client to remove this dependency.');
     res.json({ csrfToken: "deprecated-no-csrf-needed" });
   });
 
@@ -489,6 +642,12 @@ export function registerAuthRoutes(app: Express): void {
 
       logger.info({ userId }, 'MFA enabled successfully');
 
+      // Audit log: MFA enabled
+      await auditLogService.logMfaChange(userId, true, req.ip, req.headers['user-agent'], 'totp');
+
+      // Metrics: MFA enabled
+      metricsService.recordMfaEvent('enabled', userId);
+
       res.json({ message: "MFA enabled successfully" });
     } catch (error) {
       logger.error({ error }, 'MFA verification error');
@@ -501,15 +660,24 @@ export function registerAuthRoutes(app: Express): void {
    * Verify MFA during login
    */
   app.post('/api/auth/mfa/verify-login', authRateLimit, async (req: Request, res: Response) => {
+    const startTime = Date.now();
+
     try {
       const { userId, token, backupCode } = req.body;
 
-      if (!userId) return res.status(400).json({ message: "User ID required" });
+      if (!userId) {
+        metricsService.recordAuthLatency(startTime, 'mfa_verify', 400);
+        return res.status(400).json({ message: "User ID required" });
+      }
 
       const user = await userRepository.findById(userId);
-      if (!user) return res.status(404).json({ message: "User not found" });
+      if (!user) {
+        metricsService.recordAuthLatency(startTime, 'mfa_verify', 404);
+        return res.status(404).json({ message: "User not found" });
+      }
 
       let verified = false;
+      let usedBackupCode = false;
 
       // Try TOTP first
       if (token) {
@@ -519,10 +687,14 @@ export function registerAuthRoutes(app: Express): void {
       // Try backup code if TOTP failed or not provided
       if (!verified && backupCode) {
         verified = await mfaService.verifyBackupCode(userId, backupCode);
+        usedBackupCode = verified;
       }
 
       if (!verified) {
         logger.warn({ userId }, 'MFA verification failed during login');
+        metricsService.recordMfaEvent('verification_failed', userId);
+        metricsService.recordAuthLatency(startTime, 'mfa_verify', 401);
+
         return res.status(401).json({
           message: "Invalid authentication code",
           error: "invalid_mfa_code"
@@ -545,6 +717,12 @@ export function registerAuthRoutes(app: Express): void {
       }));
 
       logger.info({ userId }, 'MFA login successful');
+
+      // Metrics: MFA verification successful
+      metricsService.recordMfaEvent(usedBackupCode ? 'backup_code_used' : 'verified', userId);
+      metricsService.recordLoginAttempt('success', 'local');
+      metricsService.recordSessionOperation('created', userId);
+      metricsService.recordAuthLatency(startTime, 'mfa_verify', 200);
 
       res.json({
         message: 'Login successful',
@@ -627,6 +805,12 @@ export function registerAuthRoutes(app: Express): void {
 
       logger.info({ userId }, 'MFA disabled by user');
 
+      // Audit log: MFA disabled
+      await auditLogService.logMfaChange(userId, false, req.ip, req.headers['user-agent'], 'totp');
+
+      // Metrics: MFA disabled
+      metricsService.recordMfaEvent('disabled', userId);
+
       res.json({ message: "MFA disabled successfully" });
     } catch (error) {
       logger.error({ error }, 'MFA disable error');
@@ -678,6 +862,8 @@ export function registerAuthRoutes(app: Express): void {
       // Get current session token to identify which is current
       const cookies = parseCookies(req.headers.cookie || '');
       const currentRefreshToken = cookies['refresh_token'];
+      // SECURITY FIX: Hash the refresh token before comparison (session.token is stored as SHA-256 hash)
+      const currentRefreshTokenHash = currentRefreshToken ? hashToken(currentRefreshToken) : null;
 
       const sessions = await db.query.refreshTokens.findMany({
         where: and(
@@ -695,7 +881,7 @@ export function registerAuthRoutes(app: Express): void {
         ipAddress: session.ipAddress || (session.metadata as any)?.ip || 'Unknown',
         lastUsedAt: session.lastUsedAt || session.createdAt,
         createdAt: session.createdAt,
-        current: currentRefreshToken ? session.token === currentRefreshToken : false
+        current: currentRefreshTokenHash ? session.token === currentRefreshTokenHash : false
       }));
 
       logger.info({ userId, sessionCount: enrichedSessions.length }, 'Listed active sessions');
@@ -708,51 +894,9 @@ export function registerAuthRoutes(app: Express): void {
   });
 
   /**
-   * DELETE /api/auth/sessions/:sessionId
-   * Revoke a specific session
-   */
-  app.delete('/api/auth/sessions/:sessionId', hybridAuth, async (req: Request, res: Response) => {
-    try {
-      const userId = (req as AuthRequest).userId;
-      if (!userId) return res.status(401).json({ message: "Unauthorized" });
-
-      const { sessionId } = req.params;
-
-      // Verify session belongs to user
-      const session = await db.query.refreshTokens.findFirst({
-        where: eq(refreshTokens.id, sessionId)
-      });
-
-      if (!session || session.userId !== userId) {
-        return res.status(404).json({ message: "Session not found" });
-      }
-
-      // Get current session token
-      const cookies = parseCookies(req.headers.cookie || '');
-      const currentRefreshToken = cookies['refresh_token'];
-
-      // Prevent revoking current session (use logout instead)
-      if (currentRefreshToken && session.token === currentRefreshToken) {
-        return res.status(400).json({ message: "Cannot revoke current session. Use logout instead." });
-      }
-
-      // Revoke the session
-      await db.update(refreshTokens)
-        .set({ revoked: true })
-        .where(eq(refreshTokens.id, sessionId));
-
-      logger.info({ userId, sessionId }, 'Session revoked');
-
-      res.json({ message: "Session revoked successfully" });
-    } catch (error) {
-      logger.error({ error }, 'Error revoking session');
-      res.status(500).json({ message: "Failed to revoke session" });
-    }
-  });
-
-  /**
    * DELETE /api/auth/sessions/all
    * Logout from all other devices
+   * NOTE: This route MUST come before /:sessionId to avoid matching "all" as a session ID
    */
   app.delete('/api/auth/sessions/all', hybridAuth, async (req: Request, res: Response) => {
     try {
@@ -767,12 +911,15 @@ export function registerAuthRoutes(app: Express): void {
         return res.status(400).json({ message: "No active session found" });
       }
 
+      // SECURITY FIX: Hash the refresh token before comparison (session.token is stored as SHA-256 hash)
+      const currentRefreshTokenHash = hashToken(currentRefreshToken);
+
       // Revoke all except current
       await db.update(refreshTokens)
         .set({ revoked: true })
         .where(and(
           eq(refreshTokens.userId, userId),
-          ne(refreshTokens.token, currentRefreshToken)
+          ne(refreshTokens.token, currentRefreshTokenHash)
         ));
 
       // Also revoke all trusted devices
@@ -782,10 +929,70 @@ export function registerAuthRoutes(app: Express): void {
 
       logger.info({ userId }, 'All other sessions revoked');
 
+      // Audit log: All sessions revoked
+      await auditLogService.logSessionEvent(
+        userId,
+        'all_sessions_revoked' as any,
+        null,
+        req.ip,
+        req.headers['user-agent']
+      );
+
       res.json({ message: "Logged out from all other devices" });
     } catch (error) {
       logger.error({ error }, 'Error revoking all sessions');
       res.status(500).json({ message: "Failed to revoke sessions" });
+    }
+  });
+
+  /**
+   * DELETE /api/auth/sessions/:sessionId
+   * Revoke a specific session
+   */
+  app.delete('/api/auth/sessions/:sessionId', hybridAuth, async (req: Request, res: Response) => {
+    try {
+      const userId = (req as AuthRequest).userId;
+      if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+      const { sessionId } = req.params;
+
+      // Validate sessionId is a valid UUID format (basic check)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(sessionId)) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+
+      // Verify session belongs to user
+      const session = await db.query.refreshTokens.findFirst({
+        where: eq(refreshTokens.id, sessionId)
+      });
+
+      if (!session || session.userId !== userId) {
+        return res.status(404).json({ message: "Session not found" });
+      }
+
+      // Get current session token
+      const cookies = parseCookies(req.headers.cookie || '');
+      const currentRefreshToken = cookies['refresh_token'];
+      // SECURITY FIX: Hash the refresh token before comparison (session.token is stored as SHA-256 hash)
+      const currentRefreshTokenHash = currentRefreshToken ? hashToken(currentRefreshToken) : null;
+
+      // Prevent revoking current session (use logout instead)
+      if (currentRefreshTokenHash && session.token === currentRefreshTokenHash) {
+        return res.status(400).json({ message: "Cannot revoke current session. Use logout instead." });
+      }
+
+      // Revoke the session
+      await db.update(refreshTokens)
+        .set({ revoked: true })
+        .where(eq(refreshTokens.id, sessionId));
+
+      logger.info({ userId, sessionId }, 'Session revoked');
+
+      res.json({ message: "Session revoked successfully" });
+    } catch (error) {
+      logger.error({ error }, 'Error revoking session');
+      res.status(500).json({ message: "Failed to revoke session" });
     }
   });
 
@@ -804,7 +1011,7 @@ export function registerAuthRoutes(app: Express): void {
 
       const deviceFingerprint = generateDeviceFingerprint(req);
       const deviceName = parseDeviceName(req.headers['user-agent']);
-      const ipAddress = req.ip;
+      const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() || req.ip;
       const location = getLocationFromIP(ipAddress);
       const trustedUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
@@ -902,6 +1109,12 @@ export function registerAuthRoutes(app: Express): void {
       if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
       const { deviceId } = req.params;
+
+      // Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(deviceId)) {
+        return res.status(404).json({ message: "Device not found" });
+      }
 
       // Verify device belongs to user
       const device = await db.query.trustedDevices.findFirst({

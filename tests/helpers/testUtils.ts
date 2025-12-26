@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { authService } from "../../server/services/AuthService";
 import speakeasy from "speakeasy";
 import crypto from "crypto";
+import bcrypt from "bcrypt";
 
 /**
  * Test Helper Utilities
@@ -177,9 +178,33 @@ export async function createUserWithMfa(options: {
     .set({ mfaEnabled: true })
     .where(eq(users.id, userData.userId));
 
+  // Generate and store backup codes (10 codes, matching MfaService behavior)
+  const backupCodes: string[] = [];
+  for (let i = 0; i < 10; i++) {
+    const code = crypto.randomBytes(8)
+      .toString('hex')
+      .slice(0, 8)
+      .toUpperCase();
+    const formattedCode = `${code.slice(0, 4)}-${code.slice(4)}`;
+    backupCodes.push(formattedCode);
+  }
+
+  // Hash and store backup codes
+  const hashedCodes = await Promise.all(
+    backupCodes.map(async (code) => ({
+      userId: userData.userId,
+      codeHash: await bcrypt.hash(code, 10),
+      used: false,
+      createdAt: new Date()
+    }))
+  );
+
+  await db.insert(mfaBackupCodes).values(hashedCodes);
+
   return {
     ...userData,
     totpSecret: secret.base32!,
+    backupCodes,
   };
 }
 

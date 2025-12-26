@@ -96,7 +96,7 @@ describe("RBAC Middleware", () => {
       };
 
       mockRes = {
-        status: statusSpy,
+        status: statusSpy as any,
         json: jsonSpy as any,
       };
 
@@ -186,7 +186,7 @@ describe("RBAC Middleware", () => {
       };
 
       mockRes = {
-        status: statusSpy,
+        status: statusSpy as any,
         json: jsonSpy as any,
       };
 
@@ -243,7 +243,7 @@ describe("RBAC Middleware", () => {
       };
 
       mockRes = {
-        status: statusSpy,
+        status: statusSpy as any,
         json: jsonSpy as any,
       };
 
@@ -300,7 +300,7 @@ describe("RBAC Middleware", () => {
       };
 
       mockRes = {
-        status: statusSpy,
+        status: statusSpy as any,
         json: jsonSpy as any,
       };
 

@@ -15,6 +15,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import type { ApiStep, ApiSection } from '@/lib/vault-api';
+import { createLogger } from '../logger';
 import { generateRandomValuesForWorkflow, generateRandomValuesForSteps } from '../randomizer/randomFill';
 import { generateAIRandomValues } from '../randomizer/aiRandomFill';
 
@@ -42,6 +43,7 @@ export interface PreviewSessionOptions {
  * PreviewSession manages a single preview run instance in memory
  */
 export class PreviewSession {
+  private logger = createLogger({ module: 'PreviewSession' });
   private run: PreviewRun;
   private sections: ApiSection[];
   private steps: ApiStep[];
@@ -316,7 +318,7 @@ export class PreviewSession {
    * @param useAI - Whether to use AI for generation (default: false)
    */
   async randomFillWorkflow(useAI: boolean = false): Promise<void> {
-    console.log('[PreviewSession] Filling entire workflow with random data');
+    this.logger.info('Filling entire workflow with random data');
 
     let randomValues: Record<string, any>;
 
@@ -342,7 +344,7 @@ export class PreviewSession {
     // Notify listeners (triggers re-render)
     this.notifyListeners();
 
-    console.log('[PreviewSession] Filled', Object.keys(randomValues).length, 'values');
+    this.logger.info(`Filled ${Object.keys(randomValues).length} values`);
   }
 
   /**
@@ -352,12 +354,12 @@ export class PreviewSession {
    * @param useAI - Whether to use AI for generation (default: false)
    */
   async randomFillPage(useAI: boolean = false): Promise<void> {
-    console.log('[PreviewSession] Filling current page with random data');
+    this.logger.info('Filling current page with random data');
 
     // Get current section
     const currentSection = this.sections[this.run.currentSectionIndex];
     if (!currentSection) {
-      console.warn('[PreviewSession] No current section found');
+      this.logger.warn('No current section found');
       return;
     }
 
@@ -367,7 +369,7 @@ export class PreviewSession {
     );
 
     if (currentPageSteps.length === 0) {
-      console.warn('[PreviewSession] No steps found for current section');
+      this.logger.warn('No steps found for current section');
       return;
     }
 
@@ -392,7 +394,7 @@ export class PreviewSession {
     // Notify listeners (triggers re-render)
     this.notifyListeners();
 
-    console.log('[PreviewSession] Filled', Object.keys(randomValues).length, 'values on current page');
+    this.logger.info(`Filled ${Object.keys(randomValues).length} values on current page`);
   }
 }
 

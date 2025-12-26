@@ -30,7 +30,6 @@ describe.sequential("Data Sources API - Native Catalog", () => {
         const dbResponse = await db.insert(schema.datavaultDatabases).values({
             name: dbName,
             tenantId: ctx.tenantId,
-            ownerUserId: ctx.userId,
         }).returning();
         const databaseId = dbResponse[0].id;
 

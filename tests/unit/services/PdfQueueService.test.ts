@@ -69,7 +69,7 @@ describeWithDb('PdfQueueService', () => {
       .insert(users)
       .values({
         email: 'test@example.com',
-        role: 'creator',
+        role: 'creator' as any,
       })
       .returning();
     const testUserId = user.id;
@@ -79,7 +79,6 @@ describeWithDb('PdfQueueService', () => {
       .insert(tenants)
       .values({
         name: 'Test Tenant',
-        slug: 'test-tenant',
       })
       .returning();
     testTenantId = tenant.id;
@@ -118,13 +117,13 @@ describeWithDb('PdfQueueService', () => {
       .insert(workflowVersions)
       .values({
         workflowId: testWorkflowId,
-        version: '1.0.0',
-        status: 'draft',
+        versionNumber: 1,
+        isDraft: true,
         changelog: 'Initial version',
         definition: {},
         graphJson: {},
         createdBy: testUserId,
-      })
+      } as any)
       .returning();
     testVersionId = version.id;
 
@@ -347,9 +346,9 @@ describeWithDb('PdfQueueService', () => {
         runId: testRunId,
         workflowVersionId: testVersionId,
         templateKey: 'engagement_letter',
-        fileType: 'docx',
+        fileType: 'docx' as any,
         storagePath: 'test.docx',
-        status: 'ready',
+        status: 'ready' as any,
       });
 
       // Enqueue PDF job
@@ -382,9 +381,9 @@ describeWithDb('PdfQueueService', () => {
         runId: testRunId,
         workflowVersionId: testVersionId,
         templateKey: 'engagement_letter',
-        fileType: 'docx',
+        fileType: 'docx' as any,
         storagePath: 'test.docx',
-        status: 'ready',
+        status: 'ready' as any,
       });
 
       // Enqueue multiple PDF jobs

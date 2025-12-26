@@ -22,7 +22,7 @@ describe('EditableCell Component', () => {
     slug: 'full_name',
     createdAt: new Date(),
     updatedAt: new Date(),
-  };
+  } as any;
 
   const mockOnSave = vi.fn();
 
@@ -329,7 +329,7 @@ describe('EditableCell Component', () => {
     });
 
     it('formats boolean values as Yes/No', () => {
-      const booleanColumn: DatavaultColumn = { ...mockColumn, type: 'yes_no', name: 'Verified' };
+      const booleanColumn: DatavaultColumn = { ...mockColumn, type: 'yes_no' as any, name: 'Verified' };
       render(<EditableCell column={booleanColumn} value={true} onSave={mockOnSave} />);
 
       const cell = screen.getByRole('gridcell');

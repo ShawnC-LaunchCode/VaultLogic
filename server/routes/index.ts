@@ -61,12 +61,16 @@ import { registerDebugRoutes } from "./debug.routes";
 import { placesRouter } from "./places.routes";
 import { registerPreviewRoutes } from "./preview.routes";
 import portalRouter from "./portal.routes";
+import { registerMetricsRoutes } from "./metrics";
 
 /**
  * Register all modular routes
  * This is the main aggregator that wires up all domain-specific route modules
  */
 export function registerAllRoutes(app: Express): void {
+  // Metrics endpoint (Prometheus)
+  registerMetricsRoutes(app);
+
   // Public Access Routes (Platform Expansion)
   app.use("/public", publicRouter);
 

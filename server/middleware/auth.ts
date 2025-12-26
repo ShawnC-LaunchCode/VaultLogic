@@ -3,6 +3,8 @@ import { authService, type JWTPayload } from '../services/AuthService';
 import { parseCookies } from "../utils/cookies";
 import { createLogger } from '../logger';
 import { userRepository } from '../repositories';
+import { UnauthorizedError, InvalidTokenError, TokenExpiredError } from '../errors/AuthErrors';
+import { sendErrorResponse } from '../utils/responses';
 
 const logger = createLogger({ module: 'auth-middleware' });
 
@@ -18,6 +20,22 @@ export interface AuthRequest extends Request {
 }
 
 /**
+ * Type guard to check if a request is an AuthRequest
+ */
+export function isAuthRequest(req: Request): req is AuthRequest {
+  return 'userId' in req || 'userEmail' in req || 'tenantId' in req || 'jwtPayload' in req;
+}
+
+/**
+ * Type guard to assert a request has user ID (throws if not authenticated)
+ */
+export function assertAuthRequest(req: Request): asserts req is AuthRequest & { userId: string } {
+  if (!('userId' in req) || typeof req.userId !== 'string') {
+    throw new Error('Request is not authenticated');
+  }
+}
+
+/**
  * JWT Authentication Middleware
  */
 export async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -27,15 +45,14 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
 
     if (!token) {
       logger.warn({ path: req.path }, 'No authorization token provided');
-      res.status(401).json({ message: 'Authentication required', error: 'missing_token' });
-      return;
+      throw new UnauthorizedError('Authentication required');
     }
 
     const payload = authService.verifyToken(token);
     await attachUserToRequest(req, payload);
     next();
   } catch (error) {
-    handleAuthError(error, req, res);
+    sendErrorResponse(res, error as Error);
   }
 }
 
@@ -105,11 +122,13 @@ async function cookieStrategy(req: Request): Promise<boolean> {
       if (userId) {
         const user = await userRepository.findById(userId);
         if (user) {
-          const authReq = req as AuthRequest;
-          authReq.userId = user.id;
-          authReq.userEmail = user.email;
-          authReq.tenantId = user.tenantId || undefined;
-          authReq.userRole = user.tenantRole;
+          // Type-safe property assignment
+          Object.assign(req, {
+            userId: user.id,
+            userEmail: user.email,
+            tenantId: user.tenantId || undefined,
+            userRole: user.tenantRole
+          } as AuthRequest);
           logger.debug({ userId }, 'Authenticated via Refresh Token Cookie (Hybrid)');
           return true;
         }
@@ -140,10 +159,10 @@ export async function hybridAuth(req: Request, res: Response, next: NextFunction
     }
 
     // 3. No valid auth found
-    res.status(401).json({ message: 'Authentication required', error: 'unauthorized' });
+    throw new UnauthorizedError('Authentication required');
   } catch (error) {
     logger.error({ error }, 'Hybrid auth error');
-    res.status(500).json({ message: 'Authentication error', error: 'internal_error' });
+    sendErrorResponse(res, error as Error);
   }
 }
 
@@ -174,41 +193,55 @@ export async function optionalHybridAuth(req: Request, res: Response, next: Next
 // HELPERS
 // =================================================================
 
-async function attachUserToRequest(req: Request, payload: JWTPayload) {
-  const authReq = req as AuthRequest;
-  authReq.userId = payload.userId;
-  authReq.userEmail = payload.email;
-  authReq.tenantId = payload.tenantId || undefined;
-  authReq.userRole = payload.role;
-  authReq.jwtPayload = payload;
+async function attachUserToRequest(req: Request, payload: JWTPayload): Promise<void> {
+  // Type-safe property assignment without 'as' cast
+  Object.assign(req, {
+    userId: payload.userId,
+    userEmail: payload.email,
+    tenantId: payload.tenantId || undefined,
+    userRole: payload.role,
+    jwtPayload: payload
+  } as AuthRequest);
 
-  if (!authReq.tenantId && authReq.userId) {
+  // Now we can safely access via type guard
+  if (isAuthRequest(req) && req.userId && !req.tenantId) {
     try {
-      const user = await userRepository.findById(authReq.userId);
+      const user = await userRepository.findById(req.userId);
       if (user?.tenantId) {
-        authReq.tenantId = user.tenantId;
-        authReq.userRole = user.tenantRole;
+        req.tenantId = user.tenantId;
+        req.userRole = user.tenantRole;
       }
     } catch (e) { /* ignore */ }
   }
 }
 
+/**
+ * @deprecated Use sendErrorResponse from utils/responses.ts instead
+ * This function is kept for backward compatibility but will be removed in v2.0
+ */
 function handleAuthError(error: unknown, req: Request, res: Response) {
-  const message = error instanceof Error ? error.message : 'Authentication failed';
-  const code = message === 'Token expired' ? 'token_expired' : 'invalid_token';
-  res.status(401).json({ message, error: code });
+  sendErrorResponse(res, error as Error);
 }
 
 
 
+/**
+ * Safely get user ID from request (type-safe)
+ */
 export function getAuthUserId(req: Request): string | undefined {
-  return (req as AuthRequest).userId;
+  return isAuthRequest(req) ? req.userId : undefined;
 }
 
+/**
+ * Safely get tenant ID from request (type-safe)
+ */
 export function getAuthUserTenantId(req: Request): string | undefined {
-  return (req as AuthRequest).tenantId;
+  return isAuthRequest(req) ? req.tenantId : undefined;
 }
 
+/**
+ * Safely get user role from request (type-safe)
+ */
 export function getAuthUserRole(req: Request): 'owner' | 'builder' | 'runner' | 'viewer' | null | undefined {
-  return (req as AuthRequest).userRole;
+  return isAuthRequest(req) ? req.userRole : undefined;
 }

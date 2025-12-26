@@ -1,5 +1,6 @@
 import type { Express, Request, Response } from "express";
-import { hybridAuth, type AuthRequest } from '../middleware/auth';
+import { hybridAuth } from '../middleware/auth';
+import { requireUser, type UserRequest } from '../middleware/requireUser';
 import { accountService } from "../services/AccountService";
 import { z } from "zod";
 import { logger } from "../logger";
@@ -13,15 +14,11 @@ export function registerAccountRoutes(app: Express): void {
    * GET /api/account/preferences
    * Get account preferences including default mode
    */
-  app.get('/api/account/preferences', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/account/preferences', hybridAuth, requireUser, async (req: Request, res: Response) => {
     try {
-      const authReq = req as AuthRequest;
-      const userId = authReq.userId;
-      if (!userId) {
-        return res.status(401).json({ success: false, error: "Unauthorized - no user ID" });
-      }
+      const user = (req as UserRequest).user;
 
-      const preferences = await accountService.getPreferences(userId);
+      const preferences = await accountService.getPreferences(user.id);
       res.json({ success: true, data: preferences });
     } catch (error) {
       logger.error({ err: error }, "Error fetching account preferences");
@@ -35,13 +32,9 @@ export function registerAccountRoutes(app: Express): void {
    * PUT /api/account/preferences
    * Update account preferences including default mode
    */
-  app.put('/api/account/preferences', hybridAuth, async (req: Request, res: Response) => {
+  app.put('/api/account/preferences', hybridAuth, requireUser, async (req: Request, res: Response) => {
     try {
-      const authReq = req as AuthRequest;
-      const userId = authReq.userId;
-      if (!userId) {
-        return res.status(401).json({ success: false, error: "Unauthorized - no user ID" });
-      }
+      const user = (req as UserRequest).user;
 
       // Validate request body
       const schema = z.object({
@@ -49,7 +42,7 @@ export function registerAccountRoutes(app: Express): void {
       });
 
       const preferences = schema.parse(req.body);
-      const updated = await accountService.updatePreferences(userId, preferences);
+      const updated = await accountService.updatePreferences(user.id, preferences);
 
       res.json({ success: true, data: updated });
     } catch (error) {

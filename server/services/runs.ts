@@ -200,21 +200,16 @@ export async function resumeRunFromNode(
       return await updateRun(runId, {
         status: 'success',
         durationMs: Date.now() - (run.createdAt ? new Date(run.createdAt).getTime() : 0),
-      });
+      } as any);
     } else {
       // There are more nodes - for MVP, just mark as success
       // TODO: Implement full graph traversal and execution
-      await createRunLog({
-        runId,
-        level: 'info',
-        message: `Found ${nextEdges.length} outgoing edges from node ${nodeId}`,
-        context: { nextEdges: nextEdges.map((e: any) => e.target) },
-      });
+      logger.warn({ runId, nodeId, nextEdges: nextEdges.map((e: any) => e.target) }, 'Resume run: Graph continuation not implemented');
 
-      return await updateRun(runId, {
-        status: 'success',
-        durationMs: Date.now() - (run.createdAt ? new Date(run.createdAt).getTime() : 0),
-      });
+      // For now, fail the run to avoid false success
+      throw createError.internal('Workflow resumption not fully implemented (graph execution paused)');
+
+
     }
   } catch (error) {
     logger.error({ error }, 'Failed to resume run');

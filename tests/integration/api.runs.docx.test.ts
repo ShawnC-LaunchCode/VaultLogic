@@ -181,7 +181,9 @@ describe('Runs API - DOCX Generation Integration Tests', () => {
     try {
       if (tenantId) {
         // Clean up workflows first (cascades to workflow_versions)
-        await db.delete(schema.workflows).where(eq(schema.workflows.tenantId, tenantId));
+        // clean up workflows manually logic removed as tenant cascade should handle it
+        // Or finding workflows by project if needed.
+        // await db.delete(schema.workflows).where(eq(schema.workflows.tenantId, tenantId));
 
         // Delete tenant (cascades to projects, users, etc.)
         await db.delete(schema.tenants).where(eq(schema.tenants.id, tenantId));

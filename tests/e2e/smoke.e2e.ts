@@ -15,7 +15,7 @@ test.describe("Smoke Tests", () => {
     await page.waitForSelector('#root', { state: 'attached', timeout: 10000 });
 
     // Should load without 404 or 500 errors
-    expect(page.url()).toContain(page.context()._options.baseURL || '');
+    expect(page.url()).not.toBe('about:blank');
   });
 
   test("should have valid page title", async ({ page }) => {

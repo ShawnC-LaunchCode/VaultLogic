@@ -1,5 +1,6 @@
 import { PreviewEnvironment } from './PreviewEnvironment';
 import type { ApiSection, ApiStep } from '@/lib/vault-api';
+import { createLogger } from '../logger';
 
 /**
  * HotReloadManager
@@ -8,6 +9,7 @@ import type { ApiSection, ApiStep } from '@/lib/vault-api';
  * and injecting them into the active PreviewEnvironment.
  */
 export class HotReloadManager {
+    private logger = createLogger({ module: 'HotReloadManager' });
     private env: PreviewEnvironment | null = null;
 
     constructor() {
@@ -17,7 +19,7 @@ export class HotReloadManager {
 
     attach(env: PreviewEnvironment) {
         this.env = env;
-        console.log('[HotReloadManager] Attached to environment:', env.getState().id);
+        this.logger.info('Attached to environment:', env.getState().id);
     }
 
     detach() {
@@ -32,7 +34,7 @@ export class HotReloadManager {
 
         // Verify workflow match
         if (this.env.getState().workflowId !== workflowId) {
-            console.warn('[HotReloadManager] Update received for different workflow. Ignoring.');
+            this.logger.warn('Update received for different workflow. Ignoring.');
             return;
         }
 
@@ -40,7 +42,7 @@ export class HotReloadManager {
         this.env.updateSchema(sections, steps);
 
         // Optional: Notify UI (Toast is handled in UI layer, but we could emit event here)
-        console.log('[HotReloadManager] Schema updated successfully');
+        this.logger.info('Schema updated successfully');
     }
 }
 

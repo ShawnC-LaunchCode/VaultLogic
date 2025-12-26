@@ -74,7 +74,7 @@ export class IntakeQuestionVisibilityService {
     }
     // Load all questions for this page
     const allQuestions = await this.stepRepo.findBySectionIds([sectionId]);
-    console.log(`[DEBUG] evaluatePageQuestions sectionId=${sectionId} allQuestions=${JSON.stringify(allQuestions)}`);
+    logger.debug({ sectionId, questionCount: allQuestions.length }, "Evaluation context loaded");
     const sortedQuestions = allQuestions
       .filter(q => !q.isVirtual) // Exclude virtual steps (transform block outputs)
       .sort((a, b) => a.order - b.order);
@@ -319,17 +319,29 @@ export class IntakeQuestionVisibilityService {
     const stepValueMap = new Map(allStepValues.map(sv => [sv.stepId, sv]));
 
     // For each hidden question, check if it has a value and clear it
+    const idsToDelete: string[] = [];
+
     for (const questionId of visibility.hiddenQuestions) {
       const existingValue = stepValueMap.get(questionId);
 
       if (existingValue) {
-        await this.stepValueRepo.delete(existingValue.id);
+        idsToDelete.push(existingValue.id);
         clearedSteps.push(questionId);
-        logger.debug(
-          { runId, questionId },
-          "Cleared value for hidden question"
-        );
       }
+    }
+
+    // Perform batch delete if there are items to delete
+    if (idsToDelete.length > 0) {
+      // Use inArray for batch deletion
+      const { inArray } = await import("drizzle-orm");
+      const { stepValues } = await import("../../shared/schema");
+
+      await this.stepValueRepo.deleteWhere(inArray(stepValues.id, idsToDelete));
+
+      logger.debug(
+        { runId, count: idsToDelete.length, clearedSteps },
+        "Cleared values for hidden questions (batch)"
+      );
     }
 
     return clearedSteps;

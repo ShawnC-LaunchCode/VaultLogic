@@ -16,6 +16,9 @@
 import { EsignProviderFactory } from './EsignProvider';
 import { EnvelopeBuilder } from './EnvelopeBuilder';
 import type { SignatureBlockConfig } from '../../../shared/types/stepConfigs';
+import { createLogger } from '../../logger';
+
+const logger = createLogger({ module: 'signature-block-service' });
 
 // ============================================================================
 // TYPES
@@ -155,7 +158,7 @@ export class SignatureBlockService {
     const signatureRequest = await this.findSignatureRequestByEnvelope(envelopeId);
 
     if (!signatureRequest) {
-      console.warn(`[SignatureBlockService] Signature request not found for envelope: ${envelopeId}`);
+      logger.warn({ envelopeId }, 'Signature request not found for envelope');
       return;
     }
 
@@ -253,7 +256,7 @@ export class SignatureBlockService {
     // return await signatureRequestService.createSignatureRequest({...});
 
     // Placeholder
-    console.log('[SignatureBlockService] Creating signature request:', data);
+    logger.debug({ data }, 'Creating signature request (placeholder)');
     return { id: `sig_${Date.now()}` };
   }
 
@@ -268,7 +271,7 @@ export class SignatureBlockService {
     // return await repo.findByProviderRequestId(envelopeId);
 
     // Placeholder
-    console.log('[SignatureBlockService] Finding request by envelope:', envelopeId);
+    logger.debug({ envelopeId }, 'Finding request by envelope (placeholder)');
     return null;
   }
 
@@ -281,7 +284,7 @@ export class SignatureBlockService {
     completedAt?: Date
   ): Promise<void> {
     // TODO: Update signatureRequests table
-    console.log('[SignatureBlockService] Updating status:', { requestId, status, completedAt });
+    logger.debug({ requestId, status, completedAt }, 'Updating status (placeholder)');
   }
 
   /**
@@ -293,7 +296,7 @@ export class SignatureBlockService {
     eventData?: any
   ): Promise<void> {
     // TODO: Insert into signatureEvents table
-    console.log('[SignatureBlockService] Creating event:', { requestId, eventType, eventData });
+    logger.debug({ requestId, eventType, eventData }, 'Creating event (placeholder)');
   }
 
   /**
@@ -309,7 +312,7 @@ export class SignatureBlockService {
     // return steps.filter(s => s.type === 'signature_block');
 
     // Placeholder
-    console.log('[SignatureBlockService] Getting all signature blocks for run:', runId);
+    logger.debug({ runId }, 'Getting all signature blocks for run (placeholder)');
     return [];
   }
 
@@ -326,7 +329,7 @@ export class SignatureBlockService {
     // return request?.status === 'signed';
 
     // Placeholder
-    console.log('[SignatureBlockService] Checking completion:', { runId, stepId });
+    logger.debug({ runId, stepId }, 'Checking completion (placeholder)');
     return false;
   }
 
@@ -342,7 +345,7 @@ export class SignatureBlockService {
     // await runService.markStepComplete(runId, stepId);
     // await runService.advanceToNextStep(runId);
 
-    console.log('[SignatureBlockService] Advancing workflow:', { runId, stepId });
+    logger.debug({ runId, stepId }, 'Advancing workflow (placeholder)');
   }
 
   /**
@@ -357,6 +360,6 @@ export class SignatureBlockService {
     // const runService = new RunService();
     // await runService.markRunFailed(runId, `Signature ${reason}: ${stepId}`);
 
-    console.log('[SignatureBlockService] Handling failure:', { runId, stepId, reason });
+    logger.debug({ runId, stepId, reason }, 'Handling failure (placeholder)');
   }
 }

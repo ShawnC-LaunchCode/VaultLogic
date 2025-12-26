@@ -41,7 +41,7 @@ describe('Data Block Integration Tests', () => {
         const [tenant] = await db.insert(tenants).values({
             name: 'DataBlock Test Tenant',
             slug: `datablock-tenant-${Date.now()}`,
-        }).returning();
+        } as any).returning();
         tenantId = tenant.id;
 
         const [user] = await db.insert(users).values({
@@ -51,14 +51,14 @@ describe('Data Block Integration Tests', () => {
             role: 'admin',
             tenantRole: 'owner',
             authProvider: 'google',
-        }).returning();
+        } as any).returning();
         userId = user.id;
 
         // 2. Setup DataVault Schema
         const [database] = await db.insert(datavaultDatabases).values({
             name: 'Test Database',
             tenantId: tenantId,
-        }).returning();
+        } as any).returning();
         databaseId = database.id;
 
         const table = await datavaultTablesService.createTable({
@@ -104,7 +104,7 @@ describe('Data Block Integration Tests', () => {
             workspaceId: uuidv4(), // valid UUID
             creatorId: userId,
             ownerId: userId,
-        }).returning();
+        } as any).returning();
         projectId = project.id;
 
         const [workflow] = await db.insert(workflows).values({
@@ -114,13 +114,13 @@ describe('Data Block Integration Tests', () => {
             version: 1,
             creatorId: userId,
             ownerId: userId,
-        }).returning();
+        } as any).returning();
 
         const [section] = await db.insert(sections).values({
             workflowId: workflow.id,
             title: 'Write Section',
             order: 0,
-        }).returning();
+        } as any).returning();
 
         // 2. Create Steps & Blocks
         // Input 'step' to capture user data (NOT a block)
@@ -131,7 +131,7 @@ describe('Data Block Integration Tests', () => {
             type: 'short_text',
             title: 'Enter Text',
             order: 0,
-        });
+        } as any);
 
         // Write block to save data to DV (Logic Block)
         const writeBlockId = uuidv4();
@@ -153,7 +153,7 @@ describe('Data Block Integration Tests', () => {
                 ]
             },
             order: 1,
-        });
+        } as any);
 
         // 3. Execute Run
         // createRun(idOrSlug, userId, data, ...)
@@ -195,7 +195,7 @@ describe('Data Block Integration Tests', () => {
             version: 1,
             creatorId: userId,
             ownerId: userId,
-        }).returning();
+        } as any).returning();
 
         // Create a saved query
         const [query] = await db.insert(workflowQueries).values({
@@ -208,13 +208,13 @@ describe('Data Block Integration Tests', () => {
             type: 'sql',
             query: `SELECT * FROM t_${tableId.replace(/-/g, '_')}`, // Physical table name convention
             tenantId: tenantId,
-        }).returning();
+        } as any).returning();
 
         const [section] = await db.insert(sections).values({
             workflowId: workflow.id,
             title: 'Query Section',
             order: 0,
-        }).returning();
+        } as any).returning();
 
         // 2. Create Blocks
         // Query Block (Logic Block)
@@ -226,7 +226,7 @@ describe('Data Block Integration Tests', () => {
             type: 'computed',
             title: 'Query Result',
             order: 0,
-        });
+        } as any);
 
         const queryBlockId = uuidv4();
         const listVarName = 'my_results';
@@ -243,7 +243,7 @@ describe('Data Block Integration Tests', () => {
             },
             order: 0,
             stepAlias: 'query_step'
-        });
+        } as any);
 
         // Validate Block (to consume list variable)
         const validateBlockId = uuidv4();
@@ -268,7 +268,7 @@ describe('Data Block Integration Tests', () => {
                 ]
             },
             orderIndex: 1
-        });
+        } as any);
 
         // 3. Execute Run
         const run = await runService.createRun(

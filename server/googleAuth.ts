@@ -23,8 +23,15 @@ function getGoogleClient(): OAuth2Client {
   return googleClient;
 }
 
-// For testing: allow injecting a custom OAuth client
-export function __setGoogleClient(client: OAuth2Client | null) {
+/**
+ * For testing only: allow injecting a custom OAuth client
+ * @internal
+ * @throws {Error} If called outside of test environment
+ */
+export function _testOnly_setGoogleClient(client: OAuth2Client | null) {
+  if (process.env.NODE_ENV !== 'test' && process.env.NODE_ENV !== 'development') {
+    throw new Error('_testOnly_setGoogleClient can only be called in test/development environments');
+  }
   googleClient = client;
 }
 

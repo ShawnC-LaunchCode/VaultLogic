@@ -5,7 +5,7 @@ import { registerDatavaultRoutes } from '../../server/routes/datavault.routes';
 import { db } from '../../server/db';
 import { datavaultTables, datavaultColumns, datavaultRows, datavaultValues } from '@shared/schema';
 import { eq } from 'drizzle-orm';
-import { isAuthenticated } from '../../server/middleware/auth';
+import { requireAuth } from '../../server/middleware/auth';
 
 /**
  * DataVault Phase 1 PR 9: DataVault API Routes Integration Tests
@@ -21,11 +21,11 @@ import { isAuthenticated } from '../../server/middleware/auth';
 
 describe('DataVault API Routes', () => {
   let app: Express;
-  let testTenantId: string;
-  let testUserId: string;
-  let testTableId: string;
-  let testColumnId: string;
-  let testRowId: string;
+  let testTenantId: string = "test-tenant-id";
+  let testUserId: string = "test-user-id";
+  let testTableId: string = "test-table-id";
+  let testColumnId: string = "test-column-id";
+  let testRowId: string = "test-row-id";
 
   beforeAll(async () => {
     // Setup Express app with routes
