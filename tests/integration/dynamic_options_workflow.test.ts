@@ -77,15 +77,13 @@ describe('Dynamic Options Integration Flow', () => {
             options: {
                 type: 'list',
                 listVariable: 'userList',
-                labelColumnId: 'email', // Mock column IDs (would be UUIDs real scenario)
-                valueColumnId: 'id',
-                dedupeBy: 'value',
+                labelPath: 'email',
+                valuePath: 'id',
                 includeBlankOption: true,
                 blankLabel: 'Select a user...',
-                sort: {
-                    by: 'column',
-                    columnId: 'email',
-                    direction: 'asc'
+                transform: {
+                    dedupe: { fieldPath: 'id' },
+                    sort: [{ fieldPath: 'email', direction: 'asc' }]
                 }
             }
         };

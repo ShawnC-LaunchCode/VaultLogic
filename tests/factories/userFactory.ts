@@ -32,6 +32,8 @@ export function createTestUser(overrides: TestUserOptions = {}): User {
     emailVerified: true,
     mfaEnabled: false,
     lastPasswordChange: null,
+    isPlaceholder: false,
+    placeholderEmail: null,
     tenantId: "tenant-test-123",
     createdAt: timestamp,
     updatedAt: timestamp,

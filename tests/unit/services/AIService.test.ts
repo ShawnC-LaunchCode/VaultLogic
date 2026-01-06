@@ -53,16 +53,16 @@ describe('AIService Unit Tests', () => {
 
         const request = {
             workflowId: '123',
-            currentWorkflow: { name: 'Original', sections: [], logicRules: [], transformBlocks: [] },
+            currentWorkflow: { title: 'Original', sections: [], logicRules: [], transformBlocks: [] },
             userInstruction: 'Do something',
             mode: 'easy' as const
         };
 
         const result = await aiService.reviseWorkflow(request);
 
-        expect(result.updatedWorkflow.name).toBe('Revised Flow');
+        expect(result.updatedWorkflow.title).toBe('Revised Flow');
         expect(result.diff.changes).toHaveLength(1);
-        expect(result.explanation[0]).toBe('I did good.');
+        expect(result.explanation?.[0]).toBe('I did good.');
     });
 
     it('reviseWorkflow should handle JSON markdown code blocks', async () => {
@@ -87,13 +87,13 @@ describe('AIService Unit Tests', () => {
 
         const request = {
             workflowId: '123',
-            currentWorkflow: { name: 'Original', sections: [], logicRules: [], transformBlocks: [] },
+            currentWorkflow: { title: 'Original', sections: [], logicRules: [], transformBlocks: [] },
             userInstruction: 'Fix format',
             mode: 'easy' as const
         };
 
         const result = await aiService.reviseWorkflow(request);
-        expect(result.updatedWorkflow.name).toBe('Clean Flow');
+        expect(result.updatedWorkflow.title).toBe('Clean Flow');
     });
 
     it('reviseWorkflow should throw on invalid JSON', async () => {
@@ -105,7 +105,7 @@ describe('AIService Unit Tests', () => {
 
         const request = {
             workflowId: '123',
-            currentWorkflow: { name: 'Original', sections: [], logicRules: [], transformBlocks: [] },
+            currentWorkflow: { title: 'Original', sections: [], logicRules: [], transformBlocks: [] },
             userInstruction: 'Break it',
             mode: 'easy' as const
         };

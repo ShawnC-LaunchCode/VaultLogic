@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import request from 'supertest';
-import express from 'express';
+import express, { type Express } from 'express';
 import { db } from '../../../server/db';
 import { workflows, workflowVersions, projects, users, sections, steps } from '../../../shared/schema';
 import { eq, and } from 'drizzle-orm';
@@ -49,7 +49,7 @@ vi.mock('@google/generative-ai', () => ({
 }));
 
 describe('POST /api/workflows/:workflowId/ai/edit - Integration Test', () => {
-  let app: express.Application;
+  let app: Express;
   let testUserId: string;
   let testProjectId: string;
   let testWorkflowId: string;
@@ -63,15 +63,19 @@ describe('POST /api/workflows/:workflowId/ai/edit - Integration Test', () => {
     // Create test user
     const [user] = await db.insert(users).values({
       email: 'test@example.com',
-      name: 'Test User',
+      fullName: 'Test User',
       tenantId: 'test-tenant',
     }).returning();
     testUserId = user.id;
 
     // Create test project
     const [project] = await db.insert(projects).values({
+      title: 'Test Project',
       name: 'Test Project',
+      description: 'Test project for integration tests',
+      creatorId: testUserId,
       createdBy: testUserId,
+      ownerId: testUserId,
       tenantId: 'test-tenant',
     }).returning();
     testProjectId = project.id;
@@ -83,15 +87,15 @@ describe('POST /api/workflows/:workflowId/ai/edit - Integration Test', () => {
       title: 'Test Workflow',
       projectId: testProjectId,
       status: 'active', // Start as active to test draft enforcement
-      createdBy: testUserId,
-      graphJson: { sections: [], steps: [] },
+      creatorId: testUserId,
+      ownerId: testUserId,
     }).returning();
     testWorkflowId = workflow.id;
   });
 
   afterAll(async () => {
-    // Cleanup
-    await db.delete(steps).where(eq(steps.workflowId, testWorkflowId));
+    // Cleanup - delete in correct order (steps -> sections -> workflows -> projects -> users)
+    // Steps are deleted via cascade when sections are deleted
     await db.delete(sections).where(eq(sections.workflowId, testWorkflowId));
     await db.delete(workflowVersions).where(eq(workflowVersions.workflowId, testWorkflowId));
     await db.delete(workflows).where(eq(workflows.id, testWorkflowId));
@@ -375,13 +379,12 @@ describe('POST /api/workflows/:workflowId/ai/edit - Integration Test', () => {
 
     await db.insert(steps).values({
       sectionId: section.id,
-      workflowId: testWorkflowId,
       type: 'email',
       title: 'Email',
       alias: 'email',
       required: true,
       order: 1,
-      config: {},
+      options: {},
     });
 
     // Now try to create duplicate
@@ -424,9 +427,14 @@ describe('POST /api/workflows/:workflowId/ai/edit - Integration Test', () => {
     expect(response.body.data?.versionId).toBeUndefined();
 
     // Verify workflow is still in valid state (only original step exists)
+    const workflowSections = await db.select()
+      .from(sections)
+      .where(eq(sections.workflowId, testWorkflowId));
+    const sectionIds = workflowSections.map(s => s.id);
+
     const allSteps = await db.select()
       .from(steps)
-      .where(eq(steps.workflowId, testWorkflowId));
+      .where(sectionIds.length > 0 ? eq(steps.sectionId, sectionIds[0]) : eq(steps.sectionId, 'no-sections'));
     expect(allSteps).toHaveLength(1);
     expect(allSteps[0].title).toBe('Email');
   });

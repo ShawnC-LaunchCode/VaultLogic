@@ -202,7 +202,7 @@ describe('WorkflowPatchService', () => {
         {
           op: 'step.setVisibleIf',
           id: 'temp-step-1', // References step tempId
-          visibleIf: { op: 'equals', left: { type: 'variable', path: 'showName' }, right: { type: 'value', value: true } },
+          visibleIf: JSON.stringify({ op: 'equals', left: { type: 'variable', path: 'showName' }, right: { type: 'value', value: true } }) as any,
         },
       ];
 
@@ -838,15 +838,15 @@ describe('WorkflowPatchService', () => {
     });
 
     it('should create DataVault table with columns (datavault.createTable)', async () => {
-      const { DatavaultTablesService, DatavaultColumnsService } = vi.mocked(
+      const { DatavaultTablesService } = vi.mocked(
         await import('../../../server/services/DatavaultTablesService')
       );
-      const { DatavaultColumnsService: ColumnsService } = vi.mocked(
+      const { DatavaultColumnsService } = vi.mocked(
         await import('../../../server/services/DatavaultColumnsService')
       );
 
       const mockTableService = new DatavaultTablesService();
-      const mockColumnService = new ColumnsService();
+      const mockColumnService = new DatavaultColumnsService();
 
       vi.mocked(mockTableService.createTable).mockResolvedValue({
         id: 'table-new',
@@ -860,7 +860,7 @@ describe('WorkflowPatchService', () => {
         updatedAt: new Date(),
       } as any);
 
-      vi.mocked(mockColumnService.create).mockResolvedValue({} as any);
+      vi.mocked(mockColumnService.createColumn).mockResolvedValue({} as any);
 
       const ops: WorkflowPatchOp[] = [
         {
@@ -887,21 +887,21 @@ describe('WorkflowPatchService', () => {
       const { datavaultWritebackMappingsRepository, stepRepository } = vi.mocked(
         require('../../../server/repositories')
       );
-      const { DatavaultTablesService, DatavaultColumnsService } = vi.mocked(
+      const { DatavaultTablesService } = vi.mocked(
         await import('../../../server/services/DatavaultTablesService')
       );
-      const { DatavaultColumnsService: ColumnsService } = vi.mocked(
+      const { DatavaultColumnsService } = vi.mocked(
         await import('../../../server/services/DatavaultColumnsService')
       );
 
       const mockTableService = new DatavaultTablesService();
-      const mockColumnService = new ColumnsService();
+      const mockColumnService = new DatavaultColumnsService();
 
       // Mock permission check
       vi.mocked(mockTableService.requirePermission).mockResolvedValue(undefined);
 
       // Mock columns
-      vi.mocked(mockColumnService.findByTableId).mockResolvedValue([
+      vi.mocked(mockColumnService.listColumns).mockResolvedValue([
         {
           id: 'col-1',
           tableId: 'table-123',

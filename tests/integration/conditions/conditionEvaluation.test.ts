@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { evaluateConditionExpression } from '../../../shared/conditionEvaluator';
-import { conditionExpressionSchema } from '../../../shared/types/conditions';
+import { conditionExpressionSchema, type ComparisonOperator, type ValueType, type ConditionGroup } from '../../../shared/types/conditions';
 
 /**
  * Integration test proving AI-generated conditions work end-to-end
@@ -9,13 +9,13 @@ describe('AI-Generated Condition Evaluation (Round-Trip Compatibility)', () => {
   /**
    * Simulates AI parser output (same format as WorkflowPatchService.parseConditionToExpression)
    */
-  function createConditionExpression(variable: string, operator: string, value?: any, valueType: 'constant' | 'variable' = 'constant') {
+  function createConditionExpression(variable: string, operator: ComparisonOperator, value?: any, valueType: ValueType = 'constant'): ConditionGroup {
     return {
-      type: 'group' as const,
+      type: 'group',
       id: `cond_${Date.now()}_test`,
-      operator: 'AND' as const,
+      operator: 'AND',
       conditions: [{
-        type: 'condition' as const,
+        type: 'condition',
         id: `cond_${Date.now()}_test2`,
         variable,
         operator,
@@ -77,7 +77,10 @@ describe('AI-Generated Condition Evaluation (Round-Trip Compatibility)', () => {
       const expression = createConditionExpression('confirm_email', 'equals', 'email', 'variable');
 
       // Validate variable reference support
-      expect(expression.conditions[0].valueType).toBe('variable');
+      const firstCondition = expression.conditions[0];
+      if ('valueType' in firstCondition) {
+        expect(firstCondition.valueType).toBe('variable');
+      }
 
       // Both match
       expect(evaluateConditionExpression(expression, {
@@ -128,14 +131,17 @@ describe('AI-Generated Condition Evaluation (Round-Trip Compatibility)', () => {
       const result = conditionExpressionSchema.safeParse(expression);
 
       expect(result.success).toBe(true);
-      if (result.success) {
+      if (result.success && result.data) {
         expect(result.data.type).toBe('group');
-        expect(result.data.conditions[0].variable).toBe('email');
+        const firstCondition = result.data.conditions[0];
+        if (firstCondition && 'variable' in firstCondition) {
+          expect(firstCondition.variable).toBe('email');
+        }
       }
     });
 
     it('should handle all common operators used by UI', () => {
-      const operators = [
+      const operators: Array<{ op: ComparisonOperator, value: any, data: any, expected: boolean }> = [
         { op: 'equals', value: 'test', data: { field: 'test' }, expected: true },
         { op: 'not_equals', value: 'test', data: { field: 'other' }, expected: true },
         { op: 'contains', value: 'sub', data: { field: 'substring' }, expected: true },

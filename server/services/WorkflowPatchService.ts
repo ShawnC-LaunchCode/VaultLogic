@@ -60,6 +60,10 @@ export class WorkflowPatchService {
       throw new Error("Workflow not found");
     }
 
+    if (!workflow.projectId) {
+      throw new Error("Workflow has no project");
+    }
+
     const project = await projectRepository.findById(workflow.projectId);
     if (!project) {
       throw new Error("Project not found");
@@ -146,7 +150,7 @@ export class WorkflowPatchService {
     if ((op.op === "step.create" || op.op === "step.update") && op.alias) {
       const existingSteps = await stepRepository.findByWorkflowId(workflowId);
       const duplicate = existingSteps.find(
-        s => s.alias === op.alias && (op.op === "step.create" || s.id !== this.resolve(op.id))
+        (s) => s.alias === op.alias && (op.op === "step.create" || s.id !== this.resolve(op.id))
       );
       if (duplicate) {
         throw new Error(`Step alias '${op.alias}' already exists`);
@@ -233,12 +237,11 @@ export class WorkflowPatchService {
 
         const step = await stepRepository.create({
           sectionId,
-          type: op.type,
+          type: op.type as any, // Type validated by schema
           title: op.title,
           alias: op.alias,
           required: op.required ?? false,
           order,
-          config: op.config,
           defaultValue: op.defaultValue,
         });
 
@@ -254,12 +257,11 @@ export class WorkflowPatchService {
         if (!stepId) throw new Error("Step ID or tempId required");
 
         await stepRepository.update(stepId, {
-          type: op.type,
+          type: op.type as any, // Type validated by schema
           title: op.title,
           alias: op.alias,
           required: op.required,
-          config: op.config,
-          visibleIf: op.visibleIf,
+          visibleIf: op.visibleIf as any,
           defaultValue: op.defaultValue,
         });
 
@@ -342,7 +344,10 @@ export class WorkflowPatchService {
 
       case "logicRule.update": {
         // Update existing visibleIf on a step or section
-        const targetId = this.resolve(op.rule.target?.id || op.rule.target?.tempId);
+        if (!op.rule.target) {
+          throw new Error("Logic rule target required for update");
+        }
+        const targetId = this.resolve(op.rule.target.id || op.rule.target.tempId);
         if (!targetId) throw new Error("Logic rule target ID required");
 
         const conditionExpr = op.rule.condition
@@ -351,11 +356,11 @@ export class WorkflowPatchService {
 
         if (op.rule.target.type === "step") {
           await stepRepository.update(targetId, {
-            visibleIf: conditionExpr,
+            visibleIf: conditionExpr as any,
           });
         } else if (op.rule.target.type === "section") {
           await sectionRepository.update(targetId, {
-            visibleIf: conditionExpr,
+            visibleIf: conditionExpr as any,
           });
         }
 
@@ -363,17 +368,9 @@ export class WorkflowPatchService {
       }
 
       case "logicRule.delete": {
-        // Remove visibleIf from the target
-        const targetId = this.resolve(op.rule.target.id || op.rule.target.tempId);
-        if (!targetId) throw new Error("Logic rule target ID required");
-
-        if (op.rule.target.type === "step") {
-          await stepRepository.update(targetId, { visibleIf: null });
-        } else if (op.rule.target.type === "section") {
-          await sectionRepository.update(targetId, { visibleIf: null });
-        }
-
-        return `Removed visibility rule`;
+        // Delete logic rule by ID (from logic_rules table)
+        await logicRuleRepository.delete(op.id);
+        return `Removed logic rule`;
       }
 
       // ====================================================================
@@ -519,21 +516,17 @@ export class WorkflowPatchService {
         let columnCount = 0;
         for (const col of op.columns) {
           columnCount++;
-          await this.datavaultColumnsService.create({
+          await this.datavaultColumnsService.createColumn({
             tableId: table.id,
             name: col.name,
-            slug: this.generateSlug(col.name),
             type: col.type,
-            orderIndex: columnCount, // ID is at 0, custom columns start at 1
             required: col.config?.required || false,
-            isPrimaryKey: false,
-            isUnique: false,
             description: col.config?.description || null,
             // Add type-specific config
             options: col.type === 'select' || col.type === 'multiselect'
               ? col.config?.options || null
               : null,
-          });
+          }, tenantId);
         }
 
         if (op.tempId) {
@@ -558,28 +551,21 @@ export class WorkflowPatchService {
         );
 
         // Get current max orderIndex
-        const existingColumns = await this.datavaultColumnsService.findByTableId(tableId);
-        let maxOrder = existingColumns.length > 0
-          ? Math.max(...existingColumns.map(c => c.orderIndex))
-          : 0;
+        const context = await this.getTenantContext(workflowId);
+        const existingColumns = await this.datavaultColumnsService.listColumns(tableId, context.tenantId);
 
         // Add new columns
         for (const col of op.columns) {
-          maxOrder++;
-          await this.datavaultColumnsService.create({
+          await this.datavaultColumnsService.createColumn({
             tableId,
             name: col.name,
-            slug: this.generateSlug(col.name),
             type: col.type,
-            orderIndex: maxOrder,
             required: col.config?.required || false,
-            isPrimaryKey: false,
-            isUnique: false,
             description: col.config?.description || null,
             options: col.type === 'select' || col.type === 'multiselect'
               ? col.config?.options || null
               : null,
-          });
+          }, context.tenantId);
         }
 
         return `Added ${op.columns.length} column(s) to DataVault table`;
@@ -600,13 +586,13 @@ export class WorkflowPatchService {
         );
 
         // Get table columns
-        const columns = await this.datavaultColumnsService.findByTableId(tableId);
-        const columnsBySlug = new Map(columns.map(c => [c.slug, c.id]));
-        const columnsByName = new Map(columns.map(c => [c.name, c.id]));
+        const columns = await this.datavaultColumnsService.listColumns(tableId, tenantId);
+        const columnsBySlug = new Map(columns.map((c) => [c.slug, c.id]));
+        const columnsByName = new Map(columns.map((c) => [c.name, c.id]));
 
         // Get workflow steps to validate aliases
         const workflowSteps = await stepRepository.findByWorkflowId(workflowId);
-        const validAliases = new Set(workflowSteps.map(s => s.alias).filter(Boolean));
+        const validAliases = new Set(workflowSteps.map((s) => s.alias).filter(Boolean));
 
         // Build columnMappings: { stepAlias: columnId }
         const columnMappings: Record<string, string> = {};
@@ -637,7 +623,7 @@ export class WorkflowPatchService {
         const mapping = await datavaultWritebackMappingsRepository.create({
           workflowId,
           tableId,
-          columnMappings,
+          columnMappings: columnMappings as any,
           triggerPhase: 'afterComplete',
           createdBy: userId,
         });

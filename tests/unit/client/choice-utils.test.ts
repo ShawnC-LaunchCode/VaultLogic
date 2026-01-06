@@ -33,8 +33,8 @@ describe("choice-utils", () => {
         const config: DynamicOptionsConfig = {
             type: "list",
             listVariable: "users",
-            labelColumnId: "col1",
-            valueColumnId: "id"
+            labelPath: "col1",
+            valuePath: "id"
         };
         const opts = generateOptionsFromList(mockList, config);
         expect(opts).toHaveLength(3);
@@ -46,9 +46,11 @@ describe("choice-utils", () => {
         const config: DynamicOptionsConfig = {
             type: "list",
             listVariable: "users",
-            labelColumnId: "col1",
-            valueColumnId: "id",
-            sort: { by: "label", direction: "asc" }
+            labelPath: "col1",
+            valuePath: "id",
+            transform: {
+                sort: [{ fieldPath: "col1", direction: "asc" }]
+            }
         };
         const opts = generateOptionsFromList(mockList, config);
         expect(opts.map((o: ChoiceOption) => o.label)).toEqual(["Alice", "Bob", "Charlie"]);
@@ -58,9 +60,11 @@ describe("choice-utils", () => {
         const config: DynamicOptionsConfig = {
             type: "list",
             listVariable: "users",
-            labelColumnId: "col1",
-            valueColumnId: "id",
-            sort: { by: "label", direction: "desc" }
+            labelPath: "col1",
+            valuePath: "id",
+            transform: {
+                sort: [{ fieldPath: "col1", direction: "desc" }]
+            }
         };
         const opts = generateOptionsFromList(mockList, config);
         expect(opts.map((o: ChoiceOption) => o.label)).toEqual(["Charlie", "Bob", "Alice"]);
@@ -70,9 +74,11 @@ describe("choice-utils", () => {
         const config: DynamicOptionsConfig = {
             type: "list",
             listVariable: "users",
-            labelColumnId: "col1", // Name
-            valueColumnId: "id",
-            dedupeBy: "label" // Should remove duplicates of "Alice" if any (Alice appears twice in duplicateList)
+            labelPath: "col1", // Name
+            valuePath: "id",
+            transform: {
+                dedupe: { fieldPath: "col1" } // Should remove duplicates of "Alice" if any (Alice appears twice in duplicateList)
+            }
         };
         const opts = generateOptionsFromList(duplicateList, config);
         // duplicateList has two Alices.
@@ -81,13 +87,15 @@ describe("choice-utils", () => {
     });
 
     it("dedupes by value (alias)", () => {
-        // Mock list where valueColumnId produces dupes
+        // Mock list where valuePath produces dupes
         const config: DynamicOptionsConfig = {
             type: "list",
             listVariable: "users",
-            labelColumnId: "col1",
-            valueColumnId: "col3", // Role (Admin, User, User)
-            dedupeBy: "value"
+            labelPath: "col1",
+            valuePath: "col3", // Role (Admin, User, User)
+            transform: {
+                dedupe: { fieldPath: "col3" }
+            }
         };
         const opts = generateOptionsFromList(mockList, config);
         // Roles: Admin, User, User - should be Admin, User
@@ -100,8 +108,8 @@ describe("choice-utils", () => {
         const config: DynamicOptionsConfig = {
             type: "list",
             listVariable: "users",
-            labelColumnId: "col1",
-            valueColumnId: "id",
+            labelPath: "col1",
+            valuePath: "id",
             labelTemplate: "{Name} ({Role})"
         };
         const opts = generateOptionsFromList(mockList, config);
@@ -113,8 +121,8 @@ describe("choice-utils", () => {
         const config: DynamicOptionsConfig = {
             type: "list",
             listVariable: "users",
-            labelColumnId: "col1",
-            valueColumnId: "id"
+            labelPath: "col1",
+            valuePath: "id"
         };
         expect(generateOptionsFromList(null, config)).toEqual([]);
         expect(generateOptionsFromList([], config)).toEqual([]);
@@ -124,8 +132,8 @@ describe("choice-utils", () => {
         const config: DynamicOptionsConfig = {
             type: "list",
             listVariable: "users",
-            labelColumnId: "col1",
-            valueColumnId: "id",
+            labelPath: "col1",
+            valuePath: "id",
             includeBlankOption: true,
             blankLabel: "Select One..."
         };
@@ -139,9 +147,11 @@ describe("choice-utils", () => {
         const config: DynamicOptionsConfig = {
             type: "list",
             listVariable: "users",
-            labelColumnId: "col1",
-            valueColumnId: "id",
-            sort: { by: "column", columnId: "col4", direction: "asc" } // col4 is Age: 30, 25, 35
+            labelPath: "col1",
+            valuePath: "id",
+            transform: {
+                sort: [{ fieldPath: "col4", direction: "asc" }] // col4 is Age: 30, 25, 35
+            }
         };
         const opts = generateOptionsFromList(mockList, config);
         // Age: 25 (Bob), 30 (Alice), 35 (Charlie)
@@ -152,9 +162,11 @@ describe("choice-utils", () => {
         const config: DynamicOptionsConfig = {
             type: "list",
             listVariable: "users",
-            labelColumnId: "col1",
-            valueColumnId: "id",
-            sort: { by: "column", columnId: "col4", direction: "desc" }
+            labelPath: "col1",
+            valuePath: "id",
+            transform: {
+                sort: [{ fieldPath: "col4", direction: "desc" }]
+            }
         };
         const opts = generateOptionsFromList(mockList, config);
         // Age: 35 (Charlie), 30 (Alice), 25 (Bob)

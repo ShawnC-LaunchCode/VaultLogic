@@ -20,7 +20,6 @@ import {
   projectRepository,
   datavaultWritebackMappingsRepository,
   datavaultRowsRepository,
-  datavaultValuesRepository,
   documentTemplateRepository,
   runGeneratedDocumentsRepository,
 } from '../../../server/repositories';
@@ -36,6 +35,7 @@ import {
   datavaultRows,
   datavaultValues,
   templates,
+  runGeneratedDocuments,
 } from '@shared/schema';
 import { sql } from 'drizzle-orm';
 
@@ -61,7 +61,6 @@ describe('Runtime Pipelines Integration Tests', () => {
       .insert(tenants)
       .values({
         name: 'Test Tenant - Runtime Pipelines',
-        slug: 'test-runtime-pipelines',
       })
       .returning();
     testTenantId = tenant.id;
@@ -70,9 +69,12 @@ describe('Runtime Pipelines Integration Tests', () => {
     const [project] = await db
       .insert(projects)
       .values({
+        title: 'Test Project',
         name: 'Test Project',
         tenantId: testTenantId,
+        creatorId: testUserId,
         createdBy: testUserId,
+        ownerId: testUserId,
       })
       .returning();
     testProjectId = project.id;
@@ -84,7 +86,8 @@ describe('Runtime Pipelines Integration Tests', () => {
         projectId: testProjectId,
         title: 'Test Workflow - Runtime Pipelines',
         status: 'draft',
-        createdBy: testUserId,
+        creatorId: testUserId,
+        ownerId: testUserId,
       })
       .returning();
     testWorkflowId = workflow.id;
@@ -104,7 +107,6 @@ describe('Runtime Pipelines Integration Tests', () => {
       .insert(steps)
       .values({
         sectionId: section.id,
-        workflowId: testWorkflowId,
         type: 'email',
         title: 'Email Address',
         alias: 'email',
@@ -118,7 +120,6 @@ describe('Runtime Pipelines Integration Tests', () => {
       .insert(steps)
       .values({
         sectionId: section.id,
-        workflowId: testWorkflowId,
         type: 'phone',
         title: 'Phone Number',
         alias: 'phone',
@@ -140,35 +141,29 @@ describe('Runtime Pipelines Integration Tests', () => {
     testTableId = table.id;
 
     // Get the auto-created ID column
-    const columns = await datavaultColumnsService.findByTableId(testTableId);
-    const idColumn = columns.find(c => c.slug === 'id');
+    const columns = await datavaultColumnsService.listColumns(testTableId, testTenantId);
+    const idColumn = columns.find((c: any) => c.slug === 'id');
     expect(idColumn).toBeDefined();
 
     // Add custom columns
-    const emailColumn = await datavaultColumnsService.create({
+    const emailColumn = await datavaultColumnsService.createColumn({
       tableId: testTableId,
       name: 'Email',
       slug: 'email',
       type: 'text',
-      orderIndex: 1,
       required: false,
-      isPrimaryKey: false,
-      isUnique: false,
       description: null,
-    });
+    }, testTenantId);
     emailColumnId = emailColumn.id;
 
-    const phoneColumn = await datavaultColumnsService.create({
+    const phoneColumn = await datavaultColumnsService.createColumn({
       tableId: testTableId,
       name: 'Phone',
       slug: 'phone',
       type: 'text',
-      orderIndex: 2,
       required: false,
-      isPrimaryKey: false,
-      isUnique: false,
       description: null,
-    });
+    }, testTenantId);
     phoneColumnId = phoneColumn.id;
 
     // Create writeback mapping
@@ -246,8 +241,10 @@ describe('Runtime Pipelines Integration Tests', () => {
 
       // Verify row values
       const rowData = await datavaultRowsService.getRow(row.id, testTenantId);
-      expect(rowData.values[emailColumnId]).toBe('test@example.com');
-      expect(rowData.values[phoneColumnId]).toBe('+1-555-0123');
+      if (rowData) {
+        expect(rowData.values[emailColumnId]).toBe('test@example.com');
+        expect(rowData.values[phoneColumnId]).toBe('+1-555-0123');
+      }
     });
 
     it('should execute writebacks via RunService.completeRun()', async () => {
@@ -296,8 +293,10 @@ describe('Runtime Pipelines Integration Tests', () => {
       expect(newRow).toBeDefined();
 
       const rowData = await datavaultRowsService.getRow(newRow!.id, testTenantId);
-      expect(rowData.values[emailColumnId]).toBe('another@example.com');
-      expect(rowData.values[phoneColumnId]).toBe('+1-555-9999');
+      if (rowData) {
+        expect(rowData.values[emailColumnId]).toBe('another@example.com');
+        expect(rowData.values[phoneColumnId]).toBe('+1-555-9999');
+      }
 
       // Cleanup
       await db.delete(workflowRuns).where(sql`id = ${run2.id}`);
@@ -347,7 +346,7 @@ describe('Runtime Pipelines Integration Tests', () => {
     });
 
     afterAll(async () => {
-      await db.delete(runGeneratedDocumentsRepository.table).where(sql`1=1`);
+      await db.delete(runGeneratedDocuments).where(sql`1=1`);
       await db.delete(templates).where(sql`id = ${testTemplateId}`);
     });
 

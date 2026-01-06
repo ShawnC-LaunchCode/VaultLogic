@@ -89,7 +89,7 @@ describe('AIService', () => {
       });
 
       expect(result).toBeDefined();
-      expect(result.name).toBe('Test Workflow');
+      expect(result.title).toBe('Test Workflow');
       expect(result.sections).toHaveLength(1);
       expect(result.sections[0].steps).toHaveLength(2);
     });
@@ -372,7 +372,7 @@ describe('AIService', () => {
       });
 
       expect(result).toBeDefined();
-      expect(result.name).toBe('Test Workflow');
+      expect(result.title).toBe('Test Workflow');
       expect(result.sections).toHaveLength(1);
     });
 
@@ -412,7 +412,7 @@ describe('AIService', () => {
       });
 
       expect(result).toBeDefined();
-      expect(result.name).toBe('Test Workflow');
+      expect(result.title).toBe('Test Workflow');
     });
   });
 
