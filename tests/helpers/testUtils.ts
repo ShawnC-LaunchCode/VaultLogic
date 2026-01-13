@@ -1,6 +1,19 @@
 import { db } from "../../server/db";
-import { users, userCredentials, refreshTokens, emailVerificationTokens, mfaSecrets, mfaBackupCodes, trustedDevices, accountLocks, loginAttempts } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import {
+  users,
+  userCredentials,
+  refreshTokens,
+  emailVerificationTokens,
+  mfaSecrets,
+  mfaBackupCodes,
+  trustedDevices,
+  accountLocks,
+  loginAttempts,
+  auditLogs,
+  workspaceInvitations,
+  workflows
+} from "@shared/schema";
+import { eq, or } from "drizzle-orm";
 import { authService } from "../../server/services/AuthService";
 import speakeasy from "speakeasy";
 import crypto from "crypto";
@@ -20,6 +33,7 @@ import bcrypt from "bcrypt";
  */
 export async function cleanAuthTables() {
   try {
+    await db.delete(auditLogs); // Add explicit cleanup here too for safety
     await db.delete(loginAttempts);
     await db.delete(accountLocks);
     await db.delete(trustedDevices);
@@ -34,7 +48,39 @@ export async function cleanAuthTables() {
 }
 
 /**
- * Clean specific test user and all related data
+ * Clean specific test user and all related data by ID (Preferred for parallel tests)
+ */
+export async function deleteTestUser(userId: string) {
+  try {
+    // Delete in order of dependencies (child tables first)
+    // 1. Logs and history
+    await db.delete(auditLogs).where(eq(auditLogs.userId, userId));
+    await db.delete(loginAttempts).where(eq(loginAttempts.email, userId));
+
+    // 2. Auth security tables
+    await db.delete(accountLocks).where(eq(accountLocks.userId, userId));
+    await db.delete(trustedDevices).where(eq(trustedDevices.userId, userId));
+    await db.delete(mfaBackupCodes).where(eq(mfaBackupCodes.userId, userId));
+    await db.delete(mfaSecrets).where(eq(mfaSecrets.userId, userId));
+    await db.delete(refreshTokens).where(eq(refreshTokens.userId, userId));
+    await db.delete(emailVerificationTokens).where(eq(emailVerificationTokens.userId, userId));
+    await db.delete(userCredentials).where(eq(userCredentials.userId, userId));
+
+    // 3. Application Data (Entities that might reference user without Cascade)
+    await db.delete(workspaceInvitations).where(eq(workspaceInvitations.invitedBy, userId));
+    // NOTE: surveys and surveyTemplates tables removed in migration 0062
+    // For workflows, check both creator and owner
+    await db.delete(workflows).where(or(eq(workflows.creatorId, userId), eq(workflows.ownerId, userId)));
+
+    // Finally delete user
+    await db.delete(users).where(eq(users.id, userId));
+  } catch (error) {
+    console.warn(`Error deleting test user ${userId}:`, error);
+  }
+}
+
+/**
+ * Clean specific test user and all related data (Legacy/Email based)
  */
 export async function cleanTestUser(email: string) {
   try {
@@ -43,15 +89,9 @@ export async function cleanTestUser(email: string) {
     });
 
     if (user) {
+      await deleteTestUser(user.id);
+      // Also clean login attempts by email since they are not linked by userId
       await db.delete(loginAttempts).where(eq(loginAttempts.email, email));
-      await db.delete(accountLocks).where(eq(accountLocks.userId, user.id));
-      await db.delete(trustedDevices).where(eq(trustedDevices.userId, user.id));
-      await db.delete(mfaBackupCodes).where(eq(mfaBackupCodes.userId, user.id));
-      await db.delete(mfaSecrets).where(eq(mfaSecrets.userId, user.id));
-      await db.delete(refreshTokens).where(eq(refreshTokens.userId, user.id));
-      await db.delete(emailVerificationTokens).where(eq(emailVerificationTokens.userId, user.id));
-      await db.delete(userCredentials).where(eq(userCredentials.userId, user.id));
-      await db.delete(users).where(eq(users.id, user.id));
     }
   } catch (error) {
     console.warn("Error cleaning test user:", error);
@@ -174,6 +214,14 @@ export async function createUserWithMfa(options: {
     enabledAt: new Date(),
     createdAt: new Date(),
   });
+
+  // VERIFY: Ensure secret exists
+  const check = await db.query.mfaSecrets.findFirst({
+    where: eq(mfaSecrets.userId, userData.userId)
+  });
+  if (!check) throw new Error(`[TEST UTILS] MFA Secret verification failed for ${userData.userId}`);
+  if (!check.enabled) throw new Error(`[TEST UTILS] MFA Secret enabled=false for ${userData.userId}`);
+  console.log(`[TEST UTILS] MFA Secret verified for ${userData.userId}`);
 
   // Update user record
   await db.update(users)

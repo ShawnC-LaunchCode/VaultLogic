@@ -45,6 +45,7 @@ import {
 } from '../../shared/types/ai';
 import { createLogger } from '../logger';
 import { workflowQualityValidator } from './WorkflowQualityValidator';
+import { AIPromptBuilder } from './ai/AIPromptBuilder';
 
 const logger = createLogger({ module: 'ai-service' });
 
@@ -56,9 +57,11 @@ export class AIService {
   private anthropicClient: Anthropic | null = null;
   private geminiClient: ReturnType<GoogleGenerativeAI['getGenerativeModel']> | null = null;
   private config: AIProviderConfig;
+  private promptBuilder: AIPromptBuilder;
 
   constructor(config: AIProviderConfig) {
     this.config = config;
+    this.promptBuilder = new AIPromptBuilder();
 
     if (config.provider === 'openai') {
       this.openaiClient = new OpenAI({ apiKey: config.apiKey, timeout: 600000 });
@@ -81,7 +84,7 @@ export class AIService {
     const startTime = Date.now();
 
     try {
-      const prompt = this.buildWorkflowGenerationPrompt(request);
+      const prompt = this.promptBuilder.buildWorkflowGenerationPrompt(request);
       const response = await this.callLLM(prompt, 'workflow_generation');
 
       // Parse and validate the response
@@ -149,7 +152,7 @@ export class AIService {
     const startTime = Date.now();
 
     try {
-      const prompt = this.buildWorkflowSuggestionPrompt(request, existingWorkflow);
+      const prompt = this.promptBuilder.buildWorkflowSuggestionPrompt(request, existingWorkflow);
       const response = await this.callLLM(prompt, 'workflow_suggestion');
 
       const parsed = JSON.parse(response);
@@ -200,7 +203,7 @@ export class AIService {
     const startTime = Date.now();
 
     try {
-      const prompt = this.buildBindingSuggestionPrompt(variables, placeholders);
+      const prompt = this.promptBuilder.buildBindingSuggestionPrompt(variables, placeholders);
       const response = await this.callLLM(prompt, 'binding_suggestion');
 
       const parsed = JSON.parse(response);
@@ -1149,7 +1152,7 @@ Output ONLY the JSON object, no additional text or markdown.`;
     const startTime = Date.now();
 
     try {
-      const prompt = this.buildValueSuggestionPrompt(steps, mode);
+      const prompt = this.promptBuilder.buildValueSuggestionPrompt(steps, mode);
       const response = await this.callLLM(prompt, 'value_suggestion');
 
       // Parse and return the response
@@ -1329,7 +1332,7 @@ Do not include any markdown formatting, code blocks, or additional text. Return 
     const startTime = Date.now();
 
     try {
-      const prompt = this.buildWorkflowRevisionPrompt(request);
+      const prompt = this.promptBuilder.buildWorkflowRevisionPrompt(request);
       const response = await this.callLLM(prompt, 'workflow_revision');
 
       // FIRST: Check for truncation BEFORE attempting to parse
@@ -1863,7 +1866,7 @@ CRITICAL REQUIREMENTS:
     const startTime = Date.now();
 
     try {
-      const prompt = this.buildLogicGenerationPrompt(request);
+      const prompt = this.promptBuilder.buildLogicGenerationPrompt(request);
       const response = await this.callLLM(prompt, 'logic_generation');
 
       const parsed = JSON.parse(response);
@@ -1894,7 +1897,7 @@ CRITICAL REQUIREMENTS:
     const startTime = Date.now();
 
     try {
-      const prompt = this.buildLogicDebugPrompt(request);
+      const prompt = this.promptBuilder.buildLogicDebugPrompt(request);
       const response = await this.callLLM(prompt, 'logic_debug');
 
       const parsed = JSON.parse(response);
@@ -1942,7 +1945,7 @@ CRITICAL REQUIREMENTS:
     const startTime = Date.now();
 
     try {
-      const prompt = this.buildLogicVisualizationPrompt(request);
+      const prompt = this.promptBuilder.buildLogicVisualizationPrompt(request);
       const response = await this.callLLM(prompt, 'logic_visualization');
 
       const parsed = JSON.parse(response);
