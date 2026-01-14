@@ -50,7 +50,7 @@ vi.mock('../../../server/middleware/auth', () => ({
 
 // Mock Gemini API
 vi.mock('@google/generative-ai', () => ({
-  GoogleGenerativeAI: vi.fn().mockImplementation(() => {
+  GoogleGenerativeAI: vi.fn().mockImplementation(function() {
     return {
       getGenerativeModel: vi.fn().mockReturnValue({
         generateContent: vi.fn().mockResolvedValue({
