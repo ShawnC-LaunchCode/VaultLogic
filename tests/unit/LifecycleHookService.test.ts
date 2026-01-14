@@ -21,6 +21,17 @@ vi.mock('../../server/repositories/LifecycleHookRepository');
 vi.mock('../../server/repositories/ScriptExecutionLogRepository');
 vi.mock('../../server/repositories/WorkflowRepository');
 vi.mock('../../server/services/scripting/ScriptEngine');
+vi.mock('../../server/db', () => ({
+  db: {
+    select: vi.fn(() => ({
+      from: vi.fn(() => ({
+        innerJoin: vi.fn(() => ({
+          where: vi.fn(() => Promise.resolve([]))
+        }))
+      }))
+    }))
+  }
+}));
 
 describe('LifecycleHookService', () => {
   let lifecycleHookService: LifecycleHookService;

@@ -7,7 +7,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 import type { BlockContext, ListVariable, ListToolsConfig } from '@shared/types/blocks';
 
-import { blockRunner } from '../server/services/BlockRunner';
+import { ListToolsBlockRunner } from '../server/services/blockRunners/ListToolsBlockRunner';
 
 // Mock the stepValueRepository to avoid actual database calls
 vi.mock('../server/repositories/stepValues', () => ({
@@ -17,16 +17,19 @@ vi.mock('../server/repositories/stepValues', () => ({
 }));
 
 /**
- * NOTE: These tests access the private executeListToolsBlock method directly
- * because it contains complex business logic that benefits from isolated unit testing.
- * The method is called via (blockRunner as any) to bypass TypeScript private access.
+ * NOTE: These tests use the ListToolsBlockRunner directly
+ * to test complex business logic in isolation.
  * Database operations are mocked to ensure test isolation.
  */
 describe('List Tools Block', () => {
   let sampleList: ListVariable;
   let context: BlockContext;
+  let runner: ListToolsBlockRunner;
 
   beforeEach(() => {
+    // Create runner instance
+    runner = new ListToolsBlockRunner();
+
     // Sample list data
     sampleList = {
       metadata: { source: 'read_table' as const, sourceId: 'test-table' },
@@ -82,7 +85,7 @@ describe('List Tools Block', () => {
         order: 0,
       };
 
-      const result = await (blockRunner as any).executeListToolsBlock(config, context, block);
+      const result = await runner.execute(config, context, block);
 
       expect(result.success).toBe(true);
       expect(result.data?.filtered_users.count).toBe(3);
@@ -113,7 +116,7 @@ describe('List Tools Block', () => {
         order: 0,
       };
 
-      const result = await (blockRunner as any).executeListToolsBlock(config, context, block);
+      const result = await runner.execute(config, context, block);
 
       expect(result.success).toBe(true);
       expect(result.data?.senior_users.count).toBe(2);
@@ -145,7 +148,7 @@ describe('List Tools Block', () => {
         order: 0,
       };
 
-      const result = await (blockRunner as any).executeListToolsBlock(config, context, block);
+      const result = await runner.execute(config, context, block);
 
       expect(result.success).toBe(true);
       expect(result.data?.active_nyc.count).toBe(2);
@@ -176,7 +179,7 @@ describe('List Tools Block', () => {
         order: 0,
       };
 
-      const result = await (blockRunner as any).executeListToolsBlock(config, context, block);
+      const result = await runner.execute(config, context, block);
 
       expect(result.success).toBe(true);
       expect(result.data?.young_or_sf.count).toBe(2); // Bob (25) and Diana (SF)
@@ -205,7 +208,7 @@ describe('List Tools Block', () => {
         order: 0,
       };
 
-      const result = await (blockRunner as any).executeListToolsBlock(config, context, block);
+      const result = await runner.execute(config, context, block);
 
       expect(result.success).toBe(true);
       const ages = result.data?.sorted_users.rows.map((r: any) => r.age);
@@ -233,7 +236,7 @@ describe('List Tools Block', () => {
         order: 0,
       };
 
-      const result = await (blockRunner as any).executeListToolsBlock(config, context, block);
+      const result = await runner.execute(config, context, block);
 
       expect(result.success).toBe(true);
       const names = result.data?.sorted_users.rows.map((r: any) => r.name);
@@ -262,7 +265,7 @@ describe('List Tools Block', () => {
         order: 0,
       };
 
-      const result = await (blockRunner as any).executeListToolsBlock(config, context, block);
+      const result = await runner.execute(config, context, block);
 
       expect(result.success).toBe(true);
       const rows = result.data?.sorted_users.rows;
@@ -292,7 +295,7 @@ describe('List Tools Block', () => {
         order: 0,
       };
 
-      const result = await (blockRunner as any).executeListToolsBlock(config, context, block);
+      const result = await runner.execute(config, context, block);
 
       expect(result.success).toBe(true);
       expect(result.data?.limited_users.count).toBe(3);
@@ -317,7 +320,7 @@ describe('List Tools Block', () => {
         order: 0,
       };
 
-      const result = await (blockRunner as any).executeListToolsBlock(config, context, block);
+      const result = await runner.execute(config, context, block);
 
       expect(result.success).toBe(true);
       expect(result.data?.offset_users.count).toBe(3);
@@ -344,7 +347,7 @@ describe('List Tools Block', () => {
         order: 0,
       };
 
-      const result = await (blockRunner as any).executeListToolsBlock(config, context, block);
+      const result = await runner.execute(config, context, block);
 
       expect(result.success).toBe(true);
       expect(result.data?.paged_users.count).toBe(2);
@@ -373,7 +376,7 @@ describe('List Tools Block', () => {
         order: 0,
       };
 
-      const result = await (blockRunner as any).executeListToolsBlock(config, context, block);
+      const result = await runner.execute(config, context, block);
 
       expect(result.success).toBe(true);
       const row = result.data?.name_age_only.rows[0];
@@ -411,7 +414,7 @@ describe('List Tools Block', () => {
         order: 0,
       };
 
-      const result = await (blockRunner as any).executeListToolsBlock(config, context, block);
+      const result = await runner.execute(config, context, block);
 
       expect(result.success).toBe(true);
       // NYC, LA, SF = 3 unique cities
@@ -444,7 +447,7 @@ describe('List Tools Block', () => {
         order: 0,
       };
 
-      const result = await (blockRunner as any).executeListToolsBlock(config, context, block);
+      const result = await runner.execute(config, context, block);
 
       expect(result.success).toBe(true);
       expect(result.data?.user_count).toBe(5);
@@ -472,7 +475,7 @@ describe('List Tools Block', () => {
         order: 0,
       };
 
-      const result = await (blockRunner as any).executeListToolsBlock(config, context, block);
+      const result = await runner.execute(config, context, block);
 
       expect(result.success).toBe(true);
       expect(result.data?.youngest_user).toBeDefined();
@@ -516,7 +519,7 @@ describe('List Tools Block', () => {
         order: 0,
       };
 
-      const result = await (blockRunner as any).executeListToolsBlock(config, context, block);
+      const result = await runner.execute(config, context, block);
 
       expect(result.success).toBe(true);
       expect(result.data?.processed_users.count).toBe(2); // Limit of 2
@@ -564,7 +567,7 @@ describe('List Tools Block', () => {
         order: 0,
       };
 
-      const result = await (blockRunner as any).executeListToolsBlock(config, context, block);
+      const result = await runner.execute(config, context, block);
 
       expect(result.success).toBe(true);
       expect(result.data?.filtered_users.count).toBe(0);
@@ -588,7 +591,7 @@ describe('List Tools Block', () => {
         order: 0,
       };
 
-      const result = await (blockRunner as any).executeListToolsBlock(config, context, block);
+      const result = await runner.execute(config, context, block);
 
       expect(result.success).toBe(true);
       expect(result.data?.output.count).toBe(0);
@@ -618,7 +621,7 @@ describe('List Tools Block', () => {
         order: 0,
       };
 
-      const result = await (blockRunner as any).executeListToolsBlock(config, context, block);
+      const result = await runner.execute(config, context, block);
 
       expect(result.success).toBe(true);
       expect(result.data?.sorted_array.rows[0].score).toBe(90);
