@@ -211,6 +211,9 @@ describe('OAuth2 Google Authentication Flow', () => {
     it('should update existing user on subsequent logins', async () => {
       const userId = 'google-user-existing';
 
+      // Clean up any existing user first
+      await db.delete(users).where(eq(users.id, userId));
+
       // Create existing user
       await db.insert(users).values({
         id: userId,

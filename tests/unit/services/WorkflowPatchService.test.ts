@@ -81,12 +81,22 @@ describe('WorkflowPatchService', () => {
   const mockUserId = 'user-456';
 
   beforeEach(async () => {
-    const { stepRepository } = await import('../../../server/repositories');
+    const { stepRepository, workflowRepository, projectRepository } = await import('../../../server/repositories');
     service = new WorkflowPatchService(stepRepository);
     vi.clearAllMocks();
     mockStepRepoFind.mockReset();
     mockStepRepoCreate.mockReset();
-    // Reset others if needed
+
+    // Mock workflow and project lookups for getTenantContext
+    vi.mocked(workflowRepository.findById).mockResolvedValue({
+      id: mockWorkflowId,
+      projectId: 'project-123',
+      tenantId: 'tenant-123',
+    } as any);
+    vi.mocked(projectRepository.findById).mockResolvedValue({
+      id: 'project-123',
+      tenantId: 'tenant-123',
+    } as any);
   });
 
   describe('TempId Resolution', () => {

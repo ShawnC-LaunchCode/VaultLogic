@@ -13,7 +13,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 
 
 
-import { users, tenants, projects, connections, secrets } from '@shared/schema';
+import { users, tenants, projects, externalConnections as connections, secrets } from '@shared/schema';
 
 import { db } from '../../../server/db';
 import { hybridAuth } from '../../../server/middleware/auth';
