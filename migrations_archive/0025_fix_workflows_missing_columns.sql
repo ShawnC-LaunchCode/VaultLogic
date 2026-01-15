@@ -33,7 +33,9 @@ ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "first_name" varchar(255);
 ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "last_name" varchar(255);
 
 -- Add profile_image_url column if it doesn't exist
+-- Add is_placeholder column if it doesn't exist
 ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "profile_image_url" varchar(500);
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "is_placeholder" boolean DEFAULT false;
 
 -- =====================================================================
 -- ADD MISSING COLUMNS TO PROJECTS TABLE
@@ -76,7 +78,8 @@ DO $$
 DECLARE
   default_tenant_id uuid;
   default_project_id uuid;
-  first_user_id varchar;
+  first_user_id varchar; -- Assuming ID is varchar or uuid castable
+  dummy_user_id uuid;
 BEGIN
   -- Get or create default tenant
   SELECT id INTO default_tenant_id FROM tenants LIMIT 1;
@@ -95,6 +98,13 @@ BEGIN
   -- Get first user for ownership
   SELECT id INTO first_user_id FROM users LIMIT 1;
 
+  -- IF NO USER EXISTS, CREATE ONE TO SATISFY FK
+  IF first_user_id IS NULL THEN
+      INSERT INTO users (id, email, tenant_id, created_at, updated_at)
+      VALUES (gen_random_uuid(), 'system@placeholder.com', default_tenant_id, now(), now())
+      RETURNING id INTO first_user_id;
+  END IF;
+
   -- Update all projects without tenant_id to use default tenant
   UPDATE projects
   SET tenant_id = default_tenant_id
@@ -104,8 +114,8 @@ BEGIN
   SELECT id INTO default_project_id FROM projects WHERE tenant_id = default_tenant_id LIMIT 1;
 
   IF default_project_id IS NULL THEN
-    INSERT INTO projects (name, tenant_id, created_by, owner_id)
-    VALUES ('Default Project', default_tenant_id, COALESCE(first_user_id, 'system'), COALESCE(first_user_id, 'system'))
+    INSERT INTO projects (title, name, tenant_id, created_by, owner_id, creator_id)
+    VALUES ('Default Project', 'Default Project', default_tenant_id, first_user_id, first_user_id, first_user_id)
     RETURNING id INTO default_project_id;
   END IF;
 

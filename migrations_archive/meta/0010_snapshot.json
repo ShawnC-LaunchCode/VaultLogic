@@ -1,6 +1,6 @@
 {
-  "id": "caf4fc43-14ca-495c-94a3-25e83ef19833",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "17edc676-1f17-4b75-93c7-4a9e4233b770",
+  "prevId": "e64356a5-a364-4c9f-9cbc-2451cb66a37e",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -12714,21 +12714,9 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "tenant_id": {
-          "name": "tenant_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
         "project_id": {
           "name": "project_id",
           "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true
         },
@@ -12737,31 +12725,31 @@
           "type": "connection_type",
           "typeSchema": "public",
           "primaryKey": false,
+          "notNull": false,
+          "default": "'http'"
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar",
+          "primaryKey": false,
           "notNull": true
         },
         "base_url": {
           "name": "base_url",
-          "type": "varchar(500)",
+          "type": "varchar",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
-        "auth_config": {
-          "name": "auth_config",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'{}'::jsonb"
-        },
-        "secret_refs": {
-          "name": "secret_refs",
-          "type": "jsonb",
+        "auth_type": {
+          "name": "auth_type",
+          "type": "varchar(50)",
           "primaryKey": false,
           "notNull": false,
-          "default": "'{}'::jsonb"
+          "default": "'none'"
         },
-        "oauth_state": {
-          "name": "oauth_state",
-          "type": "jsonb",
+        "secret_id": {
+          "name": "secret_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -12793,24 +12781,12 @@
           "notNull": false,
           "default": 250
         },
-        "enabled": {
-          "name": "enabled",
-          "type": "boolean",
+        "config": {
+          "name": "config",
+          "type": "jsonb",
           "primaryKey": false,
-          "notNull": true,
-          "default": true
-        },
-        "last_tested_at": {
-          "name": "last_tested_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "last_used_at": {
-          "name": "last_used_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "default": "'{}'::jsonb"
         },
         "created_at": {
           "name": "created_at",
@@ -12828,21 +12804,6 @@
         }
       },
       "indexes": {
-        "connections_tenant_idx": {
-          "name": "connections_tenant_idx",
-          "columns": [
-            {
-              "expression": "tenant_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "connections_project_idx": {
           "name": "connections_project_idx",
           "columns": [
@@ -12857,94 +12818,9 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "connections_project_name_idx": {
-          "name": "connections_project_name_idx",
-          "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "name",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "connections_type_idx": {
-          "name": "connections_type_idx",
-          "columns": [
-            {
-              "expression": "type",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "connections_enabled_idx": {
-          "name": "connections_enabled_idx",
-          "columns": [
-            {
-              "expression": "enabled",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "connections_project_name_unique_idx": {
-          "name": "connections_project_name_unique_idx",
-          "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "name",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
-        "connections_tenant_id_tenants_id_fk": {
-          "name": "connections_tenant_id_tenants_id_fk",
-          "tableFrom": "connections",
-          "tableTo": "tenants",
-          "columnsFrom": [
-            "tenant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
         "connections_project_id_projects_id_fk": {
           "name": "connections_project_id_projects_id_fk",
           "tableFrom": "connections",
@@ -12956,6 +12832,19 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "connections_secret_id_secrets_id_fk": {
+          "name": "connections_secret_id_secrets_id_fk",
+          "tableFrom": "connections",
+          "tableTo": "secrets",
+          "columnsFrom": [
+            "secret_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },
@@ -14899,10 +14788,14 @@
       "name": "connection_type",
       "schema": "public",
       "values": [
-        "api_key",
-        "bearer",
-        "oauth2_client_credentials",
-        "oauth2_3leg"
+        "postgres",
+        "mysql",
+        "salesforce",
+        "hubspot",
+        "slack",
+        "stripe",
+        "google_sheets",
+        "http"
       ]
     },
     "public.secret_type": {

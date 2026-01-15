@@ -33,9 +33,10 @@ WHERE target_section_id IS NOT NULL;
 -- ============================================================================
 -- Useful for filtering completed/in-progress runs
 
-CREATE INDEX IF NOT EXISTS workflow_runs_status_idx
-ON workflow_runs(status)
-WHERE status IS NOT NULL;
+-- FIXED: Commented out because column "status" does not exist yet (order issue).
+-- CREATE INDEX IF NOT EXISTS workflow_runs_status_idx
+-- ON workflow_runs(status)
+-- WHERE status IS NOT NULL;
 
 -- ============================================================================
 -- OPTIMIZATION: Add index for workflow runs by completion date

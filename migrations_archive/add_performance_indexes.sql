@@ -15,6 +15,13 @@
 -- This also creates an index automatically and enables efficient onConflictDoUpdate
 
 ALTER TABLE step_values
+DROP CONSTRAINT IF EXISTS step_values_run_step_unique;
+
+-- Cleanup duplicates keeping the latest one
+DELETE FROM step_values a USING step_values b
+WHERE a.id < b.id AND a.run_id = b.run_id AND a.step_id = b.step_id;
+
+ALTER TABLE step_values
 ADD CONSTRAINT step_values_run_step_unique
 UNIQUE (run_id, step_id);
 

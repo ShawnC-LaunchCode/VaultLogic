@@ -45,6 +45,41 @@ CREATE TYPE "workspace_role" AS ENUM('owner', 'admin', 'editor', 'contributor', 
 ALTER TYPE "conditional_action" ADD VALUE IF NOT EXISTS 'skip_to';--> statement-breakpoint
 ALTER TYPE "survey_status" ADD VALUE IF NOT EXISTS 'active';--> statement-breakpoint
 ALTER TYPE "survey_status" ADD VALUE IF NOT EXISTS 'archived';--> statement-breakpoint
+-- PATCH: Fix duplicate/stub tables from 0000
+ALTER TABLE "sections" ADD COLUMN IF NOT EXISTS "workflow_id" uuid;--> statement-breakpoint
+ALTER TABLE "sections" ADD COLUMN IF NOT EXISTS "description" text;--> statement-breakpoint
+ALTER TABLE "sections" ADD COLUMN IF NOT EXISTS "order" integer;--> statement-breakpoint
+ALTER TABLE "sections" ADD COLUMN IF NOT EXISTS "config" jsonb DEFAULT '{}'::jsonb;--> statement-breakpoint
+ALTER TABLE "sections" ADD COLUMN IF NOT EXISTS "visible_if" jsonb;--> statement-breakpoint
+ALTER TABLE "sections" ADD COLUMN IF NOT EXISTS "skip_if" jsonb;--> statement-breakpoint
+ALTER TABLE "sections" ADD COLUMN IF NOT EXISTS "created_at" timestamp DEFAULT now();--> statement-breakpoint
+ALTER TABLE "sections" ADD COLUMN IF NOT EXISTS "updated_at" timestamp DEFAULT now();--> statement-breakpoint
+ALTER TABLE "workflows" ADD COLUMN IF NOT EXISTS "description" text;--> statement-breakpoint
+ALTER TABLE "workflows" ADD COLUMN IF NOT EXISTS "creator_id" varchar;--> statement-breakpoint
+ALTER TABLE "workflows" ADD COLUMN IF NOT EXISTS "owner_id" varchar;--> statement-breakpoint
+ALTER TABLE "workflows" ADD COLUMN IF NOT EXISTS "project_id" uuid;--> statement-breakpoint
+ALTER TABLE "workflows" ADD COLUMN IF NOT EXISTS "status" "workflow_status" DEFAULT 'draft';--> statement-breakpoint
+ALTER TABLE "workflows" ADD COLUMN IF NOT EXISTS "is_public" boolean DEFAULT false;--> statement-breakpoint
+ALTER TABLE "workflows" ADD COLUMN IF NOT EXISTS "slug" varchar;--> statement-breakpoint
+ALTER TABLE "workflows" ADD COLUMN IF NOT EXISTS "pinned_version_id" uuid;--> statement-breakpoint
+ALTER TABLE "workflows" ADD COLUMN IF NOT EXISTS "source_blueprint_id" uuid;--> statement-breakpoint
+ALTER TABLE "workflows" ADD COLUMN IF NOT EXISTS "updated_at" timestamp DEFAULT now();--> statement-breakpoint
+ALTER TABLE "workflows" ADD COLUMN IF NOT EXISTS "created_at" timestamp DEFAULT now();--> statement-breakpoint
+ALTER TABLE "workflow_runs" ADD COLUMN IF NOT EXISTS "workflow_version_id" uuid;--> statement-breakpoint
+ALTER TABLE "workflow_runs" ADD COLUMN IF NOT EXISTS "input_json" jsonb;--> statement-breakpoint
+ALTER TABLE "workflow_runs" ADD COLUMN IF NOT EXISTS "output_refs" jsonb;--> statement-breakpoint
+ALTER TABLE "workflow_runs" ADD COLUMN IF NOT EXISTS "trace" jsonb;--> statement-breakpoint
+ALTER TABLE "workflow_runs" ADD COLUMN IF NOT EXISTS "status" "run_status" DEFAULT 'pending';--> statement-breakpoint
+ALTER TABLE "workflow_runs" ADD COLUMN IF NOT EXISTS "error" text;--> statement-breakpoint
+ALTER TABLE "workflow_runs" ADD COLUMN IF NOT EXISTS "duration_ms" integer;--> statement-breakpoint
+ALTER TABLE "workflow_runs" ADD COLUMN IF NOT EXISTS "run_token" varchar;--> statement-breakpoint
+ALTER TABLE "workflow_runs" ADD COLUMN IF NOT EXISTS "share_token" varchar;--> statement-breakpoint
+ALTER TABLE "workflow_runs" ADD COLUMN IF NOT EXISTS "share_token_expires_at" timestamp;--> statement-breakpoint
+ALTER TABLE "workflow_runs" ADD COLUMN IF NOT EXISTS "created_by" varchar;--> statement-breakpoint
+ALTER TABLE "workflow_runs" ADD COLUMN IF NOT EXISTS "updated_at" timestamp DEFAULT now();--> statement-breakpoint
+ALTER TABLE "workflow_runs" ADD COLUMN IF NOT EXISTS "current_section_id" uuid;--> statement-breakpoint
+ALTER TABLE "workflow_runs" ADD COLUMN IF NOT EXISTS "completed" boolean DEFAULT false;--> statement-breakpoint
+ALTER TABLE "workflow_runs" ADD COLUMN IF NOT EXISTS "completed_at" timestamp;--> statement-breakpoint
 CREATE TABLE "account_locks" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" varchar NOT NULL,

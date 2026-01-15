@@ -26,7 +26,7 @@ import { projects } from './workflow';
 // ENUMS
 // ===================================================================
 
-export const connectionTypeEnum = pgEnum('connection_type', ['postgres', 'mysql', 'salesforce', 'hubspot', 'slack', 'stripe', 'google_sheets', 'http']);
+export const connectionTypeEnum = pgEnum('connection_type', ['api_key', 'bearer', 'oauth2_client_credentials', 'oauth2_3leg']);
 export const secretTypeEnum = pgEnum('secret_type', ['api_key', 'bearer', 'oauth2', 'basic_auth']);
 
 export const webhookEventEnum = pgEnum('webhook_event', [
@@ -61,21 +61,30 @@ export const secrets = pgTable("secrets", {
 // External Connections
 export const externalConnections = pgTable("connections", {
     id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: 'cascade' }).notNull(),
     projectId: uuid("project_id").references(() => projects.id, { onDelete: 'cascade' }).notNull(),
-    type: connectionTypeEnum("type").default('http'),
-    name: varchar("name").notNull(),
-    baseUrl: varchar("base_url").notNull(), // Make notNull
-    authType: varchar("auth_type", { length: 50 }).default('none'),
-    secretId: uuid("secret_id").references(() => secrets.id, { onDelete: 'set null' }),
-    defaultHeaders: jsonb("default_headers").default({}),
+    name: varchar("name", { length: 255 }).notNull(),
+    type: connectionTypeEnum("type").notNull(),
+    baseUrl: varchar("base_url", { length: 500 }),
+    authConfig: jsonb("auth_config").default(sql`'{}'::jsonb`),
+    secretRefs: jsonb("secret_refs").default(sql`'{}'::jsonb`),
+    oauthState: jsonb("oauth_state"),
+    defaultHeaders: jsonb("default_headers").default(sql`'{}'::jsonb`),
     timeoutMs: integer("timeout_ms").default(8000),
     retries: integer("retries").default(2),
     backoffMs: integer("backoff_ms").default(250),
-    config: jsonb("config").default(sql`'{}'::jsonb`),
+    enabled: boolean("enabled").default(true).notNull(),
+    lastTestedAt: timestamp("last_tested_at"),
+    lastUsedAt: timestamp("last_used_at"),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
+    index("connections_tenant_idx").on(table.tenantId),
     index("connections_project_idx").on(table.projectId),
+    index("connections_project_name_idx").on(table.projectId, table.name),
+    index("connections_type_idx").on(table.type),
+    index("connections_enabled_idx").on(table.enabled),
+    uniqueIndex("connections_project_name_unique_idx").on(table.projectId, table.name),
 ]);
 
 // External Destinations (for Send blocks etc)

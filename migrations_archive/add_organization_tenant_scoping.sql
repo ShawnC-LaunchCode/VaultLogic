@@ -51,7 +51,10 @@ ALTER COLUMN tenant_id SET NOT NULL;
 
 -- Step 5: Add foreign key constraint
 ALTER TABLE organizations
-ADD CONSTRAINT IF NOT EXISTS organizations_tenant_id_fkey
+DROP CONSTRAINT IF EXISTS organizations_tenant_id_fkey;
+
+ALTER TABLE organizations
+ADD CONSTRAINT organizations_tenant_id_fkey
 FOREIGN KEY (tenant_id)
 REFERENCES tenants(id)
 ON DELETE CASCADE;

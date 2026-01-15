@@ -2,6 +2,8 @@
 -- Description: Adds p_format parameter to datavault_get_next_autonumber function
 -- Date: December 3, 2025
 
+DROP FUNCTION IF EXISTS datavault_get_next_autonumber(uuid, uuid, uuid, text, integer, text, text);
+
 CREATE OR REPLACE FUNCTION datavault_get_next_autonumber(
   p_tenant_id UUID,
   p_table_id UUID,

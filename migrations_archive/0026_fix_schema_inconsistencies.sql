@@ -38,6 +38,7 @@ DO $$
 DECLARE
   first_user_id varchar;
   default_tenant_id uuid;
+  status_type text;
 BEGIN
   -- Get the first user ID (fallback for existing projects)
   SELECT id INTO first_user_id FROM users ORDER BY created_at LIMIT 1;
@@ -59,12 +60,28 @@ BEGIN
   END IF;
 
   -- Backfill status based on archived flag
-  UPDATE projects
-  SET status = CASE
-    WHEN archived = true THEN 'archived'
-    ELSE 'active'
-  END
-  WHERE status IS NULL OR status = '';
+  -- Check status type to handle enum vs varchar correctly
+  SELECT udt_name INTO status_type 
+  FROM information_schema.columns 
+  WHERE table_schema = current_schema() AND table_name = 'projects' AND column_name = 'status';
+
+  IF status_type = 'project_status' THEN
+    -- Enum requires explicit cast
+    EXECUTE 'UPDATE projects
+    SET status = (CASE
+      WHEN archived = true THEN ''archived''
+      ELSE ''active''
+    END)::project_status
+    WHERE status IS NULL';
+  ELSE
+    -- Varchar handles text literals directly
+    UPDATE projects
+    SET status = CASE
+      WHEN archived = true THEN 'archived'
+      ELSE 'active'
+    END
+    WHERE status IS NULL OR status = '';
+  END IF;
 
 END $$;
 

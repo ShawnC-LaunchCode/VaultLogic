@@ -29,11 +29,12 @@ COMMENT ON INDEX idx_workflow_runs_workflow_completed IS
 
 -- Index for filtering runs by status and completion
 -- Used in: run dashboards, progress tracking, abandoned run cleanup
-CREATE INDEX IF NOT EXISTS idx_workflow_runs_status
-ON workflow_runs(status, created_at DESC);
+-- FIXED: Commented out because column "status" does not exist in workflow_runs
+-- CREATE INDEX IF NOT EXISTS idx_workflow_runs_status
+-- ON workflow_runs(status, created_at DESC);
 
-COMMENT ON INDEX idx_workflow_runs_status IS
-'Index for filtering runs by status (draft/in_progress/completed) with creation time ordering.';
+-- COMMENT ON INDEX idx_workflow_runs_status IS
+-- 'Index for filtering runs by status (draft/in_progress/completed) with creation time ordering.';
 
 -- ============================================================================
 -- AUDIT LOGS - Security & Compliance
@@ -69,20 +70,20 @@ COMMENT ON INDEX idx_audit_logs_resource IS
 -- ============================================================================
 
 -- Index for workflow-specific event queries
--- Used in: real-time analytics, event tracking, funnel analysis
-CREATE INDEX IF NOT EXISTS idx_analytics_events_workflow_timestamp
-ON analytics_events(workflow_id, timestamp DESC);
+-- FIXED: Commented out because analytics_events is legacy and lacks workflow_id/event_type
+-- CREATE INDEX IF NOT EXISTS idx_analytics_events_workflow_timestamp
+-- ON analytics_events(workflow_id, timestamp DESC);
 
-COMMENT ON INDEX idx_analytics_events_workflow_timestamp IS
-'Composite index for workflow-scoped analytics events with time ordering.';
+-- COMMENT ON INDEX idx_analytics_events_workflow_timestamp IS
+-- 'Composite index for workflow-scoped analytics events with time ordering.';
 
 -- Index for event type aggregation
 -- Used in: event type reports, usage metrics, system monitoring
-CREATE INDEX IF NOT EXISTS idx_analytics_events_type_timestamp
-ON analytics_events(event_type, timestamp DESC);
+-- CREATE INDEX IF NOT EXISTS idx_analytics_events_type_timestamp
+-- ON analytics_events(event_type, timestamp DESC);
 
-COMMENT ON INDEX idx_analytics_events_type_timestamp IS
-'Composite index for event type aggregation and filtering.';
+-- COMMENT ON INDEX idx_analytics_events_type_timestamp IS
+-- 'Composite index for event type aggregation and filtering.';
 
 -- ============================================================================
 -- SCRIPT EXECUTION LOGS - Debugging & Performance
