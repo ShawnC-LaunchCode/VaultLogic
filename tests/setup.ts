@@ -128,8 +128,28 @@ beforeAll(async () => {
         (global as any).__TEST_SCHEMA__ = schemaName;
         console.log(`🔒 Test Schema Isolated: ${schemaName} (Reused: ${existed})`);
 
-        // Check if we need to run migrations (only if schema is new)
-        (global as any).__SKIP_MIGRATIONS__ = existed;
+        // Check if we need to run migrations
+        // If schema exists, verify it has tables before skipping migrations
+        if (existed) {
+          try {
+            const { Client } = await import('pg');
+            const checkClient = new Client({ connectionString: process.env.DATABASE_URL });
+            await checkClient.connect();
+            const tableCheck = await checkClient.query(
+              `SELECT COUNT(*) as cnt FROM information_schema.tables WHERE table_schema = $1 AND table_type = 'BASE TABLE'`,
+              [schemaName]
+            );
+            await checkClient.end();
+            const hasTable = parseInt(tableCheck.rows[0].cnt) > 0;
+            (global as any).__SKIP_MIGRATIONS__ = hasTable;
+            console.log(`📊 Schema ${schemaName} has ${tableCheck.rows[0].cnt} tables - ${hasTable ? 'skipping' : 'running'} migrations`);
+          } catch (e) {
+            console.warn(`⚠️ Could not check table count, will run migrations:`, e);
+            (global as any).__SKIP_MIGRATIONS__ = false;
+          }
+        } else {
+          (global as any).__SKIP_MIGRATIONS__ = false;
+        }
       }
 
       // Dynamically import server/db to ensure it picks up the mutated env vars
@@ -178,7 +198,14 @@ beforeAll(async () => {
 
               for (const file of files) {
                 console.log(`   Applying ${file}...`);
-                const sqlContent = fs.readFileSync(path.join(migrationsDir, file), 'utf-8');
+                let sqlContent = fs.readFileSync(path.join(migrationsDir, file), 'utf-8');
+
+                // CRITICAL: Ensure migrations run in the correct schema
+                // Prepend SET search_path to ensure all tables are created in test schema
+                const schema = (global as any).__TEST_SCHEMA__;
+                if (schema) {
+                  sqlContent = `SET search_path TO "${schema}", public;\n\n${sqlContent}`;
+                }
 
                 try {
                   // OPTIMIZATION: Try to execute the whole file first
