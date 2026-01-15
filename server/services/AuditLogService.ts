@@ -83,7 +83,7 @@ export class AuditLogService {
       // or make it nullable in a future migration. For now, we'll handle gracefully.
       const auditEntry = {
         tenantId: tenantId || null,
-        workspaceId: workspaceId || sql`NULL`, // Will need schema update to make nullable
+        workspaceId: workspaceId || null,
         userId,
         action: eventType,
         entityType: "security",  // Required field
