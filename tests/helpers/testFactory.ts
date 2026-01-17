@@ -239,8 +239,9 @@ export class TestFactory {
         projectId,
         name: 'Test Template',
         description: 'Test template',
-        status: 'active',
-        createdBy: userId,
+        type: 'docx',
+        fileRef: '/test/template.docx',
+        lastModifiedBy: userId,
         ...overrides,
       })
       .returning();
