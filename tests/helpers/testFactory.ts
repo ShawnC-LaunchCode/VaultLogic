@@ -168,8 +168,9 @@ export class TestFactory {
       .values({
         id: generateId(),
         workflowId: workflow.id,
-        version: 1,
-        changeDescription: 'Initial version',
+        versionNumber: 1,
+        graphJson: {},
+        createdBy: userId,
         ...overrides?.version,
       })
       .returning();
