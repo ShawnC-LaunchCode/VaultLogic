@@ -374,6 +374,20 @@ export const auditLogs = pgTable("audit_logs", {
     index("audit_logs_action_idx").on(table.action),
 ]);
 
+// Resource Permissions (for granular RBAC)
+export const resourcePermissions = pgTable("resource_permissions", {
+    id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+    workspaceId: uuid("workspace_id").references(() => workspaces.id, { onDelete: 'cascade' }).notNull(),
+    resourceType: varchar("resource_type").notNull(), // 'workflow', 'project'
+    resourceId: varchar("resource_id").notNull(),
+    userId: varchar("user_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    action: varchar("action").notNull(), // 'view', 'edit', 'admin' (or specific capability)
+    allowed: boolean("allowed").default(true).notNull(), // Can explicit deny
+    createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+    uniqueIndex("resource_perm_idx").on(table.resourceId, table.userId, table.action),
+]);
+
 // Sessions
 export const sessions = pgTable("sessions", {
     sid: varchar("sid").primaryKey(),

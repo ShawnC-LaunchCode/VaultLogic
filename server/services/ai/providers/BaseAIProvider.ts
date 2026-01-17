@@ -1,12 +1,11 @@
 import { createLogger } from '../../../logger';
+import { ModelRegistry } from '../ModelRegistry';
+import { AIError } from '../AIError';
 
 import type { TaskType } from '../types';
 import type { IAIProvider, AIProviderConfig } from './types';
 
 const logger = createLogger({ module: 'ai-provider' });
-
-// Security: limit regex pattern size to prevent ReDoS
-const MAX_REGEX_PATTERN_LENGTH = 100;
 
 /**
  * Abstract base class for AI providers
@@ -30,21 +29,30 @@ export abstract class BaseAIProvider implements IAIProvider {
     ): Promise<string>;
 
     /**
-     * Get max context tokens - must be implemented by subclasses
-     */
-    abstract getMaxContextTokens(): number;
-
-    /**
-     * Estimate cost - must be implemented by subclasses
-     */
-    abstract estimateCost(promptTokens: number, responseTokens: number): number;
-
-    /**
      * Estimate token count from text (rough approximation: 1 token ≈ 4 characters)
      * Subclasses can override this if they have more accurate tokenizers
      */
     estimateTokenCount(text: string): number {
         return Math.ceil(text.length / 4);
+    }
+
+    /**
+     * Get max context tokens using ModelRegistry
+     */
+    getMaxContextTokens(): number {
+        return ModelRegistry.getMaxContextTokens(this.config.provider as any, this.config.model);
+    }
+
+    /**
+     * Estimate cost using ModelRegistry
+     */
+    estimateCost(promptTokens: number, responseTokens: number): number {
+        return ModelRegistry.estimateCost(
+            this.config.provider as any,
+            this.config.model,
+            promptTokens,
+            responseTokens
+        );
     }
 
     /**
@@ -99,15 +107,10 @@ export abstract class BaseAIProvider implements IAIProvider {
     }
 
     /**
-     * Helper to create typed errors
+     * Helper to create typed AI errors
      */
-    protected createError(message: string, code: string, details?: any): Error {
-        const error = new Error(message);
-        (error as any).code = code;
-        if (details) {
-            (error as any).details = details;
-        }
-        return error;
+    protected createError(message: string, code: string, details?: any): AIError {
+        return new AIError(message, code as any, details);
     }
 
     /**

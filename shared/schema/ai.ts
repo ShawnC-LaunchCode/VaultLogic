@@ -7,10 +7,12 @@ import {
     varchar,
     text,
     uuid,
+    boolean,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 
 import { users } from './auth';
+import { workflows } from './workflow';
 
 export const aiSettings = pgTable("ai_settings", {
     id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -26,3 +28,21 @@ export const aiSettings = pgTable("ai_settings", {
 export const insertAiSettingsSchema = createInsertSchema(aiSettings);
 export type AiSettings = InferSelectModel<typeof aiSettings>;
 export type InsertAiSettings = InferInsertModel<typeof aiSettings>;
+
+// Workflow Personalization Settings
+export const workflowPersonalizationSettings = pgTable("workflow_personalization_settings", {
+    workflowId: uuid("workflow_id").references(() => workflows.id, { onDelete: 'cascade' }).primaryKey(),
+    enabled: boolean("enabled").default(true).notNull(),
+    allowDynamicPrompts: boolean("allow_dynamic_prompts").default(true).notNull(),
+    allowDynamicHelp: boolean("allow_dynamic_help").default(true).notNull(),
+    allowDynamicTone: boolean("allow_dynamic_tone").default(true).notNull(),
+    defaultTone: varchar("default_tone").default("neutral").notNull(),
+    defaultReadingLevel: varchar("default_reading_level").default("standard").notNull(),
+    defaultVerbosity: varchar("default_verbosity").default("standard").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertWorkflowPersonalizationSettingsSchema = createInsertSchema(workflowPersonalizationSettings);
+export type WorkflowPersonalizationSettings = InferSelectModel<typeof workflowPersonalizationSettings>;
+export type InsertWorkflowPersonalizationSettings = InferInsertModel<typeof workflowPersonalizationSettings>;

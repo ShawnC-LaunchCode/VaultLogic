@@ -5,6 +5,8 @@
  */
 
 import { createLogger } from '../../logger';
+import { ModelRegistry } from './ModelRegistry';
+import { AIError } from './AIError';
 
 import type { AIErrorCode, TokenEstimate, CostEstimate, TruncationCheck } from './types';
 import type { AIGeneratedWorkflow } from '../../../shared/types/ai';
@@ -21,30 +23,10 @@ export function estimateTokenCount(text: string): number {
 
 /**
  * Get maximum context window for a given provider/model
+ * @deprecated Use ModelRegistry.getMaxContextTokens instead
  */
 export function getMaxContextTokens(provider: string, model: string): number {
-  // Conservative limits to ensure we stay well within bounds
-  const limits: Record<string, Record<string, number>> = {
-    openai: {
-      'gpt-4-turbo-preview': 128000,
-      'gpt-4': 8192,
-      'gpt-3.5-turbo': 16385,
-      'default': 8000, // Safe default
-    },
-    anthropic: {
-      'claude-3-5-sonnet-20241022': 200000,
-      'claude-3-opus-20240229': 200000,
-      'claude-3-sonnet-20240229': 200000,
-      'default': 100000,
-    },
-    gemini: {
-      'gemini-2.0-flash': 1048576, // 1M tokens
-      'gemini-1.5-pro': 2097152, // 2M tokens
-      'default': 1000000,
-    },
-  };
-
-  return limits[provider]?.[model] || limits[provider]?.['default'] || 8000;
+  return ModelRegistry.getMaxContextTokens(provider as any, model);
 }
 
 /**
@@ -80,17 +62,14 @@ export function validateTokenLimits(
       `The workflow or request is too large for the AI model to process.`,
     ].join('\n');
 
-    const error: any = new Error(errorMsg);
-    error.code = 'VALIDATION_ERROR';
-    error.details = {
+    throw new AIError(errorMsg, 'VALIDATION_ERROR', {
       promptTokens,
       maxResponseTokens,
       totalTokens,
       maxContext,
       provider,
       model,
-    };
-    throw error;
+    });
   }
 
   // Warn if we're using >80% of context window
@@ -108,7 +87,7 @@ export function validateTokenLimits(
 
 /**
  * Estimate cost in USD for AI API call
- * Pricing as of January 2025 - subject to change
+ * @deprecated Use ModelRegistry.estimateCost instead
  */
 export function estimateCost(
   provider: string,
@@ -116,33 +95,7 @@ export function estimateCost(
   promptTokens: number,
   responseTokens: number,
 ): number {
-  // Pricing per 1M tokens (input / output)
-  const pricing: Record<string, Record<string, { input: number; output: number }>> = {
-    openai: {
-      'gpt-4-turbo-preview': { input: 10.00, output: 30.00 },
-      'gpt-4': { input: 30.00, output: 60.00 },
-      'gpt-3.5-turbo': { input: 0.50, output: 1.50 },
-      'default': { input: 10.00, output: 30.00 },
-    },
-    anthropic: {
-      'claude-3-5-sonnet-20241022': { input: 3.00, output: 15.00 },
-      'claude-3-opus-20240229': { input: 15.00, output: 75.00 },
-      'claude-3-sonnet-20240229': { input: 3.00, output: 15.00 },
-      'default': { input: 3.00, output: 15.00 },
-    },
-    gemini: {
-      'gemini-2.0-flash': { input: 0.10, output: 0.40 }, // Very cheap!
-      'gemini-1.5-pro': { input: 1.25, output: 5.00 },
-      'default': { input: 0.10, output: 0.40 },
-    },
-  };
-
-  const modelPricing = pricing[provider]?.[model] || pricing[provider]?.['default'] || { input: 0, output: 0 };
-
-  const inputCost = (promptTokens / 1_000_000) * modelPricing.input;
-  const outputCost = (responseTokens / 1_000_000) * modelPricing.output;
-
-  return inputCost + outputCost;
+  return ModelRegistry.estimateCost(provider as any, model, promptTokens, responseTokens);
 }
 
 /**
@@ -264,19 +217,18 @@ export function getTroubleshootingHints(code: string): string {
 
 /**
  * Create a typed error with troubleshooting hints
+ * @deprecated Use AIError class directly or import createAIError from AIError.ts
  */
 export function createAIError(
   message: string,
   code: AIErrorCode,
   details?: any,
-): Error {
+): AIError {
   const troubleshootingHints = getTroubleshootingHints(code);
   const fullMessage = troubleshootingHints ? `${message}\n\n${troubleshootingHints}` : message;
 
-  const error = new Error(fullMessage) as any;
-  error.code = code;
-  error.details = details;
-  error.troubleshooting = troubleshootingHints;
+  const error = new AIError(fullMessage, code, details);
+  (error as any).troubleshooting = troubleshootingHints;
   return error;
 }
 
@@ -367,3 +319,71 @@ export function validateWorkflowStructure(workflow: AIGeneratedWorkflow): void {
     }
   }
 }
+
+/**
+ * Valid step types from database schema (shared/schema.ts stepTypeEnum)
+ * This is the source of truth - must match the actual DB enum
+ */
+export const VALID_STEP_TYPES = [
+  // Legacy types
+  'short_text', 'long_text', 'multiple_choice', 'radio', 'yes_no',
+  'date_time', 'file_upload', 'loop_group', 'computed', 'js_question',
+  'repeater', 'final_documents', 'signature_block',
+  // Easy mode types
+  'true_false', 'phone', 'date', 'time', 'datetime', 'email',
+  'number', 'currency', 'scale', 'website', 'display', 'address', 'final',
+  // Advanced mode types
+  'text', 'boolean', 'phone_advanced', 'datetime_unified', 'choice',
+  'email_advanced', 'number_advanced', 'scale_advanced', 'website_advanced',
+  'address_advanced', 'multi_field', 'display_advanced',
+] as const;
+
+/**
+ * Type mapping for AI-friendly names to DB types
+ */
+export const TYPE_ALIASES: Record<string, string> = {
+  'checkbox': 'multiple_choice', // Common AI mistake
+  'select': 'choice',
+  'dropdown': 'choice',
+  'textarea': 'long_text',
+  'input': 'short_text',
+};
+
+/**
+ * Normalize workflow types (e.g. map AI-friendly types to DB types)
+ */
+export function normalizeWorkflowTypes(workflow: AIGeneratedWorkflow): void {
+  for (const section of workflow.sections) {
+    for (const step of section.steps) {
+      // Apply type alias mapping
+      if (TYPE_ALIASES[step.type]) {
+        const originalType = step.type;
+        step.type = TYPE_ALIASES[step.type] as any;
+        logger.debug({ originalType, normalizedType: step.type, stepId: step.id }, 'Normalized step type');
+      }
+
+      // Validate against DB schema
+      if (!VALID_STEP_TYPES.includes(step.type as any)) {
+        logger.error({
+          invalidType: step.type,
+          stepId: step.id,
+          stepTitle: step.title,
+          validTypes: VALID_STEP_TYPES
+        }, 'AI generated invalid step type');
+
+        throw createAIError(
+          `AI generated invalid step type: "${step.type}" for step "${step.title}"`,
+          'VALIDATION_ERROR',
+          {
+            invalidType: step.type,
+            stepId: step.id,
+            stepTitle: step.title,
+            validTypes: VALID_STEP_TYPES,
+            suggestion: 'The AI model generated a step type that is not supported by the database. This is a bug in the AI prompt or model behavior.',
+          }
+        );
+      }
+    }
+  }
+}
+

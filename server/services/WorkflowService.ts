@@ -1,7 +1,7 @@
 import { eq, inArray } from "drizzle-orm";
 
 import type { Workflow, InsertWorkflow, Section, Step, LogicRule, WorkflowAccess, PrincipalType, AccessRole } from "@shared/schema";
-import { workflowVersions, workflows, sections, steps, logicRules, auditEvents, projects } from "@shared/schema";
+import { workflowVersions, workflows, sections, steps, logicRules, auditLogs, projects } from "@shared/schema";
 
 import { db } from "../db";
 import { logger } from "../logger";
@@ -259,7 +259,7 @@ export class WorkflowService {
       .replace(/^-+|-+$/g, '');
 
     // Ensure it's not empty
-    if (!baseSlug) {baseSlug = 'workflow';}
+    if (!baseSlug) { baseSlug = 'workflow'; }
 
     // 2. Check strict existence of the requested slug
     let candidate = baseSlug;
@@ -585,7 +585,7 @@ export class WorkflowService {
    * Specifically ensures 'final' nodes are converted to Final Sections for the Runner
    */
   async syncWithGraph(workflowId: string, graphJson: any, userId: string): Promise<void> {
-    if (!graphJson?.nodes) {return;}
+    if (!graphJson?.nodes) { return; }
 
     // 1. Find 'final' node in graph
     const finalNode = graphJson.nodes.find((n: any) => n.type === 'final');
@@ -773,7 +773,7 @@ export class WorkflowService {
         );
       }
 
-      await db.insert(auditEvents).values({
+      await db.insert(auditLogs).values({
         actorId: userId,
         entityType: 'workflow',
         entityId: workflowId,

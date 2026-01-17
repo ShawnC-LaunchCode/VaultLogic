@@ -2,6 +2,7 @@ import {
     AIWorkflowRevisionResponseSchema,
 } from '../../../shared/types/ai';
 import { createLogger } from '../../logger';
+
 import { AIPromptBuilder } from './AIPromptBuilder';
 import { AIProviderClient } from './AIProviderClient';
 import {
@@ -655,3 +656,8 @@ CRITICAL REQUIREMENTS:
     Output ONLY the JSON object.`;
     }
 }
+
+import { aiPromptBuilder } from './AIPromptBuilder';
+
+// Singleton export removed - services create their own instances via dependency injection
+

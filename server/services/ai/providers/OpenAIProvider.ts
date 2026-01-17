@@ -83,29 +83,4 @@ export class OpenAIProvider extends BaseAIProvider {
             throw error;
         }
     }
-
-    getMaxContextTokens(): number {
-        const model = this.config.model;
-        const limits: Record<string, number> = {
-            'gpt-4-turbo-preview': 128000,
-            'gpt-4': 8192,
-            'gpt-3.5-turbo': 16385,
-            'default': 8000,
-        };
-        return limits[model] || limits['default'];
-    }
-
-    estimateCost(promptTokens: number, responseTokens: number): number {
-        const model = this.config.model;
-        const pricing: Record<string, { input: number; output: number }> = {
-            'gpt-4-turbo-preview': { input: 10.00, output: 30.00 },
-            'gpt-4': { input: 30.00, output: 60.00 },
-            'gpt-3.5-turbo': { input: 0.50, output: 1.50 },
-            'default': { input: 10.00, output: 30.00 },
-        };
-
-        const modelPricing = pricing[model] || pricing['default'];
-        return (promptTokens / 1_000_000) * modelPricing.input +
-            (responseTokens / 1_000_000) * modelPricing.output;
-    }
 }

@@ -21,29 +21,6 @@ export interface IAIProvider {
     readonly providerName: string;
 
     /**
-     * Calculate exact or estimated cost for a request
-     */
-    estimateCost(promptTokens: number, responseTokens: number): number;
-
-    /**
-     * Estimate token count for a text string
-     */
-    /**
-     * Estimate token count for a text string
-     */
-    estimateTokenCount(text: string): number;
-
-    /**
-     * Check if response appears to be truncated
-     */
-    isResponseTruncated(response: string): boolean;
-
-    /**
-     * Get maximum context window for the current model
-     */
-    getMaxContextTokens(): number;
-
-    /**
      * Generate a response from the LLM
      */
     generateResponse(
@@ -51,4 +28,24 @@ export interface IAIProvider {
         taskType: TaskType,
         systemMessage?: string
     ): Promise<string>;
+
+    /**
+     * Estimate token count for a text string
+     */
+    estimateTokenCount(text: string): number;
+
+    /**
+     * Calculate exact or estimated cost for a request
+     */
+    estimateCost(promptTokens: number, responseTokens: number): number;
+
+    /**
+     * Get maximum context window for the current model
+     */
+    getMaxContextTokens(): number;
+
+    /**
+     * Check if response appears to be truncated
+     */
+    isResponseTruncated(response: string): boolean;
 }

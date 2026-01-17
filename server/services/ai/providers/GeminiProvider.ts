@@ -82,27 +82,4 @@ export class GeminiProvider extends BaseAIProvider {
             throw error;
         }
     }
-
-    getMaxContextTokens(): number {
-        const model = this.config.model;
-        const limits: Record<string, number> = {
-            'gemini-2.0-flash': 1048576,
-            'gemini-1.5-pro': 2097152,
-            'default': 1000000,
-        };
-        return limits[model] || limits['default'];
-    }
-
-    estimateCost(promptTokens: number, responseTokens: number): number {
-        const model = this.config.model;
-        const pricing: Record<string, { input: number; output: number }> = {
-            'gemini-2.0-flash': { input: 0.10, output: 0.40 },
-            'gemini-1.5-pro': { input: 1.25, output: 5.00 },
-            'default': { input: 0.10, output: 0.40 },
-        };
-
-        const modelPricing = pricing[model] || pricing['default'];
-        return (promptTokens / 1_000_000) * modelPricing.input +
-            (responseTokens / 1_000_000) * modelPricing.output;
-    }
 }
