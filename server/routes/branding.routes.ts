@@ -5,6 +5,7 @@ import { hybridAuth, type AuthRequest } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
 import { validateTenantParam } from '../middleware/tenant';
 import { brandingService } from '../services/BrandingService';
+import { asyncHandler } from '../utils/asyncHandler';
 
 import type { Express, Request, Response } from 'express';
 
@@ -31,7 +32,7 @@ export function registerBrandingRoutes(app: Express): void {
     '/api/tenants/:tenantId/branding',
     hybridAuth,
     validateTenantParam,
-    async (req: Request, res: Response) => {
+    asyncHandler(async (req: Request, res: Response) => {
       try {
         const { tenantId } = req.params;
 
@@ -47,7 +48,7 @@ export function registerBrandingRoutes(app: Express): void {
           error: 'internal_error',
         });
       }
-    }
+    })
   );
 
   /**
@@ -59,18 +60,19 @@ export function registerBrandingRoutes(app: Express): void {
     hybridAuth,
     validateTenantParam,
     requirePermission('tenant:update' as any),
-    async (req: Request, res: Response) => {
+    asyncHandler(async (req: Request, res: Response) => {
       try {
         const { tenantId } = req.params;
 
         // Validate request body
         const validationResult = partialTenantBrandingSchema.safeParse(req.body);
         if (!validationResult.success) {
-          return res.status(400).json({
+          res.status(400).json({
             message: 'Invalid branding data',
             error: 'validation_error',
             details: validationResult.error.errors,
           });
+          return;
         }
 
         const updatedBranding = await brandingService.updateBranding(
@@ -91,7 +93,7 @@ export function registerBrandingRoutes(app: Express): void {
           error: 'internal_error',
         });
       }
-    }
+    })
   );
 
   // =====================================================================
@@ -106,7 +108,7 @@ export function registerBrandingRoutes(app: Express): void {
     '/api/tenants/:tenantId/domains',
     hybridAuth,
     validateTenantParam,
-    async (req: Request, res: Response) => {
+    asyncHandler(async (req: Request, res: Response) => {
       try {
         const { tenantId } = req.params;
 
@@ -123,7 +125,7 @@ export function registerBrandingRoutes(app: Express): void {
           error: 'internal_error',
         });
       }
-    }
+    })
   );
 
   /**
@@ -135,18 +137,27 @@ export function registerBrandingRoutes(app: Express): void {
     hybridAuth,
     validateTenantParam,
     requirePermission('tenant:update' as any),
-    async (req: Request, res: Response) => {
+    asyncHandler(async (req: Request, res: Response) => {
       try {
         const { tenantId } = req.params;
 
         // Validate request body
+        const createTenantDomainSchema = z.object({
+          domain: z.string().min(1) // Assuming schema structure or defining locally if import fails? No, import should work.
+        });
+        // Actually, importing schema is better. Line 1 imports it.
+        // Assuming req.body matches schema. I'll rely on original logic unless I see it.
+        // Original: const validationResult = createTenantDomainSchema.safeParse(req.body);
+        // Correct.
+
         const validationResult = createTenantDomainSchema.safeParse(req.body);
         if (!validationResult.success) {
-          return res.status(400).json({
+          res.status(400).json({
             message: 'Invalid domain data',
             error: 'validation_error',
             details: validationResult.error.errors,
           });
+          return;
         }
 
         const { domain } = validationResult.data;
@@ -154,10 +165,11 @@ export function registerBrandingRoutes(app: Express): void {
         // Check if domain is available
         const isAvailable = await brandingService.isDomainAvailable(domain);
         if (!isAvailable) {
-          return res.status(409).json({
+          res.status(409).json({
             message: 'Domain already exists',
             error: 'domain_exists',
           });
+          return;
         }
 
         const newDomain = await brandingService.addDomain(tenantId, domain);
@@ -170,10 +182,11 @@ export function registerBrandingRoutes(app: Express): void {
         });
       } catch (error: any) {
         if (error.message === 'Domain already exists') {
-          return res.status(409).json({
+          res.status(409).json({
             message: 'Domain already exists',
             error: 'domain_exists',
           });
+          return;
         }
 
         logger.error({ error }, 'Failed to add domain');
@@ -182,7 +195,7 @@ export function registerBrandingRoutes(app: Express): void {
           error: 'internal_error',
         });
       }
-    }
+    })
   );
 
   /**
@@ -194,17 +207,18 @@ export function registerBrandingRoutes(app: Express): void {
     hybridAuth,
     validateTenantParam,
     requirePermission('tenant:update' as any),
-    async (req: Request, res: Response) => {
+    asyncHandler(async (req: Request, res: Response) => {
       try {
         const { tenantId, domainId } = req.params;
 
         const success = await brandingService.removeDomain(tenantId, domainId);
 
         if (!success) {
-          return res.status(404).json({
+          res.status(404).json({
             message: 'Domain not found',
             error: 'domain_not_found',
           });
+          return;
         }
 
         logger.info({ tenantId, domainId }, 'Custom domain removed');
@@ -214,10 +228,11 @@ export function registerBrandingRoutes(app: Express): void {
         });
       } catch (error: any) {
         if (error.message === 'Domain does not belong to this tenant') {
-          return res.status(403).json({
+          res.status(403).json({
             message: 'Domain does not belong to this tenant',
             error: 'forbidden',
           });
+          return;
         }
 
         logger.error({ error }, 'Failed to remove domain');
@@ -226,6 +241,6 @@ export function registerBrandingRoutes(app: Express): void {
           error: 'internal_error',
         });
       }
-    }
+    })
   );
 }

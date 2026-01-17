@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { hybridAuth } from "../middleware/auth";
 import { documentHookService } from "../services/scripting/DocumentHookService";
+import { asyncHandler } from '../utils/asyncHandler';
 
 import type { AuthRequest } from "../middleware/auth";
 
@@ -63,10 +64,11 @@ const testHookSchema = z.object({
 router.get(
   "/workflows/:workflowId/document-hooks",
   hybridAuth,
-  async (req: AuthRequest, res) => {
+  asyncHandler(async (req: any, res) => {
     try {
+      const authReq = req as AuthRequest;
       const { workflowId } = req.params;
-      const userId = req.userId!;
+      const userId = authReq.userId!;
 
       const hooks = await documentHookService.listHooks(workflowId, userId);
 
@@ -77,7 +79,7 @@ router.get(
         error: error instanceof Error ? error.message : "Failed to list document hooks",
       });
     }
-  }
+  })
 );
 
 /**
@@ -87,10 +89,11 @@ router.get(
 router.post(
   "/workflows/:workflowId/document-hooks",
   hybridAuth,
-  async (req: AuthRequest, res) => {
+  asyncHandler(async (req: any, res) => {
     try {
+      const authReq = req as AuthRequest;
       const { workflowId } = req.params;
-      const userId = req.userId!;
+      const userId = authReq.userId!;
 
       // Validate request body
       const validatedData = createDocumentHookSchema.parse({
@@ -115,17 +118,18 @@ router.post(
         });
       }
     }
-  }
+  })
 );
 
 /**
  * GET /api/document-hooks/:hookId
  * Get a single document hook by ID
  */
-router.get("/document-hooks/:hookId", hybridAuth, async (req: AuthRequest, res) => {
+router.get("/document-hooks/:hookId", hybridAuth, asyncHandler(async (req: any, res) => {
   try {
+    const authReq = req as AuthRequest;
     const { hookId } = req.params;
-    const userId = req.userId!;
+    const userId = authReq.userId!;
 
     // Note: We could add a specific get method to the service, but for now
     // we'll just list all and filter (or add getById to service later)
@@ -140,16 +144,17 @@ router.get("/document-hooks/:hookId", hybridAuth, async (req: AuthRequest, res) 
       error: error instanceof Error ? error.message : "Failed to get document hook",
     });
   }
-});
+}));
 
 /**
  * PUT /api/document-hooks/:hookId
  * Update a document hook
  */
-router.put("/document-hooks/:hookId", hybridAuth, async (req: AuthRequest, res) => {
+router.put("/document-hooks/:hookId", hybridAuth, asyncHandler(async (req: any, res) => {
   try {
+    const authReq = req as AuthRequest;
     const { hookId } = req.params;
-    const userId = req.userId!;
+    const userId = authReq.userId!;
 
     // Validate request body
     const validatedData = updateDocumentHookSchema.parse(req.body);
@@ -171,16 +176,17 @@ router.put("/document-hooks/:hookId", hybridAuth, async (req: AuthRequest, res) 
       });
     }
   }
-});
+}));
 
 /**
  * DELETE /api/document-hooks/:hookId
  * Delete a document hook
  */
-router.delete("/document-hooks/:hookId", hybridAuth, async (req: AuthRequest, res) => {
+router.delete("/document-hooks/:hookId", hybridAuth, asyncHandler(async (req: any, res) => {
   try {
+    const authReq = req as AuthRequest;
     const { hookId } = req.params;
-    const userId = req.userId!;
+    const userId = authReq.userId!;
 
     await documentHookService.deleteHook(hookId, userId);
 
@@ -191,16 +197,17 @@ router.delete("/document-hooks/:hookId", hybridAuth, async (req: AuthRequest, re
       error: error instanceof Error ? error.message : "Failed to delete document hook",
     });
   }
-});
+}));
 
 /**
  * POST /api/document-hooks/:hookId/test
  * Test a document hook with sample data
  */
-router.post("/document-hooks/:hookId/test", hybridAuth, async (req: AuthRequest, res) => {
+router.post("/document-hooks/:hookId/test", hybridAuth, asyncHandler(async (req: any, res) => {
   try {
+    const authReq = req as AuthRequest;
     const { hookId } = req.params;
-    const userId = req.userId!;
+    const userId = authReq.userId!;
 
     // Validate request body
     const validatedData = testHookSchema.parse(req.body);
@@ -222,6 +229,6 @@ router.post("/document-hooks/:hookId/test", hybridAuth, async (req: AuthRequest,
       });
     }
   }
-});
+}));
 
 export default router;

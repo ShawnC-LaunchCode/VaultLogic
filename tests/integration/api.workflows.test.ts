@@ -5,6 +5,23 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 
 import * as schema from "@shared/schema";
 
+// Local mock to fix constructor error
+import { vi } from "vitest";
+vi.mock('@google/generative-ai', () => {
+  return {
+    GoogleGenerativeAI: class MockGoogleGenerativeAI {
+      constructor(apiKey: string) { }
+      getGenerativeModel(params: any) {
+        return {
+          generateContent: vi.fn().mockResolvedValue({
+            response: { text: () => JSON.stringify({}) }
+          })
+        };
+      }
+    }
+  };
+});
+
 import { db } from "../../server/db";
 import { setupIntegrationTest, type IntegrationTestContext } from "../helpers/integrationTestHelper";
 

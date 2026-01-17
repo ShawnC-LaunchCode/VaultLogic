@@ -160,7 +160,7 @@ export function VisualBuilderTab({ workflowId, readOnly: propReadOnly }: VisualB
                     <div className="flex-1 overflow-hidden relative flex flex-col">
                         {selectedVersion !== 'current' && (
                             <div className="bg-amber-100 text-amber-800 px-4 py-2 text-sm text-center border-b border-amber-200">
-                                Viewing older version. <Button variant="link" className="h-auto p-0 text-amber-900 font-semibold ml-1" onClick={() => setSelectedVersion('current')}>Switch to current</Button>
+                                Viewing older version. <Button variant="link" className="h-auto p-0 text-amber-900 font-semibold ml-1" onClick={() => { void setSelectedVersion('current'); }}>Switch to current</Button>
                             </div>
                         )}
                         <div className="flex-1 relative">

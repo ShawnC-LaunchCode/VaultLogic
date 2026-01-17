@@ -3,6 +3,7 @@ import { z } from "zod";
 import { logger } from "../logger";
 import { hybridAuth, type AuthRequest } from '../middleware/auth';
 import { snapshotService } from "../services/SnapshotService";
+import { asyncHandler } from "../utils/asyncHandler";
 
 import type { Express, Request, Response } from "express";
 
@@ -28,7 +29,7 @@ export function registerSnapshotRoutes(app: Express): void {
    * GET /api/workflows/:workflowId/snapshots
    * Get all snapshots for a workflow
    */
-  app.get('/api/workflows/:workflowId/snapshots', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:workflowId/snapshots', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -46,13 +47,13 @@ export function registerSnapshotRoutes(app: Express): void {
         error: process.env.NODE_ENV === 'development' && error instanceof Error ? error.message : undefined,
       });
     }
-  });
+  }));
 
   /**
    * GET /api/workflows/:workflowId/snapshots/:snapshotId
    * Get a single snapshot by ID
    */
-  app.get('/api/workflows/:workflowId/snapshots/:snapshotId', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:workflowId/snapshots/:snapshotId', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -74,13 +75,13 @@ export function registerSnapshotRoutes(app: Express): void {
         error: process.env.NODE_ENV === 'development' && error instanceof Error ? error.message : undefined,
       });
     }
-  });
+  }));
 
   /**
    * POST /api/workflows/:workflowId/snapshots
    * Create a new snapshot (empty values)
    */
-  app.post('/api/workflows/:workflowId/snapshots', hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/workflows/:workflowId/snapshots', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -104,13 +105,13 @@ export function registerSnapshotRoutes(app: Express): void {
         error: process.env.NODE_ENV === 'development' && error instanceof Error ? error.message : undefined,
       });
     }
-  });
+  }));
 
   /**
    * PUT /api/workflows/:workflowId/snapshots/:snapshotId
    * Rename a snapshot
    */
-  app.put('/api/workflows/:workflowId/snapshots/:snapshotId', hybridAuth, async (req: Request, res: Response) => {
+  app.put('/api/workflows/:workflowId/snapshots/:snapshotId', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -139,13 +140,13 @@ export function registerSnapshotRoutes(app: Express): void {
         error: process.env.NODE_ENV === 'development' && error instanceof Error ? error.message : undefined,
       });
     }
-  });
+  }));
 
   /**
    * DELETE /api/workflows/:workflowId/snapshots/:snapshotId
    * Delete a snapshot
    */
-  app.delete('/api/workflows/:workflowId/snapshots/:snapshotId', hybridAuth, async (req: Request, res: Response) => {
+  app.delete('/api/workflows/:workflowId/snapshots/:snapshotId', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -168,13 +169,13 @@ export function registerSnapshotRoutes(app: Express): void {
         error: process.env.NODE_ENV === 'development' && error instanceof Error ? error.message : undefined,
       });
     }
-  });
+  }));
 
   /**
    * POST /api/workflows/:workflowId/snapshots/:snapshotId/save-from-run
    * Save current run values to snapshot (versioned)
    */
-  app.post('/api/workflows/:workflowId/snapshots/:snapshotId/save-from-run', hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/workflows/:workflowId/snapshots/:snapshotId/save-from-run', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -198,13 +199,13 @@ export function registerSnapshotRoutes(app: Express): void {
         error: process.env.NODE_ENV === 'development' && error instanceof Error ? error.message : undefined,
       });
     }
-  });
+  }));
 
   /**
    * GET /api/workflows/:workflowId/snapshots/:snapshotId/values
    * Get snapshot values as simple key-value map
    */
-  app.get('/api/workflows/:workflowId/snapshots/:snapshotId/values', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:workflowId/snapshots/:snapshotId/values', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -227,13 +228,13 @@ export function registerSnapshotRoutes(app: Express): void {
         error: process.env.NODE_ENV === 'development' && error instanceof Error ? error.message : undefined,
       });
     }
-  });
+  }));
 
   /**
    * GET /api/workflows/:workflowId/snapshots/:snapshotId/validate
    * Validate if snapshot values are still current with workflow
    */
-  app.get('/api/workflows/:workflowId/snapshots/:snapshotId/validate', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:workflowId/snapshots/:snapshotId/validate', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -256,5 +257,5 @@ export function registerSnapshotRoutes(app: Express): void {
         error: process.env.NODE_ENV === 'development' && error instanceof Error ? error.message : undefined,
       });
     }
-  });
+  }));
 }

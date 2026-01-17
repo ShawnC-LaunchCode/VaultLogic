@@ -114,7 +114,7 @@ export function GoogleLogin({ onSuccess, onError, 'data-testid': testId }: Googl
         <Button
           variant="outline"
           size="sm"
-          onClick={handleLogout}
+          onClick={() => { void handleLogout(); }}
           data-testid="button-logout"
         >
           <LogOut className="w-4 h-4 mr-2" />
@@ -126,7 +126,7 @@ export function GoogleLogin({ onSuccess, onError, 'data-testid': testId }: Googl
 
   return (
     <GoogleOAuthLogin
-      onSuccess={handleLoginSuccess}
+      onSuccess={(response) => { void handleLoginSuccess(response); }}
       onError={handleLoginError}
       useOneTap={false}
       data-testid={testId || "button-google-login"}

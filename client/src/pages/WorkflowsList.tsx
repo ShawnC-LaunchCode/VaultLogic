@@ -249,7 +249,7 @@ export default function WorkflowsList() {
                       New Workflow
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setIsProjectDialogOpen(true)}>
+                  <DropdownMenuItem onClick={() => { void setIsProjectDialogOpen(true); }}>
                     <FolderPlus className="w-4 h-4 mr-2" />
                     New Project
                   </DropdownMenuItem>
@@ -315,7 +315,7 @@ export default function WorkflowsList() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleCopyLink(workflow.id)}
+                            onClick={() => { void handleCopyLink(workflow.id); }}
                             data-testid={`button-copy-link-workflow-${workflow.id}`}
                           >
                             <LinkIcon className="w-4 h-4 mr-1" />
@@ -324,7 +324,7 @@ export default function WorkflowsList() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setTransferringWorkflow({ id: workflow.id, title: workflow.title })}
+                            onClick={() => { void setTransferringWorkflow({ id: workflow.id, title: workflow.title }); }}
                             data-testid={`button-transfer-workflow-${workflow.id}`}
                           >
                             <ArrowRightLeft className="w-4 h-4 mr-1" />
@@ -355,7 +355,7 @@ export default function WorkflowsList() {
                                   Cancel
                                 </AlertDialogCancel>
                                 <AlertDialogAction
-                                  onClick={() => handleDeleteWorkflow(workflow.id)}
+                                  onClick={() => { void handleDeleteWorkflow(workflow.id); }}
                                   disabled={deletingWorkflowId === workflow.id}
                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                   data-testid={`button-confirm-delete-${workflow.id}`}
@@ -394,7 +394,7 @@ export default function WorkflowsList() {
                       <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">or</span>
                       <Button
                         variant="outline"
-                        onClick={() => createSampleMutation.mutate()}
+                        onClick={() => { void createSampleMutation.mutate(); }}
                         disabled={createSampleMutation.isPending}
                         className="bg-background min-w-[140px]"
                       >
@@ -428,7 +428,7 @@ export default function WorkflowsList() {
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
-                onClick={() => handleDeleteProject(deletingProjectId)}
+                onClick={() => { void handleDeleteProject(deletingProjectId); }}
                 disabled={deleteProjectMutation.isPending}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
@@ -455,7 +455,7 @@ export default function WorkflowsList() {
                 id="project-name"
                 placeholder="Enter project name"
                 value={newProjectName}
-                onChange={(e) => setNewProjectName(e.target.value)}
+                onChange={(e) => { void setNewProjectName(e.target.value); }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     handleCreateProject();
@@ -469,7 +469,7 @@ export default function WorkflowsList() {
                 id="project-description"
                 placeholder="Enter project description (optional)"
                 value={newProjectDescription}
-                onChange={(e) => setNewProjectDescription(e.target.value)}
+                onChange={(e) => { void setNewProjectDescription(e.target.value); }}
                 rows={3}
               />
             </div>
@@ -486,7 +486,7 @@ export default function WorkflowsList() {
               Cancel
             </Button>
             <Button
-              onClick={handleCreateProject}
+              onClick={() => { void handleCreateProject(); }}
               disabled={createProjectMutation.isPending || !newProjectName.trim()}
               className="bg-indigo-600 hover:bg-indigo-700"
             >

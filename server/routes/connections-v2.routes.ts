@@ -25,6 +25,7 @@ import {
   validateOAuth2State,
   cleanupOAuth2State,
 } from '../services/oauth2';
+import { asyncHandler } from '../utils/asyncHandler';
 
 
 import type { Express, Request, Response } from 'express';
@@ -66,7 +67,7 @@ export function registerConnectionsV2Routes(app: Express) {
    * GET /api/projects/:projectId/connections
    * List all connections for a project
    */
-  app.get('/api/projects/:projectId/connections', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/projects/:projectId/connections', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { projectId } = req.params;
 
@@ -81,20 +82,21 @@ export function registerConnectionsV2Routes(app: Express) {
         message: (error as Error).message,
       });
     }
-  });
+  }));
 
   /**
    * GET /api/projects/:projectId/connections/:connectionId
    * Get a specific connection
    */
-  app.get('/api/projects/:projectId/connections/:connectionId', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/projects/:projectId/connections/:connectionId', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { projectId, connectionId } = req.params;
 
       const connection = await getConnection(projectId, connectionId);
 
       if (!connection) {
-        return res.status(404).json({ error: 'Connection not found' });
+        res.status(404).json({ error: 'Connection not found' });
+        return;
       }
 
       res.json(connection);
@@ -105,13 +107,13 @@ export function registerConnectionsV2Routes(app: Express) {
         message: (error as Error).message,
       });
     }
-  });
+  }));
 
   /**
    * POST /api/projects/:projectId/connections
    * Create a new connection
    */
-  app.post('/api/projects/:projectId/connections', hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/projects/:projectId/connections', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { projectId } = req.params;
 
@@ -136,10 +138,11 @@ export function registerConnectionsV2Routes(app: Express) {
       res.status(201).json(connection);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({
+        res.status(400).json({
           error: 'Validation error',
           details: error.errors,
         });
+        return;
       }
 
       logger.error({ error }, 'Failed to create connection:');
@@ -148,13 +151,13 @@ export function registerConnectionsV2Routes(app: Express) {
         message: (error as Error).message,
       });
     }
-  });
+  }));
 
   /**
    * PATCH /api/projects/:projectId/connections/:connectionId
    * Update a connection
    */
-  app.patch('/api/projects/:projectId/connections/:connectionId', hybridAuth, async (req: Request, res: Response) => {
+  app.patch('/api/projects/:projectId/connections/:connectionId', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { projectId, connectionId } = req.params;
 
@@ -175,10 +178,11 @@ export function registerConnectionsV2Routes(app: Express) {
       res.json(connection);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({
+        res.status(400).json({
           error: 'Validation error',
           details: error.errors,
         });
+        return;
       }
 
       logger.error({ error }, 'Failed to update connection:');
@@ -187,13 +191,13 @@ export function registerConnectionsV2Routes(app: Express) {
         message: (error as Error).message,
       });
     }
-  });
+  }));
 
   /**
    * DELETE /api/projects/:projectId/connections/:connectionId
    * Delete a connection
    */
-  app.delete('/api/projects/:projectId/connections/:connectionId', hybridAuth, async (req: Request, res: Response) => {
+  app.delete('/api/projects/:projectId/connections/:connectionId', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { projectId, connectionId } = req.params;
 
@@ -212,13 +216,13 @@ export function registerConnectionsV2Routes(app: Express) {
         message: (error as Error).message,
       });
     }
-  });
+  }));
 
   /**
    * POST /api/projects/:projectId/connections/:connectionId/test
    * Test a connection
    */
-  app.post('/api/projects/:projectId/connections/:connectionId/test', hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/projects/:projectId/connections/:connectionId/test', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { projectId, connectionId } = req.params;
 
@@ -239,13 +243,13 @@ export function registerConnectionsV2Routes(app: Express) {
         message: (error as Error).message,
       });
     }
-  });
+  }));
 
   /**
    * GET /api/projects/:projectId/connections/:connectionId/status
    * Get connection status (for UI display)
    */
-  app.get('/api/projects/:projectId/connections/:connectionId/status', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/projects/:projectId/connections/:connectionId/status', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { projectId, connectionId } = req.params;
 
@@ -259,22 +263,24 @@ export function registerConnectionsV2Routes(app: Express) {
         message: (error as Error).message,
       });
     }
-  });
+  }));
 
   /**
    * GET /api/connections/oauth/start
    * Initiate OAuth2 3-legged authorization flow
    */
-  app.get('/api/connections/oauth/start', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/connections/oauth/start', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { connectionId, projectId } = req.query;
 
       if (!connectionId || typeof connectionId !== 'string') {
-        return res.status(400).json({ error: 'connectionId query parameter is required' });
+        res.status(400).json({ error: 'connectionId query parameter is required' });
+        return;
       }
 
       if (!projectId || typeof projectId !== 'string') {
-        return res.status(400).json({ error: 'projectId query parameter is required' });
+        res.status(400).json({ error: 'projectId query parameter is required' });
+        return;
       }
 
       // Get base URL from environment or request
@@ -299,20 +305,20 @@ export function registerConnectionsV2Routes(app: Express) {
         message: (error as Error).message,
       });
     }
-  });
+  }));
 
   /**
    * GET /api/connections/oauth/callback
    * Handle OAuth2 callback
    */
-  app.get('/api/connections/oauth/callback', async (req: Request, res: Response) => {
+  app.get('/api/connections/oauth/callback', asyncHandler(async (req: Request, res: Response) => {
     try {
       const { code, state, error: oauthError } = req.query;
 
       // Check for OAuth error
       if (oauthError) {
         logger.error({ error: oauthError }, 'OAuth2 callback error:');
-        return res.status(400).send(`
+        res.status(400).send(`
           <html>
             <body>
               <h1>Authorization Failed</h1>
@@ -321,23 +327,27 @@ export function registerConnectionsV2Routes(app: Express) {
             </body>
           </html>
         `);
+        return;
       }
 
       // Validate parameters
       if (!code || typeof code !== 'string' || !state || typeof state !== 'string') {
-        return res.status(400).json({ error: 'Invalid callback parameters' });
+        res.status(400).json({ error: 'Invalid callback parameters' });
+        return;
       }
 
       // Validate state token
       const stateRecord = validateOAuth2State(state);
       if (!stateRecord) {
-        return res.status(400).json({ error: 'Invalid or expired state token' });
+        res.status(400).json({ error: 'Invalid or expired state token' });
+        return;
       }
 
       // Get connection
       const connection = await getConnection(stateRecord.connectionId, stateRecord.connectionId);
       if (!connection) {
-        return res.status(404).json({ error: 'Connection not found' });
+        res.status(404).json({ error: 'Connection not found' });
+        return;
       }
 
       // Handle OAuth2 callback
@@ -367,5 +377,5 @@ export function registerConnectionsV2Routes(app: Express) {
         message: (error as Error).message,
       });
     }
-  });
+  }));
 }

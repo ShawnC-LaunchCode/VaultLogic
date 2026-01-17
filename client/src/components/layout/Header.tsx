@@ -95,7 +95,7 @@ export default function Header({ title, description, actions }: HeaderProps) {
                 {navigation.map((item) => (
                   <Link key={item.name} href={item.href}>
                     <div
-                      onClick={() => setMobileMenuOpen(false)}
+                      onClick={() => { void setMobileMenuOpen(false); }}
                       className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors cursor-pointer ${isActive(item.href)
                         ? "bg-primary text-primary-foreground"
                         : "text-muted-foreground hover:text-foreground hover:bg-accent"
@@ -118,7 +118,7 @@ export default function Header({ title, description, actions }: HeaderProps) {
                     {adminNavigation.map((item) => (
                       <Link key={item.name} href={item.href}>
                         <div
-                          onClick={() => setMobileMenuOpen(false)}
+                          onClick={() => { void setMobileMenuOpen(false); }}
                           className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors cursor-pointer ${isActive(item.href)
                             ? "bg-purple-600 text-white"
                             : "text-muted-foreground hover:text-foreground hover:bg-purple-50"
@@ -162,7 +162,7 @@ export default function Header({ title, description, actions }: HeaderProps) {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={handleLogout}
+                    onClick={() => { void handleLogout(); }}
                     className="w-full flex items-center justify-center space-x-2"
                   >
                     <i className="fas fa-sign-out-alt text-sm"></i>

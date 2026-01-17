@@ -8,6 +8,7 @@ import { validatePage } from "@shared/validation/PageValidator";
 
 import { db } from "../db"; // Correct path: ../db because we are in server/routes/
 import { logger } from "../logger"; // Correct path: ../logger
+import { asyncHandler } from "../utils/asyncHandler";
 
 export const validationRouter = Router();
 
@@ -17,7 +18,7 @@ export const validationRouter = Router();
  * Validates a page of answers server-side.
  * Payload: { sectionId: string, values: Record<string, any> }
  */
-validationRouter.post("/api/workflows/:workflowId/validate-page", async (req, res) => {
+validationRouter.post("/api/workflows/:workflowId/validate-page", asyncHandler(async (req, res) => {
     const { workflowId } = req.params;
     const { sectionId, values, allValues } = req.body;
 
@@ -42,8 +43,8 @@ validationRouter.post("/api/workflows/:workflowId/validate-page", async (req, re
         // Server-side visibility check attempt
         // If allValues not provided, we might over-validate or skip visibility check
         const stepsToValidate = sectionSteps.filter((step: any) => {
-            if (!step.visibleIf) {return true;}
-            if (!allValues) {return true;} // Validate if we can't be sure
+            if (!step.visibleIf) { return true; }
+            if (!allValues) { return true; } // Validate if we can't be sure
             try {
                 // evaluateConditionExpression is Isomorphic
                 const { evaluateConditionExpression } = require("@shared/conditionEvaluator");
@@ -75,4 +76,4 @@ validationRouter.post("/api/workflows/:workflowId/validate-page", async (req, re
         logger.error({ error, workflowId, sectionId }, "Server-side validation failed");
         res.status(500).json({ valid: false, error: "Internal validation error" });
     }
-});
+}));

@@ -195,7 +195,7 @@ export default function TemplatesPage() {
             <Input
               placeholder="Search templates..."
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => { void setQuery(e.target.value); }}
               className="w-full sm:w-[240px]"
               aria-label="Search templates"
             />
@@ -217,7 +217,7 @@ export default function TemplatesPage() {
           <Button
             variant={viewFilter === "all" ? "default" : "outline"}
             size="sm"
-            onClick={() => setViewFilter("all")}
+            onClick={() => { void setViewFilter("all"); }}
             className="h-8"
           >
             All Templates
@@ -225,7 +225,7 @@ export default function TemplatesPage() {
           <Button
             variant={viewFilter === "mine" ? "default" : "outline"}
             size="sm"
-            onClick={() => setViewFilter("mine")}
+            onClick={() => { void setViewFilter("mine"); }}
             className="h-8"
           >
             My Templates
@@ -233,7 +233,7 @@ export default function TemplatesPage() {
           <Button
             variant={viewFilter === "shared" ? "default" : "outline"}
             size="sm"
-            onClick={() => setViewFilter("shared")}
+            onClick={() => { void setViewFilter("shared"); }}
             className="h-8"
           >
             <Users className="w-3 h-3 mr-1.5" />
@@ -275,7 +275,7 @@ export default function TemplatesPage() {
                   key={tag}
                   variant={selectedTags.includes(tag) ? "default" : "outline"}
                   className="cursor-pointer hover:bg-primary/90 transition-colors"
-                  onClick={() => toggleTag(tag)}
+                  onClick={() => { void toggleTag(tag); }}
                 >
                   {tag}
                 </Badge>
@@ -399,7 +399,7 @@ export default function TemplatesPage() {
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
-                onClick={() => deletingTemplate && handleDeleteTemplate(deletingTemplate)}
+                onClick={() => { void deletingTemplate && handleDeleteTemplate(deletingTemplate); }}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 Delete
@@ -536,22 +536,22 @@ function TemplateCard({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onEdit(template)}>
+                    <DropdownMenuItem onClick={() => { void onEdit(template); }}>
                       <Pencil className="w-4 h-4 mr-2" />
                       Edit details
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onEditContent(template.id)}>
+                    <DropdownMenuItem onClick={() => { void onEditContent(template.id); }}>
                       <FileEdit className="w-4 h-4 mr-2" />
                       Edit content
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => onShare(template)}>
+                    <DropdownMenuItem onClick={() => { void onShare(template); }}>
                       <Share2 className="w-4 h-4 mr-2" />
                       Share with team
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onClick={() => onDelete(template)}
+                      onClick={() => { void onDelete(template); }}
                       className="text-destructive focus:text-destructive"
                     >
                       <Trash2 className="w-4 h-4 mr-2" />
@@ -618,7 +618,7 @@ function TemplateCard({
           <div className="flex justify-end pt-2">
             <Button
               size="sm"
-              onClick={() => onAddToSurvey(template.id)}
+              onClick={() => { void onAddToSurvey(template.id); }}
               className="gap-2"
             >
               <Plus className="w-3 h-3" />

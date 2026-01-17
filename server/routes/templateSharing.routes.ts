@@ -2,6 +2,7 @@ import { createLogger } from "../logger";
 import { hybridAuth, type AuthRequest } from '../middleware/auth';
 import { userRepository } from "../repositories";
 import { TemplateSharingService } from "../services/TemplateSharingService";
+import { asyncHandler } from "../utils/asyncHandler";
 
 import type { Express, Request, Response } from "express";
 
@@ -18,7 +19,7 @@ export function registerTemplateSharingRoutes(app: Express): void {
    * GET /api/templates/:id/shares
    * List all shares for a template (owner/admin only)
    */
-  app.get("/api/templates/:id/shares", hybridAuth, async (req: Request, res: Response) => {
+  app.get("/api/templates/:id/shares", hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const authReq = req as AuthRequest;
@@ -43,14 +44,14 @@ export function registerTemplateSharingRoutes(app: Express): void {
       }
       res.status(500).json({ error: "Failed to list shares" });
     }
-  });
+  }));
 
   /**
    * POST /api/templates/:id/share
    * Share a template with a user (by userId or email)
    * Body: { userId?: string, email?: string, access: "use" | "edit" }
    */
-  app.post("/api/templates/:id/share", hybridAuth, async (req: Request, res: Response) => {
+  app.post("/api/templates/:id/share", hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const userId = authReq.userId;
@@ -64,7 +65,7 @@ export function registerTemplateSharingRoutes(app: Express): void {
 
       const { id } = req.params;
       const { userId: targetUserId, email, access } = req.body;
-      
+
 
       if (!access || !["use", "edit"].includes(access)) {
         return res.status(400).json({ error: "Invalid access level. Must be 'use' or 'edit'" });
@@ -94,14 +95,14 @@ export function registerTemplateSharingRoutes(app: Express): void {
       }
       res.status(500).json({ error: "Failed to share template" });
     }
-  });
+  }));
 
   /**
    * PUT /api/template-shares/:shareId
    * Update access level for a share
    * Body: { access: "use" | "edit" }
    */
-  app.put("/api/template-shares/:shareId", hybridAuth, async (req: Request, res: Response) => {
+  app.put("/api/template-shares/:shareId", hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const userId = authReq.userId;
@@ -115,7 +116,7 @@ export function registerTemplateSharingRoutes(app: Express): void {
 
       const { shareId } = req.params;
       const { access } = req.body;
-      
+
 
       if (!access || !["use", "edit"].includes(access)) {
         return res.status(400).json({ error: "Invalid access level. Must be 'use' or 'edit'" });
@@ -135,13 +136,13 @@ export function registerTemplateSharingRoutes(app: Express): void {
       }
       res.status(500).json({ error: "Failed to update share access" });
     }
-  });
+  }));
 
   /**
    * DELETE /api/template-shares/:shareId
    * Revoke a share
    */
-  app.delete("/api/template-shares/:shareId", hybridAuth, async (req: Request, res: Response) => {
+  app.delete("/api/template-shares/:shareId", hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const userId = authReq.userId;
@@ -154,7 +155,7 @@ export function registerTemplateSharingRoutes(app: Express): void {
       }
 
       const { shareId } = req.params;
-      
+
       const success = await sharingService.revoke(shareId, user);
 
       if (success) {
@@ -169,13 +170,13 @@ export function registerTemplateSharingRoutes(app: Express): void {
       }
       res.status(500).json({ error: "Failed to revoke share" });
     }
-  });
+  }));
 
   /**
    * GET /api/templates-shared-with-me
    * List all templates shared with the current user
    */
-  app.get("/api/templates-shared-with-me", hybridAuth, async (req: Request, res: Response) => {
+  app.get("/api/templates-shared-with-me", hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const userId = authReq.userId;
@@ -194,5 +195,5 @@ export function registerTemplateSharingRoutes(app: Express): void {
       logger.error({ error }, "Error listing shared templates");
       res.status(500).json({ error: "Failed to list shared templates" });
     }
-  });
+  }));
 }

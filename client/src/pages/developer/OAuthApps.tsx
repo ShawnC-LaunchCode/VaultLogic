@@ -38,7 +38,7 @@ export default function OAuthApps() {
                     <h1 className="text-3xl font-bold tracking-tight">OAuth Applications</h1>
                     <p className="text-muted-foreground">Manage your OAuth 2.1 applications and credentials.</p>
                 </div>
-                <Button onClick={() => setIsCreating(true)}>
+                <Button onClick={() => { void setIsCreating(true); }}>
                     <Plus className="mr-2 h-4 w-4" /> New Application
                 </Button>
             </div>
@@ -59,8 +59,8 @@ export default function OAuthApps() {
                             <Input value={newRedirectUri} onChange={e => setNewRedirectUri(e.target.value)} placeholder="https://myapp.com/callback" />
                         </div>
                         <div className="flex justify-end space-x-2">
-                            <Button variant="outline" onClick={() => setIsCreating(false)}>Cancel</Button>
-                            <Button onClick={handleCreate}>Create App</Button>
+                            <Button variant="outline" onClick={() => { void setIsCreating(false); }}>Cancel</Button>
+                            <Button onClick={() => { void handleCreate(); }}>Create App</Button>
                         </div>
                     </CardContent>
                 </Card>
@@ -71,7 +71,7 @@ export default function OAuthApps() {
                     <Card className="bg-muted/50 border-dashed">
                         <CardContent className="flex flex-col items-center justify-center py-10 text-center">
                             <p className="text-muted-foreground">No applications registered yet.</p>
-                            <Button variant="link" onClick={() => setIsCreating(true)}>Create your first app</Button>
+                            <Button variant="link" onClick={() => { void setIsCreating(true); }}>Create your first app</Button>
                         </CardContent>
                     </Card>
                 ) : (

@@ -7,6 +7,7 @@ import { hybridAuth, type AuthRequest } from '../middleware/auth';
 import { autoRevertToDraft } from "../middleware/autoRevertToDraft";
 import { sectionRepository } from "../repositories/SectionRepository";
 import { sectionService } from "../services/SectionService";
+import { asyncHandler } from "../utils/asyncHandler";
 
 import type { Express, Request, Response, NextFunction } from "express";
 
@@ -51,7 +52,7 @@ export function registerSectionRoutes(app: Express): void {
    * POST /api/workflows/:workflowId/sections
    * Create a new section
    */
-  app.post('/api/workflows/:workflowId/sections', hybridAuth, autoRevertToDraft, async (req: Request, res: Response) => {
+  app.post('/api/workflows/:workflowId/sections', hybridAuth, autoRevertToDraft, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -69,13 +70,13 @@ export function registerSectionRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * GET /api/workflows/:workflowId/sections
    * Get all sections for a workflow
    */
-  app.get('/api/workflows/:workflowId/sections', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:workflowId/sections', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -91,13 +92,13 @@ export function registerSectionRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * GET /api/workflows/:workflowId/sections/:sectionId
    * Get a single section with steps
    */
-  app.get('/api/workflows/:workflowId/sections/:sectionId', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:workflowId/sections/:sectionId', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -113,14 +114,14 @@ export function registerSectionRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * PUT /api/workflows/:workflowId/sections/reorder
    * Reorder sections
    * NOTE: This route MUST come before /:sectionId routes to avoid "reorder" being treated as an ID
    */
-  app.put('/api/workflows/:workflowId/sections/reorder', hybridAuth, autoRevertToDraft, async (req: Request, res: Response) => {
+  app.put('/api/workflows/:workflowId/sections/reorder', hybridAuth, autoRevertToDraft, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -157,13 +158,13 @@ export function registerSectionRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * PUT /api/workflows/:workflowId/sections/:sectionId
    * Update a section
    */
-  app.put('/api/workflows/:workflowId/sections/:sectionId', hybridAuth, autoRevertToDraft, async (req: Request, res: Response) => {
+  app.put('/api/workflows/:workflowId/sections/:sectionId', hybridAuth, autoRevertToDraft, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -181,13 +182,13 @@ export function registerSectionRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * DELETE /api/workflows/:workflowId/sections/:sectionId
    * Delete a section
    */
-  app.delete('/api/workflows/:workflowId/sections/:sectionId', hybridAuth, autoRevertToDraft, async (req: Request, res: Response) => {
+  app.delete('/api/workflows/:workflowId/sections/:sectionId', hybridAuth, autoRevertToDraft, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -203,7 +204,7 @@ export function registerSectionRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   // ===================================================================
   // SIMPLIFIED SECTION ENDPOINTS (without workflowId in path)
@@ -214,7 +215,7 @@ export function registerSectionRoutes(app: Express): void {
    * PUT /api/sections/:sectionId
    * Update a section (workflow looked up automatically)
    */
-  app.put('/api/sections/:sectionId', hybridAuth, lookupWorkflowIdMiddleware, autoRevertToDraft, async (req: Request, res: Response) => {
+  app.put('/api/sections/:sectionId', hybridAuth, lookupWorkflowIdMiddleware, autoRevertToDraft, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -232,13 +233,13 @@ export function registerSectionRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * DELETE /api/sections/:sectionId
    * Delete a section (workflow looked up automatically)
    */
-  app.delete('/api/sections/:sectionId', hybridAuth, lookupWorkflowIdMiddleware, autoRevertToDraft, async (req: Request, res: Response) => {
+  app.delete('/api/sections/:sectionId', hybridAuth, lookupWorkflowIdMiddleware, autoRevertToDraft, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -254,5 +255,5 @@ export function registerSectionRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 }

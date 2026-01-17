@@ -2,6 +2,7 @@ import { createLogger } from "../logger";
 import { hybridAuth, type AuthRequest } from '../middleware/auth';
 import { WorkflowRepository } from "../repositories/WorkflowRepository";
 import { WorkflowRunRepository } from "../repositories/WorkflowRunRepository";
+import { asyncHandler } from '../utils/asyncHandler';
 
 import type { Express, Request, Response } from "express";
 
@@ -22,12 +23,13 @@ export function registerDashboardRoutes(app: Express): void {
    * Get dashboard statistics for the authenticated user
    * Returns workflow counts and run statistics
    */
-  app.get('/api/dashboard/stats', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/dashboard/stats', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const userId = authReq.userId;
       if (!userId) {
-        return res.status(401).json({ message: "Unauthorized - no user ID" });
+        res.status(401).json({ message: "Unauthorized - no user ID" });
+        return;
       }
 
       // Get user's workflows
@@ -65,18 +67,19 @@ export function registerDashboardRoutes(app: Express): void {
       logger.error({ error }, "Error fetching dashboard stats");
       res.status(500).json({ message: "Failed to fetch dashboard stats" });
     }
-  });
+  }));
 
   /**
    * GET /api/dashboard/workflows
    * Get recent workflows with basic info
    */
-  app.get('/api/dashboard/workflows', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/dashboard/workflows', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const userId = authReq.userId;
       if (!userId) {
-        return res.status(401).json({ message: "Unauthorized - no user ID" });
+        res.status(401).json({ message: "Unauthorized - no user ID" });
+        return;
       }
 
       // SECURITY FIX: Validate limit parameter properly (no NaN from parseInt)
@@ -108,18 +111,19 @@ export function registerDashboardRoutes(app: Express): void {
       logger.error({ error }, "Error fetching dashboard workflows");
       res.status(500).json({ message: "Failed to fetch dashboard workflows" });
     }
-  });
+  }));
 
   /**
    * GET /api/dashboard/recent-runs
    * Get recent workflow runs across all user's workflows
    */
-  app.get('/api/dashboard/recent-runs', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/dashboard/recent-runs', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const userId = authReq.userId;
       if (!userId) {
-        return res.status(401).json({ message: "Unauthorized - no user ID" });
+        res.status(401).json({ message: "Unauthorized - no user ID" });
+        return;
       }
 
       // SECURITY FIX: Validate limit parameter properly (no NaN from parseInt)
@@ -132,7 +136,8 @@ export function registerDashboardRoutes(app: Express): void {
       const workflowIds = workflows.map((w: any) => w.id);
 
       if (workflowIds.length === 0) {
-        return res.json([]);
+        res.json([]);
+        return;
       }
 
       // Get runs for user's workflows
@@ -160,5 +165,5 @@ export function registerDashboardRoutes(app: Express): void {
       logger.error({ error }, "Error fetching recent runs");
       res.status(500).json({ message: "Failed to fetch recent runs" });
     }
-  });
+  }));
 }

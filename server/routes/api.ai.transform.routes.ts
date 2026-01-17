@@ -7,6 +7,8 @@ import { reviseTransforms } from "../lib/ai/transformRevision";
 import { TransformDebugger } from "../lib/transforms/debugger";
 import { alignSchema } from "../lib/transforms/schemaAlign";
 import { hybridAuth } from "../middleware/auth";
+import { asyncHandler } from '../utils/asyncHandler';
+import { logger } from '../logger';
 
 const router = Router();
 
@@ -32,16 +34,17 @@ const reviseSchema = z.object({
     workflowContext: z.record(z.unknown()).optional().default({}),
 });
 
-router.post("/generate", hybridAuth, aiRateLimit, async (req, res) => {
+router.post("/generate", hybridAuth, aiRateLimit, asyncHandler(async (req, res) => {
     try {
         // Safe Parse with Zod
         const validation = generateSchema.safeParse(req.body);
 
         if (!validation.success) {
-            return res.status(400).json({
+            res.status(400).json({
                 error: "Invalid request data",
                 details: validation.error.format()
             });
+            return;
         }
 
         const { workflowContext, description, currentTransforms } = validation.data;
@@ -54,20 +57,21 @@ router.post("/generate", hybridAuth, aiRateLimit, async (req, res) => {
 
         res.json(result);
     } catch (error: any) {
-        console.error("AI Transform Generation Error:", error);
+        logger.error({ error }, "AI Transform Generation Error");
         res.status(500).json({ error: error.message || "Failed to generate transforms" });
     }
-});
+}));
 
-router.post("/revise", hybridAuth, aiRateLimit, async (req, res) => {
+router.post("/revise", hybridAuth, aiRateLimit, asyncHandler(async (req, res) => {
     try {
         const validation = reviseSchema.safeParse(req.body);
 
         if (!validation.success) {
-            return res.status(400).json({
+            res.status(400).json({
                 error: "Invalid request data",
                 details: validation.error.format()
             });
+            return;
         }
 
         const { currentTransforms, userRequest, workflowContext } = validation.data;
@@ -80,34 +84,34 @@ router.post("/revise", hybridAuth, aiRateLimit, async (req, res) => {
 
         res.json(result);
     } catch (error: any) {
-        console.error("AI Transform Revision Error:", error);
+        logger.error({ error }, "AI Transform Revision Error");
         res.status(500).json({ error: error.message || "Failed to revise transforms" });
     }
-});
+}));
 
-router.post("/debug", hybridAuth, async (req, res) => {
+router.post("/debug", hybridAuth, asyncHandler(async (req, res) => {
     try {
         const { transforms } = req.body;
         const issues = TransformDebugger.debug(transforms || []);
         res.json({ issues });
     } catch (error: any) {
-        console.error("Transform Debug Error:", error);
+        logger.error({ error }, "Transform Debug Error");
         res.status(500).json({ error: error.message || "Failed to debug transforms" });
     }
-});
+}));
 
-router.post("/auto-fix", hybridAuth, async (req, res) => {
+router.post("/auto-fix", hybridAuth, asyncHandler(async (req, res) => {
     try {
         const { transforms, issues } = req.body;
         const fixes = await TransformDebugger.autoFix(transforms || [], issues || []);
         res.json({ fixes });
     } catch (error: any) {
-        console.error("Transform Auto-fix Error:", error);
+        logger.error({ error }, "Transform Auto-fix Error");
         res.status(500).json({ error: error.message || "Failed to generate auto-fixes" });
     }
-});
+}));
 
-router.post("/schema-align", hybridAuth, async (req, res) => {
+router.post("/schema-align", hybridAuth, asyncHandler(async (req, res) => {
     try {
         const { transforms, documents, workflowVariables } = req.body;
         const result = await alignSchema({
@@ -117,9 +121,9 @@ router.post("/schema-align", hybridAuth, async (req, res) => {
         });
         res.json(result);
     } catch (error: any) {
-        console.error("Schema Align Error:", error);
+        logger.error({ error }, "Schema Align Error");
         res.status(500).json({ error: error.message || "Failed to align schema" });
     }
-});
+}));
 
 export default router;

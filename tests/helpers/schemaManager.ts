@@ -13,7 +13,7 @@ export class SchemaManager {
     // Generate a schema name that is unique to this worker and STABLE across test files
     // Logic: test_schema_w{workerId}
     static generateSchemaName(): string {
-        return `test_schema_w${this.workerId}`;
+        return `test_schema_w${this.workerId}_v3`;
     }
 
     /**
@@ -73,9 +73,11 @@ export class SchemaManager {
                 url.searchParams.set('sslmode', 'require');
             }
 
-            // Set search_path in startup options (only works on Direct/Session connections)
-            // CRITICAL: encoding is handled by URL searchParams automatically
-            url.searchParams.set('options', `-c search_path=${schemaName},public`);
+            // NOTE: We don't set search_path in the connection string options because:
+            // 1. It's not supported by the standard pg library (only by Neon pooler)
+            // 2. It causes "unsupported startup parameter" errors
+            // Instead, server/db.ts will set search_path on each connection via pool.connect() wrapper
+            // url.searchParams.set('options', `-c search_path=${schemaName},public`);
 
             console.log(`[SchemaManager] Final Connection String (Host): ${url.hostname}`);
             console.log(`[SchemaManager] Final Connection String (Options): ${url.searchParams.get('options')}`);

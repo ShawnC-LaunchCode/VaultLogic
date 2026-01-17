@@ -1,0 +1,179 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.16 [39m[90mC:/Users/scoot/poll/VaultLogic[39m
+
+[90mstdout[2m | tests/integration/auth/oauth2.sessions.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: ≡ƒ¢á∩╕Å  run anywhere with `dotenvx run -- yourcommand`
+
+[90mstdout[2m | tests/integration/auth/oauth2.sessions.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ≡ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+DB: Skipping auto-init because NODE_ENV=test
+
+{"level":30,"time":1768608053209,"env":"test","module":"metrics-service","msg":"MetricsService initialized"}
+[90mstdout[2m | tests/integration/auth/oauth2.sessions.test.ts
+[22m[39m[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+{"level":30,"time":1768608053292,"env":"test","msg":"DB: initializing... Local"}
+{"level":30,"time":1768608053316,"env":"test","msg":"DB: initialized flag set."}
+[90mstdout[2m | tests/integration/auth/oauth2.sessions.test.ts
+[22m[39mΓ£à Database initialized. Current schema: public
+≡ƒöä Running test migrations (manual file mode due to broken journal)...
+
+[90mstdout[2m | tests/integration/auth/oauth2.sessions.test.ts
+[22m[39m   Applying 0000_mushy_thing.sql...
+
+[90mstdout[2m | tests/integration/auth/oauth2.sessions.test.ts
+[22m[39mΓ£à Applied failsafe schema fixes
+
+[90mstdout[2m | tests/integration/auth/oauth2.sessions.test.ts
+[22m[39mDEBUG: audit_logs columns: [
+  {
+    "column_name": "id",
+    "data_type": "uuid"
+  },
+  {
+    "column_name": "workspace_id",
+    "data_type": "uuid"
+  },
+  {
+    "column_name": "user_id",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "action",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "resource_type",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "resource_id",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "changes",
+    "data_type": "jsonb"
+  },
+  {
+    "column_name": "ip_address",
+    "data_type": "character varying"
+  },
+  {
+    "column_name": "user_agent",
+    "data_type": "text"
+  },
+  {
+    "column_name": "timestamp",
+    "data_type": "timestamp without time zone"
+  },
+  {
+    "column_name": "tenant_id",
+    "data_type": "uuid"
+  }
+]
+
+[90mstdout[2m | tests/integration/auth/oauth2.sessions.test.ts
+[22m[39mDEBUG: Existing functions: [
+  {
+    "proname": "datavault_get_next_autonumber",
+    "proargnames": [
+      "p_tenant_id",
+      "p_table_id",
+      "p_column_id",
+      "p_context_key",
+      "p_min_digits",
+      "p_prefix",
+      "p_format"
+    ],
+    "proargtypes": "2950 2950 2950 25 23 25 25",
+    "signature": "test_schema_w0_v2.datavault_get_next_autonumber(uuid,uuid,uuid,text,integer,text,text)"
+  }
+]
+DEBUG: Dropping existing function: test_schema_w0_v2.datavault_get_next_autonumber(uuid,uuid,uuid,text,integer,text,text)
+
+{"level":30,"time":1768608055631,"env":"test","module":"user-credentials-repository","userId":"b-SITbizxWWH2Kkw8NNgp","msg":"User credentials created"}
+{"level":30,"time":1768608055816,"env":"test","module":"auth-routes","userId":"b-SITbizxWWH2Kkw8NNgp","sessionCount":2,"msg":"Listed active sessions"}
+{"level":30,"time":1768608056129,"env":"test","module":"user-credentials-repository","userId":"suho_GYsfWw0iqUTPJt0h","msg":"User credentials created"}
+{"level":30,"time":1768608056230,"env":"test","module":"auth-routes","userId":"suho_GYsfWw0iqUTPJt0h","sessionCount":1,"msg":"Listed active sessions"}
+{"level":30,"time":1768608056533,"env":"test","module":"user-credentials-repository","userId":"zOWcv8jSgPQcI4dxexY3X","msg":"User credentials created"}
+{"level":30,"time":1768608056631,"env":"test","module":"auth-routes","userId":"zOWcv8jSgPQcI4dxexY3X","sessionCount":0,"msg":"Listed active sessions"}
+{"level":30,"time":1768608056936,"env":"test","module":"user-credentials-repository","userId":"MZG9tvmamU-Q8IUNp_mbW","msg":"User credentials created"}
+{"level":30,"time":1768608057033,"env":"test","module":"auth-routes","userId":"MZG9tvmamU-Q8IUNp_mbW","sessionCount":0,"msg":"Listed active sessions"}
+{"level":30,"time":1768608057361,"env":"test","module":"user-credentials-repository","userId":"51mQvzvTzk0WcZv4FLoh7","msg":"User credentials created"}
+{"level":30,"time":1768608057498,"env":"test","module":"auth-routes","userId":"51mQvzvTzk0WcZv4FLoh7","sessionCount":1,"msg":"Listed active sessions"}
+{"level":30,"time":1768608057808,"env":"test","module":"user-credentials-repository","userId":"X0VMWqB_8Et7RJ9oJcKfU","msg":"User credentials created"}
+{"level":30,"time":1768608057915,"env":"test","module":"auth-routes","userId":"X0VMWqB_8Et7RJ9oJcKfU","sessionCount":1,"msg":"Listed active sessions"}
+{"level":30,"time":1768608058227,"env":"test","module":"user-credentials-repository","userId":"h_8sCppkeP5IgrHSffBNz","msg":"User credentials created"}
+{"level":50,"time":1768608058230,"env":"test","module":"auth-middleware","error":{"name":"UnauthorizedError","code":"AUTH_008","statusCode":401,"isOperational":true},"msg":"Hybrid auth error"}
+{"level":30,"time":1768608058541,"env":"test","module":"user-credentials-repository","userId":"Am3D3iaiTcGy8pho4FcPT","msg":"User credentials created"}
+{"level":30,"time":1768608058729,"env":"test","module":"auth-routes","userId":"Am3D3iaiTcGy8pho4FcPT","sessionId":"6959ab70-d915-4443-8e9b-330e40e69fd7","msg":"Session revoked"}
+{"level":30,"time":1768608059075,"env":"test","module":"user-credentials-repository","userId":"npRdmN_S8lkCDTmZG_sYM","msg":"User credentials created"}
+{"level":30,"time":1768608059384,"env":"test","module":"user-credentials-repository","userId":"fEhyg8JDIPdlnENLwt8Je","msg":"User credentials created"}
+{"level":30,"time":1768608059832,"env":"test","module":"user-credentials-repository","userId":"NY-yJ5eSnoqoegaVr5fky","msg":"User credentials created"}
+{"level":30,"time":1768608060320,"env":"test","module":"user-credentials-repository","userId":"PB3oHMub3BkgD-KEDXO7h","msg":"User credentials created"}
+{"level":50,"time":1768608060323,"env":"test","module":"auth-middleware","error":{"name":"UnauthorizedError","code":"AUTH_008","statusCode":401,"isOperational":true},"msg":"Hybrid auth error"}
+{"level":30,"time":1768608060630,"env":"test","module":"user-credentials-repository","userId":"CUOOlCKqn7ZqZy0WW-bmo","msg":"User credentials created"}
+{"level":30,"time":1768608061153,"env":"test","module":"auth-routes","userId":"CUOOlCKqn7ZqZy0WW-bmo","msg":"All other sessions revoked"}
+{"level":50,"time":1768608061209,"env":"test","module":"audit-log-service","error":{"query":"insert into \"audit_logs\" (\"id\", \"tenant_id\", \"workspace_id\", \"user_id\", \"action\", \"entity_type\", \"entity_id\", \"resource_type\", \"resource_id\", \"changes\", \"details\", \"ip_address\", \"user_agent\", \"created_at\", \"timestamp\") values (default, $1, $2, $3, $4, $5, $6, $7, $8, $9, default, $10, $11, default, $12) returning \"id\", \"tenant_id\", \"workspace_id\", \"user_id\", \"action\", \"entity_type\", \"entity_id\", \"resource_type\", \"resource_id\", \"changes\", \"details\", \"ip_address\", \"user_agent\", \"created_at\", \"timestamp\"","params":[null,null,"CUOOlCKqn7ZqZy0WW-bmo","all_sessions_revoked","security","CUOOlCKqn7ZqZy0WW-bmo","security","CUOOlCKqn7ZqZy0WW-bmo",null,"::ffff:127.0.0.1",null,"2026-01-17T00:01:01.154Z"],"cause":{"length":134,"name":"error","severity":"ERROR","code":"42703","position":"83","file":"parse_target.c","line":"1065","routine":"checkInsertTargets"}},"userId":"CUOOlCKqn7ZqZy0WW-bmo","eventType":"all_sessions_revoked","msg":"Failed to log security event"}
+{"level":50,"time":1768608061212,"env":"test","module":"auth-routes","error":{"query":"insert into \"audit_logs\" (\"id\", \"tenant_id\", \"workspace_id\", \"user_id\", \"action\", \"entity_type\", \"entity_id\", \"resource_type\", \"resource_id\", \"changes\", \"details\", \"ip_address\", \"user_agent\", \"created_at\", \"timestamp\") values (default, $1, $2, $3, $4, $5, $6, $7, $8, $9, default, $10, $11, default, $12) returning \"id\", \"tenant_id\", \"workspace_id\", \"user_id\", \"action\", \"entity_type\", \"entity_id\", \"resource_type\", \"resource_id\", \"changes\", \"details\", \"ip_address\", \"user_agent\", \"created_at\", \"timestamp\"","params":[null,null,"CUOOlCKqn7ZqZy0WW-bmo","all_sessions_revoked","security","CUOOlCKqn7ZqZy0WW-bmo","security","CUOOlCKqn7ZqZy0WW-bmo",null,"::ffff:127.0.0.1",null,"2026-01-17T00:01:01.154Z"],"cause":{"length":134,"name":"error","severity":"ERROR","code":"42703","position":"83","file":"parse_target.c","line":"1065","routine":"checkInsertTargets"}},"msg":"Error revoking all sessions"}
+{"level":30,"time":1768608061550,"env":"test","module":"user-credentials-repository","userId":"29OxwwKbxFZrRYvVymKmx","msg":"User credentials created"}
+{"level":30,"time":1768608061787,"env":"test","module":"auth-routes","userId":"29OxwwKbxFZrRYvVymKmx","msg":"All other sessions revoked"}
+{"level":50,"time":1768608061843,"env":"test","module":"audit-log-service","error":{"query":"insert into \"audit_logs\" (\"id\", \"tenant_id\", \"workspace_id\", \"user_id\", \"action\", \"entity_type\", \"entity_id\", \"resource_type\", \"resource_id\", \"changes\", \"details\", \"ip_address\", \"user_agent\", \"created_at\", \"timestamp\") values (default, $1, $2, $3, $4, $5, $6, $7, $8, $9, default, $10, $11, default, $12) returning \"id\", \"tenant_id\", \"workspace_id\", \"user_id\", \"action\", \"entity_type\", \"entity_id\", \"resource_type\", \"resource_id\", \"changes\", \"details\", \"ip_address\", \"user_agent\", \"created_at\", \"timestamp\"","params":[null,null,"29OxwwKbxFZrRYvVymKmx","all_sessions_revoked","security","29OxwwKbxFZrRYvVymKmx","security","29OxwwKbxFZrRYvVymKmx",null,"::ffff:127.0.0.1",null,"2026-01-17T00:01:01.787Z"],"cause":{"length":134,"name":"error","severity":"ERROR","code":"42703","position":"83","file":"parse_target.c","line":"1065","routine":"checkInsertTargets"}},"userId":"29OxwwKbxFZrRYvVymKmx","eventType":"all_sessions_revoked","msg":"Failed to log security event"}
+{"level":50,"time":1768608061844,"env":"test","module":"auth-routes","error":{"query":"insert into \"audit_logs\" (\"id\", \"tenant_id\", \"workspace_id\", \"user_id\", \"action\", \"entity_type\", \"entity_id\", \"resource_type\", \"resource_id\", \"changes\", \"details\", \"ip_address\", \"user_agent\", \"created_at\", \"timestamp\") values (default, $1, $2, $3, $4, $5, $6, $7, $8, $9, default, $10, $11, default, $12) returning \"id\", \"tenant_id\", \"workspace_id\", \"user_id\", \"action\", \"entity_type\", \"entity_id\", \"resource_type\", \"resource_id\", \"changes\", \"details\", \"ip_address\", \"user_agent\", \"created_at\", \"timestamp\"","params":[null,null,"29OxwwKbxFZrRYvVymKmx","all_sessions_revoked","security","29OxwwKbxFZrRYvVymKmx","security","29OxwwKbxFZrRYvVymKmx",null,"::ffff:127.0.0.1",null,"2026-01-17T00:01:01.787Z"],"cause":{"length":134,"name":"error","severity":"ERROR","code":"42703","position":"83","file":"parse_target.c","line":"1065","routine":"checkInsertTargets"}},"msg":"Error revoking all sessions"}
+{"level":30,"time":1768608062160,"env":"test","module":"user-credentials-repository","userId":"Me5gGylMTkgM5TKDBi_pn","msg":"User credentials created"}
+{"level":30,"time":1768608062474,"env":"test","module":"user-credentials-repository","userId":"YArt8wcr1JH1zr1x3szAm","msg":"User credentials created"}
+{"level":50,"time":1768608062477,"env":"test","module":"auth-middleware","error":{"name":"UnauthorizedError","code":"AUTH_008","statusCode":401,"isOperational":true},"msg":"Hybrid auth error"}
+{"level":30,"time":1768608062788,"env":"test","module":"user-credentials-repository","userId":"vGeNig1nnSnSEiJV6Qord","msg":"User credentials created"}
+{"level":30,"time":1768608062888,"env":"test","module":"auth-routes","userId":"vGeNig1nnSnSEiJV6Qord","deviceFingerprint":"0c304ba4c86647b5f5daea2958cadcf6d04bf27326f1c319a59264ba7ace843b","msg":"Device marked as trusted"}
+{"level":30,"time":1768608063241,"env":"test","module":"user-credentials-repository","userId":"-HpA8JlwdxzluH6plcf4d","msg":"User credentials created"}
+{"level":30,"time":1768608063338,"env":"test","module":"auth-routes","userId":"-HpA8JlwdxzluH6plcf4d","deviceFingerprint":"0c304ba4c86647b5f5daea2958cadcf6d04bf27326f1c319a59264ba7ace843b","msg":"Device marked as trusted"}
+{"level":30,"time":1768608063488,"env":"test","module":"auth-routes","userId":"-HpA8JlwdxzluH6plcf4d","deviceFingerprint":"0c304ba4c86647b5f5daea2958cadcf6d04bf27326f1c319a59264ba7ace843b","msg":"Trusted device expiry updated"}
+{"level":30,"time":1768608063843,"env":"test","module":"user-credentials-repository","userId":"darUWgDuqcfS1CcJnvrPj","msg":"User credentials created"}
+{"level":30,"time":1768608063934,"env":"test","module":"auth-routes","userId":"darUWgDuqcfS1CcJnvrPj","deviceCount":2,"msg":"Listed trusted devices"}
+{"level":30,"time":1768608064238,"env":"test","module":"user-credentials-repository","userId":"ha6rdjlc9KqAFCwfks8jE","msg":"User credentials created"}
+{"level":30,"time":1768608064332,"env":"test","module":"auth-routes","userId":"ha6rdjlc9KqAFCwfks8jE","deviceCount":0,"msg":"Listed trusted devices"}
+{"level":30,"time":1768608064637,"env":"test","module":"user-credentials-repository","userId":"uCDDwZ9QPLrbQ7q1jjEHP","msg":"User credentials created"}
+{"level":30,"time":1768608064769,"env":"test","module":"auth-routes","userId":"uCDDwZ9QPLrbQ7q1jjEHP","deviceId":"be3eee09-5d2f-4af4-b19c-47bdfd5f118a","msg":"Trusted device revoked"}
+{"level":30,"time":1768608065175,"env":"test","module":"user-credentials-repository","userId":"Qdap03Igm7V4tVNXQrHgi","msg":"User credentials created"}
+{"level":30,"time":1768608065510,"env":"test","module":"user-credentials-repository","userId":"cTCQppo-iyzoju07tHAG8","msg":"User credentials created"}
+{"level":30,"time":1768608065910,"env":"test","module":"user-credentials-repository","userId":"AoHgKfm4ryZqmT1w5YW1Y","msg":"User credentials created"}
+{"level":30,"time":1768608066317,"env":"test","module":"user-credentials-repository","userId":"Mkk7iipMqqZdmVoRRX0ia","msg":"User credentials created"}
+{"level":30,"time":1768608066509,"env":"test","module":"auth-service","tokenHash":"dbcfb6bfba59b90f8920e76613e1c3e9bc17c745b684b52e8262b6fffe265e85","plainTokenLen":80,"msg":"DEBUG: rotateRefreshToken called"}
+{"level":30,"time":1768608066742,"env":"test","msg":"DB: closing pool..."}
+[90mstdout[2m | tests/integration/auth/oauth2.sessions.test.ts
+[22m[39m≡ƒº╣ Cleaning up test environment...
+
+{"level":30,"time":1768608066743,"env":"test","msg":"DB: pool closed."}
+ [31mΓ¥»[39m tests/integration/auth/oauth2.sessions.test.ts [2m([22m[2m25 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 13452[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should list all active sessions for current user [33m 511[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should mark current session as current [33m 408[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should return empty array when user has no active sessions [33m 402[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should not include expired sessions [33m 402[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should not include revoked sessions [33m 465[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should parse device name from user agent [33m 417[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should return 401 for unauthenticated request [33m 314[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should revoke a specific session [33m 542[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should return 404 for non-existent session [33m 307[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should prevent revoking current session [33m 443[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should prevent revoking another user's session [33m 494[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should return 401 for unauthenticated request [33m 307[2mms[22m[39m
+[31m       [31m├ù[31m should revoke all sessions except current[39m[33m 896[2mms[22m[39m
+[31m       [31m├ù[31m should revoke all trusted devices[39m[33m 626[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should return 400 when no active session found [33m 319[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should return 401 for unauthenticated request [33m 314[2mms[22m[39m
+         [33m[2mΓ£ô[22m[39m should mark current device as trusted [33m 454[2mms[22m[39m
+         [33m[2mΓ£ô[22m[39m should update existing trusted device expiry [33m 600[2mms[22m[39m
+         [33m[2mΓ£ô[22m[39m should list all trusted devices [33m 404[2mms[22m[39m
+         [33m[2mΓ£ô[22m[39m should not include revoked devices [33m 397[2mms[22m[39m
+         [33m[2mΓ£ô[22m[39m should revoke a trusted device [33m 498[2mms[22m[39m
+         [33m[2mΓ£ô[22m[39m should return 404 for non-existent device [33m 351[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should track IP address for sessions [33m 420[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should track user agent for sessions [33m 403[2mms[22m[39m
+       [33m[2mΓ£ô[22m[39m should update lastUsedAt on token refresh [33m 737[2mms[22m[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m23 passed[39m[22m[90m (25)[39m
+[2m   Start at [22m 18:00:50
+[2m   Duration [22m 16.17s[2m (transform 697ms, setup 146ms, import 2.13s, tests 13.45s, environment 0ms)[22m
+

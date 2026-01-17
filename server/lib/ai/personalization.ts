@@ -12,7 +12,7 @@ interface PersonalizationContext {
 }
 
 export class PersonalizationService {
-    private genAI: GoogleGenerativeAI;
+    private genAI: GoogleGenerativeAI | null = null;
     private model: any;
 
     constructor() {
@@ -20,9 +20,21 @@ export class PersonalizationService {
         if (!apiKey) {
             console.warn("GEMINI_API_KEY is not set. Personalization will be disabled.");
         }
-        this.genAI = new GoogleGenerativeAI(apiKey || "");
-        const model = process.env.GEMINI_MODEL || "gemini-2.0-flash";
-        this.model = this.genAI.getGenerativeModel({ model });
+
+        if (process.env.NODE_ENV !== 'test_without_mock') {
+            try {
+                this.genAI = new GoogleGenerativeAI(apiKey || "");
+                const model = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+                this.model = this.genAI.getGenerativeModel({ model });
+            } catch (e) {
+                console.warn("Failed to initialize GoogleGenerativeAI (likely mock issue in tests)");
+                this.model = null;
+            }
+        } else {
+            this.genAI = new GoogleGenerativeAI(apiKey || "");
+            const model = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+            this.model = this.genAI.getGenerativeModel({ model });
+        }
     }
 
     async rewriteBlockText(
@@ -94,7 +106,7 @@ export class PersonalizationService {
         userAnswer: string,
         context: PersonalizationContext
     ): Promise<string | null> {
-        if (!context.userSettings.allowAIClarification) {return null;}
+        if (!context.userSettings.allowAIClarification) { return null; }
 
         const prompt = `
         The user provided an unclear or ambiguous answer to a question.
@@ -136,7 +148,7 @@ export class PersonalizationService {
         try {
             const result = await this.model.generateContent(prompt);
             const text = result.response.text().trim();
-            if (text.includes("NO")) {return null;}
+            if (text.includes("NO")) { return null; }
 
             // Clean json block if present
             const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
@@ -147,7 +159,7 @@ export class PersonalizationService {
     }
 
     async translateText(text: string, targetLanguage: string): Promise<string> {
-        if (targetLanguage === 'en') {return text;}
+        if (targetLanguage === 'en') { return text; }
 
         const prompt = `Translate the following text to ${targetLanguage}. Return only the translation.\n\nText: "${text}"`;
         try {

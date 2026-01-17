@@ -26,9 +26,11 @@ export function registerAiWorkflowEditRoutes(app: Express): void {
     "/api/workflows/:workflowId/ai/edit",
     hybridAuth,
     async (req: any, res: Response) => {
+      console.log(`[DEBUG] Entered workflowEdit route handler. WorkflowId: ${req.params.workflowId}`);
       try {
         const { workflowId } = req.params;
         const userId = req.user.id;
+        console.log(`[DEBUG] Validating request body`);
 
         // 1. Validate request body (merge param ID into body for schema validation)
         const bodyToValidate = {
@@ -46,18 +48,21 @@ export function registerAiWorkflowEditRoutes(app: Express): void {
         const requestData = validationResult.data;
 
         // 2. Get current workflow
+        console.log(`[DEBUG] Fetching workflow details`);
         const currentWorkflow = await workflowService.getWorkflowWithDetails(workflowId, userId);
         if (!currentWorkflow) {
           return res.status(404).json({ success: false, error: "Workflow not found" });
         }
 
         // 3. Create BEFORE snapshot
+        console.log(`[DEBUG] Creating snapshot`);
         let beforeSnapshot;
         try {
           beforeSnapshot = await snapshotService.createSnapshot(
             workflowId,
             `AI Edit BEFORE: ${new Date().toISOString()}`
           );
+          console.log(`[DEBUG] Snapshot created`);
         } catch (error) {
           logger.error({ error, workflowId }, "Failed to create before snapshot");
           // Continue? Or fail? Usually fail safety.
@@ -66,6 +71,7 @@ export function registerAiWorkflowEditRoutes(app: Express): void {
 
         // 4. (Optional) Check permissions (handled by service mostly but context useful)
         // 5. Call AI model (Gemini)
+        console.log(`[DEBUG] Calling Gemini`);
         let aiResponse: AiModelResponse;
         try {
           const systemPromptTemplate = await aiSettingsService.getEffectivePrompt({ userId });
@@ -75,6 +81,7 @@ export function registerAiWorkflowEditRoutes(app: Express): void {
             requestData.preferences,
             systemPromptTemplate
           );
+          console.log(`[DEBUG] Gemini returned`);
         } catch (error) {
           logger.error({ error, workflowId }, "AI model call failed");
           return res.status(500).json({
@@ -84,94 +91,115 @@ export function registerAiWorkflowEditRoutes(app: Express): void {
         }
 
         // 6. Apply patch operations
-        const { summary, errors } = await workflowPatchService.applyOps(
-          workflowId,
-          userId,
-          aiResponse.ops
-        );
+        console.log(`[DEBUG] Calling applyOps with ${aiResponse.ops.length} ops`);
+        try {
+          const { summary, errors } = await workflowPatchService.applyOps(
+            workflowId,
+            userId,
+            aiResponse.ops
+          );
+          console.log(`[DEBUG] applyOps returned. Errors: ${errors.length}`);
 
-        if (errors.length > 0) {
-          logger.error({ errors, workflowId }, "Failed to apply some AI operations");
-          return res.status(400).json({
-            success: false,
-            error: "Failed to apply operations",
-            details: errors,
-          });
+          if (errors.length > 0) {
+            logger.error({ errors, workflowId }, "Failed to apply some AI operations");
+            return res.status(400).json({
+              success: false,
+              error: "Failed to apply operations",
+              details: errors,
+            });
+          }
+        } catch (applyError) {
+          console.error("Debug: applyOps THREW error:", applyError);
+          throw applyError;
         }
 
         // 7. Get updated workflow
         const updatedWorkflow = await workflowService.getWorkflowWithDetails(workflowId, userId);
 
-        // 8. Create AFTER snapshot
-        const afterSnapshot = await snapshotService.createSnapshot(
-          workflowId,
-          `AI Edit AFTER: ${new Date().toISOString()}`
-        );
+        // 8. Create new version (DRAFT)
+        const graphJson = convertWorkflowToGraphJson(updatedWorkflow);
 
-        // 9. Create draft version (returns null if no changes)
-        const draftVersion = await versionService.createDraftVersion(
-          workflowId,
-          userId,
-          convertWorkflowToGraphJson(updatedWorkflow),
-          aiResponse.summary.join('\n'),
-          {
-            aiGenerated: true,
-            userPrompt: requestData.userMessage,
-            confidence: aiResponse.confidence,
-            beforeSnapshotId: beforeSnapshot?.id,
-            afterSnapshotId: afterSnapshot.id,
+        let draftVersion;
+        let noChanges = false;
+
+        try {
+          draftVersion = await versionService.createDraftVersion(
+            workflowId,
+            userId,
+            graphJson,
+            `AI Edit: ${requestData.userMessage.substring(0, 30)}${requestData.userMessage.length > 30 ? '...' : ''}`,
+            {
+              source: 'ai-edit',
+              aiOpsCount: aiResponse.ops.length,
+              aiGenerated: true,
+              userPrompt: requestData.userMessage,
+              confidence: aiResponse.confidence
+              // snapshots added after creation to avoid circular dep
+            }
+          );
+
+          if (!draftVersion) {
+            noChanges = true;
+          } else {
+            // If workflow was active, revert to draft (because we made changes)
+            if (updatedWorkflow.status === 'active') {
+              await workflowService.changeStatus(workflowId, userId, 'draft');
+            }
+
+            // 9. Create AFTER snapshot
+            let afterSnapshot;
+            try {
+              afterSnapshot = await snapshotService.createSnapshot(
+                workflowId,
+                `AI Edit AFTER: ${draftVersion.versionNumber}`,
+                draftVersion.id
+              );
+
+              // 10. Update version metadata with snapshot IDs
+              await versionService.updateAiMetadata(draftVersion.id, {
+                source: 'ai-edit',
+                aiOpsCount: aiResponse.ops.length,
+                aiGenerated: true,
+                userPrompt: requestData.userMessage,
+                confidence: aiResponse.confidence,
+                beforeSnapshotId: beforeSnapshot?.id,
+                afterSnapshotId: afterSnapshot?.id
+              });
+
+            } catch (error) {
+              logger.error({ error, workflowId }, "Failed to create after snapshot or update metadata");
+            }
           }
-        );
-
-        if (!draftVersion) {
-          logger.info({ workflowId }, "AI made no changes (checksum match)");
-          return res.json({
-            success: true,
-            data: {
-              workflow: updatedWorkflow,
-              versionId: null,
-              summary: ["No changes made"],
-              warnings: [],
-              questions: aiResponse.questions || [],
-              confidence: aiResponse.confidence,
-              noChanges: true,
-            } as AiWorkflowEditResponse,
-          });
+        } catch (error) {
+          logger.error({ error, workflowId }, "Failed to create draft version after AI edit");
+          // Proceed, but warn?
         }
 
-        // Set workflow status to draft explicitly
-        await workflowService.updateWorkflow(workflowId, userId, { status: 'draft' });
-
-        // 10. Optionally compute diff
-        const diff = draftVersion.changelog || null;
-
-        // 11. Return response
-        const response: AiWorkflowEditResponse = {
-          workflow: updatedWorkflow,
-          versionId: draftVersion.id,
-          summary: aiResponse.summary,
-          warnings: aiResponse.warnings || [],
-          questions: aiResponse.questions || [],
-          confidence: aiResponse.confidence,
-          diff,
-          noChanges: false,
-        };
-
-        logger.info({ workflowId, versionId: draftVersion.id, opsCount: aiResponse.ops.length }, "AI edit completed");
-
-        res.json({
+        res.status(200).json({
           success: true,
-          data: response,
+          data: {
+            workflowId: updatedWorkflow.id,
+            versionId: draftVersion?.id || null,
+            versionNumber: draftVersion?.versionNumber,
+            noChanges,
+            summary: aiResponse.summary,
+            warnings: aiResponse.warnings || [],
+            questions: aiResponse.questions || []
+          }
         });
+
       } catch (error) {
         logger.error({ error, workflowId: req.params.workflowId }, "Error in AI workflow edit");
         const message = error instanceof Error ? error.message : "Failed to process AI edit";
+
         // Map common validation/duplicate errors to 400
         const isUserError = message.includes("Access denied") ||
           message.includes("already exists") ||
           message.includes("Duplicate") ||
           message.includes("duplicate key");
+
         const status = isUserError ? (message.includes("Access denied") ? 403 : 400) : 500;
+
         res.status(status).json({ success: false, error: message });
       }
     }
@@ -243,6 +271,7 @@ Return ONLY valid JSON. No markdown, no code blocks, just raw JSON.`;
   logger.debug({ promptLength: fullPrompt.length }, "Calling Gemini API");
 
   const result = await model.generateContent(fullPrompt);
+
   const responseText = result.response.text();
 
   logger.debug({ responseLength: responseText.length }, "Received Gemini response");

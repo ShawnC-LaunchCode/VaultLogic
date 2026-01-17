@@ -70,14 +70,14 @@ export function BrandingSettings({ tenantId }: BrandingSettingsProps) {
         Configure your tenant's branding. This is a placeholder UI - final design coming soon.
       </p>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={(e) => { e.preventDefault(); void handleSubmit(e); }} className="space-y-4">
         {/* Logo URL */}
         <div>
           <label className="block text-sm font-medium mb-1">Logo URL</label>
           <input
             type="url"
             value={formData.logoUrl || ''}
-            onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
+            onChange={(e) => { void setFormData({ ...formData, logoUrl: e.target.value }); }}
             placeholder="https://example.com/logo.png"
             className="w-full px-3 py-2 border rounded"
           />
@@ -89,7 +89,7 @@ export function BrandingSettings({ tenantId }: BrandingSettingsProps) {
           <input
             type="color"
             value={formData.primaryColor || '#000000'}
-            onChange={(e) => setFormData({ ...formData, primaryColor: e.target.value })}
+            onChange={(e) => { void setFormData({ ...formData, primaryColor: e.target.value }); }}
             className="w-full h-10 border rounded"
           />
         </div>
@@ -100,7 +100,7 @@ export function BrandingSettings({ tenantId }: BrandingSettingsProps) {
           <input
             type="color"
             value={formData.accentColor || '#0066cc'}
-            onChange={(e) => setFormData({ ...formData, accentColor: e.target.value })}
+            onChange={(e) => { void setFormData({ ...formData, accentColor: e.target.value }); }}
             className="w-full h-10 border rounded"
           />
         </div>
@@ -110,7 +110,7 @@ export function BrandingSettings({ tenantId }: BrandingSettingsProps) {
           <input
             type="checkbox"
             checked={formData.darkModeEnabled || false}
-            onChange={(e) => setFormData({ ...formData, darkModeEnabled: e.target.checked })}
+            onChange={(e) => { void setFormData({ ...formData, darkModeEnabled: e.target.checked }); }}
             className="mr-2"
           />
           <label className="text-sm font-medium">Enable Dark Mode</label>
@@ -122,7 +122,7 @@ export function BrandingSettings({ tenantId }: BrandingSettingsProps) {
           <input
             type="text"
             value={formData.intakeHeaderText || ''}
-            onChange={(e) => setFormData({ ...formData, intakeHeaderText: e.target.value })}
+            onChange={(e) => { void setFormData({ ...formData, intakeHeaderText: e.target.value }); }}
             placeholder="Welcome to our workflow"
             className="w-full px-3 py-2 border rounded"
             maxLength={500}
@@ -135,7 +135,7 @@ export function BrandingSettings({ tenantId }: BrandingSettingsProps) {
           <input
             type="text"
             value={formData.emailSenderName || ''}
-            onChange={(e) => setFormData({ ...formData, emailSenderName: e.target.value })}
+            onChange={(e) => { void setFormData({ ...formData, emailSenderName: e.target.value }); }}
             placeholder="VaultLogic Team"
             className="w-full px-3 py-2 border rounded"
             maxLength={255}
@@ -148,7 +148,7 @@ export function BrandingSettings({ tenantId }: BrandingSettingsProps) {
           <input
             type="email"
             value={formData.emailSenderAddress || ''}
-            onChange={(e) => setFormData({ ...formData, emailSenderAddress: e.target.value })}
+            onChange={(e) => { void setFormData({ ...formData, emailSenderAddress: e.target.value }); }}
             placeholder="noreply@yourdomain.com"
             className="w-full px-3 py-2 border rounded"
           />

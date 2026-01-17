@@ -1,16 +1,17 @@
 import { eq } from "drizzle-orm";
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 
 import { workflows } from "@shared/schema";
 
 import { db } from "../db";
 import { WebhookDispatcher } from "../lib/webhooks/dispatcher";
+import { asyncHandler } from "../utils/asyncHandler";
 
 
 const router = Router();
 
 // Get Public Workflow by Slug
-router.get("/w/:slug", async (req, res) => {
+router.get("/w/:slug", asyncHandler(async (req: Request, res: Response) => {
     try {
         const { slug } = req.params;
 
@@ -46,17 +47,17 @@ router.get("/w/:slug", async (req, res) => {
         console.error("Public Runner Error:", error);
         res.status(500).json({ error: "Internal Server Error" });
     }
-});
+}));
 
 // Run Workflow (Start Session)
-router.post("/w/:slug/run", async (req, res) => {
+router.post("/w/:slug/run", asyncHandler(async (req: Request, res: Response) => {
     // Logic to initialize a run (like internal runner but anonymous)
     // Would insert into 'usage_records' if metering enabled
     res.json({ runId: "mock_run_id", status: "started" });
-});
+}));
 
 // Complete Workflow (Simulator)
-router.post("/w/:slug/complete", async (req, res) => {
+router.post("/w/:slug/complete", asyncHandler(async (req: Request, res: Response) => {
     const { slug } = req.params;
     const { runId, payload } = req.body;
 
@@ -77,6 +78,6 @@ router.post("/w/:slug/complete", async (req, res) => {
     }
 
     res.json({ status: "completed" });
-});
+}));
 
 export default router;

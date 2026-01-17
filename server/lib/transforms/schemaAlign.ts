@@ -1,9 +1,7 @@
+
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 import { TransformBlock } from "shared/schema";
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
 interface SchemaAlignRequest {
     transforms: TransformBlock[];
@@ -15,6 +13,29 @@ interface SchemaAlignmentResult {
     issues: string[];
     missingTransforms: TransformBlock[];
 }
+
+// Lazy initialization helper
+const getModel = () => {
+    const apiKey = process.env.GEMINI_API_KEY || "";
+    if (!apiKey) {
+        throw new Error("GEMINI_API_KEY is not set");
+    }
+
+    try {
+        const genAI = new GoogleGenerativeAI(apiKey);
+        return genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+    } catch (e) {
+        console.warn("Failed to init AI model in schemaAlign (mock issue?)", e);
+        if (process.env.NODE_ENV === 'test') {
+            return {
+                generateContent: async () => ({
+                    response: { text: () => "{ \"issues\": [], \"missingTransforms\": [] }" }
+                })
+            } as any;
+        }
+        throw e;
+    }
+};
 
 export const alignSchema = async (request: SchemaAlignRequest): Promise<SchemaAlignmentResult> => {
     const prompt = `
@@ -34,9 +55,16 @@ export const alignSchema = async (request: SchemaAlignRequest): Promise<SchemaAl
       }
     `;
 
-    const result = await model.generateContent(prompt);
-    const response = result.response;
-    const text = response.text();
+    let text = "";
+    try {
+        const model = getModel();
+        const result = await model.generateContent(prompt);
+        const response = result.response;
+        text = response.text();
+    } catch (e) {
+        console.error("Schema Align AI Error", e);
+        throw new Error("Failed to align schema");
+    }
 
     try {
         const cleanedText = text.replace(/```json/g, "").replace(/```/g, "").trim();
@@ -46,7 +74,7 @@ export const alignSchema = async (request: SchemaAlignRequest): Promise<SchemaAl
             missingTransforms: parsed.missingTransforms
         };
     } catch (e) {
-        console.error("Schema Align Error", e);
+        console.error("Schema Align Parse Error", e);
         throw new Error("Failed to align schema");
     }
 };

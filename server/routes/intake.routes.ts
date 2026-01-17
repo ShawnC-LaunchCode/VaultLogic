@@ -10,10 +10,7 @@ import { optionalHybridAuth, type AuthRequest } from '../middleware/auth';
 import { CaptchaService } from "../services/CaptchaService.js";
 import { intakeService } from "../services/IntakeService";
 import { runService } from "../services/RunService";
-
-
-
-
+import { asyncHandler } from '../utils/asyncHandler';
 
 import type { CaptchaResponse } from "../../shared/types/intake.js";
 import type { Express, Request, Response } from "express";
@@ -70,7 +67,7 @@ export function registerIntakeRoutes(app: Express): void {
    * Get published workflow metadata and branding
    * Stage 12.5: Includes intakeConfig
    */
-  app.get('/intake/workflows/:slug/published', async (req: Request, res: Response) => {
+  app.get('/intake/workflows/:slug/published', asyncHandler(async (req: Request, res: Response) => {
     try {
       const { slug } = req.params;
 
@@ -96,14 +93,14 @@ export function registerIntakeRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * GET /intake/captcha/challenge
    * Generate a new CAPTCHA challenge
    * Stage 12.5: Simple math CAPTCHA
    */
-  app.get('/intake/captcha/challenge', async (req: Request, res: Response) => {
+  app.get('/intake/captcha/challenge', asyncHandler(async (req: Request, res: Response) => {
     try {
       const challenge = CaptchaService.generateSimpleChallenge();
 
@@ -118,7 +115,7 @@ export function registerIntakeRoutes(app: Express): void {
         error: "Failed to generate CAPTCHA challenge",
       });
     }
-  });
+  }));
 
   /**
    * POST /intake/runs
@@ -126,7 +123,7 @@ export function registerIntakeRoutes(app: Express): void {
    * Body: { slug, answers?, prefillParams? }
    * Stage 12.5: Supports prefillParams for URL-based prefill
    */
-  app.post('/intake/runs', optionalHybridAuth, async (req: Request, res: Response) => {
+  app.post('/intake/runs', optionalHybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const data = createRunSchema.parse(req.body);
 
@@ -151,14 +148,14 @@ export function registerIntakeRoutes(app: Express): void {
       const status = message.includes("required") ? 401 : message.includes("not found") ? 404 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * POST /intake/runs/:token/save
    * Save intake run progress (draft)
    * Body: { answers }
    */
-  app.post('/intake/runs/:token/save', async (req: Request, res: Response) => {
+  app.post('/intake/runs/:token/save', asyncHandler(async (req: Request, res: Response) => {
     try {
       const { token } = req.params;
       const data = saveProgressSchema.parse(req.body);
@@ -175,7 +172,7 @@ export function registerIntakeRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * POST /intake/runs/:token/submit
@@ -183,7 +180,7 @@ export function registerIntakeRoutes(app: Express): void {
    * Body: { answers, captcha? }
    * Stage 12.5: Validates CAPTCHA and sends email receipt
    */
-  app.post('/intake/runs/:token/submit', async (req: Request, res: Response) => {
+  app.post('/intake/runs/:token/submit', asyncHandler(async (req: Request, res: Response) => {
     try {
       const { token } = req.params;
       const data = submitRunSchema.parse(req.body);
@@ -204,13 +201,13 @@ export function registerIntakeRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("already completed") ? 400 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * GET /intake/runs/:token/status
    * Get intake run status
    */
-  app.get('/intake/runs/:token/status', async (req: Request, res: Response) => {
+  app.get('/intake/runs/:token/status', asyncHandler(async (req: Request, res: Response) => {
     try {
       const { token } = req.params;
 
@@ -226,33 +223,35 @@ export function registerIntakeRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * GET /intake/runs/:token/download
    * Download generated documents
    * Query: ?type=docx|pdf
    */
-  app.get('/intake/runs/:token/download', async (req: Request, res: Response) => {
+  app.get('/intake/runs/:token/download', asyncHandler(async (req: Request, res: Response) => {
     try {
       const { token } = req.params;
       const { type } = req.query;
 
       if (!type || (type !== 'docx' && type !== 'pdf')) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           error: "Invalid or missing type parameter (must be 'docx' or 'pdf')",
         });
+        return;
       }
 
       // Get run status
       const status = await intakeService.getIntakeRunStatus(token);
 
       if (!status.completed) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           error: "Run is not completed yet",
         });
+        return;
       }
 
       // TODO: Implement document generation and download
@@ -266,20 +265,21 @@ export function registerIntakeRoutes(app: Express): void {
       const message = error instanceof Error ? error.message : "Failed to download document";
       res.status(500).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * POST /intake/upload
    * Upload file for intake form
    * Multipart form data
    */
-  app.post('/intake/upload', upload.single('file'), async (req: Request, res: Response) => {
+  app.post('/intake/upload', upload.single('file'), asyncHandler(async (req: Request, res: Response) => {
     try {
       if (!req.file) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           error: "No file provided",
         });
+        return;
       }
 
       // Generate secure file reference
@@ -308,5 +308,5 @@ export function registerIntakeRoutes(app: Express): void {
       const message = error instanceof Error ? error.message : "Failed to upload file";
       res.status(500).json({ success: false, error: message });
     }
-  });
+  }));
 }

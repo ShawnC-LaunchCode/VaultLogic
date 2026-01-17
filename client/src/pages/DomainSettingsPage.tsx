@@ -175,7 +175,7 @@ export default function DomainSettingsPage() {
                   Configure custom domains for your intake portals
                 </p>
               </div>
-              <Button onClick={() => setIsAddModalOpen(true)}>
+              <Button onClick={() => { void setIsAddModalOpen(true); }}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Domain
               </Button>
@@ -228,7 +228,7 @@ export default function DomainSettingsPage() {
                     <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
                       Add a subdomain or custom domain to create branded intake portal URLs
                     </p>
-                    <Button onClick={() => setIsAddModalOpen(true)}>
+                    <Button onClick={() => { void setIsAddModalOpen(true); }}>
                       <Plus className="h-4 w-4 mr-2" />
                       Add Your First Domain
                     </Button>
@@ -280,7 +280,7 @@ export default function DomainSettingsPage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => window.open(`https://${domain.domain}/intake/preview`, '_blank')}
+                            onClick={() => { void window.open(`https://${domain.domain}/intake/preview`, '_blank'); }}
                           >
                             <ExternalLink className="h-4 w-4 mr-2" />
                             Preview
@@ -288,7 +288,7 @@ export default function DomainSettingsPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => setDomainToDelete(domain)}
+                            onClick={() => { void setDomainToDelete(domain); }}
                             className="text-destructive hover:text-destructive hover:bg-destructive/10"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -358,7 +358,7 @@ export default function DomainSettingsPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteDomain}
+              onClick={() => { void handleDeleteDomain(); }}
               disabled={isDeleting}
               className="bg-destructive hover:bg-destructive/90"
             >

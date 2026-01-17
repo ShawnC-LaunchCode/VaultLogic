@@ -117,7 +117,7 @@ export function TableGridView({ tableId }: TableGridViewProps) {
     try {
       // Get current row values
       const row = allRows.find(r => r.row.id === rowId);
-      if (!row) {return;}
+      if (!row) { return; }
 
       // Update with new value
       const updatedValues = {
@@ -197,7 +197,7 @@ export function TableGridView({ tableId }: TableGridViewProps) {
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
+          onDragEnd={(e) => { void handleDragEnd(e); }}
         >
           <table className="min-w-full text-sm border-collapse">
             <thead>
@@ -229,7 +229,7 @@ export function TableGridView({ tableId }: TableGridViewProps) {
                         row={row}
                         column={col}
                         editing={editingCell?.rowId === row.row.id && editingCell?.colId === col.id}
-                        onCommit={(value) => handleCellUpdate(row.row.id, col, value)}
+                        onCommit={(value) => { void handleCellUpdate(row.row.id, col, value); }}
                         onCancel={() => setEditingCell(null)}
                         batchReferencesData={batchReferencesData}
                       />

@@ -117,8 +117,116 @@ tags:
     description: Workflow versions and snapshots
   - name: Admin
     description: System administration and diagnostics
+  - name: Blueprints
+    description: Workflow templates (Blueprints) management
+paths:
+  # ===================================================================
+  # BLUEPRINT ENDPOINTS
+  # ===================================================================
 
-components:
+  /api/blueprints:
+    get:
+      tags:
+        - Blueprints
+      summary: List blueprints
+      description: Retrieve a list of available blueprints (templates) for the current tenant.
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        '200':
+          description: List of blueprints
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Blueprint'
+        '401':
+          $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/schemas/Error'
+
+    post:
+      tags:
+        - Blueprints
+      summary: Create blueprint
+      description: Create a new blueprint from an existing workflow version.
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BlueprintCreate'
+      responses:
+        '200':
+          description: Blueprint created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Blueprint'
+        '400':
+          $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/schemas/Error'
+
+  /api/blueprints/{id}/instantiate:
+    post:
+      tags:
+        - Blueprints
+      summary: Instantiate blueprint
+      description: Create a new workflow instance from a blueprint.
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: Blueprint ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BlueprintInstantiate'
+      responses:
+        '200':
+          description: Blueprint instantiated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      workflowId:
+                        type: string
+                        format: uuid
+                      versionId:
+                        type: string
+                        format: uuid
+        '401':
+          $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/schemas/Error'
   securitySchemes:
     bearerAuth:
       type: http
@@ -629,6 +737,81 @@ components:
         - phase
         - language
         - code
+
+    # ===================================================================
+    # BLUEPRINT SCHEMAS
+    # ===================================================================
+
+    Blueprint:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        sourceWorkflowId:
+          type: string
+          format: uuid
+        creatorId:
+          type: string
+        tenantId:
+          type: string
+        isPublic:
+          type: boolean
+          default: false
+        metadata:
+          type: object
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - sourceWorkflowId
+        - creatorId
+
+    BlueprintCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+        sourceWorkflowId:
+          type: string
+          format: uuid
+        isPublic:
+          type: boolean
+          default: false
+        metadata:
+          type: object
+      required:
+        - name
+        - sourceWorkflowId
+
+    BlueprintInstantiate:
+      type: object
+      properties:
+        projectId:
+          type: string
+          format: uuid
+          nullable: true
+        name:
+          type: string
+          description: Name for the new workflow
+      required: []
 
     LifecycleHookCreate:
       type: object

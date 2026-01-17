@@ -4,6 +4,7 @@ import { createLogger } from '../logger';
 import { hybridAuth } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
 import { emailTemplateMetadataService } from '../services/EmailTemplateMetadataService';
+import { asyncHandler } from '../utils/asyncHandler';
 
 import type { Express, Request, Response } from 'express';
 
@@ -21,7 +22,7 @@ export function registerEmailTemplateRoutes(app: Express): void {
    * GET /api/email-templates
    * List all email template metadata
    */
-  app.get('/api/email-templates', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/email-templates', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const templates = await emailTemplateMetadataService.listEmailTemplates();
 
@@ -36,23 +37,24 @@ export function registerEmailTemplateRoutes(app: Express): void {
         error: 'internal_error',
       });
     }
-  });
+  }));
 
   /**
    * GET /api/email-templates/:id
    * Get a specific email template metadata
    */
-  app.get('/api/email-templates/:id', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/email-templates/:id', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
 
       const template = await emailTemplateMetadataService.getTemplateById(id);
 
       if (!template) {
-        return res.status(404).json({
+        res.status(404).json({
           message: 'Template not found',
           error: 'template_not_found',
         });
+        return;
       }
 
       res.json({
@@ -65,7 +67,7 @@ export function registerEmailTemplateRoutes(app: Express): void {
         error: 'internal_error',
       });
     }
-  });
+  }));
 
   /**
    * PATCH /api/email-templates/:id/metadata
@@ -75,18 +77,19 @@ export function registerEmailTemplateRoutes(app: Express): void {
     '/api/email-templates/:id/metadata',
     hybridAuth,
     requirePermission('tenant:update' as any),
-    async (req: Request, res: Response) => {
+    asyncHandler(async (req: Request, res: Response) => {
       try {
         const { id } = req.params;
 
         // Validate request body
         const validationResult = updateEmailTemplateMetadataSchema.safeParse(req.body);
         if (!validationResult.success) {
-          return res.status(400).json({
+          res.status(400).json({
             message: 'Invalid template metadata',
             error: 'validation_error',
             details: validationResult.error.errors,
           });
+          return;
         }
 
         const updatedTemplate = await emailTemplateMetadataService.updateTemplateMetadata(
@@ -102,10 +105,11 @@ export function registerEmailTemplateRoutes(app: Express): void {
         });
       } catch (error: any) {
         if (error.message === 'Template not found') {
-          return res.status(404).json({
+          res.status(404).json({
             message: 'Template not found',
             error: 'template_not_found',
           });
+          return;
         }
 
         logger.error({ error }, 'Failed to update email template metadata');
@@ -114,7 +118,7 @@ export function registerEmailTemplateRoutes(app: Express): void {
           error: 'internal_error',
         });
       }
-    }
+    })
   );
 
   /**
@@ -125,7 +129,7 @@ export function registerEmailTemplateRoutes(app: Express): void {
   app.get(
     '/api/email-templates/token/:tokenKey',
     hybridAuth,
-    async (req: Request, res: Response) => {
+    asyncHandler(async (req: Request, res: Response) => {
       try {
         const { tokenKey } = req.params;
 
@@ -145,6 +149,6 @@ export function registerEmailTemplateRoutes(app: Express): void {
           error: 'internal_error',
         });
       }
-    }
+    })
   );
 }

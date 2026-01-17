@@ -220,26 +220,26 @@ export default function VisualWorkflowBuilder() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate('/workflows')}
+              onClick={() => { void navigate('/workflows'); }}
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
             <h1 className="text-xl font-semibold">{workflow.name}</h1>
-            <Button variant="outline" size="sm" onClick={() => navigate(`/workflows/${workflowId}/builder`)}>
+            <Button variant="outline" size="sm" onClick={() => { void navigate(`/workflows/${workflowId}/builder`); }}>
               Standard Builder
             </Button>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowHistoryDialog(true)}>
+            <Button variant="outline" size="sm" onClick={() => { void setShowHistoryDialog(true); }}>
               <Clock className="w-4 h-4 mr-2" />
               History
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowInsights(true)}>
+            <Button variant="outline" size="sm" onClick={() => { void setShowInsights(true); }}>
               <BarChart3 className="w-4 h-4 mr-2" />
               Insights
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowShareDialog(true)}>
+            <Button variant="outline" size="sm" onClick={() => { void setShowShareDialog(true); }}>
               <Share2 className="w-4 h-4 mr-2" />
               Share
             </Button>
@@ -297,7 +297,7 @@ export default function VisualWorkflowBuilder() {
           <div className="flex-1 overflow-hidden relative flex flex-col">
             {selectedVersion !== 'current' && (
               <div className="bg-amber-100 text-amber-800 px-4 py-2 text-sm text-center border-b border-amber-200">
-                You are viewing an older version of this workflow. <Button variant="link" className="h-auto p-0 text-amber-900 font-semibold ml-1" onClick={() => setSelectedVersion('current')}>Switch to current</Button>
+                You are viewing an older version of this workflow. <Button variant="link" className="h-auto p-0 text-amber-900 font-semibold ml-1" onClick={() => { void setSelectedVersion('current'); }}>Switch to current</Button>
               </div>
             )}
             <div className="flex-1 relative">
@@ -352,14 +352,14 @@ export default function VisualWorkflowBuilder() {
               <Input
                 id="template-name"
                 value={templateName}
-                onChange={(e) => setTemplateName(e.target.value)}
+                onChange={(e) => { void setTemplateName(e.target.value); }}
                 placeholder="My Awesome Template"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowSaveTemplateDialog(false)}>Cancel</Button>
-            <Button onClick={handleSaveTemplate} disabled={!templateName.trim()}>Save Template</Button>
+            <Button variant="outline" onClick={() => { void setShowSaveTemplateDialog(false); }}>Cancel</Button>
+            <Button onClick={() => { void handleSaveTemplate(); }} disabled={!templateName.trim()}>Save Template</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

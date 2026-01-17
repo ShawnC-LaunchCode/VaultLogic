@@ -103,7 +103,7 @@ export function DocumentTemplateEditor({ templateId, isOpen, onClose, workflowVa
                                 <FileEdit className="w-5 h-5 text-blue-600" />
                                 <h2 className="font-semibold">{fileName || 'Document Editor'}</h2>
                             </div>
-                            <Button variant="ghost" size="sm" onClick={onClose}>Close</Button>
+                            <Button variant="ghost" size="sm" onClick={() => { void onClose(); }}>Close</Button>
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-8 flex justify-center">

@@ -96,7 +96,7 @@ export class DocumentHookService {
             } else if (result.output !== undefined && hook.outputKeys.length > 0) {
               // Single value output
               const key = hook.outputKeys[0];
-              if (key) resultData[key] = result.output;
+              if (key) {resultData[key] = result.output;}
             }
 
             // Collect console logs

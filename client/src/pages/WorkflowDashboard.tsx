@@ -236,11 +236,11 @@ export default function WorkflowDashboard() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setIsCreateProjectOpen(true)}>
+            <Button variant="outline" onClick={() => { void setIsCreateProjectOpen(true); }}>
               <Folder className="w-4 h-4 mr-2" />
               New Project
             </Button>
-            <Button onClick={() => setIsCreateWorkflowOpen(true)}>
+            <Button onClick={() => { void setIsCreateWorkflowOpen(true); }}>
               <Plus className="w-4 h-4 mr-2" />
               New Workflow
             </Button>
@@ -257,11 +257,11 @@ export default function WorkflowDashboard() {
                 Get started by creating your first project to organize workflows, or create a workflow directly
               </p>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setIsCreateProjectOpen(true)}>
+                <Button variant="outline" onClick={() => { void setIsCreateProjectOpen(true); }}>
                   <Folder className="w-4 h-4 mr-2" />
                   Create Project
                 </Button>
-                <Button onClick={() => setIsCreateWorkflowOpen(true)}>
+                <Button onClick={() => { void setIsCreateWorkflowOpen(true); }}>
                   <Plus className="w-4 h-4 mr-2" />
                   Create Workflow
                 </Button>
@@ -355,7 +355,7 @@ export default function WorkflowDashboard() {
                 id="project-title"
                 placeholder="e.g., Customer Onboarding"
                 value={newProject.title}
-                onChange={(e) => setNewProject({ ...newProject, title: e.target.value })}
+                onChange={(e) => { void setNewProject({ ...newProject, title: e.target.value }); }}
                 onKeyDown={(e) =>
                   e.key === "Enter" && (editingProject ? handleUpdateProject() : handleCreateProject())
                 }
@@ -367,7 +367,7 @@ export default function WorkflowDashboard() {
                 id="project-description"
                 placeholder="Optional description..."
                 value={newProject.description}
-                onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
+                onChange={(e) => { void setNewProject({ ...newProject, description: e.target.value }); }}
                 rows={3}
               />
             </div>
@@ -413,8 +413,8 @@ export default function WorkflowDashboard() {
                 id="workflow-title"
                 placeholder="e.g., Onboarding Survey"
                 value={newWorkflow.title}
-                onChange={(e) => setNewWorkflow({ ...newWorkflow, title: e.target.value })}
-                onKeyDown={(e) => e.key === "Enter" && handleCreateWorkflow()}
+                onChange={(e) => { void setNewWorkflow({ ...newWorkflow, title: e.target.value }); }}
+                onKeyDown={(e) => { void e.key === "Enter" && handleCreateWorkflow(); }}
               />
             </div>
             <div className="space-y-2">
@@ -423,16 +423,16 @@ export default function WorkflowDashboard() {
                 id="workflow-description"
                 placeholder="Optional description..."
                 value={newWorkflow.description}
-                onChange={(e) => setNewWorkflow({ ...newWorkflow, description: e.target.value })}
+                onChange={(e) => { void setNewWorkflow({ ...newWorkflow, description: e.target.value }); }}
                 rows={3}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateWorkflowOpen(false)}>
+            <Button variant="outline" onClick={() => { void setIsCreateWorkflowOpen(false); }}>
               Cancel
             </Button>
-            <Button onClick={handleCreateWorkflow} disabled={createWorkflowMutation.isPending}>
+            <Button onClick={() => { void handleCreateWorkflow(); }} disabled={createWorkflowMutation.isPending}>
               {createWorkflowMutation.isPending ? "Creating..." : "Create"}
             </Button>
           </DialogFooter>
@@ -470,10 +470,10 @@ export default function WorkflowDashboard() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsMoveWorkflowOpen(false)}>
+            <Button variant="outline" onClick={() => { void setIsMoveWorkflowOpen(false); }}>
               Cancel
             </Button>
-            <Button onClick={handleMoveWorkflow} disabled={moveWorkflowMutation.isPending}>
+            <Button onClick={() => { void handleMoveWorkflow(); }} disabled={moveWorkflowMutation.isPending}>
               {moveWorkflowMutation.isPending ? "Moving..." : "Move"}
             </Button>
           </DialogFooter>
@@ -493,7 +493,7 @@ export default function WorkflowDashboard() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteProject}
+              onClick={() => { void handleDeleteProject(); }}
               className="bg-destructive text-destructive-foreground"
             >
               {deleteProjectMutation.isPending ? "Deleting..." : "Delete"}
@@ -514,7 +514,7 @@ export default function WorkflowDashboard() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteWorkflow}
+              onClick={() => { void handleDeleteWorkflow(); }}
               className="bg-destructive text-destructive-foreground"
             >
               {deleteWorkflowMutation.isPending ? "Deleting..." : "Delete"}

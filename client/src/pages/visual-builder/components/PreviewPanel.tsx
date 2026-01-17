@@ -56,7 +56,7 @@ export function PreviewPanel({ workflowId, onClose }: PreviewPanelProps) {
       {/* Header */}
       <div className="border-b px-4 py-3 flex items-center justify-between">
         <h3 className="font-semibold">Run Preview</h3>
-        <Button variant="ghost" size="sm" onClick={onClose}>
+        <Button variant="ghost" size="sm" onClick={() => { void onClose(); }}>
           <X className="w-4 h-4" />
         </Button>
       </div>
@@ -74,7 +74,7 @@ export function PreviewPanel({ workflowId, onClose }: PreviewPanelProps) {
                 <Input
                   id="test-input-1"
                   value={inputs.input1 || ''}
-                  onChange={(e) => handleInputChange('input1', e.target.value)}
+                  onChange={(e) => { void handleInputChange('input1', e.target.value); }}
                   placeholder="Enter test value"
                 />
               </div>
@@ -84,14 +84,14 @@ export function PreviewPanel({ workflowId, onClose }: PreviewPanelProps) {
                 <Input
                   id="test-input-2"
                   value={inputs.input2 || ''}
-                  onChange={(e) => handleInputChange('input2', e.target.value)}
+                  onChange={(e) => { void handleInputChange('input2', e.target.value); }}
                   placeholder="Enter test value"
                 />
               </div>
 
               <div className="flex gap-2">
                 <Button
-                  onClick={handleRun}
+                  onClick={() => { void handleRun(); }}
                   disabled={runWorkflow.isPending}
                   className="flex-1"
                 >
@@ -100,7 +100,7 @@ export function PreviewPanel({ workflowId, onClose }: PreviewPanelProps) {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={handleReset}
+                  onClick={() => { void handleReset(); }}
                 >
                   Reset
                 </Button>
@@ -217,7 +217,7 @@ export function PreviewPanel({ workflowId, onClose }: PreviewPanelProps) {
                     variant="outline"
                     size="sm"
                     className="w-full mt-3"
-                    onClick={() => window.open(runData.outputs.documentUrl as string, '_blank')}
+                    onClick={() => { void window.open(runData.outputs.documentUrl as string, '_blank'); }}
                   >
                     <Download className="w-4 h-4 mr-2" />
                     Download Document

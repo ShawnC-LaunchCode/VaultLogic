@@ -140,7 +140,7 @@ export default function ProjectView() {
   };
 
   const handleDeleteWorkflow = async () => {
-    if (!deleteWorkflowId) {return;}
+    if (!deleteWorkflowId) { return; }
 
     try {
       await deleteWorkflowMutation.mutateAsync(deleteWorkflowId);
@@ -228,7 +228,7 @@ export default function ProjectView() {
                 <Edit className="w-4 h-4 mr-2" />
                 Edit Project
               </Button>
-              <Button onClick={() => setIsCreateWorkflowOpen(true)}>
+              <Button onClick={() => { void setIsCreateWorkflowOpen(true); }}>
                 <Plus className="w-4 h-4 mr-2" />
                 New Workflow
               </Button>
@@ -244,7 +244,7 @@ export default function ProjectView() {
               <p className="text-muted-foreground text-sm mb-4">
                 Get started by creating your first workflow in this project
               </p>
-              <Button onClick={() => setIsCreateWorkflowOpen(true)}>
+              <Button onClick={() => { void setIsCreateWorkflowOpen(true); }}>
                 <Plus className="w-4 h-4 mr-2" />
                 Create Workflow
               </Button>
@@ -256,9 +256,9 @@ export default function ProjectView() {
               <WorkflowCard
                 key={workflow.id}
                 workflow={workflow}
-                onMove={handleMoveWorkflowOut}
-                onArchive={handleArchiveWorkflow}
-                onActivate={handleActivateWorkflow}
+                onMove={(w) => { void handleMoveWorkflowOut(w); }}
+                onArchive={(id) => { void handleArchiveWorkflow(id); }}
+                onActivate={(id) => { void handleActivateWorkflow(id); }}
                 onDelete={(id) => setDeleteWorkflowId(id)}
               />
             ))}
@@ -280,8 +280,8 @@ export default function ProjectView() {
                 id="project-title"
                 placeholder="e.g., Customer Onboarding"
                 value={editProject.title}
-                onChange={(e) => setEditProject({ ...editProject, title: e.target.value })}
-                onKeyDown={(e) => e.key === "Enter" && handleUpdateProject()}
+                onChange={(e) => { void setEditProject({ ...editProject, title: e.target.value }); }}
+                onKeyDown={(e) => { void e.key === "Enter" && handleUpdateProject(); }}
               />
             </div>
             <div className="space-y-2">
@@ -290,16 +290,16 @@ export default function ProjectView() {
                 id="project-description"
                 placeholder="Optional description..."
                 value={editProject.description}
-                onChange={(e) => setEditProject({ ...editProject, description: e.target.value })}
+                onChange={(e) => { void setEditProject({ ...editProject, description: e.target.value }); }}
                 rows={3}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditProjectOpen(false)}>
+            <Button variant="outline" onClick={() => { void setIsEditProjectOpen(false); }}>
               Cancel
             </Button>
-            <Button onClick={handleUpdateProject} disabled={updateProjectMutation.isPending}>
+            <Button onClick={() => { void handleUpdateProject(); }} disabled={updateProjectMutation.isPending}>
               {updateProjectMutation.isPending ? "Saving..." : "Update"}
             </Button>
           </DialogFooter>
@@ -320,8 +320,8 @@ export default function ProjectView() {
                 id="workflow-title"
                 placeholder="e.g., Onboarding Survey"
                 value={newWorkflow.title}
-                onChange={(e) => setNewWorkflow({ ...newWorkflow, title: e.target.value })}
-                onKeyDown={(e) => e.key === "Enter" && handleCreateWorkflow()}
+                onChange={(e) => { void setNewWorkflow({ ...newWorkflow, title: e.target.value }); }}
+                onKeyDown={(e) => { void e.key === "Enter" && handleCreateWorkflow(); }}
               />
             </div>
             <div className="space-y-2">
@@ -330,16 +330,16 @@ export default function ProjectView() {
                 id="workflow-description"
                 placeholder="Optional description..."
                 value={newWorkflow.description}
-                onChange={(e) => setNewWorkflow({ ...newWorkflow, description: e.target.value })}
+                onChange={(e) => { void setNewWorkflow({ ...newWorkflow, description: e.target.value }); }}
                 rows={3}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateWorkflowOpen(false)}>
+            <Button variant="outline" onClick={() => { void setIsCreateWorkflowOpen(false); }}>
               Cancel
             </Button>
-            <Button onClick={handleCreateWorkflow} disabled={createWorkflowMutation.isPending}>
+            <Button onClick={() => { void handleCreateWorkflow(); }} disabled={createWorkflowMutation.isPending}>
               {createWorkflowMutation.isPending ? "Creating..." : "Create"}
             </Button>
           </DialogFooter>
@@ -358,7 +358,7 @@ export default function ProjectView() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteWorkflow}
+              onClick={() => { void handleDeleteWorkflow(); }}
               className="bg-destructive text-destructive-foreground"
             >
               {deleteWorkflowMutation.isPending ? "Deleting..." : "Delete"}

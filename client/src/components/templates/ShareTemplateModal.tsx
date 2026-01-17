@@ -158,10 +158,10 @@ export default function ShareTemplateModal({
                   type="email"
                   placeholder="colleague@example.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => { void setEmail(e.target.value); }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !isSharing) {
-                      handleShare();
+                      void handleShare();
                     }
                   }}
                   disabled={isSharing}
@@ -189,7 +189,7 @@ export default function ShareTemplateModal({
                     </SelectItem>
                   </SelectContent>
                 </Select>
-                <Button onClick={handleShare} disabled={isSharing}>
+                <Button onClick={() => { void handleShare(); }} disabled={isSharing}>
                   {isSharing ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
@@ -267,9 +267,9 @@ export default function ShareTemplateModal({
                       <div className="flex items-center gap-2">
                         <Select
                           value={share.access}
-                          onValueChange={(value: "use" | "edit") =>
-                            handleUpdateAccess(share.id, value)
-                          }
+                          onValueChange={(value: "use" | "edit") => {
+                            void handleUpdateAccess(share.id, value);
+                          }}
                           disabled={updateAccess.isPending}
                         >
                           <SelectTrigger className="w-[120px] h-8 text-xs">
@@ -294,7 +294,7 @@ export default function ShareTemplateModal({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleRevoke(share.id, displayEmail)}
+                          onClick={() => { void handleRevoke(share.id, displayEmail); }}
                           disabled={revoke.isPending}
                         >
                           <X className="h-4 w-4" />
@@ -308,6 +308,6 @@ export default function ShareTemplateModal({
           </div>
         </div>
       </DialogContent>
-    </Dialog>
+    </Dialog >
   );
 }

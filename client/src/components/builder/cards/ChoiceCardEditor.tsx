@@ -526,9 +526,9 @@ export function ChoiceCardEditor({ stepId, sectionId, step, workflowId }: Choice
 
   return (
     <div className="space-y-4 p-4 border-t bg-muted/30">
-      <LabelField value={step.title} onChange={handleLabelChange} />
-      <AliasField value={step.alias} onChange={handleAliasChange} />
-      <RequiredToggle checked={step.required} onChange={handleRequiredChange} />
+      <LabelField value={step.title} onChange={() => { void handleLabelChange(); }} />
+      <AliasField value={step.alias} onChange={() => { void handleAliasChange(); }} />
+      <RequiredToggle checked={step.required} onChange={() => { void handleRequiredChange(); }} />
 
       <Separator />
 
@@ -580,14 +580,14 @@ export function ChoiceCardEditor({ stepId, sectionId, step, workflowId }: Choice
               <div key={option.id} className="flex items-start gap-2 p-3 border rounded-md bg-background">
                 <div className="pt-2 cursor-grab"><GripVertical className="h-4 w-4 text-muted-foreground" /></div>
                 <div className="flex-1 space-y-2">
-                  <Input value={option.label} onChange={(e) => handleUpdateOption(index, 'label', e.target.value)} placeholder="Display Value" className="text-sm" />
-                  <Input value={option.alias || option.id} onChange={(e) => handleUpdateOption(index, 'alias', e.target.value)} placeholder="Saved Value" className="text-sm font-mono" />
+                  <Input value={option.label} onChange={(e) => { void handleUpdateOption(index, 'label', e.target.value); }} placeholder="Display Value" className="text-sm" />
+                  <Input value={option.alias || option.id} onChange={(e) => { void handleUpdateOption(index, 'alias', e.target.value); }} placeholder="Saved Value" className="text-sm font-mono" />
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => handleDeleteOption(index)}><Trash2 className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => { void handleDeleteOption(index); }}><Trash2 className="h-4 w-4" /></Button>
               </div>
             ))}
           </div>
-          <Button variant="outline" size="sm" className="w-full" onClick={handleAddOption}><Plus className="h-4 w-4 mr-2" />Add Option</Button>
+          <Button variant="outline" size="sm" className="w-full" onClick={() => { void handleAddOption(); }}><Plus className="h-4 w-4 mr-2" />Add Option</Button>
         </TabsContent>
 
         <TabsContent value="dynamic" className="mt-0 space-y-4">
@@ -654,7 +654,7 @@ export function ChoiceCardEditor({ stepId, sectionId, step, workflowId }: Choice
                         variant="default"
                         size="sm"
                         className="w-full h-8 text-xs font-medium"
-                        onClick={handleOpenLinkedBlock}
+                        onClick={() => { void handleOpenLinkedBlock(); }}
                       >
                         <ExternalLink className="h-3 w-3 mr-1" />
                         Open List Tools Block to Edit
@@ -670,7 +670,7 @@ export function ChoiceCardEditor({ stepId, sectionId, step, workflowId }: Choice
                         variant="ghost"
                         size="sm"
                         className="h-7 text-xs flex-1"
-                        onClick={handleUnlinkListTools}
+                        onClick={() => { void handleUnlinkListTools(); }}
                       >
                         <Unlink className="h-3 w-3 mr-1" />
                         Unlink
@@ -679,7 +679,7 @@ export function ChoiceCardEditor({ stepId, sectionId, step, workflowId }: Choice
                         variant="ghost"
                         size="sm"
                         className="h-7 text-xs flex-1"
-                        onClick={handleReplaceListTools}
+                        onClick={() => { void handleReplaceListTools(); }}
                         disabled={isCreatingListTools}
                       >
                         <RefreshCw className="h-3 w-3 mr-1" />
@@ -696,7 +696,7 @@ export function ChoiceCardEditor({ stepId, sectionId, step, workflowId }: Choice
                       variant="outline"
                       size="sm"
                       className="w-full h-8 text-xs"
-                      onClick={handleCreateListTools}
+                      onClick={() => { void handleCreateListTools(); }}
                       disabled={isCreatingListTools || !localConfig.dynamicOptions.listVariable}
                     >
                       <Wand2 className="h-3 w-3 mr-1" />
@@ -779,7 +779,7 @@ export function ChoiceCardEditor({ stepId, sectionId, step, workflowId }: Choice
                   <Input
                     placeholder="(e.g. Select an option...)"
                     value={localConfig.dynamicOptions.blankLabel || ''}
-                    onChange={(e) => handleUpdate({ dynamicOptions: { ...localConfig.dynamicOptions, blankLabel: e.target.value } })}
+                    onChange={(e) => { void handleUpdate({ dynamicOptions: { ...localConfig.dynamicOptions, blankLabel: e.target.value } }); }}
                     className="text-xs"
                   />
                 </div>
@@ -792,7 +792,7 @@ export function ChoiceCardEditor({ stepId, sectionId, step, workflowId }: Choice
               <Input
                 placeholder="{FirstName} {LastName}"
                 value={localConfig.dynamicOptions.labelTemplate || ''}
-                onChange={(e) => handleUpdate({ dynamicOptions: { ...localConfig.dynamicOptions, labelTemplate: e.target.value } })}
+                onChange={(e) => { void handleUpdate({ dynamicOptions: { ...localConfig.dynamicOptions, labelTemplate: e.target.value } }); }}
                 className="text-xs"
               />
               <p className="text-[10px] text-muted-foreground">Use column names in braces to combine fields.</p>

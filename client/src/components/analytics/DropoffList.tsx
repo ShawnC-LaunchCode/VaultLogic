@@ -14,7 +14,7 @@ export const DropoffList: React.FC<Props> = ({ workflowId, versionId, className 
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        loadFunnel();
+        void loadFunnel();
     }, [workflowId, versionId]);
 
     const loadFunnel = async () => {
@@ -29,8 +29,8 @@ export const DropoffList: React.FC<Props> = ({ workflowId, versionId, className 
         }
     };
 
-    if (loading) {return <div className="p-4 text-center text-gray-400 animate-pulse">Loading funnel...</div>;}
-    if (!funnel || funnel.length === 0) {return <div className="p-4 text-center text-gray-500">No dropoff data available</div>;}
+    if (loading) { return <div className="p-4 text-center text-gray-400 animate-pulse">Loading funnel...</div>; }
+    if (!funnel || funnel.length === 0) { return <div className="p-4 text-center text-gray-500">No dropoff data available</div>; }
 
     const maxViews = Math.max(...funnel.map(s => s.views), 1);
 

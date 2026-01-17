@@ -102,11 +102,11 @@ export const FloatingAIAssist: React.FC<FloatingAIAssistProps> = ({ currentBlock
                 <div className="space-y-2">
                     <h4 className="text-sm font-medium text-muted-foreground mb-2">Capabilities</h4>
                     <div className="grid grid-cols-2 gap-2">
-                        <Button variant="outline" size="sm" onClick={handleRewrite} disabled={loading} className="justify-start">
+                        <Button variant="outline" size="sm" onClick={() => { void handleRewrite(); }} disabled={loading} className="justify-start">
                             <MessageSquare className="w-4 h-4 mr-2" />
                             Rewrite
                         </Button>
-                        <Button variant="outline" size="sm" onClick={handleExplain} disabled={loading} className="justify-start">
+                        <Button variant="outline" size="sm" onClick={() => { void handleExplain(); }} disabled={loading} className="justify-start">
                             <HelpCircle className="w-4 h-4 mr-2" />
                             Explain
                         </Button>

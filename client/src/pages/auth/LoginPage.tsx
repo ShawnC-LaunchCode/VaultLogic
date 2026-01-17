@@ -126,14 +126,14 @@ export default function LoginPage() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <form onSubmit={handleMfaSubmit} className="space-y-4">
+                            <form onSubmit={(e) => { e.preventDefault(); void handleMfaSubmit(e); }} className="space-y-4">
                                 <div className="space-y-2">
                                     <FormLabel>Authentication Code</FormLabel>
                                     <div className="relative">
                                         <Smartphone className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
                                         <Input
                                             value={mfaToken}
-                                            onChange={(e) => setMfaToken(e.target.value)}
+                                            onChange={(e) => { void setMfaToken(e.target.value); }}
                                             className="pl-10 text-lg tracking-widest"
                                             placeholder="000 000"
                                             maxLength={6}
@@ -155,7 +155,7 @@ export default function LoginPage() {
 
                                 <button
                                     type="button"
-                                    onClick={() => setMfaRequired(false)}
+                                    onClick={() => { void setMfaRequired(false); }}
                                     className="w-full text-sm text-gray-500 hover:text-gray-900"
                                 >
                                     Back to login

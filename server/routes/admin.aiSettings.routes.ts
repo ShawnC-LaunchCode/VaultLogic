@@ -6,6 +6,7 @@ import { createLogger } from "../logger";
 import { isAdmin } from "../middleware/adminAuth";
 import { hybridAuth } from "../middleware/auth";
 import { aiSettingsService } from "../services/AiSettingsService";
+import { asyncHandler } from "../utils/asyncHandler";
 
 import type { Express, Request, Response } from "express";
 
@@ -17,7 +18,7 @@ export function registerAdminAiSettingsRoutes(app: Express): void {
      * GET /api/admin/ai-settings
      * Get global AI settings
      */
-    app.get('/api/admin/ai-settings', hybridAuth, isAdmin, async (req: Request, res: Response) => {
+    app.get('/api/admin/ai-settings', hybridAuth, isAdmin, asyncHandler(async (req: Request, res: Response) => {
         try {
             if (!req.adminUser) {
                 return res.status(401).json({ message: "Unauthorized" });
@@ -33,13 +34,13 @@ export function registerAdminAiSettingsRoutes(app: Express): void {
             logger.error({ err: error, adminId: req.adminUser!.id }, 'Error fetching AI settings');
             res.status(500).json({ message: "Failed to fetch AI settings" });
         }
-    });
+    }));
 
     /**
      * PUT /api/admin/ai-settings
      * Update global AI settings
      */
-    app.put('/api/admin/ai-settings', hybridAuth, isAdmin, async (req: Request, res: Response) => {
+    app.put('/api/admin/ai-settings', hybridAuth, isAdmin, asyncHandler(async (req: Request, res: Response) => {
         try {
             if (!req.adminUser) {
                 return res.status(401).json({ message: "Unauthorized" });
@@ -63,13 +64,13 @@ export function registerAdminAiSettingsRoutes(app: Express): void {
             logger.error({ err: error, adminId: req.adminUser!.id }, 'Error updating AI settings');
             res.status(500).json({ message: "Failed to update AI settings" });
         }
-    });
+    }));
 
     /**
      * GET /api/admin/ai-settings/feedback/stats
      * Get global AI feedback statistics (admin only)
      */
-    app.get('/api/admin/ai-settings/feedback/stats', hybridAuth, isAdmin, async (req: Request, res: Response) => {
+    app.get('/api/admin/ai-settings/feedback/stats', hybridAuth, isAdmin, asyncHandler(async (req: Request, res: Response) => {
         try {
             if (!req.adminUser) {
                 return res.status(401).json({ message: "Unauthorized" });
@@ -164,7 +165,7 @@ export function registerAdminAiSettingsRoutes(app: Express): void {
 
             // Time series data (daily)
             const dailyStats = allFeedback.reduce((acc, f) => {
-                if (!f.createdAt) {return acc;}
+                if (!f.createdAt) { return acc; }
                 const date = f.createdAt.toISOString().split('T')[0];
                 if (!acc[date]) {
                     acc[date] = { date, count: 0, totalRating: 0, totalQualityScore: 0, qualityScoreCount: 0 };
@@ -208,13 +209,13 @@ export function registerAdminAiSettingsRoutes(app: Express): void {
                 message: 'Failed to get feedback statistics',
             });
         }
-    });
+    }));
 
     /**
      * GET /api/admin/ai-settings/feedback/recent
      * Get recent AI feedback entries with details (admin only)
      */
-    app.get('/api/admin/ai-settings/feedback/recent', hybridAuth, isAdmin, async (req: Request, res: Response) => {
+    app.get('/api/admin/ai-settings/feedback/recent', hybridAuth, isAdmin, asyncHandler(async (req: Request, res: Response) => {
         try {
             if (!req.adminUser) {
                 return res.status(401).json({ message: "Unauthorized" });
@@ -269,5 +270,5 @@ export function registerAdminAiSettingsRoutes(app: Express): void {
                 message: 'Failed to get recent feedback',
             });
         }
-    });
+    }));
 }

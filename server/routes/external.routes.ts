@@ -8,6 +8,7 @@ import { db } from "../db";
 import { requireExternalAuth, ExternalAuthRequest } from "../lib/authz/externalAuth";
 import { TenantContext } from "../lib/tenancy/tenantContext";
 import { createLogger } from "../logger";
+import { asyncHandler } from '../utils/asyncHandler';
 
 const logger = createLogger({ module: 'external-routes' });
 const router = Router();
@@ -16,9 +17,10 @@ const router = Router();
 router.use(requireExternalAuth);
 
 // GET /api/external/workflows
-router.get("/workflows", async (req: ExternalAuthRequest, res) => {
+router.get("/workflows", asyncHandler(async (req: any, res) => {
+    const extReq = req as ExternalAuthRequest;
     try {
-        const workspaceId = req.externalAuth!.workspaceId;
+        const workspaceId = extReq.externalAuth!.workspaceId;
 
         // Ensure isolation
         // Only fetch workflows in the authorized workspace
@@ -39,13 +41,14 @@ router.get("/workflows", async (req: ExternalAuthRequest, res) => {
     } catch (err) {
         res.status(500).json({ error: "Internal Error" });
     }
-});
+}));
 
 // POST /api/external/workflows/:id/runs
-router.post("/workflows/:id/runs", async (req: ExternalAuthRequest, res) => {
+router.post("/workflows/:id/runs", asyncHandler(async (req: any, res) => {
+    const extReq = req as ExternalAuthRequest;
     try {
         const { id } = req.params;
-        const workspaceId = req.externalAuth!.workspaceId;
+        const workspaceId = extReq.externalAuth!.workspaceId;
         const body = req.body; // { initialValues, metadata }
 
         // Verify workflow exists in workspace
@@ -57,12 +60,13 @@ router.post("/workflows/:id/runs", async (req: ExternalAuthRequest, res) => {
         });
 
         if (!workflow) {
-            return res.status(404).json({ error: "Workflow not found" });
+            res.status(404).json({ error: "Workflow not found" });
+            return;
         }
 
         // Create Run (Mock)
         // In real impl, insert into 'survey_results' or 'workflow_runs'
-        const runId = `run_${  Math.random().toString(36).substr(2, 9)}`;
+        const runId = `run_${Math.random().toString(36).substr(2, 9)}`;
 
         // Resolve organization ID from workspace
         const workspace = await db.query.workspaces.findFirst({
@@ -70,7 +74,8 @@ router.post("/workflows/:id/runs", async (req: ExternalAuthRequest, res) => {
         });
 
         if (!workspace) {
-            return res.status(500).json({ error: "Workspace not found" });
+            res.status(500).json({ error: "Workspace not found" });
+            return;
         }
 
         // Record Usage (Metering)
@@ -92,12 +97,12 @@ router.post("/workflows/:id/runs", async (req: ExternalAuthRequest, res) => {
         logger.error({ err }, 'Error creating workflow run');
         res.status(500).json({ error: "Internal Error" });
     }
-});
+}));
 
 // GET /api/external/runs/:id
-router.get("/runs/:id", async (req: ExternalAuthRequest, res) => {
+router.get("/runs/:id", asyncHandler(async (req: any, res) => {
     // Implementation to get run status
     res.json({ id: req.params.id, status: "completed", output: {} });
-});
+}));
 
 export default router;

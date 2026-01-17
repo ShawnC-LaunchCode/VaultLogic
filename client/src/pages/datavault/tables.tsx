@@ -222,7 +222,7 @@ export default function DataVaultTablesPage() {
                     Manage your custom data tables
                   </p>
                 </div>
-                <Button onClick={() => setCreateModalOpen(true)}>
+                <Button onClick={() => { void setCreateModalOpen(true); }}>
                   <Plus className="w-4 h-4 mr-2" />
                   Create Table
                   <kbd className="ml-2 hidden sm:inline-block pointer-events-none h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
@@ -238,7 +238,7 @@ export default function DataVaultTablesPage() {
                   <Input
                     placeholder="Search tables..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => { void setSearchQuery(e.target.value); }}
                     className="pl-9"
                   />
                 </div>
@@ -289,7 +289,7 @@ export default function DataVaultTablesPage() {
                   <TableCard
                     key={table.id}
                     table={table}
-                    onClick={() => handleTableClick(table.id)}
+                    onClick={() => { void handleTableClick(table.id); }}
                     onDelete={() => setDeleteConfirm({ id: table.id, name: table.name })}
                     onMove={() => setMoveTable({ id: table.id, name: table.name, currentDatabaseId: (table as any).databaseId || null })}
                   />
@@ -305,7 +305,7 @@ export default function DataVaultTablesPage() {
                 <p className="text-muted-foreground mb-6 max-w-sm">
                   Get started by creating your first data table with custom columns
                 </p>
-                <Button onClick={() => setCreateModalOpen(true)}>
+                <Button onClick={() => { void setCreateModalOpen(true); }}>
                   <Plus className="w-4 h-4 mr-2" />
                   Create Your First Table
                 </Button>
@@ -318,7 +318,7 @@ export default function DataVaultTablesPage() {
                 <p className="text-muted-foreground mb-4">
                   No tables match "{searchQuery}"
                 </p>
-                <Button variant="outline" onClick={() => setSearchQuery("")}>
+                <Button variant="outline" onClick={() => { void setSearchQuery(""); }}>
                   Clear Search
                 </Button>
               </div>
@@ -331,7 +331,7 @@ export default function DataVaultTablesPage() {
       <CreateTableModal
         open={createModalOpen}
         onOpenChange={setCreateModalOpen}
-        onSubmit={handleCreate}
+        onSubmit={(e) => { e.preventDefault(); void handleCreate(e); }}
         isLoading={createTableMutation.isPending || createColumnMutation.isPending}
       />
 
@@ -348,7 +348,7 @@ export default function DataVaultTablesPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDelete}
+              onClick={() => { void handleDelete(); }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={deleteTableMutation.isPending}
             >

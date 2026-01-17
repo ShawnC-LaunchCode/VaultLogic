@@ -37,6 +37,29 @@ export class WorkflowRepository extends BaseRepository<typeof workflows, Workflo
   }
 
   /**
+   * Update a record by ID (override)
+   */
+  async update(id: string, updates: Partial<InsertWorkflow>, tx?: DbTransaction): Promise<Workflow> {
+    const database = this.getDb(tx);
+
+    console.error(`[DEBUG] WorkflowRepository.update id=${id} updates=${JSON.stringify(updates)}`);
+
+    const effectiveUpdates = { ...updates, updatedAt: new Date() };
+
+    const [record] = await database
+      .update(workflows)
+      .set(effectiveUpdates)
+      .where(eq(workflows.id, id))
+      .returning();
+
+    if (updates.status && record && record.status !== updates.status) {
+      console.error(`[CRITICAL] UPDATE FAILED check: requested=${updates.status} got=${record.status}`);
+    }
+
+    return record;
+  }
+
+  /**
    * Find workflows by creator ID (includes user-owned and org-owned)
    * @deprecated use findByUserAccess for full access control
    */

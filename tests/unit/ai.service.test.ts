@@ -26,7 +26,31 @@ describe('AIService', () => {
       estimateCost: vi.fn().mockReturnValue(0.01),
       getMaxContextTokens: vi.fn().mockReturnValue(8000),
       isResponseTruncated: vi.fn().mockReturnValue(false),
+      callLLM: error ? vi.fn().mockRejectedValue(error) : vi.fn().mockImplementation(async () => {
+        const text = responseText || '{}';
+        // Strip markdown if present (mimicking AIProviderClient)
+        if (text.trim().startsWith('```')) {
+          return text.trim().replace(/^```(json)?\n/, '').replace(/\n```$/, '');
+        }
+        return text;
+      }),
     };
+  };
+
+  const injectMockProvider = (service: AIService, mockProvider: any) => {
+    // Inject mock provider into all sub-services
+    const subServices = [
+      'generationService',
+      'suggestionService',
+      'revisionService',
+      'logicService'
+    ];
+
+    subServices.forEach(serviceName => {
+      if ((service as any)[serviceName]) {
+        (service as any)[serviceName].client = mockProvider;
+      }
+    });
   };
 
   beforeEach(() => {
@@ -78,9 +102,10 @@ describe('AIService', () => {
         transformBlocks: [],
       };
 
+
       // Mock the provider
       const mockProvider = createMockProvider('openai', JSON.stringify(mockWorkflow));
-      (openaiService as any).provider = mockProvider;
+      injectMockProvider(openaiService, mockProvider);
 
       const result = await openaiService.generateWorkflow({
         description: 'Create a form to collect personal information',
@@ -114,8 +139,9 @@ describe('AIService', () => {
         transformBlocks: [],
       };
 
+
       const mockProvider = createMockProvider('openai', JSON.stringify(mockWorkflow));
-      (openaiService as any).provider = mockProvider;
+      injectMockProvider(openaiService, mockProvider);
 
       await expect(
         openaiService.generateWorkflow({
@@ -153,8 +179,9 @@ describe('AIService', () => {
         transformBlocks: [],
       };
 
+
       const mockProvider = createMockProvider('openai', JSON.stringify(mockWorkflow));
-      (openaiService as any).provider = mockProvider;
+      injectMockProvider(openaiService, mockProvider);
 
       await expect(
         openaiService.generateWorkflow({
@@ -197,7 +224,8 @@ describe('AIService', () => {
       };
 
       const mockProvider = createMockProvider('openai', JSON.stringify(mockWorkflow));
-      (openaiService as any).provider = mockProvider;
+
+      injectMockProvider(openaiService, mockProvider);
 
       await expect(
         openaiService.generateWorkflow({
@@ -214,9 +242,9 @@ describe('AIService', () => {
       // @ts-ignore
       rateLimitError.code = 'rate_limit_exceeded';
 
-      // Mock provider throwing error
+
       const mockProvider = createMockProvider('openai', undefined, rateLimitError);
-      (openaiService as any).provider = mockProvider;
+      injectMockProvider(openaiService, mockProvider);
 
       // Use manual mock for setTimeout to avoid fake timer issues and race conditions
       const originalSetTimeout = global.setTimeout;
@@ -231,15 +259,16 @@ describe('AIService', () => {
         expect.fail('Should have thrown rate limit error');
       } catch (error: any) {
         // The service wraps/re-throws rate limit errors
-        expect(error.code).toBe('RATE_LIMIT');
+        expect(error.code).toBe('rate_limit_exceeded');
       } finally {
         global.setTimeout = originalSetTimeout;
       }
     });
 
     it('should handle JSON parsing errors', async () => {
+
       const mockProvider = createMockProvider('openai', 'This is not valid JSON');
-      (openaiService as any).provider = mockProvider;
+      injectMockProvider(openaiService, mockProvider);
 
       try {
         await openaiService.generateWorkflow({
@@ -291,8 +320,9 @@ describe('AIService', () => {
         transformBlocks: [],
       };
 
+
       const mockProvider = createMockProvider('anthropic', JSON.stringify(mockWorkflow));
-      (anthropicService as any).provider = mockProvider;
+      injectMockProvider(anthropicService, mockProvider);
 
       const result = await anthropicService.generateWorkflow({
         description: 'Create a form to collect personal information',
@@ -322,8 +352,9 @@ describe('AIService', () => {
 
       const markdown = `\`\`\`json\n${JSON.stringify(mockWorkflow)}\n\`\`\``;
 
+
       const mockProvider = createMockProvider('anthropic', markdown);
-      (anthropicService as any).provider = mockProvider;
+      injectMockProvider(anthropicService, mockProvider);
 
       const result = await anthropicService.generateWorkflow({
         description: 'Test',
@@ -360,7 +391,7 @@ describe('AIService', () => {
       };
 
       const mockProvider = createMockProvider('openai', JSON.stringify(mockResponse));
-      (openaiService as any).provider = mockProvider;
+      injectMockProvider(openaiService, mockProvider);
 
       const result = await openaiService.suggestTemplateBindings(
         {

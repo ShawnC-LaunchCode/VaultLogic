@@ -26,6 +26,7 @@ import {
 import { AclService } from '../services/AclService';
 import { datavaultDatabasesService } from '../services/DatavaultDatabasesService';
 import { validationMessages } from '../utils/validationMessages';
+import { asyncHandler } from '../utils/asyncHandler';
 
 import type { Express, Request, Response } from 'express';
 
@@ -66,7 +67,7 @@ export function registerDatavaultRoutes(app: Express): void {
    * GET /api/datavault/databases
    * List all databases for the authenticated tenant
    */
-  app.get('/api/datavault/databases', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/datavault/databases', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const userId = getAuthUserId(req);
@@ -116,13 +117,13 @@ export function registerDatavaultRoutes(app: Express): void {
       const message = error instanceof Error ? error.message : 'Failed to fetch databases';
       res.status(500).json({ message });
     }
-  });
+  }));
 
   /**
    * POST /api/datavault/databases
    * Create a new database
    */
-  app.post('/api/datavault/databases', createLimiter, hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/datavault/databases', createLimiter, hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
 
@@ -159,13 +160,13 @@ export function registerDatavaultRoutes(app: Express): void {
       const message = error instanceof Error ? error.message : 'Failed to create database';
       res.status(500).json({ message });
     }
-  });
+  }));
 
   /**
    * GET /api/datavault/databases/:id
    * Get a single database with stats
    */
-  app.get('/api/datavault/databases/:id', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/datavault/databases/:id', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const { id } = req.params;
@@ -178,13 +179,13 @@ export function registerDatavaultRoutes(app: Express): void {
       const status = message.includes('not found') ? 404 : message.includes('Unauthorized') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * PATCH /api/datavault/databases/:id
    * Update a database
    */
-  app.patch('/api/datavault/databases/:id', hybridAuth, async (req: Request, res: Response) => {
+  app.patch('/api/datavault/databases/:id', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const { id } = req.params;
@@ -224,13 +225,13 @@ export function registerDatavaultRoutes(app: Express): void {
       const status = message.includes('not found') ? 404 : message.includes('Unauthorized') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * DELETE /api/datavault/databases/:id
    * Delete a database (tables will be moved to main folder)
    */
-  app.delete('/api/datavault/databases/:id', deleteLimiter, hybridAuth, async (req: Request, res: Response) => {
+  app.delete('/api/datavault/databases/:id', deleteLimiter, hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const { id } = req.params;
@@ -243,13 +244,13 @@ export function registerDatavaultRoutes(app: Express): void {
       const status = message.includes('not found') ? 404 : message.includes('Unauthorized') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * GET /api/datavault/databases/:id/tables
    * Get all tables in a database
    */
-  app.get('/api/datavault/databases/:id/tables', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/datavault/databases/:id/tables', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const { id } = req.params;
@@ -262,7 +263,7 @@ export function registerDatavaultRoutes(app: Express): void {
       const status = message.includes('not found') ? 404 : message.includes('Unauthorized') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   // ===================================================================
   // TABLE ENDPOINTS
@@ -272,7 +273,7 @@ export function registerDatavaultRoutes(app: Express): void {
    * GET /api/datavault/tables
    * List all tables for the authenticated tenant
    */
-  app.get('/api/datavault/tables', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/datavault/tables', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const withStats = req.query.stats === 'true';
@@ -293,13 +294,13 @@ export function registerDatavaultRoutes(app: Express): void {
       const message = error instanceof Error ? error.message : 'Failed to fetch tables';
       res.status(500).json({ message });
     }
-  });
+  }));
 
   /**
    * POST /api/datavault/tables
    * Create a new table
    */
-  app.post('/api/datavault/tables', createLimiter, hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/datavault/tables', createLimiter, hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const userId = getAuthUserId(req);
@@ -325,14 +326,14 @@ export function registerDatavaultRoutes(app: Express): void {
       const message = error instanceof Error ? error.message : 'Failed to create table';
       res.status(500).json({ message });
     }
-  });
+  }));
 
   /**
    * GET /api/datavault/tables/:tableId
    * Get a single table with optional columns
    * Requires: read permission
    */
-  app.get('/api/datavault/tables/:tableId', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/datavault/tables/:tableId', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const userId = getAuthUserId(req);
@@ -361,14 +362,14 @@ export function registerDatavaultRoutes(app: Express): void {
       const status = message.includes('not found') ? 404 : message.includes('Access denied') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * PATCH /api/datavault/tables/:tableId
    * Update a table
    * Requires: owner permission
    */
-  app.patch('/api/datavault/tables/:tableId', hybridAuth, async (req: Request, res: Response) => {
+  app.patch('/api/datavault/tables/:tableId', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const userId = getAuthUserId(req);
@@ -405,13 +406,13 @@ export function registerDatavaultRoutes(app: Express): void {
       const status = message.includes('not found') ? 404 : message.includes('Access denied') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * PATCH /api/datavault/tables/:tableId/move
    * Move table to a database or main folder
    */
-  app.patch('/api/datavault/tables/:tableId/move', hybridAuth, async (req: Request, res: Response) => {
+  app.patch('/api/datavault/tables/:tableId/move', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const { tableId } = req.params;
@@ -438,14 +439,14 @@ export function registerDatavaultRoutes(app: Express): void {
       const status = message.includes('not found') ? 404 : message.includes('Access denied') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * DELETE /api/datavault/tables/:tableId
    * Delete a table (cascades to columns, rows, and values)
    * Requires: owner permission
    */
-  app.delete('/api/datavault/tables/:tableId', deleteLimiter, hybridAuth, async (req: Request, res: Response) => {
+  app.delete('/api/datavault/tables/:tableId', deleteLimiter, hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const userId = getAuthUserId(req);
@@ -466,7 +467,7 @@ export function registerDatavaultRoutes(app: Express): void {
       const status = message.includes('not found') ? 404 : message.includes('Access denied') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * GET /api/datavault/tables/:tableId/schema
@@ -474,7 +475,7 @@ export function registerDatavaultRoutes(app: Express): void {
    * Returns: { id, name, slug, description, databaseId, columns: [...] }
    * Requires: read permission
    */
-  app.get('/api/datavault/tables/:tableId/schema', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/datavault/tables/:tableId/schema', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const userId = getAuthUserId(req);
@@ -499,7 +500,7 @@ export function registerDatavaultRoutes(app: Express): void {
       const status = message.includes('not found') ? 404 : message.includes('Access denied') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   // ===================================================================
   // COLUMN ENDPOINTS
@@ -509,7 +510,7 @@ export function registerDatavaultRoutes(app: Express): void {
    * GET /api/datavault/tables/:tableId/columns
    * List all columns for a table
    */
-  app.get('/api/datavault/tables/:tableId/columns', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/datavault/tables/:tableId/columns', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const { tableId } = req.params;
@@ -526,14 +527,14 @@ export function registerDatavaultRoutes(app: Express): void {
       const status = message.includes('not found') ? 404 : message.includes('Access denied') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * POST /api/datavault/tables/:tableId/columns
    * Create a new column
    * Requires: owner permission
    */
-  app.post('/api/datavault/tables/:tableId/columns', createLimiter, hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/datavault/tables/:tableId/columns', createLimiter, hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const userId = getAuthUserId(req);
@@ -567,13 +568,13 @@ export function registerDatavaultRoutes(app: Express): void {
       const status = message.includes('not found') ? 404 : message.includes('Access denied') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * PATCH /api/datavault/columns/:columnId
    * Update a column (name only - type changes not allowed)
    */
-  app.patch('/api/datavault/columns/:columnId', hybridAuth, async (req: Request, res: Response) => {
+  app.patch('/api/datavault/columns/:columnId', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const { columnId } = req.params;
@@ -603,13 +604,13 @@ export function registerDatavaultRoutes(app: Express): void {
       const status = message.includes('not found') ? 404 : message.includes('Access denied') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * DELETE /api/datavault/columns/:columnId
    * Delete a column (cascades to all values)
    */
-  app.delete('/api/datavault/columns/:columnId', deleteLimiter, hybridAuth, async (req: Request, res: Response) => {
+  app.delete('/api/datavault/columns/:columnId', deleteLimiter, hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const { columnId } = req.params;
@@ -622,13 +623,13 @@ export function registerDatavaultRoutes(app: Express): void {
       const status = message.includes('not found') ? 404 : message.includes('Access denied') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * POST /api/datavault/tables/:tableId/columns/reorder
    * Reorder columns for a table
    */
-  app.post('/api/datavault/tables/:tableId/columns/reorder', hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/datavault/tables/:tableId/columns/reorder', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const { tableId } = req.params;
@@ -655,7 +656,7 @@ export function registerDatavaultRoutes(app: Express): void {
       const status = message.includes('not found') ? 404 : message.includes('Access denied') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   // ===================================================================
   // ROW ENDPOINTS
@@ -666,7 +667,7 @@ export function registerDatavaultRoutes(app: Express): void {
    * Batch resolve reference values (fixes N+1 query problem)
    * Body: { requests: [{ tableId, rowIds[], displayColumnSlug? }] }
    */
-  app.post('/api/datavault/references/batch', batchLimiter, hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/datavault/references/batch', batchLimiter, hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
 
@@ -712,7 +713,7 @@ export function registerDatavaultRoutes(app: Express): void {
       const status = message.includes('not found') ? 404 : message.includes('Access denied') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * GET /api/datavault/tables/:tableId/rows
@@ -724,7 +725,7 @@ export function registerDatavaultRoutes(app: Express): void {
    *  - sortOrder (asc/desc, default asc)
    * Requires: read permission
    */
-  app.get('/api/datavault/tables/:tableId/rows', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/datavault/tables/:tableId/rows', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const userId = getAuthUserId(req);
@@ -778,14 +779,14 @@ export function registerDatavaultRoutes(app: Express): void {
       const status = message.includes('not found') ? 404 : message.includes('Access denied') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * POST /api/datavault/tables/:tableId/rows
    * Create a new row with values
    * Requires: write permission
    */
-  app.post('/api/datavault/tables/:tableId/rows', strictLimiter, hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/datavault/tables/:tableId/rows', strictLimiter, hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const userId = getAuthUserId(req);
@@ -808,7 +809,7 @@ export function registerDatavaultRoutes(app: Express): void {
       res.status(201).json(result);
     } catch (error) {
       logger.error({ error }, 'Error creating DataVault row');
-      if (error instanceof Error) {logger.debug({ error: error.message }, 'Row creation error message');}
+      if (error instanceof Error) { logger.debug({ error: error.message }, 'Row creation error message'); }
 
       if (error instanceof z.ZodError) {
         return res.status(400).json({
@@ -823,13 +824,13 @@ export function registerDatavaultRoutes(app: Express): void {
           message.includes('not a valid option') || message.includes('missing') || message.includes('Required') ? 400 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * GET /api/datavault/rows/:rowId
    * Get a single row with all its values
    */
-  app.get('/api/datavault/rows/:rowId', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/datavault/rows/:rowId', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const { rowId } = req.params;
@@ -847,14 +848,14 @@ export function registerDatavaultRoutes(app: Express): void {
       const status = message.includes('not found') ? 404 : message.includes('Access denied') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * PATCH /api/datavault/rows/:rowId
    * Update a row's values
    * Requires: write permission
    */
-  app.patch('/api/datavault/rows/:rowId', hybridAuth, async (req: Request, res: Response) => {
+  app.patch('/api/datavault/rows/:rowId', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const userId = getAuthUserId(req);
@@ -895,14 +896,14 @@ export function registerDatavaultRoutes(app: Express): void {
       const status = message.includes('not found') ? 404 : message.includes('Access denied') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * GET /api/datavault/rows/:rowId/references
    * Check if row is referenced by other rows
    * Returns list of tables/columns that reference this row
    */
-  app.get('/api/datavault/rows/:rowId/references', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/datavault/rows/:rowId/references', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const { rowId } = req.params;
@@ -920,7 +921,7 @@ export function registerDatavaultRoutes(app: Express): void {
       const status = message.includes('not found') ? 404 : message.includes('Access denied') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * DELETE /api/datavault/rows/:rowId
@@ -928,7 +929,7 @@ export function registerDatavaultRoutes(app: Express): void {
    * Note: References to this row will be automatically set to NULL by database trigger
    * Requires: write permission
    */
-  app.delete('/api/datavault/rows/:rowId', deleteLimiter, hybridAuth, async (req: Request, res: Response) => {
+  app.delete('/api/datavault/rows/:rowId', deleteLimiter, hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const userId = getAuthUserId(req);
@@ -955,7 +956,7 @@ export function registerDatavaultRoutes(app: Express): void {
       const status = message.includes('not found') ? 404 : message.includes('Access denied') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   // ===================================================================
   // ROW ARCHIVING ENDPOINTS (DataVault v3)
@@ -1004,7 +1005,7 @@ export function registerDatavaultRoutes(app: Express): void {
    * Bulk archive rows
    * Body: { rowIds: string[] }
    */
-  app.patch('/api/datavault/rows/bulk/archive', batchLimiter, hybridAuth, async (req: Request, res: Response) => {
+  app.patch('/api/datavault/rows/bulk/archive', batchLimiter, hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
 
@@ -1034,14 +1035,14 @@ export function registerDatavaultRoutes(app: Express): void {
       const status = message.includes('not found') || message.includes('unauthorized') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * PATCH /api/datavault/rows/bulk/unarchive
    * Bulk unarchive rows
    * Body: { rowIds: string[] }
    */
-  app.patch('/api/datavault/rows/bulk/unarchive', batchLimiter, hybridAuth, async (req: Request, res: Response) => {
+  app.patch('/api/datavault/rows/bulk/unarchive', batchLimiter, hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
 
@@ -1071,14 +1072,14 @@ export function registerDatavaultRoutes(app: Express): void {
       const status = message.includes('not found') || message.includes('unauthorized') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * DELETE /api/datavault/rows/bulk/delete
    * Bulk delete rows (permanent)
    * Body: { rowIds: string[] }
    */
-  app.delete('/api/datavault/rows/bulk/delete', deleteLimiter, hybridAuth, async (req: Request, res: Response) => {
+  app.delete('/api/datavault/rows/bulk/delete', deleteLimiter, hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
 
@@ -1108,7 +1109,7 @@ export function registerDatavaultRoutes(app: Express): void {
       const status = message.includes('not found') || message.includes('unauthorized') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   // ===================================================================
   // ROW NOTES ENDPOINTS (v4 Micro-Phase 3)
@@ -1118,7 +1119,7 @@ export function registerDatavaultRoutes(app: Express): void {
    * GET /api/datavault/rows/:rowId/notes
    * Get all notes for a row
    */
-  app.get('/api/datavault/rows/:rowId/notes', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/datavault/rows/:rowId/notes', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const { rowId } = req.params;
@@ -1131,14 +1132,14 @@ export function registerDatavaultRoutes(app: Express): void {
       const status = message.includes('not found') ? 404 : message.includes('Access denied') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * POST /api/datavault/rows/:rowId/notes
    * Create a new note for a row
    * Body: { text: string }
    */
-  app.post('/api/datavault/rows/:rowId/notes', createLimiter, hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/datavault/rows/:rowId/notes', createLimiter, hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const userId = getAuthUserId(req);
@@ -1172,14 +1173,14 @@ export function registerDatavaultRoutes(app: Express): void {
       const status = message.includes('not found') ? 404 : message.includes('Access denied') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * DELETE /api/datavault/notes/:noteId
    * Delete a note
    * Only the note owner or table owner may delete
    */
-  app.delete('/api/datavault/notes/:noteId', deleteLimiter, hybridAuth, async (req: Request, res: Response) => {
+  app.delete('/api/datavault/notes/:noteId', deleteLimiter, hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const userId = getAuthUserId(req);
@@ -1197,7 +1198,7 @@ export function registerDatavaultRoutes(app: Express): void {
       const status = message.includes('not found') ? 404 : message.includes('Access denied') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   // ===================================================================
   // TABLE PERMISSIONS ENDPOINTS (v4 Micro-Phase 6)
@@ -1207,7 +1208,7 @@ export function registerDatavaultRoutes(app: Express): void {
    * GET /api/datavault/tables/:tableId/permissions
    * Get all permissions for a table (owner only)
    */
-  app.get('/api/datavault/tables/:tableId/permissions', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/datavault/tables/:tableId/permissions', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const userId = getAuthUserId(req);
@@ -1230,14 +1231,14 @@ export function registerDatavaultRoutes(app: Express): void {
       const status = message.includes('Access denied') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * POST /api/datavault/tables/:tableId/permissions
    * Grant or update permission for a user (owner only)
    * Body: { userId: string, role: 'owner' | 'write' | 'read' }
    */
-  app.post('/api/datavault/tables/:tableId/permissions', createLimiter, hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/datavault/tables/:tableId/permissions', createLimiter, hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const actorUserId = getAuthUserId(req);
@@ -1286,14 +1287,14 @@ export function registerDatavaultRoutes(app: Express): void {
         message.includes('not found') ? 404 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * DELETE /api/datavault/permissions/:permissionId
    * Revoke a permission (owner only)
    * Query param: tableId (required for authorization)
    */
-  app.delete('/api/datavault/permissions/:permissionId', deleteLimiter, hybridAuth, async (req: Request, res: Response) => {
+  app.delete('/api/datavault/permissions/:permissionId', deleteLimiter, hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const tenantId = getTenantId(req);
       const actorUserId = getAuthUserId(req);
@@ -1323,7 +1324,7 @@ export function registerDatavaultRoutes(app: Express): void {
         message.includes('not found') ? 404 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * POST /api/datavault/databases/:databaseId/transfer
@@ -1331,7 +1332,7 @@ export function registerDatavaultRoutes(app: Express): void {
    * Tables inherit ownership from database
    * Body: { targetOwnerType: 'user' | 'org', targetOwnerUuid: string }
    */
-  app.post('/api/datavault/databases/:databaseId/transfer', hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/datavault/databases/:databaseId/transfer', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = getAuthUserId(req);
       if (!userId) {
@@ -1370,5 +1371,5 @@ export function registerDatavaultRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 }

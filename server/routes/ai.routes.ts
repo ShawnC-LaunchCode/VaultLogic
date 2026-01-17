@@ -3,6 +3,7 @@ import { createLogger } from "../logger";
 import { validateWorkflowSize, aiWorkflowRateLimit } from "../middleware/ai.middleware";
 import { hybridAuth } from '../middleware/auth';
 import { requireBuilder } from "../middleware/rbac";
+import { asyncHandler } from '../utils/asyncHandler';
 
 import type { Express } from "express";
 
@@ -20,13 +21,13 @@ export function registerAiRoutes(app: Express): void {
    * GET /api/ai/status
    * Check if AI services are available
    */
-  app.get('/api/ai/status', hybridAuth, AiController.getStatus);
+  app.get('/api/ai/status', hybridAuth, asyncHandler(AiController.getStatus));
 
   /**
    * POST /api/ai/sentiment
    * Quick sentiment analysis for text
    */
-  app.post('/api/ai/sentiment', hybridAuth, AiController.analyzeSentiment);
+  app.post('/api/ai/sentiment', hybridAuth, asyncHandler(AiController.analyzeSentiment));
 
   // ============================================================================
   // AI Workflow Generation Endpoints (Stage 15)
@@ -41,7 +42,7 @@ export function registerAiRoutes(app: Express): void {
     hybridAuth,
     requireBuilder,
     aiWorkflowRateLimit,
-    AiController.generateWorkflow
+    asyncHandler(AiController.generateWorkflow)
   );
 
   /**
@@ -53,7 +54,7 @@ export function registerAiRoutes(app: Express): void {
     hybridAuth,
     requireBuilder,
     aiWorkflowRateLimit,
-    AiController.suggestWorkflowImprovements
+    asyncHandler(AiController.suggestWorkflowImprovements)
   );
 
   /**
@@ -65,7 +66,7 @@ export function registerAiRoutes(app: Express): void {
     hybridAuth,
     requireBuilder,
     aiWorkflowRateLimit,
-    AiController.suggestTemplateBindings
+    asyncHandler(AiController.suggestTemplateBindings)
   );
 
   /**
@@ -78,7 +79,7 @@ export function registerAiRoutes(app: Express): void {
     requireBuilder,
     validateWorkflowSize(50, 50),
     aiWorkflowRateLimit,
-    AiController.reviseWorkflow
+    asyncHandler(AiController.reviseWorkflow)
   );
 
   /**
@@ -89,7 +90,7 @@ export function registerAiRoutes(app: Express): void {
     '/api/ai/workflows/revise/:jobId',
     hybridAuth,
     requireBuilder,
-    AiController.getRevisionJobStatus
+    asyncHandler(AiController.getRevisionJobStatus)
   );
 
   /**
@@ -100,7 +101,7 @@ export function registerAiRoutes(app: Express): void {
     '/api/ai/suggest-values',
     hybridAuth,
     aiWorkflowRateLimit,
-    AiController.suggestValues
+    asyncHandler(AiController.suggestValues)
   );
 
   /**
@@ -113,7 +114,7 @@ export function registerAiRoutes(app: Express): void {
     requireBuilder,
     validateWorkflowSize(50, 50),
     aiWorkflowRateLimit,
-    AiController.generateLogic
+    asyncHandler(AiController.generateLogic)
   );
 
   /**
@@ -126,7 +127,7 @@ export function registerAiRoutes(app: Express): void {
     requireBuilder,
     validateWorkflowSize(50, 50),
     aiWorkflowRateLimit,
-    AiController.debugLogic
+    asyncHandler(AiController.debugLogic)
   );
 
   /**
@@ -139,7 +140,7 @@ export function registerAiRoutes(app: Express): void {
     requireBuilder,
     validateWorkflowSize(50, 50),
     aiWorkflowRateLimit,
-    AiController.visualizeLogic
+    asyncHandler(AiController.visualizeLogic)
   );
 
   aiLogger.info('AI workflow generation routes registered');

@@ -17,6 +17,8 @@ import { z } from 'zod';
 
 import { EsignProviderFactory } from '../services/esign';
 import { SignatureBlockService } from '../services/esign/SignatureBlockService';
+import { asyncHandler } from '../utils/asyncHandler';
+import { logger } from '../logger';
 
 import type { SignatureBlockConfig } from '../../shared/types/stepConfigs';
 
@@ -66,7 +68,7 @@ const ExecuteSignatureBlockSchema = z.object({
  */
 router.post(
   '/execute/:runId/:stepId',
-  async (req: Request, res: Response, next: NextFunction) => {
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { runId, stepId } = req.params;
       const parsed = ExecuteSignatureBlockSchema.parse(req.body);
@@ -89,7 +91,7 @@ router.post(
     } catch (error) {
       next(error);
     }
-  }
+  })
 );
 
 /**
@@ -101,7 +103,7 @@ router.post(
  */
 router.get(
   '/status/:envelopeId',
-  async (req: Request, res: Response, next: NextFunction) => {
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { envelopeId } = req.params;
       const provider = (req.query.provider as string) || 'docusign';
@@ -113,7 +115,7 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  })
 );
 
 /**
@@ -127,7 +129,7 @@ router.get(
  */
 router.post(
   '/callback/:runId/:stepId',
-  async (req: Request, res: Response, next: NextFunction) => {
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { runId, stepId } = req.params;
       const { envelopeId, status, completedAt, ...eventData } = req.body;
@@ -147,7 +149,7 @@ router.post(
     } catch (error) {
       next(error);
     }
-  }
+  })
 );
 
 /**
@@ -158,7 +160,7 @@ router.post(
  */
 router.post(
   '/callback/docusign',
-  async (req: Request, res: Response, next: NextFunction) => {
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     try {
       const payload = req.body;
       const signature = req.headers['x-docusign-signature-1'] as string;
@@ -169,7 +171,8 @@ router.post(
       // Verify signature
       const isValid = await provider.verifyWebhookSignature(payload, signature);
       if (!isValid) {
-        return res.status(401).json({ error: 'Invalid signature' });
+        res.status(401).json({ error: 'Invalid signature' });
+        return;
       }
 
       // Parse event
@@ -180,8 +183,9 @@ router.post(
       const { runId, stepId } = payload.customFields || {};
 
       if (!runId || !stepId) {
-        console.warn('[Esign] DocuSign webhook missing runId/stepId:', event);
-        return res.status(400).json({ error: 'Missing runId or stepId in webhook' });
+        logger.warn({ event }, '[Esign] DocuSign webhook missing runId/stepId:');
+        res.status(400).json({ error: 'Missing runId or stepId in webhook' });
+        return;
       }
 
       // Handle callback
@@ -191,8 +195,8 @@ router.post(
         {
           envelopeId: event.envelopeId,
           status: event.type === 'signed' || event.type === 'completed' ? 'signed' :
-                  event.type === 'declined' ? 'declined' :
-                  event.type === 'voided' ? 'voided' : 'expired',
+            event.type === 'declined' ? 'declined' :
+              event.type === 'voided' ? 'voided' : 'expired',
           completedAt: event.timestamp,
           eventData: event.data,
         }
@@ -200,11 +204,11 @@ router.post(
 
       res.json({ success: true });
     } catch (error) {
-      console.error('[Esign] DocuSign webhook error:', error);
+      logger.error({ error }, '[Esign] DocuSign webhook error:');
       // Return 200 to prevent DocuSign from retrying
       res.status(200).json({ error: 'Webhook processing failed' });
     }
-  }
+  })
 );
 
 /**
@@ -213,14 +217,14 @@ router.post(
  */
 router.get(
   '/providers',
-  async (req: Request, res: Response, next: NextFunction) => {
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     try {
       const providers = EsignProviderFactory.getAllProviders();
       res.json({ providers });
     } catch (error) {
       next(error);
     }
-  }
+  })
 );
 
 /**
@@ -232,7 +236,7 @@ router.get(
  */
 router.post(
   '/test',
-  async (req: Request, res: Response, next: NextFunction) => {
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { provider = 'docusign' } = req.body;
 
@@ -249,7 +253,7 @@ router.post(
         error: error instanceof Error ? error.message : String(error),
       });
     }
-  }
+  })
 );
 
 export default router;
@@ -259,5 +263,5 @@ export default router;
  */
 export function registerEsignRoutes(app: any): void {
   app.use('/api/esign', router);
-  console.log('[Routes] E-Signature routes registered at /api/esign');
+  logger.info('[Routes] E-Signature routes registered at /api/esign');
 }

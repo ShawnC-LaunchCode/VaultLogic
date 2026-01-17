@@ -2,7 +2,7 @@
 import { randomBytes } from "crypto";
 
 import { eq, and } from "drizzle-orm";
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 
 import { workspaceMembers, workspaceInvitations, users, resourcePermissions } from "@shared/schema";
 
@@ -10,6 +10,7 @@ import { db } from "../db";
 import { AuditLogger } from "../lib/audit/auditLogger";
 import { ACTION } from "../lib/authz/checkPermission";
 import { requireWorkspace, enforce } from "../lib/authz/enforce";
+import { asyncHandler } from "../utils/asyncHandler";
 
 
 const router = Router();
@@ -18,7 +19,7 @@ const router = Router();
 router.use(requireWorkspace);
 
 // List Workspace Members
-router.get("/members", enforce(ACTION.VIEW_ANALYTICS), async (req, res) => {
+router.get("/members", enforce(ACTION.VIEW_ANALYTICS), asyncHandler(async (req: Request, res: Response) => {
     const workspaceId = (req as any).workspaceId;
 
     // Join with user table to get names/emails
@@ -30,13 +31,13 @@ router.get("/members", enforce(ACTION.VIEW_ANALYTICS), async (req, res) => {
     });
 
     res.json(members);
-});
+}));
 
 // Invite Member
-router.post("/invite", enforce(ACTION.MANAGE_MEMBERS), async (req, res) => {
+router.post("/invite", enforce(ACTION.MANAGE_MEMBERS), asyncHandler(async (req: Request, res: Response) => {
     const workspaceId = (req as any).workspaceId;
     const { email, role } = req.body;
-    const inviterId = req.user!.id;
+    const inviterId = (req as any).user!.id;
 
     // Check if user already exists
     const existingUser = await db.query.users.findFirst({
@@ -102,14 +103,14 @@ router.post("/invite", enforce(ACTION.MANAGE_MEMBERS), async (req, res) => {
 
         return res.json({ status: "invited", email });
     }
-});
+}));
 
 // Update Member Role
-router.patch("/members/:userId", enforce(ACTION.MANAGE_MEMBERS), async (req, res) => {
+router.patch("/members/:userId", enforce(ACTION.MANAGE_MEMBERS), asyncHandler(async (req: Request, res: Response) => {
     const workspaceId = (req as any).workspaceId;
     const targetUserId = req.params.userId;
     const { role } = req.body;
-    const actorId = req.user!.id;
+    const actorId = (req as any).user!.id;
 
     if (targetUserId === actorId) {
         return res.status(400).json({ error: "Cannot change your own role" });
@@ -132,6 +133,6 @@ router.patch("/members/:userId", enforce(ACTION.MANAGE_MEMBERS), async (req, res
     });
 
     res.json({ success: true });
-});
+}));
 
 export default router;

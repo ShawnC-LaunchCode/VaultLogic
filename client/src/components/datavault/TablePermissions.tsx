@@ -268,7 +268,7 @@ export function TablePermissions({ tableId }: TablePermissionsProps) {
               <CardDescription>Manage table access for team members</CardDescription>
             </div>
             {!addUserMode && (
-              <Button onClick={() => setAddUserMode(true)} size="sm">
+              <Button onClick={() => { void setAddUserMode(true); }} size="sm">
                 <Plus className="w-4 h-4 mr-2" />
                 Add User
               </Button>
@@ -283,7 +283,7 @@ export function TablePermissions({ tableId }: TablePermissionsProps) {
                 <Input
                   id="userId"
                   value={newUserId}
-                  onChange={(e) => setNewUserId(e.target.value)}
+                  onChange={(e) => { void setNewUserId(e.target.value); }}
                   placeholder="Enter user ID or email"
                 />
               </div>
@@ -319,7 +319,7 @@ export function TablePermissions({ tableId }: TablePermissionsProps) {
                 </Select>
               </div>
               <div className="flex gap-2">
-                <Button onClick={handleAddUser} disabled={grantMutation.isPending}>
+                <Button onClick={() => { void handleAddUser(); }} disabled={grantMutation.isPending}>
                   {grantMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Add User
                 </Button>
@@ -406,7 +406,7 @@ export function TablePermissions({ tableId }: TablePermissionsProps) {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => setEditingPermission(null)}
+                                onClick={() => { void setEditingPermission(null); }}
                               >
                                 Cancel
                               </Button>
@@ -415,7 +415,7 @@ export function TablePermissions({ tableId }: TablePermissionsProps) {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => setEditingPermission(permission.id)}
+                                  onClick={() => { void setEditingPermission(permission.id); }}
                                   disabled={isOnlyOwner}
                                   title={isOnlyOwner ? "Cannot edit the only owner" : "Edit role"}
                                 >
@@ -424,7 +424,7 @@ export function TablePermissions({ tableId }: TablePermissionsProps) {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => setDeletePermissionId(permission.id)}
+                                  onClick={() => { void setDeletePermissionId(permission.id); }}
                                   disabled={cannotDelete || isOnlyOwner}
                                   title={
                                     cannotDelete
@@ -480,7 +480,7 @@ export function TablePermissions({ tableId }: TablePermissionsProps) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleRevoke} disabled={revokeMutation.isPending}>
+            <AlertDialogAction onClick={() => { void handleRevoke(); }} disabled={revokeMutation.isPending}>
               {revokeMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Revoke Access
             </AlertDialogAction>

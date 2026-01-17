@@ -32,7 +32,7 @@ export function ActivateToggle({
   const isActive = currentStatus === "active";
 
   const handleToggle = async () => {
-    if (disabled) {return;}
+    if (disabled) { return; }
 
     const newStatus: WorkflowStatus = isActive ? "draft" : "active";
 
@@ -77,7 +77,7 @@ export function ActivateToggle({
         <Switch
           id="activate-toggle"
           checked={isActive}
-          onCheckedChange={handleToggle}
+          onCheckedChange={() => { void handleToggle(); }}
           disabled={disabled || isUpdating}
           className={cn(
             "data-[state=checked]:bg-green-600",

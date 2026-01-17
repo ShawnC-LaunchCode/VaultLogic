@@ -31,7 +31,7 @@ export function TransformBlocksPanel({ workflowId }: { workflowId: string }) {
           <h3 className="font-semibold text-sm">Transform Blocks</h3>
           <p className="text-xs text-muted-foreground">JavaScript/Python code execution</p>
         </div>
-        <Button size="sm" onClick={() => setIsCreateOpen(true)}>
+        <Button size="sm" onClick={() => { void setIsCreateOpen(true); }}>
           <Plus className="w-3 h-3 mr-1" />
           Add
         </Button>
@@ -84,7 +84,7 @@ function TransformBlockCard({ block, workflowId, onEdit }: { block: any; workflo
   const displayInputKeys = block.inputKeys.map(getVariableDisplayName).join(", ") || "none";
 
   return (
-    <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => onEdit(block)}>
+    <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => { void onEdit(block); }}>
       <CardContent className="p-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">
@@ -235,7 +235,7 @@ function TransformBlockEditor({
               <Label>Name</Label>
               <Input
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) => { void setFormData({ ...formData, name: e.target.value }); }}
                 placeholder="e.g., Calculate Total"
               />
             </div>
@@ -281,7 +281,7 @@ function TransformBlockEditor({
             <Label>Code</Label>
             <Textarea
               value={formData.code}
-              onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+              onChange={(e) => { void setFormData({ ...formData, code: e.target.value }); }}
               rows={12}
               className="font-mono text-xs"
               placeholder={
@@ -297,7 +297,7 @@ function TransformBlockEditor({
               <Label>Input Keys (comma-separated)</Label>
               <Input
                 value={inputKeysText}
-                onChange={(e) => setInputKeysText(e.target.value)}
+                onChange={(e) => { void setInputKeysText(e.target.value); }}
                 placeholder="e.g., firstName, lastName"
               />
               <p className="text-xs text-muted-foreground">Variables available in your code</p>
@@ -307,7 +307,7 @@ function TransformBlockEditor({
               <Label>Output Key</Label>
               <Input
                 value={formData.outputKey}
-                onChange={(e) => setFormData({ ...formData, outputKey: e.target.value })}
+                onChange={(e) => { void setFormData({ ...formData, outputKey: e.target.value }); }}
                 placeholder="e.g., fullName"
               />
               <p className="text-xs text-muted-foreground">Where the result will be stored</p>
@@ -356,12 +356,12 @@ function TransformBlockEditor({
               <div className="flex gap-2">
                 <Textarea
                   value={testData}
-                  onChange={(e) => setTestData(e.target.value)}
+                  onChange={(e) => { void setTestData(e.target.value); }}
                   rows={4}
                   className="font-mono text-xs flex-1"
                   placeholder='{"inputKey1": "value1", "inputKey2": "value2"}'
                 />
-                <Button type="button" variant="outline" onClick={handleTest} disabled={testMutation.isPending}>
+                <Button type="button" variant="outline" onClick={() => { void handleTest(); }} disabled={testMutation.isPending}>
                   <Play className="w-3 h-3 mr-1" />
                   Test
                 </Button>
@@ -379,10 +379,10 @@ function TransformBlockEditor({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={() => { void onClose(); }}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={createMutation.isPending || updateMutation.isPending}>
+          <Button onClick={() => { void handleSave(); }} disabled={createMutation.isPending || updateMutation.isPending}>
             {block ? "Update" : "Create"}
           </Button>
         </DialogFooter>

@@ -27,7 +27,7 @@ export default function PublicRunner() {
 
     useEffect(() => {
         if (slug) {
-            fetchWorkflow();
+            void fetchWorkflow();
         }
     }, [slug]);
 
@@ -35,7 +35,7 @@ export default function PublicRunner() {
         try {
             const res = await fetch(`/public/w/${slug}`);
             if (!res.ok) {
-                if (res.status === 404) {throw new Error("Workflow not found or private");}
+                if (res.status === 404) { throw new Error("Workflow not found or private"); }
                 throw new Error("Failed to load workflow");
             }
             const data = await res.json();
@@ -51,7 +51,7 @@ export default function PublicRunner() {
         try {
             setRunState('running');
             const res = await fetch(`/public/w/${slug}/run`, { method: 'POST' });
-            if (!res.ok) {throw new Error("Failed to start run");}
+            if (!res.ok) { throw new Error("Failed to start run"); }
             const data = await res.json();
             // In a real app, this would initialize a Multi-Step Runner component
             // For now, we simulate completion
@@ -100,7 +100,7 @@ export default function PublicRunner() {
                     <CardContent className="p-8">
                         {runState === 'idle' && (
                             <div className="text-center py-8">
-                                <Button size="lg" onClick={startRun} className="w-full sm:w-auto text-lg px-8 py-6 h-auto">
+                                <Button size="lg" onClick={() => { void startRun(); }} className="w-full sm:w-auto text-lg px-8 py-6 h-auto">
                                     Start Workflow
                                 </Button>
                             </div>

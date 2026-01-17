@@ -310,7 +310,7 @@ describe('OAuth2 3-Legged Flow - Callback Handling', () => {
       const connectionId = createResponse.body.id;
 
       // Check initial status (should be disabled/not authorized)
-      const connection = await db.query.connections.findFirst({
+      const connection = await db.query.externalConnections.findFirst({
         where: eq(connections.id, connectionId),
       });
 

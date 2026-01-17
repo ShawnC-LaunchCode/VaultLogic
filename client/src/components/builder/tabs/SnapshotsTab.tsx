@@ -197,18 +197,18 @@ export function SnapshotsTab({ workflowId }: SnapshotsTabProps) {
                         size="sm"
                         variant="default"
                         className="bg-indigo-600 hover:bg-indigo-700"
-                        onClick={() => handlePreview(snapshot)}
+                        onClick={() => { void handlePreview(snapshot); }}
                       >
                         <Play className="w-3 h-3 mr-1" />
                         Run Scenario
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => handleView(snapshot)}>
+                      <Button size="sm" variant="ghost" onClick={() => { void handleView(snapshot); }}>
                         <Eye className="w-3 h-3" />
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => handleOpenRename(snapshot)}>
+                      <Button size="sm" variant="ghost" onClick={() => { void handleOpenRename(snapshot); }}>
                         <Edit2 className="w-3 h-3" />
                       </Button>
-                      <Button size="sm" variant="ghost" className="text-muted-foreground hover:text-destructive" onClick={() => handleOpenDelete(snapshot)}>
+                      <Button size="sm" variant="ghost" className="text-muted-foreground hover:text-destructive" onClick={() => { void handleOpenDelete(snapshot); }}>
                         <Trash2 className="w-3 h-3" />
                       </Button>
                     </TableCell>
@@ -232,8 +232,8 @@ export function SnapshotsTab({ workflowId }: SnapshotsTabProps) {
                 <Input
                   id="rename"
                   value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleRename()}
+                  onChange={(e) => { void setNewName(e.target.value); }}
+                  onKeyDown={(e) => { void e.key === "Enter" && handleRename(); }}
                 />
               </div>
             </div>
@@ -247,7 +247,7 @@ export function SnapshotsTab({ workflowId }: SnapshotsTabProps) {
               >
                 Cancel
               </Button>
-              <Button onClick={handleRename} disabled={renameSnapshot.isPending || !newName.trim()}>
+              <Button onClick={() => { void handleRename(); }} disabled={renameSnapshot.isPending || !newName.trim()}>
                 {renameSnapshot.isPending ? "Saving..." : "Save Name"}
               </Button>
             </DialogFooter>
@@ -264,10 +264,10 @@ export function SnapshotsTab({ workflowId }: SnapshotsTabProps) {
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              <Button variant="outline" onClick={() => { void setDeleteDialogOpen(false); }}>
                 Cancel
               </Button>
-              <Button variant="destructive" onClick={handleDelete} disabled={deleteSnapshot.isPending}>
+              <Button variant="destructive" onClick={() => { void handleDelete(); }} disabled={deleteSnapshot.isPending}>
                 {deleteSnapshot.isPending ? "Deleting..." : "Delete Scenario"}
               </Button>
             </DialogFooter>
@@ -289,7 +289,7 @@ export function SnapshotsTab({ workflowId }: SnapshotsTabProps) {
               </pre>
             </div>
             <DialogFooter>
-              <Button onClick={() => setViewDialogOpen(false)}>Close</Button>
+              <Button onClick={() => { void setViewDialogOpen(false); }}>Close</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

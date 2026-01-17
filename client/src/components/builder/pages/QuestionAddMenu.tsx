@@ -105,7 +105,7 @@ export function QuestionAddMenu({ sectionId, nextOrder, workflowId }: QuestionAd
               return (
                 <DropdownMenuItem
                   key={block.type}
-                  onClick={() => handleAddQuestion(block)}
+                  onClick={() => { void handleAddQuestion(block); }}
                   className="cursor-pointer"
                 >
                   <Icon className="mr-2 h-4 w-4 text-muted-foreground" />

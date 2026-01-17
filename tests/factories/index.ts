@@ -14,16 +14,17 @@
  */
 
 import { nanoid } from 'nanoid';
+import { v4 as uuidv4 } from 'uuid';
 
 import type {
-  users, // Added missing import
+  users,
   tenants,
   organizations,
   projects,
   workflows,
   sections,
   steps,
-  workflowRuns, // Updated from runs to workflowRuns which matches the factory usage
+  workflowRuns,
   stepValues,
 } from '@shared/schema';
 
@@ -35,7 +36,7 @@ type Project = typeof projects.$inferSelect;
 type Workflow = typeof workflows.$inferSelect;
 type Section = typeof sections.$inferSelect;
 type Step = typeof steps.$inferSelect;
-type WorkflowRun = typeof workflowRuns.$inferSelect; // Updated type
+type WorkflowRun = typeof workflowRuns.$inferSelect;
 type StepValue = typeof stepValues.$inferSelect;
 
 // ===================================================================
@@ -106,8 +107,7 @@ export function createTestUserCredentials(
 export function createTestTenant(overrides?: DeepPartial<Tenant>): Omit<Tenant, 'id' | 'createdAt' | 'updatedAt'> {
   return {
     name: overrides?.name || `Test Tenant ${nanoid(6)}`,
-    // slug: overrides?.slug || `tenant-${nanoid(8)}`, // Removed: does not exist on schema
-    billingEmail: overrides?.billingEmail || generateEmail(), // Ensure string
+    billingEmail: overrides?.billingEmail || generateEmail(),
     plan: overrides?.plan || 'pro',
     mfaRequired: overrides?.mfaRequired ?? false,
     branding: overrides?.branding || null,
@@ -125,10 +125,10 @@ export function createTestOrganization(overrides?: DeepPartial<Organization>): O
     name: overrides?.name || `Test Organization ${nanoid(6)}`,
     description: overrides?.description || `A test organization for automated testing`,
     slug: overrides?.slug || null,
-    domain: overrides?.domain || null, // Explicitly handle domain
+    domain: overrides?.domain || null,
     settings: overrides?.settings || {},
     createdByUserId: overrides?.createdByUserId || null,
-    tenantId: overrides?.tenantId || nanoid(),
+    tenantId: overrides?.tenantId || uuidv4(), // Fix: nanoid -> uuidv4
   };
 }
 
@@ -153,7 +153,7 @@ export function createTestProject(overrides?: DeepPartial<Project>): Omit<Projec
     createdBy: overrides?.createdBy || null,
     ownerId: overrides?.ownerId || `user-${uniqueId}`,
     ownerType: overrides?.ownerType || 'user',
-    ownerUuid: overrides?.ownerUuid || `user-${uniqueId}`,
+    ownerUuid: overrides?.ownerUuid || uuidv4(), // Fix: user-${uniqueId} -> uuidv4()
     status: overrides?.status || 'active',
     archived: overrides?.archived ?? false,
   };
@@ -177,9 +177,9 @@ export function createTestWorkflow(overrides?: DeepPartial<Workflow>): any {
     title: overrides?.title || `Test Workflow ${uniqueId}`,
     name: overrides?.name || null,
     description: overrides?.description || 'A test workflow for automated testing',
-    creatorId: (overrides?.creatorId ?? null) as any, // Optional field
-    ownerId: (overrides?.ownerId ?? overrides?.creatorId ?? `user-${uniqueId}`) as any, // Ensure ownerId is populated per schema constraints
-    ownerUuid: overrides?.ownerUuid || `user-${uniqueId}`,
+    creatorId: (overrides?.creatorId ?? null) as any,
+    ownerId: (overrides?.ownerId ?? overrides?.creatorId ?? uuidv4()) as any, // Fix: default to uuidv4
+    ownerUuid: overrides?.ownerUuid || uuidv4(), // Fix: default to uuidv4
     status: overrides?.status || 'draft',
     pinnedVersionId: overrides?.pinnedVersionId || null,
     isPublic: overrides?.isPublic ?? false,
@@ -201,12 +201,11 @@ export function createTestWorkflow(overrides?: DeepPartial<Workflow>): any {
 export function createTestSection(overrides?: DeepPartial<Section>): Omit<Section, 'id' | 'createdAt' | 'updatedAt'> {
   const uniqueId = nanoid(8);
   return {
-    workflowId: overrides?.workflowId || `wf-${uniqueId}`,
+    workflowId: overrides?.workflowId || uuidv4(), // Fix: wf-${uniqueId} -> uuidv4
     title: overrides?.title || `Section ${uniqueId}`,
     description: overrides?.description || null,
     order: overrides?.order ?? 0,
-    skipIf: overrides?.skipIf || null, // Renamed from skipLogic if needed, or if unrelated. Schema has skipIf.
-    // skipLogic: overrides?.skipLogic || null, // Removed
+    skipIf: overrides?.skipIf || null,
     visibleIf: overrides?.visibleIf || null,
     config: overrides?.config || {},
     ...overrides,
@@ -222,10 +221,9 @@ export function createTestStep(overrides?: DeepPartial<Step>): Omit<Step, 'id' |
   const uniqueId = nanoid(8);
 
   return {
-    sectionId: overrides?.sectionId || `sec-${uniqueId}`,
+    sectionId: overrides?.sectionId || uuidv4(), // Fix: sec-${uniqueId} -> uuidv4
     type: overrides?.type || 'short_text',
-    title: overrides?.title || `Step ${uniqueId}`, // label -> title
-    // label: overrides?.label || `Test ${stepType} step`, // Removed
+    title: overrides?.title || `Step ${uniqueId}`,
     description: overrides?.description || null,
     required: overrides?.required ?? false,
     options: overrides?.options || null,
@@ -235,7 +233,6 @@ export function createTestStep(overrides?: DeepPartial<Step>): Omit<Step, 'id' |
     isVirtual: overrides?.isVirtual ?? false,
     visibleIf: overrides?.visibleIf || null,
     repeaterConfig: overrides?.repeaterConfig || null,
-    // config: overrides?.config || {}, // Removed
     ...overrides,
   };
 }
@@ -254,7 +251,7 @@ export function createTestWorkflowRun(overrides?: DeepPartial<WorkflowRun>): Omi
 
   return {
     ...overrides,
-    workflowId: overrides?.workflowId || `wf-${uniqueId}`,
+    workflowId: overrides?.workflowId || uuidv4(), // Fix: wf-${uniqueId} -> uuidv4
     runToken: overrides?.runToken || uniqueId,
     createdBy: overrides?.createdBy || `creator:${uniqueId}`,
     workflowVersionId: overrides?.workflowVersionId || null,
@@ -280,61 +277,12 @@ export function createTestWorkflowRun(overrides?: DeepPartial<WorkflowRun>): Omi
  */
 export function createTestStepValue(overrides?: DeepPartial<StepValue>): Omit<StepValue, 'id' | 'createdAt' | 'updatedAt'> {
   return {
-    runId: overrides?.runId || `run-${nanoid(8)}`,
-    stepId: overrides?.stepId || `step-${nanoid(8)}`,
+    runId: overrides?.runId || uuidv4(), // Fix: run-${nanoid} -> uuidv4
+    stepId: overrides?.stepId || uuidv4(), // Fix: step-${nanoid} -> uuidv4
     value: overrides?.value || null,
     ...overrides,
   };
 }
-
-// ===================================================================
-// DataVault Factories
-// ===================================================================
-
-/*
-// DataVault factories commented out as tables are currently missing in schema export
-export function createTestDatabase(overrides?: DeepPartial<Database>): Omit<Database, 'id' | 'createdAt' | 'updatedAt'> {
-  const uniqueId = nanoid(8);
-
-  return {
-    name: overrides?.name || `Database ${uniqueId}`,
-    description: overrides?.description || null,
-    tenantId: overrides?.tenantId || `tenant-${uniqueId}`,
-    scopeType: overrides?.scopeType || 'project',
-    scopeId: overrides?.scopeId || `proj-${uniqueId}`,
-    ...overrides,
-  };
-}
-
-export function createTestTable(overrides?: DeepPartial<Table>): Omit<Table, 'id' | 'createdAt' | 'updatedAt'> {
-  const uniqueId = nanoid(8);
-
-  return {
-    databaseId: overrides?.databaseId || `db-${uniqueId}`,
-    name: overrides?.name || `Table ${uniqueId}`,
-    description: overrides?.description || null,
-    role: overrides?.role || 'read',
-    schema: overrides?.schema || {},
-    ...overrides,
-  };
-}
-
-export function createTestTableRow(overrides?: DeepPartial<TableRow>): Omit<TableRow, 'id' | 'createdAt' | 'updatedAt'> {
-  const uniqueId = nanoid(8);
-
-  return {
-    tableId: overrides?.tableId || `table-${uniqueId}`,
-    data: overrides?.data || {},
-    ...overrides,
-  };
-}
-*/
-/**
- * Creates a test database
- * @param overrides Partial database properties to override defaults
- * @returns Database object ready for database insertion
- */
-// Duplicate DataVault factories removed
 
 // ===================================================================
 // Logic & Transform Factories

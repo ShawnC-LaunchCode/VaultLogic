@@ -90,7 +90,7 @@ export function DatabaseSettings({ database, onClose }: DatabaseSettingsProps) {
         <Button
           variant="ghost"
           size="sm"
-          onClick={onClose}
+          onClick={() => { void onClose(); }}
           className="absolute -top-2 -right-2 h-8 w-8 rounded-full p-0 hover:bg-destructive/10"
           aria-label="Close settings"
         >
@@ -115,7 +115,7 @@ export function DatabaseSettings({ database, onClose }: DatabaseSettingsProps) {
             <Input
               id="name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => { void setName(e.target.value); }}
               placeholder="Database name"
             />
           </div>
@@ -125,7 +125,7 @@ export function DatabaseSettings({ database, onClose }: DatabaseSettingsProps) {
             <Textarea
               id="description"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => { void setDescription(e.target.value); }}
               placeholder="Optional description"
               rows={3}
             />
@@ -184,7 +184,7 @@ export function DatabaseSettings({ database, onClose }: DatabaseSettingsProps) {
               <Input
                 id="scopeId"
                 value={scopeId}
-                onChange={(e) => setScopeId(e.target.value)}
+                onChange={(e) => { void setScopeId(e.target.value); }}
                 placeholder={`Enter ${scopeType} UUID`}
               />
               <Alert>
@@ -246,7 +246,7 @@ export function DatabaseSettings({ database, onClose }: DatabaseSettingsProps) {
       {/* Actions */}
       <div className="flex gap-3">
         <Button
-          onClick={handleSave}
+          onClick={() => { void handleSave(); }}
           disabled={!hasChanges || updateMutation.isPending}
         >
           {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -255,7 +255,7 @@ export function DatabaseSettings({ database, onClose }: DatabaseSettingsProps) {
         </Button>
         <Button
           variant="outline"
-          onClick={handleReset}
+          onClick={() => { void handleReset(); }}
           disabled={!hasChanges || updateMutation.isPending}
         >
           Reset

@@ -170,7 +170,7 @@ export function AiAssistantDialog({ workflowId, open, onOpenChange }: AiAssistan
                                                 <Button
                                                     size="sm"
                                                     className="h-7 text-xs w-full bg-indigo-600 hover:bg-indigo-700"
-                                                    onClick={() => handleApply(msg.suggestions)}
+                                                    onClick={() => { void handleApply(msg.suggestions); }}
                                                 >
                                                     <Check className="w-3 h-3 mr-1" /> Apply Changes
                                                 </Button>
@@ -194,7 +194,7 @@ export function AiAssistantDialog({ workflowId, open, onOpenChange }: AiAssistan
                         <Textarea
                             placeholder="Message AI..."
                             value={prompt}
-                            onChange={(e) => setPrompt(e.target.value)}
+                            onChange={(e) => { void setPrompt(e.target.value); }}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
                                     e.preventDefault();
@@ -204,7 +204,7 @@ export function AiAssistantDialog({ workflowId, open, onOpenChange }: AiAssistan
                             className="min-h-[44px] max-h-[120px] resize-none py-3"
                         />
                         <Button
-                            onClick={handleGenerate}
+                            onClick={() => { void handleGenerate(); }}
                             disabled={suggestMutation.isPending || !prompt.trim()}
                             size="icon"
                             className="h-[44px] w-[44px] shrink-0"

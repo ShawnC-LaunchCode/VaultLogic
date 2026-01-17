@@ -146,7 +146,7 @@ function SortableColumn({ column, onEdit, onDelete, isLoading, canDelete }: Sort
         <Button
           variant="ghost"
           size="sm"
-          onClick={onEdit}
+          onClick={() => { void onEdit(); }}
           disabled={isLoading}
           title="Edit column"
         >
@@ -155,7 +155,7 @@ function SortableColumn({ column, onEdit, onDelete, isLoading, canDelete }: Sort
         <Button
           variant="ghost"
           size="sm"
-          onClick={onDelete}
+          onClick={() => { void onDelete(); }}
           disabled={isLoading || !canDelete}
           className="text-destructive hover:text-destructive disabled:opacity-50 disabled:cursor-not-allowed"
           title={
@@ -214,9 +214,7 @@ export function ColumnManagerWithDnd({
 
   // Update local columns when props change
   // Update local columns when props change
-  useEffect(() => {
-    setLocalColumns(columns);
-  }, [columns]);
+  useEffect(() => { void setLocalColumns(columns); }, [columns]);
 
   // Listen for custom event from header button
   useEffect(() => {
@@ -374,7 +372,7 @@ export function ColumnManagerWithDnd({
                 id="column-name"
                 placeholder="e.g., Full Name, Email, Age"
                 value={newColumnName}
-                onChange={(e) => setNewColumnName(e.target.value)}
+                onChange={(e) => { void setNewColumnName(e.target.value); }}
                 autoFocus
               />
             </div>
@@ -412,7 +410,7 @@ export function ColumnManagerWithDnd({
                 id="column-description"
                 placeholder="Describe this column's purpose..."
                 value={newColumnDescription}
-                onChange={(e) => setNewColumnDescription(e.target.value)}
+                onChange={(e) => { void setNewColumnDescription(e.target.value); }}
                 rows={3}
               />
             </div>
@@ -475,10 +473,10 @@ export function ColumnManagerWithDnd({
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddDialogOpen(false)}>
+            <Button variant="outline" onClick={() => { void setAddDialogOpen(false); }}>
               Cancel
             </Button>
-            <Button onClick={handleAddColumn} disabled={!newColumnName.trim() || isLoading}>
+            <Button onClick={() => { void handleAddColumn(); }} disabled={!newColumnName.trim() || isLoading}>
               {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Add Column
             </Button>
@@ -503,7 +501,7 @@ export function ColumnManagerWithDnd({
               <Input
                 id="edit-column-name"
                 value={editColumnName}
-                onChange={(e) => setEditColumnName(e.target.value)}
+                onChange={(e) => { void setEditColumnName(e.target.value); }}
                 autoFocus
               />
             </div>
@@ -513,7 +511,7 @@ export function ColumnManagerWithDnd({
                 id="edit-column-description"
                 placeholder="Describe this column's purpose..."
                 value={editColumnDescription}
-                onChange={(e) => setEditColumnDescription(e.target.value)}
+                onChange={(e) => { void setEditColumnDescription(e.target.value); }}
                 rows={3}
               />
             </div>
@@ -529,10 +527,10 @@ export function ColumnManagerWithDnd({
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialog(null)}>
+            <Button variant="outline" onClick={() => { void setEditDialog(null); }}>
               Cancel
             </Button>
-            <Button onClick={handleEditColumn} disabled={!editColumnName.trim() || isLoading}>
+            <Button onClick={() => { void handleEditColumn(); }} disabled={!editColumnName.trim() || isLoading}>
               {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Save Changes
             </Button>
@@ -553,7 +551,7 @@ export function ColumnManagerWithDnd({
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteColumn}
+              onClick={() => { void handleDeleteColumn(); }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={isLoading}
             >

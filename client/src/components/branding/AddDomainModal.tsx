@@ -279,10 +279,10 @@ export default function AddDomainModal({
         )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isSubmitting}>
+          <Button variant="outline" onClick={() => { void handleOpenChange(false); }} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={!currentValue || isSubmitting || !isValid}>
+          <Button onClick={() => { void handleSubmit(); }} disabled={!currentValue || isSubmitting || !isValid}>
             {isSubmitting ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />

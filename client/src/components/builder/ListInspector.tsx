@@ -143,7 +143,7 @@ export function ListInspector({ list, variableName }: ListInspectorProps) {
                   variant="ghost"
                   size="icon"
                   className="h-6 w-6 opacity-0 group-hover:opacity-100"
-                  onClick={() => handleCopyReference(`${variableName}.rows[i].${col.id}`)}
+                  onClick={() => { void handleCopyReference(`${variableName}.rows[i].${col.id}`); }}
                   title="Copy reference"
                 >
                   <Copy className="w-3 h-3" />
@@ -163,7 +163,7 @@ export function ListInspector({ list, variableName }: ListInspectorProps) {
                 variant="ghost"
                 size="icon"
                 className="h-5 w-5 opacity-0 group-hover:opacity-100"
-                onClick={() => handleCopyReference(`${variableName}.count`)}
+                onClick={() => { void handleCopyReference(`${variableName}.count`); }}
               >
                 <Copy className="w-3 h-3" />
               </Button>
@@ -174,7 +174,7 @@ export function ListInspector({ list, variableName }: ListInspectorProps) {
                 variant="ghost"
                 size="icon"
                 className="h-5 w-5 opacity-0 group-hover:opacity-100"
-                onClick={() => handleCopyReference(`${variableName}.rows[0]`)}
+                onClick={() => { void handleCopyReference(`${variableName}.rows[0]`); }}
               >
                 <Copy className="w-3 h-3" />
               </Button>

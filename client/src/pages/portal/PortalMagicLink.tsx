@@ -45,7 +45,7 @@ export default function PortalMagicLink() {
             }
         };
 
-        verifyToken();
+        void verifyToken();
     }, [setLocation, toast]);
 
     return (

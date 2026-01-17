@@ -6,6 +6,7 @@ import { hybridAuth, getAuthUserTenantId, getAuthUserId } from '../middleware/au
 import { datavaultDatabasesRepository } from '../repositories/DatavaultDatabasesRepository';
 import { datavaultTablesRepository } from '../repositories/DatavaultTablesRepository';
 import { dataSourceService } from '../services/DataSourceService';
+import { asyncHandler } from '../utils/asyncHandler';
 
 export const dataSourceRouter = Router();
 
@@ -25,7 +26,7 @@ const getTenant = (req: any): string => {
  * GET /api/data-sources
  * List all data sources for the tenant
  */
-dataSourceRouter.get('/', async (req, res) => {
+dataSourceRouter.get('/', asyncHandler(async (req, res) => {
     try {
         const tenantId = getTenant(req);
         const dataSources = await dataSourceService.listDataSources(tenantId);
@@ -34,19 +35,20 @@ dataSourceRouter.get('/', async (req, res) => {
         logger.error({ error }, 'Error listing data sources');
         res.status(500).json({ message: 'Failed to list data sources' });
     }
-});
+}));
 
 /**
  * GET /api/data-sources/native/catalog
  * Get accessible native databases and tables for the selector UI
  */
-dataSourceRouter.get('/native/catalog', async (req, res) => {
+dataSourceRouter.get('/native/catalog', asyncHandler(async (req, res) => {
     try {
         const tenantId = getTenant(req);
         const userId = getAuthUserId(req);
 
         if (!userId) {
-            return res.status(401).json({ message: 'Authentication required' });
+            res.status(401).json({ message: 'Authentication required' });
+            return;
         }
 
         // 1. Get all accessible databases
@@ -86,20 +88,21 @@ dataSourceRouter.get('/native/catalog', async (req, res) => {
         logger.error({ error }, 'Error fetching native catalog');
         res.status(500).json({ message: 'Failed to fetch native catalog' });
     }
-});
+}));
 
 /**
  * GET /api/data-sources/:id
  * Get a single data source
  */
-dataSourceRouter.get('/:id', async (req, res) => {
+dataSourceRouter.get('/:id', asyncHandler(async (req, res) => {
     try {
         const tenantId = getTenant(req);
         const { id } = req.params;
         const dataSource = await dataSourceService.getDataSource(id, tenantId);
 
         if (!dataSource) {
-            return res.status(404).json({ message: 'Data source not found' });
+            res.status(404).json({ message: 'Data source not found' });
+            return;
         }
 
         res.json(dataSource);
@@ -107,13 +110,13 @@ dataSourceRouter.get('/:id', async (req, res) => {
         logger.error({ error }, 'Error fetching data source');
         res.status(500).json({ message: 'Failed to fetch data source' });
     }
-});
+}));
 
 /**
  * GET /api/data-sources/:id/tables
  * List tables in a data source
  */
-dataSourceRouter.get('/:id/tables', async (req, res) => {
+dataSourceRouter.get('/:id/tables', asyncHandler(async (req, res) => {
     try {
         const tenantId = getTenant(req);
         const { id } = req.params;
@@ -126,13 +129,13 @@ dataSourceRouter.get('/:id/tables', async (req, res) => {
         const status = message.includes('not found') ? 404 : 500;
         res.status(status).json({ message });
     }
-});
+}));
 
 /**
  * POST /api/data-sources
  * Create a new data source
  */
-dataSourceRouter.post('/', async (req, res) => {
+dataSourceRouter.post('/', asyncHandler(async (req, res) => {
     try {
         const tenantId = getTenant(req);
 
@@ -148,20 +151,6 @@ dataSourceRouter.post('/', async (req, res) => {
 
         const data = schema.parse(req.body);
 
-        // If type is 'native_table', we might need to handle it differently in service or repo
-        // But dataSourceService.createDataSource just passes it to the repo which validates against DB schema.
-        // The DB enum for 'type' needs to support 'native_table' OR we map it to 'native' with config.
-        // Wait, 'type' in 'datavault_databases' table is an enum? 
-        // Let's check schema.ts. If it's an enum, we might need a migration (which I can't do easily).
-        // OR we treat 'native_table' as 'native' type but store the tableId in config?
-        // Let's assume for now we map it if necessary or the enum accepts text.
-
-        // Actually, looking at the request, 'native_table' is a new concept for *Data Source Link*?
-        // No, the prompt says "create a data source link... type: native_table".
-        // Existing table `datavault_databases` is what backs Data Sources.
-        // If I create a `datavault_databases` entry for a single table, it's effectively a "link" or wrapper.
-        // Let's check schema for `dataSourceTypeEnum`.
-
         const dataSource = await dataSourceService.createDataSource({
             ...data,
             tenantId,
@@ -171,17 +160,18 @@ dataSourceRouter.post('/', async (req, res) => {
     } catch (error) {
         logger.error({ error }, 'Error creating data source');
         if (error instanceof z.ZodError) {
-            return res.status(400).json({ message: 'Invalid input', errors: error.errors });
+            res.status(400).json({ message: 'Invalid input', errors: error.errors });
+            return;
         }
         res.status(500).json({ message: 'Failed to create data source' });
     }
-});
+}));
 
 /**
  * PATCH /api/data-sources/:id
  * Update a data source
  */
-dataSourceRouter.patch('/:id', async (req, res) => {
+dataSourceRouter.patch('/:id', asyncHandler(async (req, res) => {
     try {
         const tenantId = getTenant(req);
         const { id } = req.params;
@@ -199,17 +189,18 @@ dataSourceRouter.patch('/:id', async (req, res) => {
     } catch (error) {
         logger.error({ error }, 'Error updating data source');
         if (error instanceof z.ZodError) {
-            return res.status(400).json({ message: 'Invalid input', errors: error.errors });
+            res.status(400).json({ message: 'Invalid input', errors: error.errors });
+            return;
         }
         res.status(500).json({ message: 'Failed to update data source' });
     }
-});
+}));
 
 /**
  * DELETE /api/data-sources/:id
  * Delete a data source
  */
-dataSourceRouter.delete('/:id', async (req, res) => {
+dataSourceRouter.delete('/:id', asyncHandler(async (req, res) => {
     try {
         const tenantId = getTenant(req);
         const { id } = req.params;
@@ -220,13 +211,13 @@ dataSourceRouter.delete('/:id', async (req, res) => {
         logger.error({ error }, 'Error deleting data source');
         res.status(500).json({ message: 'Failed to delete data source' });
     }
-});
+}));
 
 /**
  * GET /api/data-sources/workflow/:workflowId
  * List data sources linked to a workflow
  */
-dataSourceRouter.get('/workflow/:workflowId', async (req, res) => {
+dataSourceRouter.get('/workflow/:workflowId', asyncHandler(async (req, res) => {
     try {
         const { workflowId } = req.params;
         // Optional: Verify workflow ownership/access here or in service
@@ -236,13 +227,13 @@ dataSourceRouter.get('/workflow/:workflowId', async (req, res) => {
         logger.error({ error }, 'Error listing workflow data sources');
         res.status(500).json({ message: 'Failed to list workflow data sources' });
     }
-});
+}));
 
 /**
  * POST /api/data-sources/:id/link
  * Link a data source to a workflow
  */
-dataSourceRouter.post('/:id/link', async (req, res) => {
+dataSourceRouter.post('/:id/link', asyncHandler(async (req, res) => {
     try {
         const tenantId = getTenant(req);
         const { id } = req.params;
@@ -257,17 +248,18 @@ dataSourceRouter.post('/:id/link', async (req, res) => {
     } catch (error) {
         logger.error({ error }, 'Error linking data source');
         if (error instanceof z.ZodError) {
-            return res.status(400).json({ message: 'Invalid input', errors: error.errors });
+            res.status(400).json({ message: 'Invalid input', errors: error.errors });
+            return;
         }
         res.status(500).json({ message: 'Failed to link data source' });
     }
-});
+}));
 
 /**
  * DELETE /api/data-sources/:id/link/:workflowId
  * Unlink a data source from a workflow
  */
-dataSourceRouter.delete('/:id/link/:workflowId', async (req, res) => {
+dataSourceRouter.delete('/:id/link/:workflowId', asyncHandler(async (req, res) => {
     try {
         const { id, workflowId } = req.params;
         // const tenantId = getTenant(req); // Service doesn't currently require tenantId for unlink, but typically should for safety.
@@ -279,4 +271,4 @@ dataSourceRouter.delete('/:id/link/:workflowId', async (req, res) => {
         logger.error({ error }, 'Error unlinking data source');
         res.status(500).json({ message: 'Failed to unlink data source' });
     }
-});
+}));

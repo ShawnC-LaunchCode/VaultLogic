@@ -73,7 +73,7 @@ export function Toolbar({ workflowId, workflowStatus, onRunPreview, readOnly = f
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            <DropdownMenuItem onClick={() => handleAddNode('question')}>
+            <DropdownMenuItem onClick={() => { void handleAddNode('question'); }}>
               <div className="flex flex-col gap-1">
                 <span className="font-medium">Question</span>
                 <span className="text-xs text-muted-foreground">
@@ -81,7 +81,7 @@ export function Toolbar({ workflowId, workflowStatus, onRunPreview, readOnly = f
                 </span>
               </div>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleAddNode('compute')}>
+            <DropdownMenuItem onClick={() => { void handleAddNode('compute'); }}>
               <div className="flex flex-col gap-1">
                 <span className="font-medium">Compute</span>
                 <span className="text-xs text-muted-foreground">
@@ -89,7 +89,7 @@ export function Toolbar({ workflowId, workflowStatus, onRunPreview, readOnly = f
                 </span>
               </div>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleAddNode('branch')}>
+            <DropdownMenuItem onClick={() => { void handleAddNode('branch'); }}>
               <div className="flex flex-col gap-1">
                 <span className="font-medium">Branch</span>
                 <span className="text-xs text-muted-foreground">
@@ -97,7 +97,7 @@ export function Toolbar({ workflowId, workflowStatus, onRunPreview, readOnly = f
                 </span>
               </div>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleAddNode('template')}>
+            <DropdownMenuItem onClick={() => { void handleAddNode('template'); }}>
               <div className="flex flex-col gap-1">
                 <span className="font-medium">Template</span>
                 <span className="text-xs text-muted-foreground">
@@ -105,7 +105,7 @@ export function Toolbar({ workflowId, workflowStatus, onRunPreview, readOnly = f
                 </span>
               </div>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleAddNode('final')}>
+            <DropdownMenuItem onClick={() => { void handleAddNode('final'); }}>
               <div className="flex flex-col gap-1">
                 <span className="font-medium">Final Page</span>
                 <span className="text-xs text-muted-foreground">
@@ -170,7 +170,7 @@ export function Toolbar({ workflowId, workflowStatus, onRunPreview, readOnly = f
         <Button
           variant="outline"
           size="sm"
-          onClick={onRunPreview}
+          onClick={() => { void onRunPreview(); }}
         >
           <Play className="w-4 h-4 mr-2" />
           Run Preview
@@ -180,7 +180,7 @@ export function Toolbar({ workflowId, workflowStatus, onRunPreview, readOnly = f
         <Button
           variant="default"
           size="sm"
-          onClick={handlePublish}
+          onClick={() => { void handlePublish(); }}
           disabled={workflowStatus === 'published' || isDirty || isSaving || readOnly}
         >
           <Save className="w-4 h-4 mr-2" />

@@ -227,7 +227,7 @@ export function InfiniteEditableDataGrid({
       {onAddRow && (
         <div className="mt-4 flex justify-start">
           <Button
-            onClick={onAddRow}
+            onClick={() => { void onAddRow(); }}
             disabled={columns.length === 0}
             variant="outline"
             size="sm"

@@ -123,7 +123,7 @@ export default function CollectionsPage() {
               Manage your data tables and records
             </p>
           </div>
-          <Button onClick={() => setCreateModalOpen(true)}>
+          <Button onClick={() => { void setCreateModalOpen(true); }}>
             <Plus className="w-4 h-4 mr-2" />
             New Collection
           </Button>
@@ -136,7 +136,7 @@ export default function CollectionsPage() {
             <Input
               placeholder="Search collections..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => { void setSearchQuery(e.target.value); }}
               className="pl-9"
             />
           </div>
@@ -150,7 +150,7 @@ export default function CollectionsPage() {
             <CollectionCard
               key={collection.id}
               collection={collection}
-              onClick={handleCollectionClick}
+              onClick={() => { void handleCollectionClick(); }}
               onDelete={(id) =>
                 setDeleteConfirm({
                   id,
@@ -172,7 +172,7 @@ export default function CollectionsPage() {
           title="No collections yet"
           description="Create your first collection to start storing structured data"
           action={
-            <Button onClick={() => setCreateModalOpen(true)}>
+            <Button onClick={() => { void setCreateModalOpen(true); }}>
               Create Collection
             </Button>
           }
@@ -183,7 +183,7 @@ export default function CollectionsPage() {
       <CreateCollectionModal
         open={createModalOpen}
         onOpenChange={setCreateModalOpen}
-        onSubmit={handleCreate}
+        onSubmit={(e) => { e.preventDefault(); void handleCreate(e); }}
         isLoading={createMutation.isPending}
       />
 
@@ -201,7 +201,7 @@ export default function CollectionsPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDelete}
+              onClick={() => { void handleDelete(); }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleteMutation.isPending && (

@@ -116,7 +116,7 @@ export function EnhancedVariablePicker({
                           variant="ghost"
                           size="icon"
                           className="h-5 w-5 p-0 shrink-0"
-                          onClick={() => toggleExpanded(variable.key)}
+                          onClick={() => { void toggleExpanded(variable.key); }}
                           title={isExpanded ? "Collapse" : "Expand list properties"}
                         >
                           {isExpanded ? (
@@ -151,7 +151,7 @@ export function EnhancedVariablePicker({
                           variant="ghost"
                           size="icon"
                           className="h-6 w-6"
-                          onClick={() => handleCopy(variablePath)}
+                          onClick={() => { void handleCopy(variablePath); }}
                           title="Copy path"
                         >
                           <Copy className="h-3 w-3" />
@@ -160,7 +160,7 @@ export function EnhancedVariablePicker({
                           variant="ghost"
                           size="icon"
                           className="h-6 w-6"
-                          onClick={() => onInsert(variablePath)}
+                          onClick={() => { void onInsert(variablePath); }}
                           title="Insert path"
                         >
                           <ChevronRight className="h-3 w-3" />
@@ -186,7 +186,7 @@ export function EnhancedVariablePicker({
                               variant="ghost"
                               size="icon"
                               className="h-5 w-5"
-                              onClick={() => handleCopy(`${variablePath}.count`)}
+                              onClick={() => { void handleCopy(`${variablePath}.count`); }}
                               title="Copy"
                             >
                               <Copy className="h-2.5 w-2.5" />
@@ -195,7 +195,7 @@ export function EnhancedVariablePicker({
                               variant="ghost"
                               size="icon"
                               className="h-5 w-5"
-                              onClick={() => onInsert(`${variablePath}.count`)}
+                              onClick={() => { void onInsert(`${variablePath}.count`); }}
                               title="Insert"
                             >
                               <ChevronRight className="h-2.5 w-2.5" />
@@ -218,7 +218,7 @@ export function EnhancedVariablePicker({
                               variant="ghost"
                               size="icon"
                               className="h-5 w-5"
-                              onClick={() => handleCopy(`${variablePath}.rows`)}
+                              onClick={() => { void handleCopy(`${variablePath}.rows`); }}
                               title="Copy"
                             >
                               <Copy className="h-2.5 w-2.5" />
@@ -227,7 +227,7 @@ export function EnhancedVariablePicker({
                               variant="ghost"
                               size="icon"
                               className="h-5 w-5"
-                              onClick={() => onInsert(`${variablePath}.rows`)}
+                              onClick={() => { void onInsert(`${variablePath}.rows`); }}
                               title="Insert"
                             >
                               <ChevronRight className="h-2.5 w-2.5" />
@@ -250,7 +250,7 @@ export function EnhancedVariablePicker({
                               variant="ghost"
                               size="icon"
                               className="h-5 w-5"
-                              onClick={() => handleCopy(`${variablePath}.rows[0]`)}
+                              onClick={() => { void handleCopy(`${variablePath}.rows[0]`); }}
                               title="Copy"
                             >
                               <Copy className="h-2.5 w-2.5" />
@@ -259,7 +259,7 @@ export function EnhancedVariablePicker({
                               variant="ghost"
                               size="icon"
                               className="h-5 w-5"
-                              onClick={() => onInsert(`${variablePath}.rows[0]`)}
+                              onClick={() => { void onInsert(`${variablePath}.rows[0]`); }}
                               title="Insert"
                             >
                               <ChevronRight className="h-2.5 w-2.5" />
@@ -282,7 +282,7 @@ export function EnhancedVariablePicker({
                               variant="ghost"
                               size="icon"
                               className="h-5 w-5"
-                              onClick={() => handleCopy(`${variablePath}.columns`)}
+                              onClick={() => { void handleCopy(`${variablePath}.columns`); }}
                               title="Copy"
                             >
                               <Copy className="h-2.5 w-2.5" />
@@ -291,7 +291,7 @@ export function EnhancedVariablePicker({
                               variant="ghost"
                               size="icon"
                               className="h-5 w-5"
-                              onClick={() => onInsert(`${variablePath}.columns`)}
+                              onClick={() => { void onInsert(`${variablePath}.columns`); }}
                               title="Insert"
                             >
                               <ChevronRight className="h-2.5 w-2.5" />

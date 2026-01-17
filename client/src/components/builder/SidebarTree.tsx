@@ -137,11 +137,11 @@ export function SidebarTree({ workflowId }: { workflowId: string }) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56">
-            <DropdownMenuItem onClick={handleCreateSection}>
+            <DropdownMenuItem onClick={() => { void handleCreateSection(); }}>
               <FileText className="w-4 h-4 mr-2" />
               Regular Page
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleCreateFinalDocumentsSection}>
+            <DropdownMenuItem onClick={() => { void handleCreateFinalDocumentsSection(); }}>
               <FileCheck className="w-4 h-4 mr-2" />
               Final Documents Section
             </DropdownMenuItem>
@@ -154,7 +154,7 @@ export function SidebarTree({ workflowId }: { workflowId: string }) {
           variant="outline"
           size="sm"
           className="w-full border-dashed border-indigo-300 text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800"
-          onClick={() => setShowAiDialog(true)}
+          onClick={() => { void setShowAiDialog(true); }}
         >
           <Sparkles className="w-3 h-3 mr-2" />
           Edit with AI
@@ -165,7 +165,7 @@ export function SidebarTree({ workflowId }: { workflowId: string }) {
           variant="outline"
           size="sm"
           className="w-full border-dashed border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
-          onClick={() => setShowSnipDialog(true)}
+          onClick={() => { void setShowSnipDialog(true); }}
         >
           <Plus className="w-3 h-3 mr-2" />
           Add Snip
@@ -189,7 +189,7 @@ export function SidebarTree({ workflowId }: { workflowId: string }) {
               </p>
               <div className="relative">
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-0.5 h-3 bg-indigo-200"></div>
-                <Button onClick={handleCreateSection} size="sm" className="bg-indigo-600 hover:bg-indigo-700 shadow-sm">
+                <Button onClick={() => { void handleCreateSection(); }} size="sm" className="bg-indigo-600 hover:bg-indigo-700 shadow-sm">
                   <Plus className="w-3.5 h-3.5 mr-1.5" />
                   Add First Page
                 </Button>
@@ -368,7 +368,7 @@ function SectionItem({
           "flex items-center gap-2 p-2 rounded-md hover:bg-sidebar-accent/50 cursor-pointer group transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20",
           isSelected && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
         )}
-        onClick={() => selectSection(section.id)}
+        onClick={() => { void selectSection(section.id); }}
         tabIndex={0}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -430,7 +430,7 @@ function SectionItem({
               variant="ghost"
               size="icon"
               className="h-6 w-6"
-              onClick={handleCreateStep}
+              onClick={() => { void handleCreateStep(); }}
               title="Add Question"
             >
               <Plus className="h-3 w-3" />
@@ -443,7 +443,7 @@ function SectionItem({
                     size="icon"
                     className="h-6 w-6"
                     title="Add Logic"
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(e) => { void e.stopPropagation(); }}
                   >
                     <Zap className="h-3 w-3" />
                   </Button>
@@ -536,7 +536,7 @@ function StepItem({ step, sectionId }: { step: any; sectionId: string }) {
         "flex items-start gap-2 py-1.5 px-1.5 rounded-md hover:bg-sidebar-accent/50 cursor-pointer text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20 group",
         isSelected && "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
       )}
-      onClick={() => selectStep(step.id)}
+      onClick={() => { void selectStep(step.id); }}
       tabIndex={0}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -578,7 +578,7 @@ function StepItem({ step, sectionId }: { step: any; sectionId: string }) {
           variant="ghost"
           size="icon"
           className="h-5 w-5 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-          onClick={handleDelete}
+          onClick={() => { void handleDelete(); }}
           title="Delete Question"
         >
           <Trash2 className="h-3 w-3" />
@@ -661,7 +661,7 @@ function BlockTreeItem({ block, mode, onEdit, workflowId }: { block: any, mode: 
             variant="ghost"
             size="icon"
             className="h-5 w-5 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-            onClick={handleDelete}
+            onClick={() => { void handleDelete(); }}
             title="Delete Block"
           >
             <Trash2 className="h-3 w-3" />

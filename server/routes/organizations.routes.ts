@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { logger } from '../logger';
 import { hybridAuth, type AuthRequest } from '../middleware/auth';
 import { organizationService } from '../services/OrganizationService';
+import { asyncHandler } from '../utils/asyncHandler';
 
 import type { Express, Request, Response } from 'express';
 
@@ -37,7 +38,7 @@ export function registerOrganizationRoutes(app: Express): void {
    * Create a new organization
    * Auto-creates admin membership for creator
    */
-  app.post('/api/organizations', hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/organizations', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -55,13 +56,13 @@ export function registerOrganizationRoutes(app: Express): void {
       const status = message.includes('validation') ? 400 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * GET /api/organizations
    * Get all organizations for the authenticated user
    */
-  app.get('/api/organizations', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/organizations', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -74,14 +75,14 @@ export function registerOrganizationRoutes(app: Express): void {
       logger.error({ error, userId: (req as AuthRequest).userId }, 'Error fetching organizations');
       res.status(500).json({ message: 'Failed to fetch organizations' });
     }
-  });
+  }));
 
   /**
    * GET /api/organizations/:orgId
    * Get organization details
    * Requires membership
    */
-  app.get('/api/organizations/:orgId', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/organizations/:orgId', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -100,13 +101,13 @@ export function registerOrganizationRoutes(app: Express): void {
       const status = message.includes('not found') ? 404 : message.includes('Access denied') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * PATCH /api/organizations/:orgId
    * Update organization (admin only)
    */
-  app.patch('/api/organizations/:orgId', hybridAuth, async (req: Request, res: Response) => {
+  app.patch('/api/organizations/:orgId', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -128,14 +129,14 @@ export function registerOrganizationRoutes(app: Express): void {
       const status = message.includes('not found') ? 404 : message.includes('Access denied') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * GET /api/organizations/:orgId/members
    * Get organization members
    * Requires membership
    */
-  app.get('/api/organizations/:orgId/members', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/organizations/:orgId/members', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -154,7 +155,7 @@ export function registerOrganizationRoutes(app: Express): void {
       const status = message.includes('Access denied') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * POST /api/organizations/:orgId/members/:targetUserId/promote
@@ -163,7 +164,7 @@ export function registerOrganizationRoutes(app: Express): void {
   app.post(
     '/api/organizations/:orgId/members/:targetUserId/promote',
     hybridAuth,
-    async (req: Request, res: Response) => {
+    asyncHandler(async (req: Request, res: Response) => {
       try {
         const userId = (req as AuthRequest).userId;
         if (!userId) {
@@ -189,7 +190,7 @@ export function registerOrganizationRoutes(app: Express): void {
         const status = message.includes('Access denied') ? 403 : message.includes('not a member') ? 400 : 500;
         res.status(status).json({ message });
       }
-    }
+    })
   );
 
   /**
@@ -199,7 +200,7 @@ export function registerOrganizationRoutes(app: Express): void {
   app.post(
     '/api/organizations/:orgId/members/:targetUserId/demote',
     hybridAuth,
-    async (req: Request, res: Response) => {
+    asyncHandler(async (req: Request, res: Response) => {
       try {
         const userId = (req as AuthRequest).userId;
         if (!userId) {
@@ -225,7 +226,7 @@ export function registerOrganizationRoutes(app: Express): void {
         const status = message.includes('Access denied') ? 403 : message.includes('not a member') ? 400 : 500;
         res.status(status).json({ message });
       }
-    }
+    })
   );
 
   /**
@@ -235,7 +236,7 @@ export function registerOrganizationRoutes(app: Express): void {
   app.delete(
     '/api/organizations/:orgId/members/:targetUserId',
     hybridAuth,
-    async (req: Request, res: Response) => {
+    asyncHandler(async (req: Request, res: Response) => {
       try {
         const userId = (req as AuthRequest).userId;
         if (!userId) {
@@ -261,14 +262,14 @@ export function registerOrganizationRoutes(app: Express): void {
         const status = message.includes('Access denied') ? 403 : message.includes('not a member') ? 400 : 500;
         res.status(status).json({ message });
       }
-    }
+    })
   );
 
   /**
    * POST /api/organizations/:orgId/leave
    * Leave organization (any member can remove themselves)
    */
-  app.post('/api/organizations/:orgId/leave', hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/organizations/:orgId/leave', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -289,13 +290,13 @@ export function registerOrganizationRoutes(app: Express): void {
       const status = message.includes('not a member') ? 400 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * POST /api/organizations/:orgId/members
    * Add member to organization (admin only)
    */
-  app.post('/api/organizations/:orgId/members', hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/organizations/:orgId/members', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -322,17 +323,17 @@ export function registerOrganizationRoutes(app: Express): void {
       const status = message.includes('Access denied')
         ? 403
         : message.includes('already a member')
-        ? 409
-        : 500;
+          ? 409
+          : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * POST /api/organizations/:orgId/invites
    * Create organization invite by email (admin only)
    */
-  app.post('/api/organizations/:orgId/invites', hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/organizations/:orgId/invites', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -358,17 +359,17 @@ export function registerOrganizationRoutes(app: Express): void {
       const status = message.includes('Access denied')
         ? 403
         : message.includes('already exists') || message.includes('already a member')
-        ? 409
-        : 500;
+          ? 409
+          : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * GET /api/organizations/:orgId/invites
    * Get organization invites (admin only)
    */
-  app.get('/api/organizations/:orgId/invites', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/organizations/:orgId/invites', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -388,13 +389,13 @@ export function registerOrganizationRoutes(app: Express): void {
       const status = message.includes('Access denied') ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * GET /api/me/invites
    * Get pending invites for current user
    */
-  app.get('/api/me/invites', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/me/invites', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -407,13 +408,13 @@ export function registerOrganizationRoutes(app: Express): void {
       logger.error({ error, userId: (req as AuthRequest).userId }, 'Error fetching user invites');
       res.status(500).json({ message: 'Failed to fetch invites' });
     }
-  });
+  }));
 
   /**
    * POST /api/invites/:token/accept
    * Accept organization invite
    */
-  app.post('/api/invites/:token/accept', hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/invites/:token/accept', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -435,13 +436,13 @@ export function registerOrganizationRoutes(app: Express): void {
       const status = message.includes('not found')
         ? 404
         : message.includes('expired') || message.includes('already') || message.includes('revoked')
-        ? 400
-        : message.includes('does not match')
-        ? 403
-        : 500;
+          ? 400
+          : message.includes('does not match')
+            ? 403
+            : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * DELETE /api/organizations/:orgId/invites/:inviteId
@@ -450,7 +451,7 @@ export function registerOrganizationRoutes(app: Express): void {
   app.delete(
     '/api/organizations/:orgId/invites/:inviteId',
     hybridAuth,
-    async (req: Request, res: Response) => {
+    asyncHandler(async (req: Request, res: Response) => {
       try {
         const userId = (req as AuthRequest).userId;
         if (!userId) {
@@ -471,7 +472,7 @@ export function registerOrganizationRoutes(app: Express): void {
         const status = message.includes('not found') ? 404 : message.includes('Access denied') ? 403 : 500;
         res.status(status).json({ message });
       }
-    }
+    })
   );
 
   /**
@@ -479,7 +480,7 @@ export function registerOrganizationRoutes(app: Express): void {
    * Delete organization (admin only)
    * FIX #7: Prevent stuck state for last admin
    */
-  app.delete('/api/organizations/:orgId', hybridAuth, async (req: Request, res: Response) => {
+  app.delete('/api/organizations/:orgId', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -500,9 +501,9 @@ export function registerOrganizationRoutes(app: Express): void {
       const status = message.includes('not found')
         ? 404
         : message.includes('Access denied') || message.includes('Cannot delete')
-        ? 403
-        : 500;
+          ? 403
+          : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 }

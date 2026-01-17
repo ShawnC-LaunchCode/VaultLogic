@@ -253,7 +253,7 @@ export function TemplateManagementPanel({
         </h2>
 
         <div className="flex gap-2">
-          <Button size="sm" variant="ghost" onClick={() => setIsUploadWizardOpen(true)}>
+          <Button size="sm" variant="ghost" onClick={() => { void setIsUploadWizardOpen(true); }}>
             <Upload className="h-4 w-4" />
           </Button>
           <Dialog open={isAttachDialogOpen} onOpenChange={setIsAttachDialogOpen}>
@@ -310,7 +310,7 @@ export function TemplateManagementPanel({
                     id="key"
                     placeholder="e.g., engagement_letter, schedule_a"
                     value={templateKey}
-                    onChange={(e) => setTemplateKey(e.target.value)}
+                    onChange={(e) => { void setTemplateKey(e.target.value); }}
                   />
                   <p className="text-sm text-gray-500">
                     Unique identifier for this template (used in Template nodes)
@@ -322,7 +322,7 @@ export function TemplateManagementPanel({
                     type="checkbox"
                     id="primary"
                     checked={isPrimary}
-                    onChange={(e) => setIsPrimary(e.target.checked)}
+                    onChange={(e) => { void setIsPrimary(e.target.checked); }}
                     className="rounded border-gray-300"
                   />
                   <Label htmlFor="primary" className="cursor-pointer">
@@ -332,10 +332,10 @@ export function TemplateManagementPanel({
               </div>
 
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAttachDialogOpen(false)}>
+                <Button variant="outline" onClick={() => { void setIsAttachDialogOpen(false); }}>
                   Cancel
                 </Button>
-                <Button onClick={handleAttach} disabled={attachMutation.isPending}>
+                <Button onClick={() => { void handleAttach(); }} disabled={attachMutation.isPending}>
                   {attachMutation.isPending ? 'Attaching...' : 'Attach Template'}
                 </Button>
               </DialogFooter>
@@ -383,7 +383,7 @@ export function TemplateManagementPanel({
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => handleSetPrimary(mapping.id)}
+                      onClick={() => { void handleSetPrimary(mapping.id); }}
                       title="Set as primary"
                     >
                       <StarOff className="h-4 w-4" />
@@ -392,7 +392,7 @@ export function TemplateManagementPanel({
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => handleDetach(mapping.id)}
+                    onClick={() => { void handleDetach(mapping.id); }}
                     title="Detach template"
                   >
                     <Trash2 className="h-4 w-4 text-red-500" />
@@ -400,7 +400,7 @@ export function TemplateManagementPanel({
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => setEditingTemplateContentId(mapping.templateId)}
+                    onClick={() => { void setEditingTemplateContentId(mapping.templateId); }}
                     title="AI Assist & Edit"
                   >
                     <Settings className="h-4 w-4 text-purple-500" />

@@ -85,7 +85,7 @@ export function RuntimeVariableList({ workflowId, variables, values }: RuntimeVa
                     <Input
                         placeholder="Search variables..."
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => { void setSearchQuery(e.target.value); }}
                         className="pl-8"
                     />
                 </div>
@@ -156,7 +156,7 @@ export function RuntimeVariableList({ workflowId, variables, values }: RuntimeVa
                                                                                 "h-5 w-5",
                                                                                 pinned && "text-primary opacity-100"
                                                                             )}
-                                                                            onClick={() => handlePin(displayKey)}
+                                                                            onClick={() => { void handlePin(displayKey); }}
                                                                             title={pinned ? "Unpin" : "Pin"}
                                                                         >
                                                                             <Pin className={cn("h-3 w-3", pinned && "fill-current")} />
@@ -215,7 +215,7 @@ export function RuntimeVariableList({ workflowId, variables, values }: RuntimeVa
                                                                             "h-5 w-5",
                                                                             pinned && "text-primary opacity-100"
                                                                         )}
-                                                                        onClick={() => handlePin(displayKey)}
+                                                                        onClick={() => { void handlePin(displayKey); }}
                                                                         title={pinned ? "Unpin" : "Pin"}
                                                                     >
                                                                         <Pin className={cn("h-3 w-3", pinned && "fill-current")} />

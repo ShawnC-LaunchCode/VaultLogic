@@ -208,7 +208,7 @@ export default function BrandingSettingsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => window.open(`/intake/preview?tenantId=${tenantId}`, '_blank')}
+                  onClick={() => { void window.open(`/intake/preview?tenantId=${tenantId}`, '_blank'); }}
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />
                   Open Full Preview
@@ -228,7 +228,7 @@ export default function BrandingSettingsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setShowPreview(!showPreview)}
+                  onClick={() => { void setShowPreview(!showPreview); }}
                 >
                   <Eye className="h-4 w-4 mr-2" />
                   {showPreview ? 'Hide' : 'Show'} Preview
@@ -249,11 +249,11 @@ export default function BrandingSettingsPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" onClick={handleReset}>
+                      <Button variant="outline" size="sm" onClick={() => { void handleReset(); }}>
                         <RotateCcw className="h-4 w-4 mr-2" />
                         Discard
                       </Button>
-                      <Button size="sm" onClick={handleSave} disabled={isSaving}>
+                      <Button size="sm" onClick={() => { void handleSave(); }} disabled={isSaving}>
                         {isSaving ? (
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                         ) : (
@@ -289,7 +289,7 @@ export default function BrandingSettingsPage() {
                         type="url"
                         placeholder="https://example.com/logo.png"
                         value={formData.logoUrl || ''}
-                        onChange={(e) => handleChange('logoUrl', e.target.value)}
+                        onChange={(e) => { void handleChange('logoUrl', e.target.value); }}
                       />
                       <p className="text-xs text-muted-foreground">
                         Enter a URL to your logo image. Recommended size: 200x60px
@@ -331,13 +331,13 @@ export default function BrandingSettingsPage() {
                           type="text"
                           placeholder="#3B82F6"
                           value={formData.primaryColor || ''}
-                          onChange={(e) => handleColorChange('primaryColor', e.target.value)}
+                          onChange={(e) => { void handleColorChange('primaryColor', e.target.value); }}
                           className="flex-1"
                         />
                         <Input
                           type="color"
                           value={formData.primaryColor || '#3B82F6'}
-                          onChange={(e) => handleColorChange('primaryColor', e.target.value)}
+                          onChange={(e) => { void handleColorChange('primaryColor', e.target.value); }}
                           className="w-14 h-10 p-1 cursor-pointer"
                         />
                       </div>
@@ -354,13 +354,13 @@ export default function BrandingSettingsPage() {
                           type="text"
                           placeholder="#10B981"
                           value={formData.accentColor || ''}
-                          onChange={(e) => handleColorChange('accentColor', e.target.value)}
+                          onChange={(e) => { void handleColorChange('accentColor', e.target.value); }}
                           className="flex-1"
                         />
                         <Input
                           type="color"
                           value={formData.accentColor || '#10B981'}
-                          onChange={(e) => handleColorChange('accentColor', e.target.value)}
+                          onChange={(e) => { void handleColorChange('accentColor', e.target.value); }}
                           className="w-14 h-10 p-1 cursor-pointer"
                         />
                       </div>
@@ -420,7 +420,7 @@ export default function BrandingSettingsPage() {
                         id="intakeHeaderText"
                         placeholder="Welcome to our intake portal"
                         value={formData.intakeHeaderText || ''}
-                        onChange={(e) => handleChange('intakeHeaderText', e.target.value)}
+                        onChange={(e) => { void handleChange('intakeHeaderText', e.target.value); }}
                         rows={3}
                         maxLength={500}
                       />
@@ -450,7 +450,7 @@ export default function BrandingSettingsPage() {
                         type="text"
                         placeholder="Acme Corporation"
                         value={formData.emailSenderName || ''}
-                        onChange={(e) => handleChange('emailSenderName', e.target.value)}
+                        onChange={(e) => { void handleChange('emailSenderName', e.target.value); }}
                       />
                     </div>
 
@@ -461,7 +461,7 @@ export default function BrandingSettingsPage() {
                         type="email"
                         placeholder="noreply@acme.com"
                         value={formData.emailSenderAddress || ''}
-                        onChange={(e) => handleChange('emailSenderAddress', e.target.value)}
+                        onChange={(e) => { void handleChange('emailSenderAddress', e.target.value); }}
                       />
                     </div>
                   </CardContent>
@@ -486,13 +486,13 @@ export default function BrandingSettingsPage() {
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
-                      onClick={handleReset}
+                      onClick={() => { void handleReset(); }}
                       disabled={!hasUnsavedChanges || isSaving}
                     >
                       <RotateCcw className="h-4 w-4 mr-2" />
                       Discard Changes
                     </Button>
-                    <Button onClick={handleSave} disabled={!hasUnsavedChanges || isSaving}>
+                    <Button onClick={() => { void handleSave(); }} disabled={!hasUnsavedChanges || isSaving}>
                       {isSaving ? (
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       ) : (

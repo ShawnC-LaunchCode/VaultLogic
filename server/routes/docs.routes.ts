@@ -1,10 +1,12 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { promises as fsPromises } from "fs";
 
 import { Router } from "express";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
+import { asyncHandler } from '../utils/asyncHandler';
 
 const router = Router();
 
@@ -91,16 +93,16 @@ router.get("/api-docs.json", (req, res) => {
 });
 
 // YAML endpoint for raw OpenAPI spec
-router.get("/api-docs.yaml", (req, res) => {
+router.get("/api-docs.yaml", asyncHandler(async (req, res) => {
   res.type("text/yaml");
   try {
     const openApiPath = path.join(process.cwd(), "openapi.yaml");
-    const yamlContent = fs.readFileSync(openApiPath, "utf8");
+    const yamlContent = await fsPromises.readFile(openApiPath, "utf8");
     res.send(yamlContent);
   } catch (error) {
     res.status(500).send("Error loading OpenAPI YAML file");
   }
-});
+}));
 
 export function registerDocsRoutes(app: any): void {
   app.use(router);

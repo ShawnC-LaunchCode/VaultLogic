@@ -73,7 +73,7 @@ function SectionCanvas({ section, workflowId }: { section: any; workflowId: stri
             <Input
               id="section-title"
               value={section.title}
-              onChange={(e) => handleUpdate("title", e.target.value)}
+              onChange={(e) => { void handleUpdate("title", e.target.value); }}
               onBlur={() => { }}
             />
           </div>
@@ -83,7 +83,7 @@ function SectionCanvas({ section, workflowId }: { section: any; workflowId: stri
             <Textarea
               id="section-description"
               value={section.description || ""}
-              onChange={(e) => handleUpdate("description", e.target.value)}
+              onChange={(e) => { void handleUpdate("description", e.target.value); }}
               rows={4}
               placeholder="Optional description for this page..."
             />
@@ -128,13 +128,13 @@ function StepEmptyState({ sectionId }: { sectionId: string }) {
           This page is empty. Choose a question type to get started.
         </p>
         <div className="flex flex-wrap gap-3 justify-center">
-          <Button variant="outline" onClick={() => handleQuickAdd("short_text", "Client Name")}>
+          <Button variant="outline" onClick={() => { void handleQuickAdd("short_text", "Client Name"); }}>
             Short Text
           </Button>
-          <Button variant="outline" onClick={() => handleQuickAdd("yes_no", "Confirmation")}>
+          <Button variant="outline" onClick={() => { void handleQuickAdd("yes_no", "Confirmation"); }}>
             Yes / No
           </Button>
-          <Button variant="outline" onClick={() => handleQuickAdd("single_choice", "Select Option")}>
+          <Button variant="outline" onClick={() => { void handleQuickAdd("single_choice", "Select Option"); }}>
             Choice
           </Button>
         </div>
@@ -165,7 +165,7 @@ function StepCanvas({ step, sectionId }: { step: any; sectionId: string }) {
             <Input
               id="step-title"
               value={step.title}
-              onChange={(e) => handleUpdate("title", e.target.value)}
+              onChange={(e) => { void handleUpdate("title", e.target.value); }}
               autoFocus
             />
           </div>
@@ -176,7 +176,7 @@ function StepCanvas({ step, sectionId }: { step: any; sectionId: string }) {
             <Textarea
               id="step-description"
               value={step.description || ""}
-              onChange={(e) => handleUpdate("description", e.target.value)}
+              onChange={(e) => { void handleUpdate("description", e.target.value); }}
               rows={3}
               placeholder="Help text shown to participants..."
             />
@@ -188,7 +188,7 @@ function StepCanvas({ step, sectionId }: { step: any; sectionId: string }) {
             <Input
               id="step-alias"
               value={step.alias || ""}
-              onChange={(e) => handleUpdate("alias", e.target.value || null)}
+              onChange={(e) => { void handleUpdate("alias", e.target.value || null); }}
               placeholder="e.g., firstName, age, department"
               className="font-mono text-sm"
             />
@@ -237,7 +237,7 @@ function StepCanvas({ step, sectionId }: { step: any; sectionId: string }) {
               <Label>Options</Label>
               <OptionsEditor
                 options={step.options?.options || []}
-                onChange={(opts) => handleUpdate("options", { options: opts })}
+                onChange={(opts) => { void handleUpdate("options", { options: opts }); }}
               />
             </div>
           )}
@@ -289,15 +289,15 @@ function OptionsEditor({ options, onChange }: { options: string[]; onChange: (op
         <div key={index} className="flex gap-2">
           <Input
             value={option}
-            onChange={(e) => handleChange(index, e.target.value)}
+            onChange={(e) => { void handleChange(index, e.target.value); }}
             placeholder={`Option ${index + 1}`}
           />
-          <Button variant="outline" size="icon" onClick={() => handleRemove(index)}>
+          <Button variant="outline" size="icon" onClick={() => { void handleRemove(index); }}>
             ×
           </Button>
         </div>
       ))}
-      <Button variant="outline" size="sm" onClick={handleAdd} className="w-full">
+      <Button variant="outline" size="sm" onClick={() => { void handleAdd(); }} className="w-full">
         Add Option
       </Button>
     </div>

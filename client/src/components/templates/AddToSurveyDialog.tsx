@@ -138,13 +138,13 @@ export default function AddToSurveyDialog({
         <DialogFooter className="gap-2">
           <Button
             variant="outline"
-            onClick={() => onOpenChange(false)}
+            onClick={() => { void onOpenChange(false); }}
             disabled={insert.isPending}
           >
             Cancel
           </Button>
           <Button
-            onClick={handleAdd}
+            onClick={() => { void handleAdd(); }}
             disabled={!surveyId || insert.isPending || isLoadingSurveys}
           >
             {insert.isPending ? (

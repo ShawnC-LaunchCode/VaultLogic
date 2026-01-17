@@ -142,7 +142,7 @@ export function TemplateUploadWizard({
                     <div className="space-y-4 py-4">
                         <div className="space-y-2">
                             <Label htmlFor="file">Template File (.docx)</Label>
-                            <Input id="file" type="file" accept=".docx" onChange={handleFileChange} />
+                            <Input id="file" type="file" accept=".docx" onChange={() => { void handleFileChange(); }} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="name">Name</Label>
@@ -194,14 +194,14 @@ export function TemplateUploadWizard({
 
                 <DialogFooter>
                     {step === 1 ? (
-                        <Button onClick={() => uploadAndAnalyzeMutation.mutate()} disabled={!file || !name || uploadAndAnalyzeMutation.isPending}>
+                        <Button onClick={() => { void uploadAndAnalyzeMutation.mutate(); }} disabled={!file || !name || uploadAndAnalyzeMutation.isPending}>
                             {uploadAndAnalyzeMutation.isPending ? <Loader2 className="animate-spin mr-2" /> : <Sparkles className="mr-2 w-4 h-4" />}
                             Analyze & Continue
                         </Button>
                     ) : (
                         <div className="flex gap-2">
-                            <Button variant="ghost" onClick={() => setStep(1)}>Back</Button>
-                            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
+                            <Button variant="ghost" onClick={() => { void setStep(1); }}>Back</Button>
+                            <Button onClick={() => { void saveMutation.mutate(); }} disabled={saveMutation.isPending}>
                                 {saveMutation.isPending ? <Loader2 className="animate-spin mr-2" /> : <CheckCircle className="mr-2 w-4 h-4" />}
                                 Save Template
                             </Button>

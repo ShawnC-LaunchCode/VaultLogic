@@ -65,132 +65,139 @@ export async function setupIntegrationTest(
     tenantRole = 'owner',
   } = options;
 
-  // Ensure database is initialized before proceeding
-  await initializeDatabase();
+  console.log("[DEBUG] Starting setupIntegrationTest...");
 
-  // Setup Express app
-  const app = express();
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: false }));
+  try {
+    // Ensure database is initialized before proceeding
+    console.log("[DEBUG] Initializing database...");
+    await initializeDatabase();
+    console.log("[DEBUG] Database initialized.");
 
-  // Register all routes
-  const server = await registerRoutes(app);
+    // Setup Express app
+    const app = express();
+    app.use(express.json());
+    app.use(express.urlencoded({ extended: false }));
 
-  // Start server on random port
-  const port = await new Promise<number>((resolve) => {
-    const testServer = server.listen(0, () => {
-      const addr = testServer.address();
-      const actualPort = typeof addr === 'object' && addr ? addr.port : 5000;
-      resolve(actualPort);
-    });
-  });
+    // Register all routes
+    const server = await registerRoutes(app);
 
-  const baseURL = `http://localhost:${port}`;
-
-  // Create tenant
-  const [tenant] = await db.insert(schema.tenants).values({
-    name: `${tenantName} ${nanoid()}`,
-    plan: 'pro',
-  }).returning();
-  const tenantId = tenant.id;
-
-  // Register user with proper roles
-  const email = `test-${nanoid()}@example.com`;
-  const registerResponse = await request(baseURL)
-    .post('/api/auth/register')
-    .send({
-      email,
-      password: 'StrongTestUser123!@#',
-      firstName: 'Test',
-      lastName: 'User',
-    });
-
-  if (registerResponse.status !== 201) {
-    throw new Error(`User registration failed: ${JSON.stringify(registerResponse.body)}`);
-  }
-
-  const authToken = registerResponse.body.token;
-  const userId = registerResponse.body.user.id;
-
-  // Update user with tenant and roles
-  await db.update(schema.users)
-    .set({
-      tenantId,
-      role: userRole,
-      tenantRole: tenantRole,
-    })
-    .where(eq(schema.users.id, userId));
-
-  // Create organization for ACL testing
-  const [org] = await db.insert(schema.organizations).values({
-    name: `${tenantName  } Org`,
-    tenantId: tenantId,
-  }).returning();
-  const orgId = org.id;
-
-  // Create organization membership
-  await db.insert(schema.organizationMemberships).values({
-    orgId: orgId,
-    userId: userId,
-    role: 'admin',
-  });
-
-  let projectId: string | undefined;
-
-  // Optionally create project
-  if (createProject) {
-    const projectResponse = await request(baseURL)
-      .post('/api/projects')
-      .set('Authorization', `Bearer ${authToken}`)
-      .send({ name: projectName });
-
-    if (projectResponse.status !== 201) {
-      throw new Error(`Project creation failed: ${JSON.stringify(projectResponse.body)}`);
-    }
-
-    projectId = projectResponse.body.id;
-  }
-
-  // Cleanup function
-  const cleanup = async () => {
-    try {
-      if (tenantId) {
-        // Cleanup audit_logs for users in this tenant to avoid FK constraints
-        const tenantUsers = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.tenantId, tenantId));
-        if (tenantUsers.length > 0) {
-          const userIds = tenantUsers.map(u => u.id);
-          // Delete related data first to avoid FK violations
-          await db.delete(schema.auditLogs).where(inArray(schema.auditLogs.userId, userIds));
-          await db.delete(schema.workflowVersions).where(inArray(schema.workflowVersions.createdBy, userIds));
-          // Delete workflows created by these users (to avoid FK violations)
-          await db.delete(schema.workflows).where(inArray(schema.workflows.creatorId, userIds));
-          // Note: Workflows and Projects cascade from Tenant usually, but specific user ownership might block.
-          // Explicit cleanup of user resources if needed.
-        }
-        await db.delete(schema.tenants).where(eq(schema.tenants.id, tenantId));
-      }
-    } catch (error) {
-      console.error('Cleanup error:', error);
-    }
-
-    if (server) {
-      await new Promise<void>((resolve) => {
-        server.close(() => resolve());
+    // Start server on random port
+    const port = await new Promise<number>((resolve) => {
+      const testServer = server.listen(0, () => {
+        const addr = testServer.address();
+        const actualPort = typeof addr === 'object' && addr ? addr.port : 5000;
+        resolve(actualPort);
       });
-    }
-  };
+    });
 
-  return {
-    app,
-    server,
-    baseURL,
-    tenantId,
-    orgId,
-    userId,
-    authToken,
-    projectId,
-    cleanup,
-  };
+    const baseURL = `http://localhost:${port}`;
+
+    // Create tenant
+    const [tenant] = await db.insert(schema.tenants).values({
+      name: `${tenantName} ${nanoid()}`,
+      plan: 'pro',
+    }).returning();
+    const tenantId = tenant.id;
+
+    // Register user with proper roles
+    const email = `test-${nanoid()}@example.com`;
+    const registerResponse = await request(baseURL)
+      .post('/api/auth/register')
+      .send({
+        email,
+        password: 'StrongTestUser123!@#',
+        firstName: 'Test',
+        lastName: 'User',
+      });
+
+    if (registerResponse.status !== 201) {
+      throw new Error(`User registration failed: ${JSON.stringify(registerResponse.body)}`);
+    }
+
+    const authToken = registerResponse.body.token;
+    const userId = registerResponse.body.user.id;
+
+    // Update user with tenant and roles
+    await db.update(schema.users)
+      .set({
+        tenantId,
+        role: userRole,
+        tenantRole: tenantRole,
+      })
+      .where(eq(schema.users.id, userId));
+
+    // Create organization for ACL testing
+    const [org] = await db.insert(schema.organizations).values({
+      name: `${tenantName} Org`,
+      tenantId: tenantId,
+    }).returning();
+    const orgId = org.id;
+
+    // Create organization membership
+    await db.insert(schema.organizationMemberships).values({
+      orgId: orgId,
+      userId: userId,
+      role: 'admin',
+    });
+
+    let projectId: string | undefined;
+
+    // Optionally create project
+    if (createProject) {
+      const projectResponse = await request(baseURL)
+        .post('/api/projects')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ name: projectName });
+
+      if (projectResponse.status !== 201) {
+        throw new Error(`Project creation failed: ${JSON.stringify(projectResponse.body)}`);
+      }
+
+      projectId = projectResponse.body.id;
+    }
+
+    // Cleanup function
+    const cleanup = async () => {
+      try {
+        if (tenantId) {
+          // Cleanup audit_logs for users in this tenant to avoid FK constraints
+          const tenantUsers = await db.select({ id: schema.users.id }).from(schema.users).where(eq(schema.users.tenantId, tenantId));
+          if (tenantUsers.length > 0) {
+            const userIds = tenantUsers.map(u => u.id);
+            // Delete related data first to avoid FK violations
+            await db.delete(schema.auditLogs).where(inArray(schema.auditLogs.userId, userIds));
+            await db.delete(schema.workflowVersions).where(inArray(schema.workflowVersions.createdBy, userIds));
+            // Delete workflows created by these users (to avoid FK violations)
+            await db.delete(schema.workflows).where(inArray(schema.workflows.creatorId, userIds));
+          }
+          await db.delete(schema.tenants).where(eq(schema.tenants.id, tenantId));
+        }
+      } catch (error) {
+        console.error('Cleanup error:', error);
+      }
+
+      if (server) {
+        await new Promise<void>((resolve) => {
+          server.close(() => resolve());
+        });
+      }
+    };
+
+    return {
+      app,
+      server,
+      baseURL,
+      tenantId,
+      orgId,
+      userId,
+      authToken,
+      projectId,
+      cleanup,
+    };
+  } catch (error) {
+    console.error('[FATAL] setupIntegrationTest failed:', error);
+    throw error;
+  }
 }
 
 /**

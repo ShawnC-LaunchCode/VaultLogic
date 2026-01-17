@@ -242,7 +242,7 @@ export function AiConversationPanel({
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => handleViewDiff(message.versionId!)}
+                    onClick={() => { void handleViewDiff(message.versionId!); }}
                     className="text-xs"
                   >
                     <History className="w-3 h-3 mr-1" />
@@ -251,7 +251,7 @@ export function AiConversationPanel({
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => handleUndo(message.versionId!)}
+                    onClick={() => { void handleUndo(message.versionId!); }}
                     className="text-xs"
                   >
                     <Undo className="w-3 h-3 mr-1" />
@@ -276,7 +276,7 @@ export function AiConversationPanel({
       </div>
 
       {/* Input */}
-      <form onSubmit={handleSubmit} className="p-4 border-t bg-white">
+      <form onSubmit={(e) => { e.preventDefault(); void handleSubmit(e); }} className="p-4 border-t bg-white">
         {error && (
           <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-600">
             {error}
@@ -285,7 +285,7 @@ export function AiConversationPanel({
         <div className="flex gap-2">
           <Textarea
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => { void setInput(e.target.value); }}
             placeholder="Describe what you want to change..."
             className="min-h-[60px] resize-none"
             onKeyDown={(e) => {

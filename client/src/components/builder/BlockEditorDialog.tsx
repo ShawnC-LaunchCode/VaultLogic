@@ -195,14 +195,14 @@ export function BlockEditorDialog({
                                 <Button
                                     variant={creationMode === 'regular' ? "default" : "outline"}
                                     size="sm"
-                                    onClick={() => setCreationMode('regular')}
+                                    onClick={() => { void setCreationMode('regular'); }}
                                 >
                                     Standard Block
                                 </Button>
                                 <Button
                                     variant={creationMode === 'transform' ? "default" : "outline"}
                                     size="sm"
-                                    onClick={() => setCreationMode('transform')}
+                                    onClick={() => { void setCreationMode('transform'); }}
                                     disabled={mode === 'easy'}
                                 >
                                     Code Transform
@@ -220,7 +220,7 @@ export function BlockEditorDialog({
                         <SendDataToTableBlockEditor
                             workflowId={workflowId}
                             config={formData.config}
-                            onChange={(c) => setFormData({ ...formData, config: c })}
+                            onChange={(c) => { void setFormData({ ...formData, config: c }); }}
                             phase={formData.phase}
                             onPhaseChange={(p) => setFormData({ ...formData, phase: p })}
                             order={Number(formData.order) || 0}
@@ -233,7 +233,7 @@ export function BlockEditorDialog({
                         <ReadTableBlockEditor
                             workflowId={workflowId}
                             config={formData.config}
-                            onChange={(c) => setFormData({ ...formData, config: c })}
+                            onChange={(c) => { void setFormData({ ...formData, config: c }); }}
                             phase={formData.phase}
                             onPhaseChange={(p) => setFormData({ ...formData, phase: p })}
                             order={Number(formData.order) || 0}
@@ -302,7 +302,7 @@ export function BlockEditorDialog({
                                             <Label>Block Name</Label>
                                             <Input
                                                 value={formData.name}
-                                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                                onChange={(e) => { void setFormData({ ...formData, name: e.target.value }); }}
                                                 placeholder="e.g. Calculate Risk Score"
                                                 className="mt-1"
                                             />
@@ -334,7 +334,7 @@ export function BlockEditorDialog({
                                         <Input
                                             type="number"
                                             value={formData.order}
-                                            onChange={(e) => setFormData({ ...formData, order: e.target.value })}
+                                            onChange={(e) => { void setFormData({ ...formData, order: e.target.value }); }}
                                         />
                                     </div>
                                     <div className="space-y-2 pt-8">
@@ -342,7 +342,7 @@ export function BlockEditorDialog({
                                             <input
                                                 type="checkbox"
                                                 checked={formData.enabled}
-                                                onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
+                                                onChange={(e) => { void setFormData({ ...formData, enabled: e.target.checked }); }}
                                                 className="rounded border-gray-300"
                                             />
                                             <span className="text-sm font-medium">Enabled</span>
@@ -376,7 +376,7 @@ export function BlockEditorDialog({
                                             <SendDataToTableBlockEditor
                                                 workflowId={workflowId}
                                                 config={formData.config}
-                                                onChange={(c) => setFormData({ ...formData, config: c })}
+                                                onChange={(c) => { void setFormData({ ...formData, config: c }); }}
                                                 phase={formData.phase}
                                                 onPhaseChange={(p) => setFormData({ ...formData, phase: p })}
                                                 order={Number(formData.order) || 0}
@@ -389,16 +389,16 @@ export function BlockEditorDialog({
                                             <ExternalSendBlockEditor
                                                 workflowId={workflowId}
                                                 config={formData.config}
-                                                onChange={(c) => setFormData({ ...formData, config: c })}
+                                                onChange={(c) => { void setFormData({ ...formData, config: c }); }}
                                                 phase={formData.phase}
                                                 onPhaseChange={(p) => setFormData({ ...formData, phase: p })}
                                             />
                                         ) : formData.type === 'list_tools' ? (
-                                            <ListToolsBlockEditor workflowId={workflowId} config={formData.config} onChange={(c) => setFormData({ ...formData, config: c })} mode={mode} />
+                                            <ListToolsBlockEditor workflowId={workflowId} config={formData.config} onChange={(c) => { void setFormData({ ...formData, config: c }); }} mode={mode} />
                                         ) : formData.type === 'query' ? (
-                                            <QueryBlockEditor workflowId={workflowId} config={formData.config} onChange={(c) => setFormData({ ...formData, config: c })} />
+                                            <QueryBlockEditor workflowId={workflowId} config={formData.config} onChange={(c) => { void setFormData({ ...formData, config: c }); }} />
                                         ) : formData.type === 'validate' ? (
-                                            <ValidateBlockEditor workflowId={workflowId} config={formData.config} onChange={(c) => setFormData({ ...formData, config: c })} mode={mode} />
+                                            <ValidateBlockEditor workflowId={workflowId} config={formData.config} onChange={(c) => { void setFormData({ ...formData, config: c }); }} mode={mode} />
                                         ) : (
                                             <div className="space-y-2">
                                                 <Textarea
@@ -450,8 +450,8 @@ export function BlockEditorDialog({
                 </div>
 
                 <DialogFooter>
-                    <Button variant="outline" onClick={onClose}>Cancel</Button>
-                    <Button onClick={handleSave}>Save Block</Button>
+                    <Button variant="outline" onClick={() => { void onClose(); }}>Cancel</Button>
+                    <Button onClick={() => { void handleSave(); }}>Save Block</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

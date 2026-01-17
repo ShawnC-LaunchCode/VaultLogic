@@ -274,7 +274,7 @@ export default function CollectionDetailPage() {
       <div className="container mx-auto py-8">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Collection not found</h1>
-          <Button onClick={() => setLocation("/data")} className="mt-4">
+          <Button onClick={() => { void setLocation("/data"); }} className="mt-4">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Collections
           </Button>
@@ -290,7 +290,7 @@ export default function CollectionDetailPage() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setLocation("/data")}
+          onClick={() => { void setLocation("/data"); }}
           title="Back to collections"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -326,7 +326,7 @@ export default function CollectionDetailPage() {
             <p className="text-sm text-muted-foreground">
               Define the structure of your data by adding fields
             </p>
-            <Button onClick={() => setFieldModalOpen(true)}>
+            <Button onClick={() => { void setFieldModalOpen(true); }}>
               <Plus className="w-4 h-4 mr-2" />
               Add Field
             </Button>
@@ -389,7 +389,7 @@ export default function CollectionDetailPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteField}
+              onClick={() => { void handleDeleteField(); }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleteFieldMutation.isPending && (
@@ -423,7 +423,7 @@ export default function CollectionDetailPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteRecord}
+              onClick={() => { void handleDeleteRecord(); }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleteRecordMutation.isPending && (

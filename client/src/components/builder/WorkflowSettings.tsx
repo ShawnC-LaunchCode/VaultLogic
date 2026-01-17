@@ -115,7 +115,7 @@ export function WorkflowSettings({ workflowId }: WorkflowSettingsProps) {
               <Button
                 size="default"
                 variant={mode === "easy" ? "default" : "outline"}
-                onClick={() => handleModeSwitch("easy")}
+                onClick={() => { void handleModeSwitch("easy"); }}
                 disabled={setModeMutation.isPending || mode === "easy"}
                 className="flex-1"
               >
@@ -125,7 +125,7 @@ export function WorkflowSettings({ workflowId }: WorkflowSettingsProps) {
               <Button
                 size="default"
                 variant={mode === "advanced" ? "default" : "outline"}
-                onClick={() => handleModeSwitch("advanced")}
+                onClick={() => { void handleModeSwitch("advanced"); }}
                 disabled={setModeMutation.isPending || mode === "advanced"}
                 className="flex-1"
               >
@@ -141,7 +141,7 @@ export function WorkflowSettings({ workflowId }: WorkflowSettingsProps) {
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={handleClearOverride}
+                onClick={() => { void handleClearOverride(); }}
                 disabled={setModeMutation.isPending}
                 className="w-full"
               >

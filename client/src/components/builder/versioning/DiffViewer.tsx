@@ -36,12 +36,12 @@ export function DiffViewer({ workflowId, version1, version2, isOpen, onClose }: 
 
     useEffect(() => {
         if (isOpen && workflowId && version1 && version2) {
-            loadDiff();
+            void loadDiff();
         }
     }, [isOpen, workflowId, version1, version2]);
 
     const loadDiff = async () => {
-        if (!version1 || !version2) {return;}
+        if (!version1 || !version2) { return; }
         setLoading(true);
         try {
             const result = await versionAPI.diff(version1.id, version2.id);

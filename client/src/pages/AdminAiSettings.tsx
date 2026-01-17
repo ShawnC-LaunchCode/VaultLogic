@@ -128,11 +128,11 @@ export default function AdminAiSettings() {
                                             </CardDescription>
                                         </div>
                                         <div className="flex gap-2">
-                                            <Button variant="outline" onClick={handleReset} disabled={isLoading || saveMutation.isPending}>
+                                            <Button variant="outline" onClick={() => { void handleReset(); }} disabled={isLoading || saveMutation.isPending}>
                                                 <RotateCcw className="mr-2 h-4 w-4" />
                                                 Reset to Default
                                             </Button>
-                                            <Button onClick={handleSave} disabled={isLoading || saveMutation.isPending}>
+                                            <Button onClick={() => { void handleSave(); }} disabled={isLoading || saveMutation.isPending}>
                                                 {saveMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                                                 Save Changes
                                             </Button>
@@ -148,7 +148,7 @@ export default function AdminAiSettings() {
                                         <div className="space-y-4">
                                             <Textarea
                                                 value={prompt}
-                                                onChange={(e) => setPrompt(e.target.value)}
+                                                onChange={(e) => { void setPrompt(e.target.value); }}
                                                 className="min-h-[500px] font-mono text-sm leading-relaxed"
                                                 placeholder="Enter system prompt..."
                                             />

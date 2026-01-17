@@ -298,7 +298,7 @@ export function RunOutputsPanel({ runId }: RunOutputsPanelProps) {
                     {output.status === 'ready' && (
                       <Button
                         size="sm"
-                        onClick={() => handleDownload(output.id)}
+                        onClick={() => { void handleDownload(output.id); }}
                         disabled={downloadMutation.isPending}
                       >
                         <Download className="h-4 w-4 mr-1" />
@@ -310,7 +310,7 @@ export function RunOutputsPanel({ runId }: RunOutputsPanelProps) {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleRetry(output.id)}
+                        onClick={() => { void handleRetry(output.id); }}
                         disabled={retryMutation.isPending}
                       >
                         <RefreshCw className="h-4 w-4 mr-1" />

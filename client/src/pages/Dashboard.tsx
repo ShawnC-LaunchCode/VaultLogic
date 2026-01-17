@@ -229,7 +229,7 @@ export default function Dashboard() {
                       iconBgColor="bg-primary/10"
                       label="Create New Workflow"
                       testId="button-quick-create-workflow"
-                      onClick={() => track("new_workflow_blank_clicked", { source: "quick_actions" })}
+                      onClick={() => { void track("new_workflow_blank_clicked", { source: "quick_actions" }); }}
                     />
 
                     <QuickActionButton

@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { hybridAuth } from "../middleware/auth";
 import { lifecycleHookService } from "../services/scripting/LifecycleHookService";
+import { asyncHandler } from '../utils/asyncHandler';
 
 import type { AuthRequest } from "../middleware/auth";
 
@@ -65,10 +66,11 @@ const testHookSchema = z.object({
 router.get(
   "/workflows/:workflowId/lifecycle-hooks",
   hybridAuth,
-  async (req: AuthRequest, res) => {
+  asyncHandler(async (req, res) => {
+    const authReq = req as AuthRequest;
     try {
       const { workflowId } = req.params;
-      const userId = req.userId!;
+      const userId = authReq.userId!;
 
       const hooks = await lifecycleHookService.listHooks(workflowId, userId);
 
@@ -79,7 +81,7 @@ router.get(
         error: error instanceof Error ? error.message : "Failed to list lifecycle hooks",
       });
     }
-  }
+  })
 );
 
 /**
@@ -89,10 +91,11 @@ router.get(
 router.post(
   "/workflows/:workflowId/lifecycle-hooks",
   hybridAuth,
-  async (req: AuthRequest, res) => {
+  asyncHandler(async (req, res) => {
+    const authReq = req as AuthRequest;
     try {
       const { workflowId } = req.params;
-      const userId = req.userId!;
+      const userId = authReq.userId!;
 
       // Validate request body
       const validatedData = createLifecycleHookSchema.parse({
@@ -117,17 +120,18 @@ router.post(
         });
       }
     }
-  }
+  })
 );
 
 /**
  * GET /api/lifecycle-hooks/:hookId
  * Get a single lifecycle hook by ID
  */
-router.get("/lifecycle-hooks/:hookId", hybridAuth, async (req: AuthRequest, res) => {
+router.get("/lifecycle-hooks/:hookId", hybridAuth, asyncHandler(async (req, res) => {
+  const authReq = req as AuthRequest;
   try {
     const { hookId } = req.params;
-    const userId = req.userId!;
+    const userId = authReq.userId!;
 
     // Note: We could add a specific get method to the service, but for now
     // we'll just list all and filter (or add getById to service later)
@@ -142,16 +146,17 @@ router.get("/lifecycle-hooks/:hookId", hybridAuth, async (req: AuthRequest, res)
       error: error instanceof Error ? error.message : "Failed to get lifecycle hook",
     });
   }
-});
+}));
 
 /**
  * PUT /api/lifecycle-hooks/:hookId
  * Update a lifecycle hook
  */
-router.put("/lifecycle-hooks/:hookId", hybridAuth, async (req: AuthRequest, res) => {
+router.put("/lifecycle-hooks/:hookId", hybridAuth, asyncHandler(async (req, res) => {
+  const authReq = req as AuthRequest;
   try {
     const { hookId } = req.params;
-    const userId = req.userId!;
+    const userId = authReq.userId!;
 
     // Validate request body
     const validatedData = updateLifecycleHookSchema.parse(req.body);
@@ -173,16 +178,17 @@ router.put("/lifecycle-hooks/:hookId", hybridAuth, async (req: AuthRequest, res)
       });
     }
   }
-});
+}));
 
 /**
  * DELETE /api/lifecycle-hooks/:hookId
  * Delete a lifecycle hook
  */
-router.delete("/lifecycle-hooks/:hookId", hybridAuth, async (req: AuthRequest, res) => {
+router.delete("/lifecycle-hooks/:hookId", hybridAuth, asyncHandler(async (req, res) => {
+  const authReq = req as AuthRequest;
   try {
     const { hookId } = req.params;
-    const userId = req.userId!;
+    const userId = authReq.userId!;
 
     await lifecycleHookService.deleteHook(hookId, userId);
 
@@ -193,16 +199,17 @@ router.delete("/lifecycle-hooks/:hookId", hybridAuth, async (req: AuthRequest, r
       error: error instanceof Error ? error.message : "Failed to delete lifecycle hook",
     });
   }
-});
+}));
 
 /**
  * POST /api/lifecycle-hooks/:hookId/test
  * Test a lifecycle hook with sample data
  */
-router.post("/lifecycle-hooks/:hookId/test", hybridAuth, async (req: AuthRequest, res) => {
+router.post("/lifecycle-hooks/:hookId/test", hybridAuth, asyncHandler(async (req, res) => {
+  const authReq = req as AuthRequest;
   try {
     const { hookId } = req.params;
-    const userId = req.userId!;
+    const userId = authReq.userId!;
 
     // Validate request body
     const validatedData = testHookSchema.parse(req.body);
@@ -224,7 +231,7 @@ router.post("/lifecycle-hooks/:hookId/test", hybridAuth, async (req: AuthRequest
       });
     }
   }
-});
+}));
 
 // ===================================================================
 // SCRIPT CONSOLE (Execution Logs)
@@ -234,10 +241,11 @@ router.post("/lifecycle-hooks/:hookId/test", hybridAuth, async (req: AuthRequest
  * GET /api/runs/:runId/script-console
  * Get script execution logs for a run
  */
-router.get("/runs/:runId/script-console", hybridAuth, async (req: AuthRequest, res) => {
+router.get("/runs/:runId/script-console", hybridAuth, asyncHandler(async (req, res) => {
+  const authReq = req as AuthRequest;
   try {
     const { runId } = req.params;
-    const userId = req.userId!;
+    const userId = authReq.userId!;
 
     const logs = await lifecycleHookService.getExecutionLogs(runId, userId);
 
@@ -248,16 +256,17 @@ router.get("/runs/:runId/script-console", hybridAuth, async (req: AuthRequest, r
       error: error instanceof Error ? error.message : "Failed to get script console logs",
     });
   }
-});
+}));
 
 /**
  * DELETE /api/runs/:runId/script-console
  * Clear script execution logs for a run
  */
-router.delete("/runs/:runId/script-console", hybridAuth, async (req: AuthRequest, res) => {
+router.delete("/runs/:runId/script-console", hybridAuth, asyncHandler(async (req, res) => {
+  const authReq = req as AuthRequest;
   try {
     const { runId } = req.params;
-    const userId = req.userId!;
+    const userId = authReq.userId!;
 
     await lifecycleHookService.clearExecutionLogs(runId, userId);
 
@@ -268,6 +277,6 @@ router.delete("/runs/:runId/script-console", hybridAuth, async (req: AuthRequest
       error: error instanceof Error ? error.message : "Failed to clear script console logs",
     });
   }
-});
+}));
 
 export default router;

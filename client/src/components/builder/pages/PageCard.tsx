@@ -270,7 +270,7 @@ export function PageCard({ workflowId, page, blocks, allSteps: steps, index, tot
               <div className="flex items-center gap-2">
                 <Input
                   value={page.title}
-                  onChange={(e) => handleTitleChange(e.target.value)}
+                  onChange={(e) => { void handleTitleChange(e.target.value); }}
                   className="font-semibold text-base border-none shadow-none px-0 focus-visible:ring-0 flex-1"
                   placeholder="Page title"
                 />
@@ -289,7 +289,7 @@ export function PageCard({ workflowId, page, blocks, allSteps: steps, index, tot
               </div>
               <AutoExpandTextarea
                 value={page.description || ""}
-                onChange={(e) => handleDescriptionChange(e.target.value)}
+                onChange={(e) => { void handleDescriptionChange(e.target.value); }}
                 className="text-sm text-muted-foreground border-none shadow-none px-0 focus-visible:ring-0 min-h-0"
                 placeholder="Page description (optional)"
                 minRows={1}
@@ -306,11 +306,11 @@ export function PageCard({ workflowId, page, blocks, allSteps: steps, index, tot
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => selectSection(page.id)}>
+                  <DropdownMenuItem onClick={() => { void selectSection(page.id); }}>
                     <Settings className="h-4 w-4 mr-2" />
                     Page Settings
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setIsLogicSheetOpen(true)}>
+                  <DropdownMenuItem onClick={() => { void setIsLogicSheetOpen(true); }}>
                     <EyeOff className="h-4 w-4 mr-2" />
                     Visibility Logic
                     {page.visibleIf && (
@@ -319,7 +319,7 @@ export function PageCard({ workflowId, page, blocks, allSteps: steps, index, tot
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={handleDelete}
+                    onClick={() => { void handleDelete(); }}
                     className="text-destructive focus:text-destructive"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />

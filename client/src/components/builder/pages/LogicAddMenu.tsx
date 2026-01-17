@@ -171,7 +171,7 @@ export function LogicAddMenu({ workflowId, sectionId, nextOrder }: LogicAddMenuP
           return (
             <DropdownMenuItem
               key={logic.type}
-              onClick={() => handleAddLogic(logic.type)}
+              onClick={() => { void handleAddLogic(logic.type); }}
             >
               <div className="flex items-start gap-2">
                 <Icon className="w-4 h-4 mt-0.5" />
@@ -197,7 +197,7 @@ export function LogicAddMenu({ workflowId, sectionId, nextOrder }: LogicAddMenuP
               return (
                 <DropdownMenuItem
                   key={logic.type}
-                  onClick={() => handleAddLogic(logic.type)}
+                  onClick={() => { void handleAddLogic(logic.type); }}
                 >
                   <div className="flex items-start gap-2">
                     <Icon className="w-4 h-4 mt-0.5" />

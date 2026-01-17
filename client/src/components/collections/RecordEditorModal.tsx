@@ -154,7 +154,7 @@ export function RecordEditorModal({
         return (
           <Input
             value={value || ""}
-            onChange={(e) => updateField(field.slug, e.target.value)}
+            onChange={(e) => { void updateField(field.slug, e.target.value); }}
             placeholder={`Enter ${field.name.toLowerCase()}`}
           />
         );
@@ -164,7 +164,7 @@ export function RecordEditorModal({
           <Input
             type="number"
             value={value || ""}
-            onChange={(e) => updateField(field.slug, e.target.value)}
+            onChange={(e) => { void updateField(field.slug, e.target.value); }}
             placeholder="0"
           />
         );
@@ -187,7 +187,7 @@ export function RecordEditorModal({
           <Input
             type="date"
             value={value || ""}
-            onChange={(e) => updateField(field.slug, e.target.value)}
+            onChange={(e) => { void updateField(field.slug, e.target.value); }}
           />
         );
 
@@ -196,7 +196,7 @@ export function RecordEditorModal({
           <Input
             type="datetime-local"
             value={value || ""}
-            onChange={(e) => updateField(field.slug, e.target.value)}
+            onChange={(e) => { void updateField(field.slug, e.target.value); }}
           />
         );
 
@@ -274,7 +274,7 @@ export function RecordEditorModal({
         return (
           <Textarea
             value={jsonValue || ""}
-            onChange={(e) => updateField(field.slug, e.target.value)}
+            onChange={(e) => { void updateField(field.slug, e.target.value); }}
             placeholder='{"key": "value"}'
             className="font-mono text-sm"
             rows={4}
@@ -285,7 +285,7 @@ export function RecordEditorModal({
         return (
           <Textarea
             value={value || ""}
-            onChange={(e) => updateField(field.slug, e.target.value)}
+            onChange={(e) => { void updateField(field.slug, e.target.value); }}
             placeholder={`Enter ${field.name.toLowerCase()}`}
             rows={3}
           />
@@ -307,7 +307,7 @@ export function RecordEditorModal({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={(e) => { e.preventDefault(); void handleSubmit(e); }} className="space-y-6">
           {fields.map((field) => (
             <div key={field.id} className="space-y-2">
               <Label>
@@ -327,7 +327,7 @@ export function RecordEditorModal({
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={() => { void onOpenChange(false); }}
               disabled={isLoading}
             >
               Cancel

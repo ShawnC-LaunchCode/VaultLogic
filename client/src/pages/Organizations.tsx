@@ -89,7 +89,7 @@ export default function Organizations() {
             Manage your team organizations and collaborate with members
           </p>
         </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)}>
+        <Button onClick={() => { void setIsCreateDialogOpen(true); }}>
           <Plus className="h-4 w-4 mr-2" />
           New Organization
         </Button>
@@ -103,7 +103,7 @@ export default function Organizations() {
             <p className="text-muted-foreground mb-6 max-w-md mx-auto">
               Create an organization to collaborate with your team and manage shared resources.
             </p>
-            <Button onClick={() => setIsCreateDialogOpen(true)}>
+            <Button onClick={() => { void setIsCreateDialogOpen(true); }}>
               <Plus className="h-4 w-4 mr-2" />
               Create your first organization
             </Button>
@@ -141,7 +141,7 @@ export default function Organizations() {
               Create a new organization to collaborate with your team.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleCreateOrganization}>
+          <form onSubmit={(e) => { e.preventDefault(); void handleCreateOrganization(e); }}>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="orgName">Organization Name *</Label>
@@ -149,7 +149,7 @@ export default function Organizations() {
                   id="orgName"
                   placeholder="My Organization"
                   value={newOrgName}
-                  onChange={(e) => setNewOrgName(e.target.value)}
+                  onChange={(e) => { void setNewOrgName(e.target.value); }}
                   required
                 />
               </div>
@@ -159,7 +159,7 @@ export default function Organizations() {
                   id="orgDescription"
                   placeholder="A brief description of your organization"
                   value={newOrgDescription}
-                  onChange={(e) => setNewOrgDescription(e.target.value)}
+                  onChange={(e) => { void setNewOrgDescription(e.target.value); }}
                 />
               </div>
             </div>
@@ -167,7 +167,7 @@ export default function Organizations() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setIsCreateDialogOpen(false)}
+                onClick={() => { void setIsCreateDialogOpen(false); }}
               >
                 Cancel
               </Button>

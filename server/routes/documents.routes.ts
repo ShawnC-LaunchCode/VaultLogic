@@ -18,6 +18,7 @@ import { createLogger } from '../logger';
 import { requireProjectRole } from '../middleware/aclAuth';
 import { hybridAuth, type AuthRequest } from '../middleware/auth';
 import { aclService } from '../services/AclService';
+import { asyncHandler } from '../utils/asyncHandler';
 
 import type { Express, Request, Response } from 'express';
 
@@ -40,13 +41,14 @@ export function registerDocumentRoutes(app: Express): void {
    *   ...
    * ]
    */
-  app.get('/api/documents', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/documents', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const userId = authReq.userId;
 
       if (!userId) {
-        return res.status(401).json({ message: 'Unauthorized - no user ID' });
+        res.status(401).json({ message: 'Unauthorized - no user ID' });
+        return;
       }
 
       const { projectId } = req.query;
@@ -65,7 +67,8 @@ export function registerDocumentRoutes(app: Express): void {
         const hasAccess = await aclService.hasProjectRole(userId, projectId, 'view');
         if (!hasAccess) {
           logger.warn({ userId, projectId }, 'User denied access to project documents');
-          return res.status(403).json({ message: 'Forbidden - insufficient permissions for this project' });
+          res.status(403).json({ message: 'Forbidden - insufficient permissions for this project' });
+          return;
         }
 
         // Fetch only documents for the specified project (Dec 2025 - Security fix)
@@ -102,7 +105,7 @@ export function registerDocumentRoutes(app: Express): void {
       logger.error({ error }, 'Error fetching documents');
       res.status(500).json({ message: 'Failed to fetch documents' });
     }
-  });
+  }));
 
   /**
    * GET /api/documents/:id
@@ -111,13 +114,14 @@ export function registerDocumentRoutes(app: Express): void {
    * Returns:
    * { id: string, name: string, type: string, uploadedAt: Date, ... }
    */
-  app.get('/api/documents/:id', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/documents/:id', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const userId = authReq.userId;
 
       if (!userId) {
-        return res.status(401).json({ message: 'Unauthorized - no user ID' });
+        res.status(401).json({ message: 'Unauthorized - no user ID' });
+        return;
       }
 
       const { id } = req.params;
@@ -133,7 +137,8 @@ export function registerDocumentRoutes(app: Express): void {
         .limit(1);
 
       if (!document) {
-        return res.status(404).json({ message: 'Document not found' });
+        res.status(404).json({ message: 'Document not found' });
+        return;
       }
 
       // Check ACL based on document's project
@@ -141,7 +146,8 @@ export function registerDocumentRoutes(app: Express): void {
         const hasAccess = await aclService.hasProjectRole(userId, document.projectId, 'view');
         if (!hasAccess) {
           logger.warn({ userId, projectId: document.projectId, documentId: id }, 'User denied access to document');
-          return res.status(403).json({ message: 'Forbidden - insufficient permissions for this document' });
+          res.status(403).json({ message: 'Forbidden - insufficient permissions for this document' });
+          return;
         }
       }
 
@@ -159,7 +165,7 @@ export function registerDocumentRoutes(app: Express): void {
       logger.error({ error }, 'Error fetching document');
       res.status(500).json({ message: 'Failed to fetch document' });
     }
-  });
+  }));
 
   logger.info('Document routes registered');
 }

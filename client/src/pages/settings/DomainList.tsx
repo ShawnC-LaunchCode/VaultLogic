@@ -66,13 +66,13 @@ export function DomainList({ tenantId }: DomainListProps) {
       </p>
 
       {/* Add Domain Form */}
-      <form onSubmit={handleAdd} className="mb-6">
+      <form onSubmit={(e) => { e.preventDefault(); void handleAdd(e); }} className="mb-6">
         <label className="block text-sm font-medium mb-2">Add New Domain</label>
         <div className="flex gap-2">
           <input
             type="text"
             value={newDomain}
-            onChange={(e) => setNewDomain(e.target.value)}
+            onChange={(e) => { void setNewDomain(e.target.value); }}
             placeholder="acme.vaultlogic.com"
             className="flex-1 px-3 py-2 border rounded"
           />
@@ -105,7 +105,7 @@ export function DomainList({ tenantId }: DomainListProps) {
                   </p>
                 </div>
                 <button
-                  onClick={() => handleRemove(domain.id)}
+                  onClick={() => { void handleRemove(domain.id); }}
                   disabled={removeDomain.isPending}
                   className="px-3 py-1 text-red-600 border border-red-600 rounded hover:bg-red-50 disabled:opacity-50"
                 >

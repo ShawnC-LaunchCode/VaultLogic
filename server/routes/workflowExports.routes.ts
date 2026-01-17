@@ -1,6 +1,7 @@
 import { createLogger } from "../logger";
 import { hybridAuth, type AuthRequest } from '../middleware/auth';
 import { workflowExportService } from "../services/WorkflowExportService";
+import { asyncHandler } from "../utils/asyncHandler";
 
 import type { Express, Request, Response } from "express";
 
@@ -15,7 +16,7 @@ export function registerWorkflowExportRoutes(app: Express): void {
    * GET /api/workflows/:workflowId/export?format=json|csv
    * Export workflow runs as JSON or CSV
    */
-  app.get('/api/workflows/:workflowId/export', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:workflowId/export', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const userId = authReq.userId;
@@ -45,5 +46,5 @@ export function registerWorkflowExportRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 }

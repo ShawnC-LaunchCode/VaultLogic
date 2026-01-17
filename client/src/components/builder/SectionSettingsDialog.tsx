@@ -82,13 +82,13 @@ export function SectionSettingsDialog({
                     <TabsContent value="general" className="space-y-4 py-4">
                         <div className="space-y-2">
                             <Label>Page Title</Label>
-                            <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+                            <Input value={title} onChange={(e) => { void setTitle(e.target.value); }} />
                         </div>
                         <div className="space-y-2">
                             <Label>Description</Label>
                             <Textarea
                                 value={description}
-                                onChange={(e) => setDescription(e.target.value)}
+                                onChange={(e) => { void setDescription(e.target.value); }}
                                 placeholder="Internal description or notes (optional)"
                             />
                         </div>
@@ -116,8 +116,8 @@ export function SectionSettingsDialog({
                 </Tabs>
 
                 <DialogFooter>
-                    <Button variant="outline" onClick={onClose}>Cancel</Button>
-                    <Button onClick={handleSave}>Save Changes</Button>
+                    <Button variant="outline" onClick={() => { void onClose(); }}>Cancel</Button>
+                    <Button onClick={() => { void handleSave(); }}>Save Changes</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

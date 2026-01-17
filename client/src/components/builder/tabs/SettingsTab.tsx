@@ -225,7 +225,7 @@ export function SettingsTab({ workflowId }: SettingsTabProps) {
             </p>
           </div>
 
-          <Button onClick={handleSaveSettings}>
+          <Button onClick={() => { void handleSaveSettings(); }}>
             <Save className="w-4 h-4 mr-2" />
             Save Settings
           </Button>
@@ -251,7 +251,7 @@ export function SettingsTab({ workflowId }: SettingsTabProps) {
                 <Input
                   id="name"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => { void setName(e.target.value); }}
                   placeholder="Enter workflow name"
                 />
               </div>
@@ -261,7 +261,7 @@ export function SettingsTab({ workflowId }: SettingsTabProps) {
                 <Textarea
                   id="description"
                   value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  onChange={(e) => { void setDescription(e.target.value); }}
                   placeholder="Describe the purpose of this workflow"
                   rows={3}
                 />
@@ -272,7 +272,7 @@ export function SettingsTab({ workflowId }: SettingsTabProps) {
                 <Input
                   id="slug"
                   value={slug}
-                  onChange={(e) => setSlug(e.target.value)}
+                  onChange={(e) => { void setSlug(e.target.value); }}
                   placeholder="my-workflow"
                 />
                 <p className="text-xs text-muted-foreground">
@@ -423,7 +423,7 @@ export function SettingsTab({ workflowId }: SettingsTabProps) {
                     <Input
                       id="logo"
                       value={logoUrl}
-                      onChange={(e) => setLogoUrl(e.target.value)}
+                      onChange={(e) => { void setLogoUrl(e.target.value); }}
                       placeholder="https://example.com/logo.png"
                     />
                   </div>
@@ -436,12 +436,12 @@ export function SettingsTab({ workflowId }: SettingsTabProps) {
                           id="primary-color"
                           type="color"
                           value={primaryColor}
-                          onChange={(e) => setPrimaryColor(e.target.value)}
+                          onChange={(e) => { void setPrimaryColor(e.target.value); }}
                           className="w-16 h-10 p-1"
                         />
                         <Input
                           value={primaryColor}
-                          onChange={(e) => setPrimaryColor(e.target.value)}
+                          onChange={(e) => { void setPrimaryColor(e.target.value); }}
                           placeholder="#3b82f6"
                         />
                       </div>
@@ -454,12 +454,12 @@ export function SettingsTab({ workflowId }: SettingsTabProps) {
                           id="secondary-color"
                           type="color"
                           value={secondaryColor}
-                          onChange={(e) => setSecondaryColor(e.target.value)}
+                          onChange={(e) => { void setSecondaryColor(e.target.value); }}
                           className="w-16 h-10 p-1"
                         />
                         <Input
                           value={secondaryColor}
-                          onChange={(e) => setSecondaryColor(e.target.value)}
+                          onChange={(e) => { void setSecondaryColor(e.target.value); }}
                           placeholder="#8b5cf6"
                         />
                       </div>
@@ -487,7 +487,7 @@ export function SettingsTab({ workflowId }: SettingsTabProps) {
                 <Textarea
                   id="completion-message"
                   value={completionMessage}
-                  onChange={(e) => setCompletionMessage(e.target.value)}
+                  onChange={(e) => { void setCompletionMessage(e.target.value); }}
                   placeholder="Thank you message shown after completion"
                   rows={3}
                 />
@@ -498,7 +498,7 @@ export function SettingsTab({ workflowId }: SettingsTabProps) {
                 <Input
                   id="redirect-url"
                   value={redirectUrl}
-                  onChange={(e) => setRedirectUrl(e.target.value)}
+                  onChange={(e) => { void setRedirectUrl(e.target.value); }}
                   placeholder="https://example.com/thank-you"
                 />
                 <p className="text-xs text-muted-foreground">
@@ -578,7 +578,7 @@ export function SettingsTab({ workflowId }: SettingsTabProps) {
                         readOnly
                         className="flex-1 font-mono text-sm"
                       />
-                      <Button variant="outline" onClick={handleCopyLink}>
+                      <Button variant="outline" onClick={() => { void handleCopyLink(); }}>
                         {linkCopied ? (
                           <Check className="w-4 h-4 text-green-600" />
                         ) : (

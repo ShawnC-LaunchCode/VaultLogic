@@ -234,7 +234,7 @@ export function PdfMappingEditor({ templateId, isOpen, onClose, workflowVariable
                         <div className="flex gap-2">
                             <Button variant="outline" size="sm" onClick={() => setScale(s => Math.max(0.5, s - 0.1))}><ZoomOut className="w-4 h-4" /></Button>
                             <Button variant="outline" size="sm" onClick={() => setScale(s => Math.min(2.0, s + 0.1))}><ZoomIn className="w-4 h-4" /></Button>
-                            <Button onClick={handleSave} size="sm"><Save className="w-4 h-4 mr-2" /> Save</Button>
+                            <Button onClick={() => { void handleSave(); }} size="sm"><Save className="w-4 h-4 mr-2" /> Save</Button>
                         </div>
                     </div>
                 </DialogHeader>
@@ -315,7 +315,7 @@ export function PdfMappingEditor({ templateId, isOpen, onClose, workflowVariable
                                                 <div
                                                     key={field.name}
                                                     title={field.name}
-                                                    onClick={() => setSelectedField(field.name)}
+                                                    onClick={() => { void setSelectedField(field.name); }}
                                                     style={{
                                                         position: 'absolute',
                                                         left: x,
@@ -683,7 +683,7 @@ export function PdfMappingEditor({ templateId, isOpen, onClose, workflowVariable
                                         <div
                                             key={f.name}
                                             className={`px-4 py-2 text-sm border-b cursor-pointer hover:bg-slate-50 ${selectedField === f.name ? 'bg-purple-50' : ''}`}
-                                            onClick={() => setSelectedField(f.name)}
+                                            onClick={() => { void setSelectedField(f.name); }}
                                         >
                                             <div className="flex items-center justify-between">
                                                 <span className="truncate max-w-[180px]" title={f.name}>{f.name}</span>

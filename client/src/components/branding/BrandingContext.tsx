@@ -158,7 +158,7 @@ export function BrandingProvider({
   // Load branding on mount or when tenantId changes
   useEffect(() => {
     if (!skipAutoLoad && tenantId) {
-      loadBranding();
+      void loadBranding();
     }
   }, [tenantId, skipAutoLoad]);
 

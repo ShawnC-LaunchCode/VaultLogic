@@ -145,7 +145,7 @@ export class LifecycleHookService {
               } else if (hook.outputKeys.length > 0) {
                 // If output is a single value, use the first outputKey
                 const key = hook.outputKeys[0];
-                if (key) resultData[key] = result.output;
+                if (key) {resultData[key] = result.output;}
               }
             }
 

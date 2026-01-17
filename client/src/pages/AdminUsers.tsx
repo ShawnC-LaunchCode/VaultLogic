@@ -236,7 +236,7 @@ export default function AdminUsers() {
                                     <AlertDialogFooter>
                                       <AlertDialogCancel>Cancel</AlertDialogCancel>
                                       <AlertDialogAction
-                                        onClick={() => handlePromoteToAdmin(user.id)}
+                                        onClick={() => { void handlePromoteToAdmin(user.id); }}
                                         className="bg-purple-600 hover:bg-purple-700"
                                       >
                                         Promote to Admin
@@ -267,7 +267,7 @@ export default function AdminUsers() {
                                     <AlertDialogFooter>
                                       <AlertDialogCancel>Cancel</AlertDialogCancel>
                                       <AlertDialogAction
-                                        onClick={() => handleDemoteToCreator(user.id)}
+                                        onClick={() => { void handleDemoteToCreator(user.id); }}
                                         className="bg-destructive hover:bg-destructive/90"
                                       >
                                         Demote to Creator

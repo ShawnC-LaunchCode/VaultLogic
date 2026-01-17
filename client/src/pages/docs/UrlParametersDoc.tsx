@@ -62,7 +62,7 @@ export default function UrlParametersDoc() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => window.close()}
+            onClick={() => { void window.close(); }}
             className="mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -167,7 +167,7 @@ export default function UrlParametersDoc() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => copyToClipboard(example.url, index)}
+                        onClick={() => { void copyToClipboard(example.url, index); }}
                       >
                         {copiedIndex === index ? (
                           <Check className="w-4 h-4 text-green-500" />
@@ -288,7 +288,7 @@ export default function UrlParametersDoc() {
           <div className="flex gap-4 justify-center">
             <Button
               variant="outline"
-              onClick={() => window.close()}
+              onClick={() => { void window.close(); }}
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Builder

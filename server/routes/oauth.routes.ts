@@ -1,18 +1,19 @@
 
 import { eq } from "drizzle-orm";
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 
 import { oauthApps, oauthAuthCodes, oauthAccessTokens } from "@shared/schema";
 
 import { db } from "../db";
 // import { requireAuth } from "../lib/authz/enforce"; // Require user login for authorization
+import { asyncHandler } from "../utils/asyncHandler";
 
 const router = Router();
 
 // GET /oauth/authorize
 // Browser-based flow. User visits this.
 // Should validate params and redirect to Frontend Consent Page
-router.get("/authorize", async (req, res) => {
+router.get("/authorize", asyncHandler(async (req: Request, res: Response) => {
     const { client_id, redirect_uri, response_type, scope, state } = req.query;
 
     if (response_type !== 'code') {
@@ -52,11 +53,11 @@ router.get("/authorize", async (req, res) => {
         console.error(err);
         res.status(500).send("Internal Error");
     }
-});
+}));
 
 // POST /oauth/approve (Internal API called by Frontend Consent Page)
 // Requires User Session
-router.post("/approve", async (req, res) => {
+router.post("/approve", asyncHandler(async (req: Request, res: Response) => {
     // Check user session manually or use middleware
     // const userId = req.user.id; 
     // Mock user for now if session middleware not active here
@@ -69,7 +70,7 @@ router.post("/approve", async (req, res) => {
     const { client_id, redirect_uri, scope, state, user_id } = req.body; // user_id passed from verified session
 
     // Generate Auth Code
-    const code = `auth_code_${  Math.random().toString(36).substr(2, 15)}`;
+    const code = `auth_code_${Math.random().toString(36).substr(2, 15)}`;
 
     await db.insert(oauthAuthCodes).values({
         code,
@@ -83,11 +84,11 @@ router.post("/approve", async (req, res) => {
     // Redirect user back to client
     const redirectUrl = `${redirect_uri}?code=${code}&state=${state || ''}`;
     res.json({ redirectUrl });
-});
+}));
 
 // POST /oauth/token
 // Server-to-Server exchange
-router.post("/token", async (req, res) => {
+router.post("/token", asyncHandler(async (req: Request, res: Response) => {
     const { grant_type, code, client_id, client_secret, redirect_uri } = req.body;
 
     if (grant_type !== 'authorization_code') {
@@ -123,8 +124,8 @@ router.post("/token", async (req, res) => {
     }
 
     // Issue Token
-    const accessToken = `access_${  Math.random().toString(36).substr(2)}`;
-    const refreshToken = `refresh_${  Math.random().toString(36).substr(2)}`;
+    const accessToken = `access_${Math.random().toString(36).substr(2)}`;
+    const refreshToken = `refresh_${Math.random().toString(36).substr(2)}`;
 
     await db.insert(oauthAccessTokens).values({
         accessToken,
@@ -146,6 +147,6 @@ router.post("/token", async (req, res) => {
         refresh_token: refreshToken,
         scope: authCode.scope // join ' '
     });
-});
+}));
 
 export default router;

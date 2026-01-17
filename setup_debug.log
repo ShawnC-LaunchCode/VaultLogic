@@ -1,0 +1,44 @@
+2026-01-16T21:16:15.321Z Debug: Applying failsafe fixes to schema: public
+2026-01-16T21:16:15.782Z Constraint check failed (benign?): Failed query: ALTER TABLE "public"."ai_settings" ADD CONSTRAINT "ai_settings_updated_by_users_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."users"("id") ON DELETE set null
+params: 
+2026-01-16T21:16:16.211Z ✅ Applied failsafe schema fixes
+2026-01-16T21:19:37.898Z Debug: Applying failsafe fixes to schema: public
+2026-01-16T21:19:37.899Z Debug: DATABASE_URL in setup: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+2026-01-16T21:19:38.281Z Constraint check failed (benign?): Failed query: ALTER TABLE "public"."ai_settings" ADD CONSTRAINT "ai_settings_updated_by_users_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."users"("id") ON DELETE set null
+params: 
+2026-01-16T21:19:38.826Z ✅ Applied failsafe schema fixes
+2026-01-16T21:20:44.935Z Debug: Applying failsafe fixes to schema: test_schema_w0_v2
+2026-01-16T21:20:44.936Z Debug: DATABASE_URL in setup: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require&options=-c+search_path%3Dtest_schema_w0_v2%2Cpublic
+2026-01-16T21:20:45.054Z Constraint check failed (benign?): Failed query: ALTER TABLE "test_schema_w0_v2"."ai_settings" ADD CONSTRAINT "ai_settings_updated_by_users_id_fk" FOREIGN KEY ("updated_by") REFERENCES "test_schema_w0_v2"."users"("id") ON DELETE set null
+params: 
+2026-01-16T21:20:45.481Z ✅ Applied failsafe schema fixes
+2026-01-16T21:23:01.308Z Debug: Applying failsafe fixes to schema: test_schema_w0_v2
+2026-01-16T21:23:01.310Z Debug: DATABASE_URL in setup: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require&options=-c+search_path%3Dtest_schema_w0_v2%2Cpublic
+2026-01-16T21:23:01.429Z Constraint check failed (benign?): Failed query: ALTER TABLE "test_schema_w0_v2"."ai_settings" ADD CONSTRAINT "ai_settings_updated_by_users_id_fk" FOREIGN KEY ("updated_by") REFERENCES "test_schema_w0_v2"."users"("id") ON DELETE set null
+params: 
+2026-01-16T21:23:01.866Z ✅ Applied failsafe schema fixes
+2026-01-16T21:24:06.672Z Debug: Applying failsafe fixes to schema: test_schema_w0_v2
+2026-01-16T21:24:06.673Z Debug: DATABASE_URL in setup: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require&options=-c+search_path%3Dtest_schema_w0_v2%2Cpublic
+2026-01-16T21:24:06.767Z Constraint check failed (benign?): Failed query: ALTER TABLE "test_schema_w0_v2"."ai_settings" ADD CONSTRAINT "ai_settings_updated_by_users_id_fk" FOREIGN KEY ("updated_by") REFERENCES "test_schema_w0_v2"."users"("id") ON DELETE set null
+params: 
+2026-01-16T21:24:07.203Z ✅ Applied failsafe schema fixes
+2026-01-16T21:25:40.339Z Debug: Applying failsafe fixes to schema: test_schema_w0_v2
+2026-01-16T21:25:40.340Z Debug: DATABASE_URL in setup: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require&options=-c+search_path%3Dtest_schema_w0_v2%2Cpublic
+2026-01-16T21:25:40.456Z Constraint check failed (benign?): Failed query: ALTER TABLE "test_schema_w0_v2"."ai_settings" ADD CONSTRAINT "ai_settings_updated_by_users_id_fk" FOREIGN KEY ("updated_by") REFERENCES "test_schema_w0_v2"."users"("id") ON DELETE set null
+params: 
+2026-01-16T21:25:40.987Z ✅ Applied failsafe schema fixes
+2026-01-16T21:26:45.906Z Debug: Applying failsafe fixes to schema: test_schema_w0_v2
+2026-01-16T21:26:45.908Z Debug: DATABASE_URL in setup: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require&options=-c+search_path%3Dtest_schema_w0_v2%2Cpublic
+2026-01-16T21:26:46.025Z Constraint check failed (benign?): Failed query: ALTER TABLE "test_schema_w0_v2"."ai_settings" ADD CONSTRAINT "ai_settings_updated_by_users_id_fk" FOREIGN KEY ("updated_by") REFERENCES "test_schema_w0_v2"."users"("id") ON DELETE set null
+params: 
+2026-01-16T21:26:46.451Z ✅ Applied failsafe schema fixes
+2026-01-16T21:27:31.297Z Debug: Applying failsafe fixes to schema: test_schema_w0_v2
+2026-01-16T21:27:31.299Z Debug: DATABASE_URL in setup: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require&options=-c+search_path%3Dtest_schema_w0_v2%2Cpublic
+2026-01-16T21:27:31.414Z Constraint check failed (benign?): Failed query: ALTER TABLE "test_schema_w0_v2"."ai_settings" ADD CONSTRAINT "ai_settings_updated_by_users_id_fk" FOREIGN KEY ("updated_by") REFERENCES "test_schema_w0_v2"."users"("id") ON DELETE set null
+params: 
+2026-01-16T21:27:31.845Z ✅ Applied failsafe schema fixes
+2026-01-16T21:28:40.154Z Debug: Applying failsafe fixes to schema: test_schema_w0_v2
+2026-01-16T21:28:40.155Z Debug: DATABASE_URL in setup: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require&options=-c+search_path%3Dtest_schema_w0_v2%2Cpublic
+2026-01-16T21:28:40.250Z Constraint check failed (benign?): Failed query: ALTER TABLE "test_schema_w0_v2"."ai_settings" ADD CONSTRAINT "ai_settings_updated_by_users_id_fk" FOREIGN KEY ("updated_by") REFERENCES "test_schema_w0_v2"."users"("id") ON DELETE set null
+params: 
+2026-01-16T21:28:40.667Z ✅ Applied failsafe schema fixes

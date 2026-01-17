@@ -36,9 +36,7 @@ export default function BillingDashboard() {
     const [limits, setLimits] = useState<Limits | null>(null);
     const { toast } = useToast();
 
-    useEffect(() => {
-        fetchBillingData();
-    }, []);
+    useEffect(() => { void fetchBillingData(); }, []);
 
     const fetchBillingData = async () => {
         try {
@@ -88,7 +86,7 @@ export default function BillingDashboard() {
                     <h1 className="text-3xl font-bold tracking-tight">Billing & Usage</h1>
                     <p className="text-muted-foreground mt-2">Manage your plan and monitor usage limits.</p>
                 </div>
-                <Button onClick={handleManageSubscription}>Manage Subscription</Button>
+                <Button onClick={() => { void handleManageSubscription(); }}>Manage Subscription</Button>
             </div>
 
             {/* Current Plan Card */}

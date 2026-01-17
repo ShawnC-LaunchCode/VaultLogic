@@ -13,7 +13,6 @@ export interface DocumentGenerationOptions {
     outputName: string;
     outputDir?: string;
     toPdf?: boolean;
-    pdfStrategy?: 'puppeteer' | 'libreoffice';
 }
 
 export interface DocumentGenerationResult {
@@ -28,8 +27,7 @@ export class DocumentEngine {
 
     constructor() {
         this.parser = new TemplateParser();
-        // Default to puppeteer, can be overridden per request
-        this.pdfConverter = new PdfConverter('puppeteer');
+        this.pdfConverter = new PdfConverter();
     }
 
     async generate(options: DocumentGenerationOptions): Promise<DocumentGenerationResult> {
@@ -39,10 +37,9 @@ export class DocumentEngine {
             outputName,
             outputDir = path.join(process.cwd(), 'server', 'files', 'outputs'),
             toPdf = false,
-            pdfStrategy = 'puppeteer',
         } = options;
 
-        logger.info({ templatePath, outputName, toPdf, pdfStrategy }, 'Starting document generation');
+        logger.info({ templatePath, outputName, toPdf }, 'Starting document generation');
 
         // Ensure output directory exists
         await fs.mkdir(outputDir, { recursive: true });
@@ -70,8 +67,8 @@ export class DocumentEngine {
                 const pdfFileName = `${outputName}-${timestamp}.pdf`;
                 const pdfPath = path.join(outputDir, pdfFileName);
 
-                // Instantiate converter with requested strategy
-                const converter = new PdfConverter(pdfStrategy);
+                // Instantiate converter (defaults to Puppeteer)
+                const converter = new PdfConverter();
 
                 await converter.convert({
                     docxPath,

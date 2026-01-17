@@ -83,7 +83,7 @@ export function RunWithRandomDataButton({
           <Button
             variant={variant}
             size={size}
-            onClick={handleClick}
+            onClick={() => { void handleClick(); }}
             disabled={isCreating}
             className={className}
           >

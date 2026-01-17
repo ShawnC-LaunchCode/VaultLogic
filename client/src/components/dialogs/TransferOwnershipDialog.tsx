@@ -168,11 +168,11 @@ export function TransferOwnershipDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
+          <Button variant="outline" onClick={() => { void onOpenChange(false); }} disabled={isPending}>
             Cancel
           </Button>
           <Button
-            onClick={handleTransfer}
+            onClick={() => { void handleTransfer(); }}
             disabled={!selectedOwner || isPending}
           >
             {isPending ? 'Transferring...' : 'Transfer Ownership'}

@@ -245,7 +245,7 @@ export default function SettingsPage() {
                     </p>
                   </div>
                   {mfaStatus?.enabled ? (
-                    <Button variant="destructive" onClick={() => setIsDisableOpen(true)}>Disable 2FA</Button>
+                    <Button variant="destructive" onClick={() => { void setIsDisableOpen(true); }}>Disable 2FA</Button>
                   ) : (
                     <Button onClick={startMfaSetup}>Enable 2FA</Button>
                   )}

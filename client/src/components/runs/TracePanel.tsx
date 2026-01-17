@@ -86,7 +86,7 @@ export function TracePanel({ trace }: TracePanelProps) {
           </div>
         </div>
 
-        <Button variant="outline" size="sm" onClick={handleCopyTrace}>
+        <Button variant="outline" size="sm" onClick={() => { void handleCopyTrace(); }}>
           Copy Trace JSON
         </Button>
       </div>
@@ -129,7 +129,7 @@ export function TracePanel({ trace }: TracePanelProps) {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => toggleNode(index)}
+                      onClick={() => { void toggleNode(index); }}
                       className="h-auto py-1 px-2"
                     >
                       <ChevronRight

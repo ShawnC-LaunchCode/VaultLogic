@@ -20,6 +20,7 @@ import {
   type CreateSecretInput,
   type UpdateSecretInput,
 } from '../services/secrets';
+import { asyncHandler } from "../utils/asyncHandler";
 
 import type { Express, Request, Response } from 'express';
 
@@ -51,7 +52,7 @@ export function registerSecretsRoutes(app: Express): void {
    * List all secrets for a project (metadata only, no values)
    * Required role: Owner or Builder
    */
-  app.get('/api/projects/:projectId/secrets', hybridAuth, requireProjectRole('edit'), async (req: Request, res: Response) => {
+  app.get('/api/projects/:projectId/secrets', hybridAuth, requireProjectRole('edit'), asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const userId = authReq.userId;
@@ -77,14 +78,14 @@ export function registerSecretsRoutes(app: Express): void {
         error: process.env.NODE_ENV === 'development' && error instanceof Error ? error.message : undefined,
       });
     }
-  });
+  }));
 
   /**
    * GET /api/projects/:projectId/secrets/:secretId
    * Get a single secret (metadata only, no value)
    * Required role: Owner or Builder
    */
-  app.get('/api/projects/:projectId/secrets/:secretId', hybridAuth, requireProjectRole('edit'), async (req: Request, res: Response) => {
+  app.get('/api/projects/:projectId/secrets/:secretId', hybridAuth, requireProjectRole('edit'), asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const userId = authReq.userId;
@@ -104,14 +105,14 @@ export function registerSecretsRoutes(app: Express): void {
       logger.error({ error, secretId: req.params.secretId }, 'Error fetching secret');
       res.status(500).json({ message: 'Failed to fetch secret' });
     }
-  });
+  }));
 
   /**
    * POST /api/projects/:projectId/secrets
    * Create a new secret
    * Required role: Owner or Builder
    */
-  app.post('/api/projects/:projectId/secrets', hybridAuth, requireProjectRole('edit'), async (req: Request, res: Response) => {
+  app.post('/api/projects/:projectId/secrets', hybridAuth, requireProjectRole('edit'), asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const userId = authReq.userId;
@@ -154,14 +155,14 @@ export function registerSecretsRoutes(app: Express): void {
         error: process.env.NODE_ENV === 'development' && error instanceof Error ? error.message : undefined,
       });
     }
-  });
+  }));
 
   /**
    * PATCH /api/projects/:projectId/secrets/:secretId
    * Update a secret (rotate value, change key, update metadata)
    * Required role: Owner or Builder
    */
-  app.patch('/api/projects/:projectId/secrets/:secretId', hybridAuth, requireProjectRole('edit'), async (req: Request, res: Response) => {
+  app.patch('/api/projects/:projectId/secrets/:secretId', hybridAuth, requireProjectRole('edit'), asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const userId = authReq.userId;
@@ -205,14 +206,14 @@ export function registerSecretsRoutes(app: Express): void {
         error: process.env.NODE_ENV === 'development' && error instanceof Error ? error.message : undefined,
       });
     }
-  });
+  }));
 
   /**
    * DELETE /api/projects/:projectId/secrets/:secretId
    * Delete a secret
    * Required role: Owner or Builder
    */
-  app.delete('/api/projects/:projectId/secrets/:secretId', hybridAuth, requireProjectRole('edit'), async (req: Request, res: Response) => {
+  app.delete('/api/projects/:projectId/secrets/:secretId', hybridAuth, requireProjectRole('edit'), asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const userId = authReq.userId;
@@ -234,14 +235,14 @@ export function registerSecretsRoutes(app: Express): void {
       logger.error({ error, secretId: req.params.secretId }, 'Error deleting secret');
       res.status(500).json({ message: 'Failed to delete secret' });
     }
-  });
+  }));
 
   /**
    * POST /api/projects/:projectId/secrets/:secretId/test
    * Test if a secret can be decrypted successfully
    * Required role: Owner or Builder
    */
-  app.post('/api/projects/:projectId/secrets/:secretId/test', hybridAuth, requireProjectRole('edit'), async (req: Request, res: Response) => {
+  app.post('/api/projects/:projectId/secrets/:secretId/test', hybridAuth, requireProjectRole('edit'), asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const userId = authReq.userId;
@@ -258,5 +259,5 @@ export function registerSecretsRoutes(app: Express): void {
       logger.error({ error, secretId: req.params.secretId }, 'Error testing secret');
       res.status(500).json({ message: 'Failed to test secret' });
     }
-  });
+  }));
 }

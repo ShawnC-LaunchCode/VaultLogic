@@ -161,14 +161,14 @@ export function AddRowButton({ tableId, columns, onAdd }: AddRowButtonProps) {
 
   return (
     <>
-      <Button onClick={() => setOpen(true)} size="sm" variant="outline">
+      <Button onClick={() => { void setOpen(true); }} size="sm" variant="outline">
         <Plus className="w-4 h-4 mr-2" />
         Add Row
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={(e) => { e.preventDefault(); void handleSubmit(e); }}>
             <DialogHeader>
               <DialogTitle>Add New Row</DialogTitle>
               <DialogDescription>
@@ -194,7 +194,7 @@ export function AddRowButton({ tableId, columns, onAdd }: AddRowButtonProps) {
             </div>
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              <Button type="button" variant="outline" onClick={() => { void setOpen(false); }}>
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>

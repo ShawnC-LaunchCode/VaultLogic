@@ -1,6 +1,6 @@
-import * as schema from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 
+import * as schema from "@shared/schema";
 import type { WorkflowVersion } from "@shared/schema";
 
 import { WorkflowGraphSchema } from "../../shared/zod-schemas.js";
@@ -547,6 +547,17 @@ export class VersionService {
         createdAt: v.createdAt,
       })),
     };
+  }
+  /**
+   * Update AI metadata for a version
+   */
+  async updateAiMetadata(versionId: string, metadata: any): Promise<void> {
+    await db
+      .update(schema.workflowVersions)
+      .set({
+        migrationInfo: { aiMetadata: metadata }
+      })
+      .where(eq(schema.workflowVersions.id, versionId));
   }
 }
 

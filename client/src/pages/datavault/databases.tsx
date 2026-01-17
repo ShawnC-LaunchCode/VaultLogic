@@ -174,7 +174,7 @@ export default function DataVaultDatabasesPage() {
                     Organize your tables into databases by project, workflow, or account
                   </p>
                 </div>
-                <Button onClick={() => setCreateModalOpen(true)}>
+                <Button onClick={() => { void setCreateModalOpen(true); }}>
                   <Plus className="w-4 h-4 mr-2" />
                   Create Database
                   <kbd className="ml-2 hidden sm:inline-block pointer-events-none h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
@@ -190,7 +190,7 @@ export default function DataVaultDatabasesPage() {
                   <Input
                     placeholder="Search databases..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => { void setSearchQuery(e.target.value); }}
                     className="pl-9"
                   />
                 </div>
@@ -216,7 +216,7 @@ export default function DataVaultDatabasesPage() {
                   <DatabaseCard
                     key={database.id}
                     database={database}
-                    onClick={() => handleDatabaseClick(database.id)}
+                    onClick={() => { void handleDatabaseClick(database.id); }}
                     onTransfer={(id, name) => setTransferringDatabase({ id, name })}
                     onDelete={() => setDeleteConfirm({ id: database.id, name: database.name })}
                   />
@@ -232,7 +232,7 @@ export default function DataVaultDatabasesPage() {
                 <p className="text-muted-foreground mb-6 max-w-sm">
                   Get started by creating your first database to organize your tables
                 </p>
-                <Button onClick={() => setCreateModalOpen(true)}>
+                <Button onClick={() => { void setCreateModalOpen(true); }}>
                   <Plus className="w-4 h-4 mr-2" />
                   Create Your First Database
                 </Button>
@@ -245,7 +245,7 @@ export default function DataVaultDatabasesPage() {
                 <p className="text-muted-foreground mb-4">
                   No databases match "{searchQuery}"
                 </p>
-                <Button variant="outline" onClick={() => setSearchQuery("")}>
+                <Button variant="outline" onClick={() => { void setSearchQuery(""); }}>
                   Clear Search
                 </Button>
               </div>
@@ -258,7 +258,7 @@ export default function DataVaultDatabasesPage() {
       <CreateDatabaseModal
         open={createModalOpen}
         onOpenChange={setCreateModalOpen}
-        onSubmit={handleCreate}
+        onSubmit={(e) => { e.preventDefault(); void handleCreate(e); }}
         isLoading={createDatabaseMutation.isPending}
       />
 
@@ -275,7 +275,7 @@ export default function DataVaultDatabasesPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDelete}
+              onClick={() => { void handleDelete(); }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={deleteDatabaseMutation.isPending}
             >

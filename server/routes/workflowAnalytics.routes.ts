@@ -5,7 +5,7 @@
  */
 
 import { eq, and, gte, desc, sql } from 'drizzle-orm';
-import express from 'express';
+import { Router } from 'express';
 import { z } from 'zod';
 
 import {
@@ -16,6 +16,7 @@ import {
 import { db } from '../db';
 import logger from '../logger';
 import { hybridAuth } from '../middleware';
+import { asyncHandler } from '../utils/asyncHandler';
 
 // New Analytics Services
 import { analyticsService } from '../services/analytics/AnalyticsService';
@@ -26,7 +27,7 @@ import sli from '../services/sli';
 
 import type { Express } from 'express';
 
-const router = express.Router();
+const router = Router();
 
 // ===================================================================
 // SCHEMAS
@@ -69,7 +70,7 @@ const sliConfigCreateSchema = z.object({
  * GET /api/analytics/overview
  * Get high-level analytics overview for a project or workflow
  */
-router.get('/overview', hybridAuth, async (req, res) => {
+router.get('/overview', hybridAuth, asyncHandler(async (req, res) => {
   try {
     const query = overviewQuerySchema.parse(req.query);
 
@@ -155,13 +156,13 @@ router.get('/overview', hybridAuth, async (req, res) => {
     logger.error({ error }, 'Failed to get analytics overview');
     res.status(500).json({ error: 'Failed to get analytics overview' });
   }
-});
+}));
 
 /**
  * GET /api/analytics/timeseries
  * Get timeseries data for charts
  */
-router.get('/timeseries', hybridAuth, async (req, res) => {
+router.get('/timeseries', hybridAuth, asyncHandler(async (req, res) => {
   try {
     const query = timeseriesQuerySchema.parse(req.query);
 
@@ -208,13 +209,13 @@ router.get('/timeseries', hybridAuth, async (req, res) => {
     logger.error({ error }, 'Failed to get timeseries data');
     res.status(500).json({ error: 'Failed to get timeseries data' });
   }
-});
+}));
 
 /**
  * GET /api/analytics/sli
  * Get SLI data and configuration
  */
-router.get('/sli', hybridAuth, async (req, res) => {
+router.get('/sli', hybridAuth, asyncHandler(async (req, res) => {
   try {
     const query = overviewQuerySchema.parse(req.query);
 
@@ -252,13 +253,13 @@ router.get('/sli', hybridAuth, async (req, res) => {
     logger.error({ error }, 'Failed to get SLI data');
     res.status(500).json({ error: 'Failed to get SLI data' });
   }
-});
+}));
 
 /**
  * POST /api/analytics/sli-config
  * Create or update SLI configuration
  */
-router.post('/sli-config', hybridAuth, async (req, res) => {
+router.post('/sli-config', hybridAuth, asyncHandler(async (req, res) => {
   try {
     const body = sliConfigCreateSchema.parse(req.body);
 
@@ -302,13 +303,13 @@ router.post('/sli-config', hybridAuth, async (req, res) => {
     logger.error({ error }, 'Failed to create/update SLI config');
     res.status(500).json({ error: 'Failed to create/update SLI config' });
   }
-});
+}));
 
 /**
  * PUT /api/analytics/sli-config/:id
  * Update SLI configuration
  */
-router.put('/sli-config/:id', hybridAuth, async (req, res) => {
+router.put('/sli-config/:id', hybridAuth, asyncHandler(async (req, res) => {
   try {
     const { id } = req.params;
     const body = sliConfigUpdateSchema.parse(req.body);
@@ -323,7 +324,7 @@ router.put('/sli-config/:id', hybridAuth, async (req, res) => {
     logger.error({ error }, 'Failed to update SLI config');
     res.status(500).json({ error: 'Failed to update SLI config' });
   }
-});
+}));
 
 // ===================================================================
 // NEW ANALYTICS ROUTES (Workflow Run Events)
@@ -333,7 +334,7 @@ router.put('/sli-config/:id', hybridAuth, async (req, res) => {
  * POST /api/workflow-analytics/events
  * Record a new analytics event
  */
-router.post('/events', async (req, res) => {
+router.post('/events', asyncHandler(async (req, res) => {
   try {
     // We'll trust the body for now, but validation is critical
     await analyticsService.recordEvent(req.body);
@@ -342,12 +343,12 @@ router.post('/events', async (req, res) => {
     logger.error({ error }, 'Failed to record event');
     res.status(500).json({ error: 'Failed to record event' });
   }
-});
+}));
 
 /**
  * GET /api/workflow-analytics/:workflowId/dropoff
  */
-router.get('/:workflowId/dropoff', hybridAuth, async (req, res) => {
+router.get('/:workflowId/dropoff', hybridAuth, asyncHandler(async (req, res) => {
   try {
     const { workflowId } = req.params;
     const { versionId } = req.query;
@@ -361,12 +362,12 @@ router.get('/:workflowId/dropoff', hybridAuth, async (req, res) => {
     logger.error({ error, ...req.params }, "Failed to get dropoff");
     res.status(500).json({ error: "Internal Error" });
   }
-});
+}));
 
 /**
  * GET /api/workflow-analytics/:workflowId/heatmap
  */
-router.get('/:workflowId/heatmap', hybridAuth, async (req, res) => {
+router.get('/:workflowId/heatmap', hybridAuth, asyncHandler(async (req, res) => {
   try {
     const { workflowId } = req.params;
     const { versionId } = req.query;
@@ -380,12 +381,12 @@ router.get('/:workflowId/heatmap', hybridAuth, async (req, res) => {
     logger.error({ error, ...req.params }, "Failed to get heatmap");
     res.status(500).json({ error: "Internal Error" });
   }
-});
+}));
 
 /**
  * GET /api/workflow-analytics/:workflowId/branching
  */
-router.get('/:workflowId/branching', hybridAuth, async (req, res) => {
+router.get('/:workflowId/branching', hybridAuth, asyncHandler(async (req, res) => {
   try {
     const { workflowId } = req.params;
     const { versionId } = req.query;
@@ -399,13 +400,13 @@ router.get('/:workflowId/branching', hybridAuth, async (req, res) => {
     logger.error({ error, ...req.params }, "Failed to get branching");
     res.status(500).json({ error: "Internal Error" });
   }
-});
+}));
 
 /**
  * GET /api/workflow-analytics/:workflowId/health
  * Get real-time health metrics from updated workflow_run_metrics table
  */
-router.get('/:workflowId/health', hybridAuth, async (req, res) => {
+router.get('/:workflowId/health', hybridAuth, asyncHandler(async (req, res) => {
   try {
     const { workflowId } = req.params;
     // Optional version filter
@@ -582,7 +583,7 @@ router.get('/:workflowId/health', hybridAuth, async (req, res) => {
     logger.error({ error, ...req.params }, "Failed to get health metrics");
     res.status(500).json({ error: "Internal Error" });
   }
-});
+}));
 
 // ===================================================================
 // HELPERS

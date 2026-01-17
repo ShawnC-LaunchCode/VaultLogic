@@ -7,6 +7,7 @@ import { WorkflowRunRepository } from "../repositories/WorkflowRunRepository";
 import { accountLockoutService } from "../services/AccountLockoutService";
 import { ActivityLogService } from "../services/ActivityLogService";
 import { mfaService } from "../services/MfaService";
+import { asyncHandler } from "../utils/asyncHandler";
 
 import type { Express, Request, Response } from "express";
 
@@ -31,7 +32,7 @@ export function registerAdminRoutes(app: Express): void {
    * GET /api/admin/users
    * Get all users in the system
    */
-  app.get('/api/admin/users', hybridAuth, isAdmin, async (req: Request, res: Response) => {
+  app.get('/api/admin/users', hybridAuth, isAdmin, asyncHandler(async (req: Request, res: Response) => {
     try {
       if (!req.adminUser) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -50,13 +51,13 @@ export function registerAdminRoutes(app: Express): void {
       logger.error({ err: error, adminId: req.adminUser!.id }, 'Error fetching all users');
       res.status(500).json({ message: "Failed to fetch users" });
     }
-  });
+  }));
 
   /**
    * PUT /api/admin/users/:userId/role
    * Update user role (promote/demote admin)
    */
-  app.put('/api/admin/users/:userId/role', hybridAuth, isAdmin, async (req: Request, res: Response) => {
+  app.put('/api/admin/users/:userId/role', hybridAuth, isAdmin, asyncHandler(async (req: Request, res: Response) => {
     try {
       if (!req.adminUser) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -120,13 +121,13 @@ export function registerAdminRoutes(app: Express): void {
 
       res.status(500).json({ message: "Failed to update user role" });
     }
-  });
+  }));
 
   /**
    * POST /api/admin/users/:userId/unlock
    * Unlock a locked user account
    */
-  app.post('/api/admin/users/:userId/unlock', hybridAuth, isAdmin, async (req: Request, res: Response) => {
+  app.post('/api/admin/users/:userId/unlock', hybridAuth, isAdmin, asyncHandler(async (req: Request, res: Response) => {
     try {
       if (!req.adminUser) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -174,13 +175,13 @@ export function registerAdminRoutes(app: Express): void {
       );
       res.status(500).json({ message: "Failed to unlock account" });
     }
-  });
+  }));
 
   /**
    * POST /api/admin/users/:userId/reset-mfa
    * Reset MFA for a user (for locked out users)
    */
-  app.post('/api/admin/users/:userId/reset-mfa', hybridAuth, isAdmin, async (req: Request, res: Response) => {
+  app.post('/api/admin/users/:userId/reset-mfa', hybridAuth, isAdmin, asyncHandler(async (req: Request, res: Response) => {
     try {
       if (!req.adminUser) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -227,13 +228,13 @@ export function registerAdminRoutes(app: Express): void {
       );
       res.status(500).json({ message: "Failed to reset MFA" });
     }
-  });
+  }));
 
   /**
    * GET /api/admin/users/:userId/workflows
    * Get all workflows for a specific user
    */
-  app.get('/api/admin/users/:userId/workflows', hybridAuth, isAdmin, async (req: Request, res: Response) => {
+  app.get('/api/admin/users/:userId/workflows', hybridAuth, isAdmin, asyncHandler(async (req: Request, res: Response) => {
     try {
       if (!req.adminUser) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -270,7 +271,7 @@ export function registerAdminRoutes(app: Express): void {
       );
       res.status(500).json({ message: "Failed to fetch user workflows" });
     }
-  });
+  }));
 
   // ============================================================================
   // Workflow Management (Admin can view/edit any workflow)
@@ -280,7 +281,7 @@ export function registerAdminRoutes(app: Express): void {
    * GET /api/admin/workflows
    * Get all workflows in the system
    */
-  app.get('/api/admin/workflows', hybridAuth, isAdmin, async (req: Request, res: Response) => {
+  app.get('/api/admin/workflows', hybridAuth, isAdmin, asyncHandler(async (req: Request, res: Response) => {
     try {
       if (!req.adminUser) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -321,13 +322,13 @@ export function registerAdminRoutes(app: Express): void {
       logger.error({ err: error, adminId: req.adminUser!.id }, 'Error fetching all workflows');
       res.status(500).json({ message: "Failed to fetch workflows" });
     }
-  });
+  }));
 
   /**
    * GET /api/admin/workflows/:workflowId
    * Get any workflow (including full details)
    */
-  app.get('/api/admin/workflows/:workflowId', hybridAuth, isAdmin, async (req: Request, res: Response) => {
+  app.get('/api/admin/workflows/:workflowId', hybridAuth, isAdmin, asyncHandler(async (req: Request, res: Response) => {
     try {
       if (!req.adminUser) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -352,13 +353,13 @@ export function registerAdminRoutes(app: Express): void {
       );
       res.status(500).json({ message: "Failed to fetch workflow" });
     }
-  });
+  }));
 
   /**
    * GET /api/admin/workflows/:workflowId/runs
    * Get all runs for any workflow
    */
-  app.get('/api/admin/workflows/:workflowId/runs', hybridAuth, isAdmin, async (req: Request, res: Response) => {
+  app.get('/api/admin/workflows/:workflowId/runs', hybridAuth, isAdmin, asyncHandler(async (req: Request, res: Response) => {
     try {
       if (!req.adminUser) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -385,13 +386,13 @@ export function registerAdminRoutes(app: Express): void {
       );
       res.status(500).json({ message: "Failed to fetch runs" });
     }
-  });
+  }));
 
   /**
    * DELETE /api/admin/workflows/:workflowId
    * Delete any workflow
    */
-  app.delete('/api/admin/workflows/:workflowId', hybridAuth, isAdmin, async (req: Request, res: Response) => {
+  app.delete('/api/admin/workflows/:workflowId', hybridAuth, isAdmin, asyncHandler(async (req: Request, res: Response) => {
     try {
       if (!req.adminUser) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -428,7 +429,7 @@ export function registerAdminRoutes(app: Express): void {
       );
       res.status(500).json({ message: "Failed to delete workflow" });
     }
-  });
+  }));
 
   // ============================================================================
   // Admin Dashboard Stats
@@ -438,7 +439,7 @@ export function registerAdminRoutes(app: Express): void {
    * GET /api/admin/stats
    * Get system-wide statistics
    */
-  app.get('/api/admin/stats', hybridAuth, isAdmin, async (req: Request, res: Response) => {
+  app.get('/api/admin/stats', hybridAuth, isAdmin, asyncHandler(async (req: Request, res: Response) => {
     try {
       if (!req.adminUser) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -471,7 +472,7 @@ export function registerAdminRoutes(app: Express): void {
       logger.error({ err: error, adminId: req.adminUser!.id }, "Error fetching admin stats");
       res.status(500).json({ message: "Failed to fetch statistics" });
     }
-  });
+  }));
 
   // ============================================================================
   // Activity Logs
@@ -481,7 +482,7 @@ export function registerAdminRoutes(app: Express): void {
    * GET /api/admin/logs
    * Get activity logs with filtering and pagination
    */
-  app.get('/api/admin/logs', hybridAuth, isAdmin, async (req: Request, res: Response) => {
+  app.get('/api/admin/logs', hybridAuth, isAdmin, asyncHandler(async (req: Request, res: Response) => {
     try {
       if (!req.adminUser) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -518,13 +519,13 @@ export function registerAdminRoutes(app: Express): void {
       logger.error({ err: error, adminId: req.adminUser!.id }, 'Error fetching activity logs');
       res.status(500).json({ message: "Failed to fetch activity logs" });
     }
-  });
+  }));
 
   /**
    * GET /api/admin/logs/export
    * Export activity logs to CSV
    */
-  app.get('/api/admin/logs/export', hybridAuth, isAdmin, async (req: Request, res: Response) => {
+  app.get('/api/admin/logs/export', hybridAuth, isAdmin, asyncHandler(async (req: Request, res: Response) => {
     try {
       if (!req.adminUser) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -558,13 +559,13 @@ export function registerAdminRoutes(app: Express): void {
       logger.error({ err: error, adminId: req.adminUser!.id }, 'Error exporting activity logs');
       res.status(500).json({ message: "Failed to export activity logs" });
     }
-  });
+  }));
 
   /**
    * GET /api/admin/logs/events
    * Get unique event types for filter dropdowns
    */
-  app.get('/api/admin/logs/events', hybridAuth, isAdmin, async (req: Request, res: Response) => {
+  app.get('/api/admin/logs/events', hybridAuth, isAdmin, asyncHandler(async (req: Request, res: Response) => {
     try {
       if (!req.adminUser) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -582,13 +583,13 @@ export function registerAdminRoutes(app: Express): void {
       logger.error({ err: error, adminId: req.adminUser!.id }, 'Error fetching event types');
       res.status(500).json({ message: "Failed to fetch event types" });
     }
-  });
+  }));
 
   /**
    * GET /api/admin/logs/actors
    * Get unique actors for filter dropdowns
    */
-  app.get('/api/admin/logs/actors', hybridAuth, isAdmin, async (req: Request, res: Response) => {
+  app.get('/api/admin/logs/actors', hybridAuth, isAdmin, asyncHandler(async (req: Request, res: Response) => {
     try {
       if (!req.adminUser) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -606,7 +607,7 @@ export function registerAdminRoutes(app: Express): void {
       logger.error({ err: error, adminId: req.adminUser!.id }, 'Error fetching actors');
       res.status(500).json({ message: "Failed to fetch actors" });
     }
-  });
+  }));
 
   // =================================================================
   // MFA MANAGEMENT
@@ -616,7 +617,7 @@ export function registerAdminRoutes(app: Express): void {
    * PUT /api/admin/tenants/:tenantId/mfa-required
    * Toggle MFA requirement for a tenant
    */
-  app.put('/api/admin/tenants/:tenantId/mfa-required', hybridAuth, isAdmin, async (req: Request, res: Response) => {
+  app.put('/api/admin/tenants/:tenantId/mfa-required', hybridAuth, isAdmin, asyncHandler(async (req: Request, res: Response) => {
     try {
       if (!req.adminUser) {
         return res.status(401).json({ message: "Unauthorized" });
@@ -660,5 +661,5 @@ export function registerAdminRoutes(app: Express): void {
       );
       res.status(500).json({ message: "Failed to update MFA requirement" });
     }
-  });
+  }));
 }

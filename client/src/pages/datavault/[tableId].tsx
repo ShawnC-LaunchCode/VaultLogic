@@ -429,7 +429,7 @@ export default function TableViewPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setMoveTableOpen(true)}
+                      onClick={() => { void setMoveTableOpen(true); }}
                       disabled={moveTableMutation.isPending}
                     >
                       <FolderInput className="w-4 h-4 mr-2" />
@@ -498,7 +498,7 @@ export default function TableViewPage() {
                                 Show Archived
                               </Label>
                             </div>
-                            <Button onClick={() => setRowEditorOpen(true)} disabled={!columns || columns.length === 0}>
+                            <Button onClick={() => { void setRowEditorOpen(true); }} disabled={!columns || columns.length === 0}>
                               <Plus className="w-4 h-4 mr-2" />
                               Add Row
                             </Button>
@@ -588,7 +588,7 @@ export default function TableViewPage() {
         open={rowEditorOpen}
         onOpenChange={setRowEditorOpen}
         columns={columns || []}
-        onSubmit={handleAddRow}
+        onSubmit={(e) => { e.preventDefault(); void handleAddRow(e); }}
         isLoading={isRowMutating}
         mode="add"
       />
@@ -599,7 +599,7 @@ export default function TableViewPage() {
         onOpenChange={() => setEditingRow(null)}
         columns={columns || []}
         initialValues={editingRow?.values || {}}
-        onSubmit={handleUpdateRow}
+        onSubmit={(e) => { e.preventDefault(); void handleUpdateRow(e); }}
         isLoading={isRowMutating}
         mode="edit"
       />
@@ -616,7 +616,7 @@ export default function TableViewPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteRow}
+              onClick={() => { void handleDeleteRow(); }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={isRowMutating}
             >

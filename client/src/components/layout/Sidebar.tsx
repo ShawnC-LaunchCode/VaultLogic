@@ -159,7 +159,7 @@ export default function Sidebar({ className }: SidebarProps) {
           <Button
             variant="outline"
             size="sm"
-            onClick={handleLogout}
+            onClick={() => { void handleLogout(); }}
             data-testid="button-logout"
             className="w-full flex items-center justify-center space-x-2 h-9"
           >

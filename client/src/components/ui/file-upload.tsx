@@ -242,7 +242,7 @@ export function FileUpload({
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
-          onClick={() => !disabled && fileInputRef.current?.click()}
+          onClick={() => { void !disabled && fileInputRef.current?.click(); }}
           data-testid="file-upload-dropzone"
         >
           <CardContent className="flex flex-col items-center justify-center py-8 px-4">
@@ -273,7 +273,7 @@ export function FileUpload({
         type="file"
         multiple={config?.allowMultiple !== false}
         accept={config?.acceptedTypes?.join(',')}
-        onChange={handleFileSelect}
+        onChange={() => { void handleFileSelect(); }}
         className="hidden"
         disabled={disabled}
         data-testid="file-upload-input"
@@ -322,7 +322,7 @@ export function FileUpload({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => window.open(`/api/files/${file.id}/download`, '_blank')}
+                    onClick={() => { void window.open(`/api/files/${file.id}/download`, '_blank'); }}
                     data-testid={`button-download-${file.id}`}
                   >
                     <Download className="h-4 w-4" />
@@ -332,7 +332,7 @@ export function FileUpload({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleFileRemove(file.id)}
+                      onClick={() => { void handleFileRemove(file.id); }}
                       className="text-destructive hover:text-destructive"
                       data-testid={`button-remove-${file.id}`}
                     >

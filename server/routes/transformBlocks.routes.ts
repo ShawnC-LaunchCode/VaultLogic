@@ -7,6 +7,7 @@ import { hybridAuth, type AuthRequest } from '../middleware/auth';
 import { autoRevertToDraft } from "../middleware/autoRevertToDraft";
 import { transformBlockRepository } from "../repositories/TransformBlockRepository";
 import { transformBlockService } from "../services/TransformBlockService";
+import { asyncHandler } from "../utils/asyncHandler";
 
 import type { Express, Request, Response } from "express";
 
@@ -50,7 +51,7 @@ export function registerTransformBlockRoutes(app: Express): void {
    * POST /api/workflows/:workflowId/transform-blocks
    * Create a new transform block
    */
-  app.post('/api/workflows/:workflowId/transform-blocks', hybridAuth, autoRevertToDraft, async (req: Request, res: Response) => {
+  app.post('/api/workflows/:workflowId/transform-blocks', hybridAuth, autoRevertToDraft, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -78,13 +79,13 @@ export function registerTransformBlockRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : message.includes("limit") ? 400 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * GET /api/workflows/:workflowId/transform-blocks
    * List all transform blocks for a workflow
    */
-  app.get('/api/workflows/:workflowId/transform-blocks', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:workflowId/transform-blocks', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -100,13 +101,13 @@ export function registerTransformBlockRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * GET /api/transform-blocks/:blockId
    * Get a single transform block
    */
-  app.get('/api/transform-blocks/:blockId', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/transform-blocks/:blockId', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -122,13 +123,13 @@ export function registerTransformBlockRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * PUT /api/transform-blocks/:blockId
    * Update a transform block
    */
-  app.put('/api/transform-blocks/:blockId', hybridAuth, async (req: Request, res: Response) => {
+  app.put('/api/transform-blocks/:blockId', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -146,7 +147,7 @@ export function registerTransformBlockRoutes(app: Express): void {
       req.params.workflowId = block.workflowId;
 
       // Apply auto-revert
-      await autoRevertToDraft(req, res, () => {});
+      await autoRevertToDraft(req, res, () => { });
 
       const updatedBlock = await transformBlockService.updateBlock(blockId, userId, updateData);
       res.json({ success: true, data: updatedBlock });
@@ -156,13 +157,13 @@ export function registerTransformBlockRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : message.includes("limit") ? 400 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * DELETE /api/transform-blocks/:blockId
    * Delete a transform block
    */
-  app.delete('/api/transform-blocks/:blockId', hybridAuth, async (req: Request, res: Response) => {
+  app.delete('/api/transform-blocks/:blockId', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -179,7 +180,7 @@ export function registerTransformBlockRoutes(app: Express): void {
       req.params.workflowId = block.workflowId;
 
       // Apply auto-revert
-      await autoRevertToDraft(req, res, () => {});
+      await autoRevertToDraft(req, res, () => { });
 
       await transformBlockService.deleteBlock(blockId, userId);
       res.status(200).json({ success: true, message: "Transform block deleted" });
@@ -189,13 +190,13 @@ export function registerTransformBlockRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * POST /api/transform-blocks/:blockId/test
    * Test a transform block with sample data
    */
-  app.post('/api/transform-blocks/:blockId/test', hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/transform-blocks/:blockId/test', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -234,5 +235,5 @@ export function registerTransformBlockRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 }

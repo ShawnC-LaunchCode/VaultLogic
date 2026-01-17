@@ -58,7 +58,7 @@ export function DeleteRowButton({ tableId, rowId, onDelete }: DeleteRowButtonPro
   return (
     <>
       <Button
-        onClick={() => setConfirmOpen(true)}
+        onClick={() => { void setConfirmOpen(true); }}
         size="sm"
         variant="ghost"
         className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
@@ -79,7 +79,7 @@ export function DeleteRowButton({ tableId, rowId, onDelete }: DeleteRowButtonPro
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDelete}
+              onClick={() => { void handleDelete(); }}
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >

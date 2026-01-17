@@ -118,6 +118,7 @@ export class AuditLogService {
         },
         "Failed to log security event"
       );
+      console.error("AUDIT LOG ERROR:", error);
       throw error;
     }
   }

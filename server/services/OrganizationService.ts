@@ -75,7 +75,7 @@ export class OrganizationService {
         action: 'organization.create',
         resourceType: 'organization',
         resourceId: org.id,
-        workspaceId: '', // Organization level event
+        workspaceId: null, // Organization level event
         after: { name: org.name, slug: org.slug },
       });
 
@@ -250,7 +250,7 @@ export class OrganizationService {
         action: 'organization.member_promote',
         resourceType: 'organization',
         resourceId: orgId,
-        workspaceId: '',
+        workspaceId: null,
         after: { userId: targetUserId, newRole: 'admin' },
       });
     }
@@ -298,7 +298,7 @@ export class OrganizationService {
         action: 'organization.member_demote',
         resourceType: 'organization',
         resourceId: orgId,
-        workspaceId: '',
+        workspaceId: null,
         after: { userId: targetUserId, newRole: 'member' },
       });
     }
@@ -345,7 +345,7 @@ export class OrganizationService {
         action: 'organization.member_remove',
         resourceType: 'organization',
         resourceId: orgId,
-        workspaceId: '',
+        workspaceId: null,
         after: { removedUserId: targetUserId },
       });
     }
@@ -539,7 +539,7 @@ export class OrganizationService {
           action: 'organization.invite_email_failed',
           resourceType: 'organization',
           resourceId: orgId,
-          workspaceId: '',
+          workspaceId: null,
           after: { invitedEmail: normalizedEmail, error: errorMessage },
         });
       }
@@ -552,7 +552,7 @@ export class OrganizationService {
         action: 'organization.invite_send',
         resourceType: 'organization',
         resourceId: orgId,
-        workspaceId: '',
+        workspaceId: null,
         after: { invitedEmail: normalizedEmail, token },
       });
     }

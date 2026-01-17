@@ -27,6 +27,8 @@ import { runPersistenceWriter, RunPersistenceWriter } from "./runs/RunPersistenc
 import { RunLifecycleService } from "./workflow-runs/RunLifecycleService";
 import { RunMetricsService } from "./workflow-runs/RunMetricsService";
 import { RunStateService } from "./workflow-runs/RunStateService";
+import { RunShareService } from "./workflow-runs/RunShareService";
+import { RunCompletionService } from "./workflow-runs/RunCompletionService";
 import { workflowService } from "./WorkflowService";
 
 import type { CreateRunOptions } from "./workflow-runs/types";
@@ -54,6 +56,8 @@ export class RunService {
   private lifecycleService: RunLifecycleService;
   private stateService: RunStateService;
   private metricsService: RunMetricsService;
+  private shareService: RunShareService;
+  private completionService: RunCompletionService;
 
   constructor(
     runRepo?: typeof workflowRunRepository,
@@ -71,7 +75,9 @@ export class RunService {
     persistenceWriter?: RunPersistenceWriter,
     lifecycleService?: RunLifecycleService,
     stateService?: RunStateService,
-    metricsService?: RunMetricsService
+    metricsService?: RunMetricsService,
+    shareService?: RunShareService,
+    completionService?: RunCompletionService,
   ) {
     this.runRepo = runRepo || workflowRunRepository;
     this.valueRepo = valueRepo || stepValueRepository;
@@ -124,6 +130,23 @@ export class RunService {
     this.metricsService = metricsService || new RunMetricsService(
       this.workflowRepo,
       this.projectRepo
+    );
+
+    this.shareService = shareService || new RunShareService(
+      this.runRepo,
+      this.workflowRepo,
+      this.docsRepo,
+      this.stepRepo,
+      this.authResolver
+    );
+
+    this.completionService = completionService || new RunCompletionService(
+      this.runRepo,
+      this.valueRepo,
+      this.logicSvc,
+      this.stateService,
+      this.lifecycleService,
+      this.metricsService
     );
   }
 
@@ -243,7 +266,7 @@ export class RunService {
    */
   async getRunWithValuesNoAuth(runId: string) {
     const run = await this.runRepo.findById(runId);
-    if (!run) {throw new Error("Run not found");}
+    if (!run) { throw new Error("Run not found"); }
 
     const values = await this.persistenceWriter.getRunValues(runId);
     // values is Record<string, any>. Need to map to array of StepValue format if needed by caller?
@@ -266,7 +289,7 @@ export class RunService {
    */
   async getRunByPortalAccessKey(key: string): Promise<WorkflowRun> {
     const run = await this.runRepo.findByPortalAccessKey(key);
-    if (!run) {throw new Error("Run not found");}
+    if (!run) { throw new Error("Run not found"); }
     return run;
   }
 
@@ -279,10 +302,10 @@ export class RunService {
     data: InsertStepValue
   ): Promise<void> {
     const { run, access } = await this.authResolver.resolveRun(runId, userId);
-    if (!run || access === 'none') {throw new Error("Run not found");}
+    if (!run || access === 'none') { throw new Error("Run not found"); }
 
     // Check if run is completed? 
-    if (run.completed) {throw new Error("Run is already completed");}
+    if (run.completed) { throw new Error("Run is already completed"); }
 
     await this.persistenceWriter.saveStepValue(runId, data.stepId, data.value, run.workflowId);
   }
@@ -326,7 +349,7 @@ export class RunService {
     values: Array<{ stepId: string; value: any }>
   ): Promise<void> {
     const { run, access } = await this.authResolver.resolveRun(runId, userId);
-    if (!run || access === 'none') {throw new Error("Run not found");}
+    if (!run || access === 'none') { throw new Error("Run not found"); }
 
     await this.persistenceWriter.bulkSaveValues(runId, values, run.workflowId);
   }
@@ -339,7 +362,7 @@ export class RunService {
     values: Array<{ stepId: string; value: any }>
   ): Promise<void> {
     const run = await this.runRepo.findById(runId);
-    if (!run) {throw new Error("Run not found");}
+    if (!run) { throw new Error("Run not found"); }
 
     await this.persistenceWriter.bulkSaveValues(runId, values, run.workflowId);
   }
@@ -373,7 +396,7 @@ export class RunService {
       throw new Error("Run not found");
     }
 
-    if (run.completed) {throw new Error("Run is already completed");}
+    if (run.completed) { throw new Error("Run is already completed"); }
 
     return this.executionCoordinator.submitSection(
       { runId, workflowId: run.workflowId, userId, mode: 'live' },
@@ -392,8 +415,8 @@ export class RunService {
     values: Array<{ stepId: string; value: any }>
   ): Promise<{ success: boolean; errors?: string[] }> {
     const run = await this.runRepo.findById(runId);
-    if (!run) {throw new Error("Run not found");}
-    if (run.completed) {throw new Error("Run is already completed");}
+    if (!run) { throw new Error("Run not found"); }
+    if (run.completed) { throw new Error("Run is already completed"); }
 
     return this.executionCoordinator.submitSection(
       { runId, workflowId: run.workflowId, mode: 'live' }, // No userId
@@ -415,7 +438,7 @@ export class RunService {
     if (!run || access === 'none') {
       throw new Error("Run not found");
     }
-    if (run.completed) {throw new Error("Run is already completed");}
+    if (run.completed) { throw new Error("Run is already completed"); }
 
     return this.executionCoordinator.next(
       { runId, workflowId: run.workflowId, userId, mode: 'live' },
@@ -429,8 +452,8 @@ export class RunService {
    */
   async nextNoAuth(runId: string): Promise<NavigationResult> {
     const run = await this.runRepo.findById(runId);
-    if (!run) {throw new Error("Run not found");}
-    if (run.completed) {throw new Error("Run is already completed");}
+    if (!run) { throw new Error("Run not found"); }
+    if (run.completed) { throw new Error("Run is already completed"); }
 
     return this.executionCoordinator.next(
       { runId, workflowId: run.workflowId, mode: 'live' },
@@ -444,92 +467,7 @@ export class RunService {
    */
   async completeRun(runId: string, userId: string): Promise<WorkflowRun> {
     const run = await this.getRun(runId, userId);
-    const startTime = Date.now();
-
-    if (run.completed) {
-      throw new Error("Run is already completed");
-    }
-
-    try {
-      // Get all step values for this run
-      const allValues = await this.valueRepo.findByRunId(runId);
-      const dataMap = allValues.reduce((acc, v) => {
-        acc[v.stepId] = v.value;
-        return acc;
-      }, {} as Record<string, any>);
-
-      // Execute onRunComplete blocks (transform + validate)
-      const blockResult = await blockRunner.runPhase({
-        workflowId: run.workflowId,
-        runId: run.id,
-        phase: "onRunComplete",
-        data: dataMap,
-        versionId: run.workflowVersionId || 'draft',
-      });
-
-      // If blocks produced validation errors, reject completion
-      if (!blockResult.success && blockResult.errors) {
-        const errorMsg = `Validation failed: ${blockResult.errors.join(', ')}`;
-        await this.metricsService.captureRunFailed(
-          run.workflowId,
-          run.id,
-          run.workflowVersionId || undefined,
-          Date.now() - startTime,
-          'validation_error',
-          { errors: blockResult.errors }
-        );
-        throw new Error(errorMsg);
-      }
-
-      // Validate using LogicService
-      const validation = await this.logicSvc.validateCompletion(run.workflowId, runId);
-
-      if (!validation.valid) {
-        const stepTitles = validation.missingStepTitles?.join(', ') || validation.missingSteps.join(', ');
-        const errorMsg = `Missing required steps: ${stepTitles}`;
-        await this.metricsService.captureRunFailed(
-          run.workflowId,
-          run.id,
-          run.workflowVersionId || undefined,
-          Date.now() - startTime,
-          'missing_required_steps',
-          { errorType: 'missing_required_steps', details: errorMsg }
-        );
-        throw new Error(errorMsg);
-      }
-
-      // Mark run as complete
-      const completedRun = await this.stateService.markCompleted(runId);
-
-      // Execute DataVault writebacks (non-blocking)
-      await this.lifecycleService.executeWritebacks(runId, run.workflowId, userId);
-
-      // Generate documents (non-blocking)
-      await this.lifecycleService.generateDocuments(runId);
-
-      // Capture success metrics
-      await this.metricsService.captureRunSucceeded(
-        run.workflowId,
-        run.id,
-        run.workflowVersionId || undefined,
-        Date.now() - startTime,
-        allValues.length
-      );
-
-      return completedRun;
-    } catch (error) {
-      // Capture failure if not already captured
-      if (error instanceof Error && !error.message.includes('Validation failed') && !error.message.includes('Missing required steps')) {
-        await this.metricsService.captureRunFailed(
-          run.workflowId,
-          run.id,
-          run.workflowVersionId || undefined,
-          Date.now() - startTime,
-          'unknown_error'
-        );
-      }
-      throw error;
-    }
+    return this.completionService.completeRun(runId, run, userId);
   }
 
   /**
@@ -537,51 +475,7 @@ export class RunService {
    * Used for preview/run token authentication
    */
   async completeRunNoAuth(runId: string): Promise<WorkflowRun> {
-    const run = await this.runRepo.findById(runId);
-    if (!run) {
-      throw new Error("Run not found");
-    }
-
-    if (run.completed) {
-      throw new Error("Run is already completed");
-    }
-
-    // Get all step values for this run
-    const allValues = await this.valueRepo.findByRunId(runId);
-    const dataMap = allValues.reduce((acc, v) => {
-      acc[v.stepId] = v.value;
-      return acc;
-    }, {} as Record<string, any>);
-
-    // Execute onRunComplete blocks (transform + validate)
-    const blockResult = await blockRunner.runPhase({
-      workflowId: run.workflowId,
-      runId: run.id,
-      phase: "onRunComplete",
-      data: dataMap,
-      versionId: run.workflowVersionId || 'draft',
-    });
-
-    // If blocks produced validation errors, reject completion
-    if (!blockResult.success && blockResult.errors) {
-      throw new Error(`Validation failed: ${blockResult.errors.join(', ')}`);
-    }
-
-    // Validate using LogicService
-    const validation = await this.logicSvc.validateCompletion(run.workflowId, runId);
-
-    if (!validation.valid) {
-      const stepTitles = validation.missingStepTitles?.join(', ') || validation.missingSteps.join(', ');
-      throw new Error(`Missing required steps: ${stepTitles}`);
-    }
-
-    // Mark run as complete
-    const completedRun = await this.stateService.markCompleted(runId);
-
-    // Generate documents (non-blocking)
-    await this.lifecycleService.generateDocuments(runId);
-
-    return completedRun;
+    return this.completionService.completeRunNoAuth(runId);
   }
 
   /**
@@ -707,93 +601,21 @@ export class RunService {
    * Generate a share token for a completed run
    */
   async shareRun(runId: string, userId: string | undefined, authType: 'creator' | 'runToken', authContext: any): Promise<{ shareToken: string; expiresAt: Date | null }> {
-    // Check auth
-    if (authType === 'creator') {
-      if (!userId) {throw new Error("Unauthorized");}
-      const { run, access } = await this.authResolver.resolveRun(runId, userId);
-      if (!run || access === 'none') {throw new Error("Run not found or access denied");}
-    } else {
-      // RunToken
-      const run = await this.runRepo.findById(runId);
-      if (!run) {throw new Error("Run not found");}
-      if (run.runToken !== authContext.runToken) {throw new Error("Access denied");}
-    }
-
-    const shareToken = randomUUID();
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 30); // 30 days default expiration
-
-    await this.runRepo.update(runId, {
-      shareToken,
-      shareTokenExpiresAt: expiresAt
-    });
-
-    return { shareToken, expiresAt };
+    return this.shareService.shareRun(runId, userId, authType, authContext);
   }
 
   /**
    * Get public run execution by share token
    */
   async getRunByShareToken(token: string): Promise<WorkflowRun> {
-    const run = await this.runRepo.findByShareToken(token);
-    if (!run) {throw new Error("Run not found or invalid token");}
-
-    if (run.shareTokenExpiresAt && new Date() > run.shareTokenExpiresAt) {
-      throw new Error("Share link expired");
-    }
-    return run;
+    return this.shareService.getRunByShareToken(token);
   }
 
   /**
    * Get shared run details including final block config
    */
   async getSharedRunDetails(token: string) {
-    // 1. Get run by token (validates expiration)
-    const run = await this.getRunByShareToken(token);
-    const workflow = await this.workflowRepo.findById(run.workflowId);
-    const accessSettings = (workflow as any)?.accessSettings || { allow_portal: false, allow_resume: true, allow_redownload: true };
-
-    // 2. Get documents
-    const documents = await this.docsRepo.findByRunId(run.id);
-
-    // 3. Get Final Block Config
-    let finalBlockConfig: any = null;
-
-    if (run.workflowVersionId) {
-      // Fetch version graph
-      const [version] = await db
-        .select()
-        .from(workflowVersions)
-        .where(eq(workflowVersions.id, run.workflowVersionId))
-        .limit(1);
-
-      if (version?.graphJson) {
-        const graph = version.graphJson as any;
-        // Search for 'final' node
-        // Graph structure: { nodes: [], edges: [] }
-        if (graph.nodes && Array.isArray(graph.nodes)) {
-          const finalNode = graph.nodes.find((n: any) => n.type === 'final');
-          if (finalNode?.data?.config) {
-            finalBlockConfig = finalNode.data.config;
-          }
-        }
-      }
-    } else {
-      // Draft run - fetch from steps table
-      // We look for a step of type 'final' in the current workflow definition
-      const allSteps = await this.stepRepo.findByWorkflowIdWithAliases(run.workflowId);
-      const finalStep = allSteps.find(s => s.type === 'final');
-
-      if (finalStep?.options) {
-        finalBlockConfig = finalStep.options;
-      }
-    }
-
-    return {
-      run: { ...run, accessSettings },
-      documents,
-      finalBlockConfig
-    };
+    return this.shareService.getSharedRunDetails(token);
   }
 }
 

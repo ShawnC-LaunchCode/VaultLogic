@@ -105,6 +105,11 @@ export abstract class BaseRepository<TTable extends PgTable, TSelect, TInsert> {
     const database = this.getDb(tx);
     const idColumn = (this.table as any).id;
 
+    try {
+      const tableName = (this.table as any)[Symbol.for("drizzle:Name")] || (this.table as any)._?.name || 'unknown';
+      process.stdout.write(`[DEBUG] BaseRepository.update ${tableName}: id=${id}, updates=${JSON.stringify(updates)}\n`);
+    } catch (e) { process.stdout.write("Log error\n"); }
+
     const [record] = await database
       .update(this.table as any)
       .set(updates as any)

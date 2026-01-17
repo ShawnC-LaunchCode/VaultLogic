@@ -64,7 +64,7 @@ export function CommentsPanel({
             </CardTitle>
           </div>
           {onClose && (
-            <Button variant="ghost" size="sm" onClick={onClose}>
+            <Button variant="ghost" size="sm" onClick={() => { void onClose(); }}>
               <X className="w-4 h-4" />
             </Button>
           )}
@@ -102,15 +102,15 @@ export function CommentsPanel({
           <Textarea
             placeholder="Add a comment... (Cmd/Ctrl+Enter to submit)"
             value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            onKeyDown={handleKeyDown}
+            onChange={(e) => { void setNewComment(e.target.value); }}
+            onKeyDown={() => { void handleKeyDown(); }}
             className="min-h-[80px] resize-none"
             disabled={isSubmitting}
           />
           <div className="flex justify-end">
             <Button
               size="sm"
-              onClick={handleSubmit}
+              onClick={() => { void handleSubmit(); }}
               disabled={!newComment.trim() || isSubmitting}
             >
               <Send className="w-4 h-4 mr-2" />
@@ -159,7 +159,7 @@ function CommentItem({ comment, currentUserId, onDelete }: CommentItemProps) {
             variant="ghost"
             size="sm"
             className="mt-1 h-auto py-1 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={() => onDelete(comment.id)}
+            onClick={() => { void onDelete(comment.id); }}
           >
             <Trash2 className="w-3 h-3 mr-1" />
             Delete

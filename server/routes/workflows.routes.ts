@@ -8,6 +8,7 @@ import { logicRuleRepository } from "../repositories/LogicRuleRepository";
 import { templateTestService } from "../services/TemplateTestService";
 import { variableService } from "../services/VariableService";
 import { workflowService } from "../services/WorkflowService";
+import { asyncHandler } from "../utils/asyncHandler";
 
 
 
@@ -22,7 +23,7 @@ export function registerWorkflowRoutes(app: Express): void {
    * POST /api/workflows
    * Create a new workflow
    */
-  app.post('/api/workflows', hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/workflows', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -44,13 +45,13 @@ export function registerWorkflowRoutes(app: Express): void {
         error: process.env.NODE_ENV === 'development' && error instanceof Error ? error.message : undefined,
       });
     }
-  });
+  }));
 
   /**
    * GET /api/workflows
    * Get all workflows for the authenticated user
    */
-  app.get('/api/workflows', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/workflows', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -63,14 +64,14 @@ export function registerWorkflowRoutes(app: Express): void {
       logger.error({ error, userId: (req as AuthRequest).userId }, "Error fetching workflows");
       res.status(500).json({ message: "Failed to fetch workflows" });
     }
-  });
+  }));
 
   /**
    * GET /api/workflows/unfiled
    * Get all unfiled workflows (workflows not in any project) for the authenticated user
    * NOTE: This must come BEFORE /api/workflows/:workflowId to avoid "unfiled" being treated as a workflowId
    */
-  app.get('/api/workflows/unfiled', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/workflows/unfiled', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -83,13 +84,13 @@ export function registerWorkflowRoutes(app: Express): void {
       logger.error({ error, userId: (req as AuthRequest).userId }, "Error fetching unfiled workflows");
       res.status(500).json({ message: "Failed to fetch unfiled workflows" });
     }
-  });
+  }));
 
   /**
    * GET /api/workflows/:workflowId
    * Get a single workflow with full details (sections, steps, rules)
    */
-  app.get('/api/workflows/:workflowId', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:workflowId', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -105,13 +106,13 @@ export function registerWorkflowRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * PUT /api/workflows/:workflowId
    * Update a workflow
    */
-  app.put('/api/workflows/:workflowId', hybridAuth, async (req: Request, res: Response) => {
+  app.put('/api/workflows/:workflowId', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -136,13 +137,13 @@ export function registerWorkflowRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * DELETE /api/workflows/:workflowId
    * Delete a workflow
    */
-  app.delete('/api/workflows/:workflowId', hybridAuth, async (req: Request, res: Response) => {
+  app.delete('/api/workflows/:workflowId', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -158,13 +159,13 @@ export function registerWorkflowRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * PUT /api/workflows/:workflowId/status
    * Change workflow status
    */
-  app.put('/api/workflows/:workflowId/status', hybridAuth, async (req: Request, res: Response) => {
+  app.put('/api/workflows/:workflowId/status', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -186,13 +187,13 @@ export function registerWorkflowRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * PUT /api/workflows/:workflowId/intake-config
    * Update workflow intake configuration (Stage 12.5)
    */
-  app.put('/api/workflows/:workflowId/intake-config', hybridAuth, async (req: Request, res: Response) => {
+  app.put('/api/workflows/:workflowId/intake-config', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -220,13 +221,13 @@ export function registerWorkflowRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * PUT /api/workflows/:workflowId/move
    * Move workflow to a project (or unfiled if projectId is null)
    */
-  app.put('/api/workflows/:workflowId/move', hybridAuth, async (req: Request, res: Response) => {
+  app.put('/api/workflows/:workflowId/move', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -254,13 +255,13 @@ export function registerWorkflowRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * GET /api/workflows/:workflowId/mode
    * Get resolved mode for a workflow (modeOverride ?? user.defaultMode)
    */
-  app.get('/api/workflows/:workflowId/mode', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:workflowId/mode', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -276,13 +277,13 @@ export function registerWorkflowRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * PUT /api/workflows/:workflowId/mode
    * Set or clear workflow mode override
    */
-  app.put('/api/workflows/:workflowId/mode', hybridAuth, async (req: Request, res: Response) => {
+  app.put('/api/workflows/:workflowId/mode', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -313,14 +314,14 @@ export function registerWorkflowRoutes(app: Express): void {
           message.includes("Invalid") ? 400 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * GET /api/workflows/:workflowId/variables
    * Get all variables (steps with aliases) for a workflow
    * Returns array of WorkflowVariable objects ordered by section/step order
    */
-  app.get('/api/workflows/:workflowId/variables', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:workflowId/variables', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -336,14 +337,14 @@ export function registerWorkflowRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * GET /api/workflows/:workflowId/public-link
    * Get or generate public link for a workflow
    * Returns the full public URL that can be shared
    */
-  app.get('/api/workflows/:workflowId/public-link', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:workflowId/public-link', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -359,13 +360,13 @@ export function registerWorkflowRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * GET /api/workflows/:workflowId/logic-rules
    * Get all logic rules for a workflow
    */
-  app.get('/api/workflows/:workflowId/logic-rules', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:workflowId/logic-rules', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { workflowId } = req.params;
       const logicRules = await logicRuleRepository.findByWorkflowId(workflowId);
@@ -375,7 +376,7 @@ export function registerWorkflowRoutes(app: Express): void {
       const message = error instanceof Error ? error.message : "Failed to fetch workflow logic rules";
       res.status(500).json({ message });
     }
-  });
+  }));
 
   // ===================================================================
   // WORKFLOW ACCESS (ACL) ENDPOINTS
@@ -385,7 +386,7 @@ export function registerWorkflowRoutes(app: Express): void {
    * GET /api/workflows/:workflowId/access
    * Get all ACL entries for a workflow
    */
-  app.get('/api/workflows/:workflowId/access', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:workflowId/access', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -401,14 +402,14 @@ export function registerWorkflowRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * PUT /api/workflows/:workflowId/access
    * Grant or update access to a workflow
    * Body: { entries: [{ principalType: 'user' | 'team', principalId: string, role: 'view' | 'edit' | 'owner' }] }
    */
-  app.put('/api/workflows/:workflowId/access', hybridAuth, async (req: Request, res: Response) => {
+  app.put('/api/workflows/:workflowId/access', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -443,14 +444,14 @@ export function registerWorkflowRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") || message.includes("Only the") ? 403 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * DELETE /api/workflows/:workflowId/access
    * Revoke access from a workflow
    * Body: { entries: [{ principalType: 'user' | 'team', principalId: string }] }
    */
-  app.delete('/api/workflows/:workflowId/access', hybridAuth, async (req: Request, res: Response) => {
+  app.delete('/api/workflows/:workflowId/access', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -484,14 +485,14 @@ export function registerWorkflowRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * PUT /api/workflows/:workflowId/owner
    * Transfer workflow ownership
    * Body: { userId: string }
    */
-  app.put('/api/workflows/:workflowId/owner', hybridAuth, async (req: Request, res: Response) => {
+  app.put('/api/workflows/:workflowId/owner', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const currentOwnerId = (req as AuthRequest).userId;
       if (!currentOwnerId) {
@@ -522,7 +523,7 @@ export function registerWorkflowRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Only the") ? 403 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * POST /api/workflows/:workflowId/templates/:templateId/test
@@ -530,7 +531,7 @@ export function registerWorkflowRoutes(app: Express): void {
    * PR4: Template Test Runner API
    * Body: { outputType: 'docx' | 'pdf' | 'both', sampleData: any }
    */
-  app.post('/api/workflows/:workflowId/templates/:templateId/test', hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/workflows/:workflowId/templates/:templateId/test', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -588,7 +589,7 @@ export function registerWorkflowRoutes(app: Express): void {
         ],
       });
     }
-  });
+  }));
 
   /**
    * POST /api/workflows/:workflowId/transfer
@@ -596,7 +597,7 @@ export function registerWorkflowRoutes(app: Express): void {
    * Detaches from project if transferring to different owner than project
    * Body: { targetOwnerType: 'user' | 'org', targetOwnerUuid: string }
    */
-  app.post('/api/workflows/:workflowId/transfer', hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/workflows/:workflowId/transfer', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -635,5 +636,5 @@ export function registerWorkflowRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 }

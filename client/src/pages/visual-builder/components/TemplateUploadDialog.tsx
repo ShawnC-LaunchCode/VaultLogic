@@ -126,7 +126,7 @@ export function TemplateUploadDialog({
           <DialogTitle>Upload Template</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={(e) => { e.preventDefault(); void handleSubmit(e); }}>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="file">Template File</Label>
@@ -135,7 +135,7 @@ export function TemplateUploadDialog({
                   id="file"
                   type="file"
                   accept=".docx"
-                  onChange={handleFileChange}
+                  onChange={() => { void handleFileChange(); }}
                   className="cursor-pointer"
                 />
               </div>
@@ -159,7 +159,7 @@ export function TemplateUploadDialog({
                 id="name"
                 placeholder="e.g., Engagement Letter"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => { void setName(e.target.value); }}
                 required
               />
             </div>
@@ -170,7 +170,7 @@ export function TemplateUploadDialog({
                 id="description"
                 placeholder="Describe what this template is used for"
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(e) => { void setDescription(e.target.value); }}
                 rows={3}
               />
             </div>
@@ -180,7 +180,7 @@ export function TemplateUploadDialog({
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={() => { void onOpenChange(false); }}
               disabled={uploadMutation.isPending}
             >
               Cancel

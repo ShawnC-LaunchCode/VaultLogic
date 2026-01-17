@@ -95,7 +95,7 @@ export function CreateDatabaseModal({
       }}
     >
       <DialogContent className="sm:max-w-[500px]">
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={(e) => { e.preventDefault(); void handleSubmit(e); }}>
           <DialogHeader>
             <DialogTitle>Create Database</DialogTitle>
             <DialogDescription>
@@ -113,7 +113,7 @@ export function CreateDatabaseModal({
                 id="name"
                 placeholder="e.g., Customer Data, Product Catalog"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => { void setName(e.target.value); }}
                 required
                 autoFocus
               />
@@ -126,7 +126,7 @@ export function CreateDatabaseModal({
                 id="description"
                 placeholder="Optional description of this database..."
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(e) => { void setDescription(e.target.value); }}
                 rows={3}
               />
             </div>
@@ -177,7 +177,7 @@ export function CreateDatabaseModal({
                   id="scopeId"
                   placeholder={`Enter ${scopeType} UUID`}
                   value={scopeId}
-                  onChange={(e) => setScopeId(e.target.value)}
+                  onChange={(e) => { void setScopeId(e.target.value); }}
                   required
                 />
                 <Alert>
@@ -204,7 +204,7 @@ export function CreateDatabaseModal({
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={() => { void onOpenChange(false); }}
               disabled={isLoading}
             >
               Cancel

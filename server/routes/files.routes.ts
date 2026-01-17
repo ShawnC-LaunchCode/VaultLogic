@@ -10,8 +10,7 @@
 import fs from "fs";
 import path from "path";
 
-import { eq, and } from "drizzle-orm";
-import express from "express";
+import { eq } from "drizzle-orm";
 
 import { runGeneratedDocuments, workflows } from "@shared/schema";
 
@@ -21,10 +20,9 @@ import { hybridAuth, type AuthRequest } from "../middleware/auth";
 import { workflowRunRepository } from "../repositories";
 import { aclService } from "../services/AclService";
 import { createError } from "../utils/errors";
+import { asyncHandler } from '../utils/asyncHandler';
 
-
-
-import type { Express, Request, Response, NextFunction } from "express";
+import type { Express, Response, NextFunction } from "express";
 
 const logger = createLogger({ module: "file-routes" });
 
@@ -36,7 +34,7 @@ export function registerFileRoutes(app: Express): void {
 
   // Secure download endpoint with authorization
   // GET /api/files/download/:filename
-  app.get('/api/files/download/:filename', hybridAuth, async (req: AuthRequest, res: Response, next: NextFunction) => {
+  app.get('/api/files/download/:filename', hybridAuth, asyncHandler(async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const { filename } = req.params;
       const userId = req.userId;
@@ -122,7 +120,7 @@ export function registerFileRoutes(app: Express): void {
     } catch (error) {
       next(error);
     }
-  });
+  }));
 
   logger.info({ outputsDir }, 'Secure file routes registered');
 }

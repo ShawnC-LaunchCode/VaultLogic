@@ -78,7 +78,7 @@ export async function renderDocx(options: RenderOptions): Promise<RenderResult> 
 
     // Render with data
     try {
-      doc.render(templateData);
+      await doc.renderAsync(templateData);
     } catch (error: any) {
       if (error.properties?.errors) {
         console.error('Docxtemplater MultiError:', JSON.stringify(error.properties.errors, null, 2));

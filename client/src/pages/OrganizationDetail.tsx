@@ -254,7 +254,7 @@ export default function OrganizationDetail() {
           <p className="text-muted-foreground mb-6">
             {orgError instanceof Error ? orgError.message : 'This organization does not exist or you do not have access to it'}
           </p>
-          <Button onClick={() => navigate('/organizations')}>
+          <Button onClick={() => { void navigate('/organizations'); }}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Organizations
           </Button>
@@ -267,7 +267,7 @@ export default function OrganizationDetail() {
     <div className="container mx-auto py-8 px-4 max-w-6xl">
       {/* Header */}
       <div className="mb-8">
-        <Button variant="ghost" onClick={() => navigate('/organizations')} className="mb-4">
+        <Button variant="ghost" onClick={() => { void navigate('/organizations'); }} className="mb-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Organizations
         </Button>
@@ -283,7 +283,7 @@ export default function OrganizationDetail() {
                       <Input
                         id="orgName"
                         value={orgName}
-                        onChange={(e) => setOrgName(e.target.value)}
+                        onChange={(e) => { void setOrgName(e.target.value); }}
                         placeholder="Organization name"
                       />
                     </div>
@@ -292,7 +292,7 @@ export default function OrganizationDetail() {
                       <Textarea
                         id="orgDescription"
                         value={orgDescription}
-                        onChange={(e) => setOrgDescription(e.target.value)}
+                        onChange={(e) => { void setOrgDescription(e.target.value); }}
                         placeholder="Organization description"
                         rows={3}
                       />
@@ -311,15 +311,15 @@ export default function OrganizationDetail() {
                 <div className="ml-4">
                   {isEditingOrg ? (
                     <div className="space-x-2">
-                      <Button variant="outline" onClick={() => setIsEditingOrg(false)}>
+                      <Button variant="outline" onClick={() => { void setIsEditingOrg(false); }}>
                         Cancel
                       </Button>
-                      <Button onClick={handleSaveOrg} disabled={updateOrg.isPending}>
+                      <Button onClick={() => { void handleSaveOrg(); }} disabled={updateOrg.isPending}>
                         {updateOrg.isPending ? 'Saving...' : 'Save'}
                       </Button>
                     </div>
                   ) : (
-                    <Button variant="outline" onClick={handleEditOrg}>
+                    <Button variant="outline" onClick={() => { void handleEditOrg(); }}>
                       Edit
                     </Button>
                   )}
@@ -339,7 +339,7 @@ export default function OrganizationDetail() {
               <CardDescription>People who belong to this organization</CardDescription>
             </div>
             {isAdmin && (
-              <Button onClick={() => setIsInviteDialogOpen(true)}>
+              <Button onClick={() => { void setIsInviteDialogOpen(true); }}>
                 <Mail className="h-4 w-4 mr-2" />
                 Invite Member
               </Button>
@@ -388,7 +388,7 @@ export default function OrganizationDetail() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handlePromote(member.userId)}
+                          onClick={() => { void handlePromote(member.userId); }}
                           disabled={promoteMember.isPending}
                         >
                           <Shield className="h-4 w-4 mr-1" />
@@ -398,7 +398,7 @@ export default function OrganizationDetail() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleDemote(member.userId)}
+                          onClick={() => { void handleDemote(member.userId); }}
                           disabled={demoteMember.isPending}
                         >
                           Demote
@@ -407,7 +407,7 @@ export default function OrganizationDetail() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setRemovingMemberId(member.userId)}
+                        onClick={() => { void setRemovingMemberId(member.userId); }}
                         disabled={removeMember.isPending}
                       >
                         <UserMinus className="h-4 w-4" />
@@ -460,7 +460,7 @@ export default function OrganizationDetail() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleRevokeInvite(invite.inviteId)}
+                      onClick={() => { void handleRevokeInvite(invite.inviteId); }}
                       disabled={revokeInvite.isPending}
                     >
                       Revoke
@@ -487,7 +487,7 @@ export default function OrganizationDetail() {
                 You will lose access to all projects and workflows owned by this organization
               </p>
             </div>
-            <Button variant="destructive" onClick={() => setIsLeaveDialogOpen(true)}>
+            <Button variant="destructive" onClick={() => { void setIsLeaveDialogOpen(true); }}>
               Leave Organization
             </Button>
           </div>
@@ -513,7 +513,7 @@ export default function OrganizationDetail() {
               </div>
               <Button
                 variant="destructive"
-                onClick={() => setIsDeleteDialogOpen(true)}
+                onClick={() => { void setIsDeleteDialogOpen(true); }}
               >
                 Delete Organization
               </Button>
@@ -531,7 +531,7 @@ export default function OrganizationDetail() {
               Send an invitation to join {organization.name}
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleCreateInvite}>
+          <form onSubmit={(e) => { e.preventDefault(); void handleCreateInvite(e); }}>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="inviteEmail">Email Address</Label>
@@ -540,7 +540,7 @@ export default function OrganizationDetail() {
                   type="email"
                   placeholder="member@example.com"
                   value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
+                  onChange={(e) => { void setInviteEmail(e.target.value); }}
                   required
                 />
               </div>
@@ -549,7 +549,7 @@ export default function OrganizationDetail() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setIsInviteDialogOpen(false)}
+                onClick={() => { void setIsInviteDialogOpen(false); }}
               >
                 Cancel
               </Button>
@@ -572,12 +572,12 @@ export default function OrganizationDetail() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsLeaveDialogOpen(false)}>
+            <Button variant="outline" onClick={() => { void setIsLeaveDialogOpen(false); }}>
               Cancel
             </Button>
             <Button
               variant="destructive"
-              onClick={handleLeaveOrganization}
+              onClick={() => { void handleLeaveOrganization(); }}
               disabled={leaveOrg.isPending}
             >
               {leaveOrg.isPending ? 'Leaving...' : 'Leave Organization'}
@@ -599,14 +599,14 @@ export default function OrganizationDetail() {
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setIsDeleteDialogOpen(false)}
+              onClick={() => { void setIsDeleteDialogOpen(false); }}
               disabled={deleteOrg.isPending}
             >
               Cancel
             </Button>
             <Button
               variant="destructive"
-              onClick={handleDeleteOrganization}
+              onClick={() => { void handleDeleteOrganization(); }}
               disabled={deleteOrg.isPending}
             >
               {deleteOrg.isPending ? 'Deleting...' : 'Delete Organization'}
@@ -626,12 +626,12 @@ export default function OrganizationDetail() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRemovingMemberId(null)}>
+            <Button variant="outline" onClick={() => { void setRemovingMemberId(null); }}>
               Cancel
             </Button>
             <Button
               variant="destructive"
-              onClick={() => removingMemberId && handleRemoveMember(removingMemberId)}
+              onClick={() => { void removingMemberId && handleRemoveMember(removingMemberId); }}
               disabled={removeMember.isPending}
             >
               {removeMember.isPending ? 'Removing...' : 'Remove Member'}

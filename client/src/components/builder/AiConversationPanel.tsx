@@ -70,7 +70,7 @@ export function AiConversationPanel({ workflowId, currentWorkflow, transformBloc
             setInput(initialPrompt);
             // We need to wait a tick for the state to update, then send
             setTimeout(() => {
-                handleSend(initialPrompt);
+                void handleSend(initialPrompt);
             }, 100);
         }
     }, [initialPrompt, messages.length]);
@@ -312,7 +312,7 @@ export function AiConversationPanel({ workflowId, currentWorkflow, transformBloc
             className={cn("flex flex-col h-full bg-background relative", className)}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
+            onDrop={(e) => { void handleDrop(e); }}
         >
             {/* Drag Overlay */}
             {isDragging && (
@@ -382,10 +382,10 @@ export function AiConversationPanel({ workflowId, currentWorkflow, transformBloc
                                     {/* Only show buttons if pending */}
                                     {msg.status === 'pending' && proposedWorkflow && idx === messages.length - 1 && (
                                         <div className="flex gap-2 justify-end pt-2 border-t border-purple-200/50 dark:border-purple-800/50">
-                                            <Button size="sm" variant="ghost" className="h-7 text-xs hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30" onClick={handleDiscard}>
+                                            <Button size="sm" variant="ghost" className="h-7 text-xs hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/30" onClick={() => { void handleDiscard(); }}>
                                                 <X className="w-3 h-3 mr-1" /> Discard
                                             </Button>
-                                            <Button size="sm" className="h-7 text-xs bg-purple-600 hover:bg-purple-700 text-white" onClick={handleApply}>
+                                            <Button size="sm" className="h-7 text-xs bg-purple-600 hover:bg-purple-700 text-white" onClick={() => { void handleApply(); }}>
                                                 <Check className="w-3 h-3 mr-1" /> Apply
                                             </Button>
                                         </div>
@@ -431,13 +431,13 @@ export function AiConversationPanel({ workflowId, currentWorkflow, transformBloc
                     className="flex gap-2"
                     onSubmit={(e) => {
                         e.preventDefault();
-                        handleSend();
+                        void handleSend();
                     }}
                 >
                     <Input
                         placeholder={mode === 'easy' ? "Describe changes to auto-apply..." : "Describe changes..."}
                         value={input}
-                        onChange={(e) => setInput(e.target.value)}
+                        onChange={(e) => { void setInput(e.target.value); }}
                         disabled={reviseMutation.isPending || !!proposedWorkflow || uploading}
                         className="flex-1"
                     />

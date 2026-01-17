@@ -105,7 +105,7 @@ export function DataSourcesTab({ workflowId, onCollectionsClick }: DataSourcesTa
               Connect external data sources to your workflow
             </p>
           </div>
-          <Button size="sm" variant="outline" onClick={() => setIsTypeSelectionOpen(true)}>
+          <Button size="sm" variant="outline" onClick={() => { void setIsTypeSelectionOpen(true); }}>
             <Plus className="w-4 h-4 mr-2" />
             New Source
           </Button>
@@ -160,17 +160,17 @@ export function DataSourcesTab({ workflowId, onCollectionsClick }: DataSourcesTa
                     </CardContent>
                     <CardFooter className="pt-0 flex gap-2">
                       {linked ? (
-                        <Button variant="outline" size="sm" onClick={() => handleUnlink(source.id)}
+                        <Button variant="outline" size="sm" onClick={() => { void handleUnlink(source.id); }}
                           disabled={unlinkMutation.isPending} className="w-full">
                           <Unlink2 className="w-4 h-4 mr-2" /> Disconnect
                         </Button>
                       ) : (
-                        <Button variant="default" size="sm" onClick={() => handleLink(source.id)}
+                        <Button variant="default" size="sm" onClick={() => { void handleLink(source.id); }}
                           disabled={linkMutation.isPending} className="w-full">
                           <Link2 className="w-4 h-4 mr-2" /> Connect
                         </Button>
                       )}
-                      <Button variant="ghost" size="sm" onClick={() => handleConfigure(source.id)}>
+                      <Button variant="ghost" size="sm" onClick={() => { void handleConfigure(source.id); }}>
                         <Settings className="w-4 h-4" />
                       </Button>
                     </CardFooter>

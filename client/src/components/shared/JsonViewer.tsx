@@ -127,7 +127,7 @@ export function JsonViewer({ data, className, maxHeight = '400px', readOnly = tr
         <Button
           variant="ghost"
           size="sm"
-          onClick={handleCopyAll}
+          onClick={() => { void handleCopyAll(); }}
           className="h-7 px-2"
         >
           {copiedAll ? (
@@ -227,7 +227,7 @@ function JsonNode({ name, value, isLast, depth, path, changedPaths, initiallyExp
 
     return (
       <div className="ml-0">
-        <div className={containerClass} onClick={() => !isEmpty && setExpanded(!expanded)}>
+        <div className={containerClass} onClick={() => { void !isEmpty && setExpanded(!expanded); }}>
           {/* Toggle */}
           {!isEmpty ? (
             <span className="cursor-pointer mr-1 mt-0.5 opacity-50 hover:opacity-100">
@@ -257,7 +257,7 @@ function JsonNode({ name, value, isLast, depth, path, changedPaths, initiallyExp
           <div className="ml-auto opacity-0 group-hover:opacity-100 flex gap-1">
             {path && readOnly && (
               <button
-                onClick={(e) => handleCopyPath(e, path)}
+                onClick={(e) => { void handleCopyPath(e, path); }}
                 title="Copy Path"
                 className="text-xs px-1.5 py-0.5 rounded bg-muted/50 hover:bg-muted"
               >
@@ -315,7 +315,7 @@ function JsonNode({ name, value, isLast, depth, path, changedPaths, initiallyExp
       <div className="ml-auto opacity-0 group-hover:opacity-100 flex gap-1">
         {path && readOnly && (
           <button
-            onClick={(e) => handleCopyPath(e, path)}
+            onClick={(e) => { void handleCopyPath(e, path); }}
             title="Copy Path"
             className="text-xs px-1.5 py-0.5 rounded bg-muted/50 hover:bg-muted"
           >
@@ -344,7 +344,7 @@ export function CollapsibleJsonViewer({ data, title, className }: CollapsibleJso
       <Button
         variant="outline"
         size="sm"
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={() => { void setIsExpanded(!isExpanded); }}
         className="mb-2"
       >
         {isExpanded ? 'Hide' : 'Show'} {title}

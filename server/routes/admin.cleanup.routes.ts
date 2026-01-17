@@ -1,7 +1,8 @@
 import { logger } from '../logger';
 import { isAdmin } from '../middleware/adminAuth';
-import { hybridAuth, type AuthRequest } from '../middleware/auth';
+import { hybridAuth } from '../middleware/auth';
 import { placeholderUserCleanupService } from '../services/PlaceholderUserCleanupService';
+import { asyncHandler } from '../utils/asyncHandler';
 
 import type { Express, Request, Response } from 'express';
 
@@ -15,7 +16,7 @@ export function registerAdminCleanupRoutes(app: Express): void {
    * Clean up placeholder users with no pending invites
    * Admin only
    */
-  app.post('/api/admin/cleanup/placeholder-users', hybridAuth, isAdmin, async (req: Request, res: Response) => {
+  app.post('/api/admin/cleanup/placeholder-users', hybridAuth, isAdmin, asyncHandler(async (req: Request, res: Response) => {
     try {
       const adminUser = (req as any).adminUser;
       if (!adminUser) {
@@ -37,14 +38,14 @@ export function registerAdminCleanupRoutes(app: Express): void {
         error: process.env.NODE_ENV === 'development' && error instanceof Error ? error.message : undefined,
       });
     }
-  });
+  }));
 
   /**
    * GET /api/admin/cleanup/placeholder-users/stats
    * Get statistics about placeholder users
    * Admin only
    */
-  app.get('/api/admin/cleanup/placeholder-users/stats', hybridAuth, isAdmin, async (req: Request, res: Response) => {
+  app.get('/api/admin/cleanup/placeholder-users/stats', hybridAuth, isAdmin, asyncHandler(async (req: Request, res: Response) => {
     try {
       const adminUser = (req as any).adminUser;
       if (!adminUser) {
@@ -63,5 +64,5 @@ export function registerAdminCleanupRoutes(app: Express): void {
         error: process.env.NODE_ENV === 'development' && error instanceof Error ? error.message : undefined,
       });
     }
-  });
+  }));
 }

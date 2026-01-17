@@ -51,11 +51,11 @@ export default function RunsDashboard() {
         </div>
 
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => refetch()} size="sm">
+          <Button variant="outline" onClick={() => { void refetch(); }} size="sm">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
-          <Button variant="outline" onClick={handleExport} size="sm">
+          <Button variant="outline" onClick={() => { void handleExport(); }} size="sm">
             <Download className="h-4 w-4 mr-2" />
             Export CSV
           </Button>
@@ -87,7 +87,7 @@ export default function RunsDashboard() {
           {error && (
             <div className="text-center py-8">
               <p className="text-destructive">Error loading runs: {error.message}</p>
-              <Button onClick={() => refetch()} className="mt-4">
+              <Button onClick={() => { void refetch(); }} className="mt-4">
                 Try Again
               </Button>
             </div>
@@ -107,7 +107,7 @@ export default function RunsDashboard() {
 
               {data.nextCursor && (
                 <div className="flex justify-center mt-6">
-                  <Button onClick={handleLoadMore} variant="outline">
+                  <Button onClick={() => { void handleLoadMore(); }} variant="outline">
                     Load More
                   </Button>
                 </div>

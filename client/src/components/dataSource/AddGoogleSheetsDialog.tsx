@@ -151,7 +151,7 @@ export function AddGoogleSheetsDialog({ open, onOpenChange, onComplete }: AddGoo
                                 </p>
                             </div>
                             <Button
-                                onClick={handleGoogleAuth}
+                                onClick={() => { void handleGoogleAuth(); }}
                                 disabled={isConnecting}
                                 className="w-full"
                             >
@@ -213,7 +213,7 @@ export function AddGoogleSheetsDialog({ open, onOpenChange, onComplete }: AddGoo
                                 <Label>Connection Name</Label>
                                 <Input
                                     value={connectionName}
-                                    onChange={(e) => setConnectionName(e.target.value)}
+                                    onChange={(e) => { void setConnectionName(e.target.value); }}
                                     placeholder="e.g., Client Intake Data"
                                 />
                                 <p className="text-xs text-muted-foreground">
@@ -240,7 +240,7 @@ export function AddGoogleSheetsDialog({ open, onOpenChange, onComplete }: AddGoo
 
                     {step === 'select-spreadsheet' && (
                         <Button
-                            onClick={handleContinue}
+                            onClick={() => { void handleContinue(); }}
                             disabled={!selectedSpreadsheet}
                         >
                             Continue
@@ -249,7 +249,7 @@ export function AddGoogleSheetsDialog({ open, onOpenChange, onComplete }: AddGoo
 
                     {step === 'select-sheet' && (
                         <Button
-                            onClick={handleContinue}
+                            onClick={() => { void handleContinue(); }}
                             disabled={!selectedSheet}
                         >
                             Continue
@@ -258,7 +258,7 @@ export function AddGoogleSheetsDialog({ open, onOpenChange, onComplete }: AddGoo
 
                     {step === 'name' && (
                         <Button
-                            onClick={handleComplete}
+                            onClick={() => { void handleComplete(); }}
                             disabled={!connectionName || isConnecting}
                         >
                             <Plus className="w-4 h-4 mr-2" />

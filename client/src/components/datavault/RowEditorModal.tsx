@@ -111,7 +111,7 @@ export function RowEditorModal({
             id={column.id}
             type={column.type === "email" ? "email" : column.type === "url" ? "url" : "text"}
             value={value}
-            onChange={(e) => setValues({ ...values, [column.id]: e.target.value })}
+            onChange={(e) => { void setValues({ ...values, [column.id]: e.target.value }); }}
             required={column.required}
             disabled={isReadOnly}
           />
@@ -133,7 +133,7 @@ export function RowEditorModal({
           <Textarea
             id={column.id}
             value={typeof value === "object" ? JSON.stringify(value, null, 2) : value}
-            onChange={(e) => setValues({ ...values, [column.id]: e.target.value })}
+            onChange={(e) => { void setValues({ ...values, [column.id]: e.target.value }); }}
             required={column.required}
             disabled={isReadOnly}
             rows={4}
@@ -146,7 +146,7 @@ export function RowEditorModal({
             id={column.id}
             type="number"
             value={value}
-            onChange={(e) => setValues({ ...values, [column.id]: e.target.value })}
+            onChange={(e) => { void setValues({ ...values, [column.id]: e.target.value }); }}
             required={column.required}
             disabled={isReadOnly}
           />
@@ -173,7 +173,7 @@ export function RowEditorModal({
             id={column.id}
             type="date"
             value={value ? new Date(value).toISOString().split("T")[0] : ""}
-            onChange={(e) => setValues({ ...values, [column.id]: e.target.value })}
+            onChange={(e) => { void setValues({ ...values, [column.id]: e.target.value }); }}
             required={column.required}
             disabled={isReadOnly}
           />
@@ -185,7 +185,7 @@ export function RowEditorModal({
             id={column.id}
             type="datetime-local"
             value={value ? new Date(value).toISOString().slice(0, 16) : ""}
-            onChange={(e) => setValues({ ...values, [column.id]: e.target.value })}
+            onChange={(e) => { void setValues({ ...values, [column.id]: e.target.value }); }}
             required={column.required}
             disabled={isReadOnly}
           />
@@ -196,7 +196,7 @@ export function RowEditorModal({
           <Input
             id={column.id}
             value={value}
-            onChange={(e) => setValues({ ...values, [column.id]: e.target.value })}
+            onChange={(e) => { void setValues({ ...values, [column.id]: e.target.value }); }}
             required={column.required}
             disabled={isReadOnly}
           />
@@ -207,7 +207,7 @@ export function RowEditorModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={(e) => { e.preventDefault(); void handleSubmit(e); }}>
           <DialogHeader>
             <DialogTitle>{mode === "add" ? "Add Row" : "Edit Row"}</DialogTitle>
             <DialogDescription>
@@ -237,7 +237,7 @@ export function RowEditorModal({
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleCancel} disabled={isLoading}>
+            <Button type="button" variant="outline" onClick={() => { void handleCancel(); }} disabled={isLoading}>
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading || columns.length === 0}>

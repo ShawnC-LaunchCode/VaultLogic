@@ -4,6 +4,7 @@ import { logger } from "../logger";
 import { hybridAuth } from '../middleware/auth';
 import { requireUser, type UserRequest } from '../middleware/requireUser';
 import { accountService } from "../services/AccountService";
+import { asyncHandler } from '../utils/asyncHandler';
 
 import type { Express, Request, Response } from "express";
 
@@ -16,7 +17,7 @@ export function registerAccountRoutes(app: Express): void {
    * GET /api/account/preferences
    * Get account preferences including default mode
    */
-  app.get('/api/account/preferences', hybridAuth, requireUser, async (req: Request, res: Response) => {
+  app.get('/api/account/preferences', hybridAuth, requireUser, asyncHandler(async (req: Request, res: Response) => {
     try {
       const user = (req as UserRequest).user;
 
@@ -28,13 +29,13 @@ export function registerAccountRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * PUT /api/account/preferences
    * Update account preferences including default mode
    */
-  app.put('/api/account/preferences', hybridAuth, requireUser, async (req: Request, res: Response) => {
+  app.put('/api/account/preferences', hybridAuth, requireUser, asyncHandler(async (req: Request, res: Response) => {
     try {
       const user = (req as UserRequest).user;
 
@@ -60,8 +61,8 @@ export function registerAccountRoutes(app: Express): void {
 
       const message = error instanceof Error ? error.message : "Failed to update preferences";
       const status = message.includes("not found") ? 404 :
-                     message.includes("Invalid") ? 400 : 500;
+        message.includes("Invalid") ? 400 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 }

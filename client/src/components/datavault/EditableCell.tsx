@@ -30,9 +30,7 @@ export function EditableCell({ column, value, onSave, readOnly = false, placehol
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Update editValue when value prop changes
-  useEffect(() => {
-    setEditValue(value);
-  }, [value]);
+  useEffect(() => { void setEditValue(value); }, [value]);
 
   // Focus input when entering edit mode
   useEffect(() => {
@@ -86,12 +84,12 @@ export function EditableCell({ column, value, onSave, readOnly = false, placehol
   };
 
   const handleBlur = () => {
-    handleSave();
+    void handleSave();
   };
 
   // Format display value based on column type
   const formatDisplayValue = (val: any) => {
-    if (val === null || val === undefined) {return "";}
+    if (val === null || val === undefined) { return ""; }
 
     switch (column.type as string) {
       case "boolean":
@@ -206,7 +204,7 @@ export function EditableCell({ column, value, onSave, readOnly = false, placehol
                     : "text"
         }
         value={editValue || ""}
-        onChange={(e) => setEditValue(e.target.value)}
+        onChange={(e) => { void setEditValue(e.target.value); }}
         onKeyDown={handleKeyDown}
         onBlur={handleBlur}
         disabled={isSaving}

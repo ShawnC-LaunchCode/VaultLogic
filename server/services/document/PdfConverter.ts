@@ -1,15 +1,8 @@
-import { exec } from 'child_process';
-import fs from 'fs/promises';
-import path from 'path';
-import { promisify } from 'util';
-
 import mammoth from 'mammoth';
 import puppeteer from 'puppeteer';
 
 import { logger } from '../../logger';
 import { createError } from '../../utils/errors';
-
-const execAsync = promisify(exec);
 
 export interface PdfConversionOptions {
     docxPath: string;
@@ -112,55 +105,14 @@ export class PuppeteerStrategy implements PdfConversionStrategy {
 }
 
 /**
- * Strategy using LibreOffice (System Command)
- * Uses 'libreoffice --headless --convert-to pdf'
- * Pros: High layout fidelity (native DOCX support)
- * Cons: Requires LibreOffice installed on the system
- */
-export class LibreOfficeStrategy implements PdfConversionStrategy {
-    async convert({ docxPath, outputPath }: PdfConversionOptions): Promise<void> {
-        try {
-            const outputDir = path.dirname(outputPath);
-
-            // LibreOffice places the output in the dir, we can't specify exact filename in the command easily
-            // So we convert to dir, then rename if needed.
-            // But here we assume outputPath has same basename as docxPath but .pdf extension, which is default behavior.
-
-            await execAsync(
-                `libreoffice --headless --convert-to pdf --outdir "${outputDir}" "${docxPath}"`,
-                { timeout: 30000 }
-            );
-
-            // Verify output exists
-            // Note: LibreOffice uses the same basename, so if docxPath is 'foo.docx', output is 'foo.pdf'
-            // We need to ensure that matches outputPath
-            const expectedOutput = path.join(outputDir, `${path.basename(docxPath, path.extname(docxPath))  }.pdf`);
-
-            if (expectedOutput !== outputPath) {
-                // Rename if needed (unlikely if we stick to standard naming)
-                await fs.rename(expectedOutput, outputPath);
-            }
-
-            await fs.access(outputPath);
-        } catch (error: any) {
-            logger.error({ error }, 'LibreOffice PDF conversion failed');
-            throw createError.internal(`LibreOffice conversion failed: ${error.message}`);
-        }
-    }
-}
-
-/**
  * Factory to get the appropriate strategy
+ * Enforced to PuppeteerStrategy
  */
 export class PdfConverter {
     private strategy: PdfConversionStrategy;
 
-    constructor(strategyType: 'puppeteer' | 'libreoffice' = 'puppeteer') {
-        if (strategyType === 'libreoffice') {
-            this.strategy = new LibreOfficeStrategy();
-        } else {
-            this.strategy = new PuppeteerStrategy();
-        }
+    constructor() {
+        this.strategy = new PuppeteerStrategy();
     }
 
     async convert(options: PdfConversionOptions): Promise<void> {

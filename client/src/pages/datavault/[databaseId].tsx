@@ -120,7 +120,7 @@ export default function DatabaseDetailPage() {
   };
 
   const handleMoveTable = async (targetDatabaseId: string | null) => {
-    if (!activeTableId || !activeTable) {return;}
+    if (!activeTableId || !activeTable) { return; }
 
     try {
       await moveTableMutation.mutateAsync({ tableId: activeTableId, databaseId: targetDatabaseId });
@@ -146,7 +146,7 @@ export default function DatabaseDetailPage() {
   };
 
   const handleAddColumn = async (data: { name: string; type: string; required: boolean }) => {
-    if (!activeTableId) {return;}
+    if (!activeTableId) { return; }
 
     try {
       await createColumnMutation.mutateAsync({ tableId: activeTableId, ...data });
@@ -161,7 +161,7 @@ export default function DatabaseDetailPage() {
   };
 
   const handleUpdateColumn = async (columnId: string, data: { name: string; required: boolean }) => {
-    if (!activeTableId) {return;}
+    if (!activeTableId) { return; }
 
     try {
       await updateColumnMutation.mutateAsync({ columnId, tableId: activeTableId, ...data });
@@ -177,7 +177,7 @@ export default function DatabaseDetailPage() {
   };
 
   const handleDeleteColumn = async (columnId: string) => {
-    if (!activeTableId) {return;}
+    if (!activeTableId) { return; }
 
     try {
       await deleteColumnMutation.mutateAsync({ columnId, tableId: activeTableId });
@@ -192,12 +192,12 @@ export default function DatabaseDetailPage() {
   };
 
   const handleReorderColumns = async (columnIds: string[]) => {
-    if (!activeTableId) {return;}
+    if (!activeTableId) { return; }
     await reorderColumnsMutation.mutateAsync({ tableId: activeTableId, columnIds });
   };
 
   const handleAddRow = async (values: Record<string, any>) => {
-    if (!activeTableId) {return;}
+    if (!activeTableId) { return; }
 
     try {
       await createRowMutation.mutateAsync({ tableId: activeTableId, values });
@@ -213,13 +213,13 @@ export default function DatabaseDetailPage() {
   };
 
   const handleCreateRow = async (values: Record<string, any>) => {
-    if (!activeTableId) {return;}
+    if (!activeTableId) { return; }
 
     await createRowMutation.mutateAsync({ tableId: activeTableId, values });
   };
 
   const handleUpdateRow = async (values: Record<string, any>) => {
-    if (!activeTableId || !editingRow) {return;}
+    if (!activeTableId || !editingRow) { return; }
 
     try {
       await updateRowMutation.mutateAsync({ rowId: editingRow.id, tableId: activeTableId, values });
@@ -235,7 +235,7 @@ export default function DatabaseDetailPage() {
   };
 
   const handleDeleteRow = async () => {
-    if (!activeTableId || !deleteRowConfirm) {return;}
+    if (!activeTableId || !deleteRowConfirm) { return; }
 
     try {
       await deleteRowMutation.mutateAsync({ rowId: deleteRowConfirm, tableId: activeTableId });
@@ -498,7 +498,7 @@ export default function DatabaseDetailPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteRow}
+              onClick={() => { void handleDeleteRow(); }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={isRowMutating}
             >

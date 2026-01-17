@@ -49,12 +49,12 @@ export class UserRepository extends BaseRepository<typeof users, User, UpsertUse
           };
 
           // Only include fields that are explicitly provided
-          if (userData.firstName !== undefined) {updateData.firstName = userData.firstName;}
-          if (userData.lastName !== undefined) {updateData.lastName = userData.lastName;}
-          if (userData.profileImageUrl !== undefined) {updateData.profileImageUrl = userData.profileImageUrl;}
+          if (userData.firstName !== undefined) { updateData.firstName = userData.firstName; }
+          if (userData.lastName !== undefined) { updateData.lastName = userData.lastName; }
+          if (userData.profileImageUrl !== undefined) { updateData.profileImageUrl = userData.profileImageUrl; }
           // Update auth provider and verification status if provided (e.g. linking Google account)
-          if (userData.authProvider) {updateData.authProvider = userData.authProvider;}
-          if (userData.emailVerified !== undefined) {updateData.emailVerified = userData.emailVerified;}
+          if (userData.authProvider) { updateData.authProvider = userData.authProvider; }
+          if (userData.emailVerified !== undefined) { updateData.emailVerified = userData.emailVerified; }
 
           // Note: We intentionally don't update email or role here to preserve existing values
 
@@ -83,16 +83,13 @@ export class UserRepository extends BaseRepository<typeof users, User, UpsertUse
         })
         .returning();
 
-      // Track lifetime stats for new users
-      if (user) {
-        // We only increment if it was a true insert (checked by comparing createdAt close to now, 
-        // or simplistic assumption here since upsert is complex).
-        // Better approach: Check if we are in the "insert" path which we are here. 
-        // However, onConflictDoUpdate might mean it WAS an update on ID collision.
-        // But for Google Auth, we queried by email first. So if we are here, email didn't exist.
-        // The ID conflict is rare/impossible if ID is auto-generated.
-        const { systemStatsRepository } = await import("./SystemStatsRepository"); // Lazy import to avoid circular dependency
+      // Legacy systemStats tracking removed (survey system deprecated Nov 2025)
+      // systemStats table no longer exists in schema
+      try {
+        const { systemStatsRepository } = await import("./SystemStatsRepository");
         await systemStatsRepository.incrementUsersCreated();
+      } catch (e) {
+        logger.warn({ err: e }, "Failed to increment user stats");
       }
 
       return user;
@@ -108,9 +105,9 @@ export class UserRepository extends BaseRepository<typeof users, User, UpsertUse
             updatedAt: new Date(),
           };
 
-          if (userData.firstName !== undefined) {updateData.firstName = userData.firstName;}
-          if (userData.lastName !== undefined) {updateData.lastName = userData.lastName;}
-          if (userData.profileImageUrl !== undefined) {updateData.profileImageUrl = userData.profileImageUrl;}
+          if (userData.firstName !== undefined) { updateData.firstName = userData.firstName; }
+          if (userData.lastName !== undefined) { updateData.lastName = userData.lastName; }
+          if (userData.profileImageUrl !== undefined) { updateData.profileImageUrl = userData.profileImageUrl; }
 
           const [updatedUser] = await database
             .update(users)

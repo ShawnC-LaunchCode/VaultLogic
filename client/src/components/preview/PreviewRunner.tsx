@@ -40,7 +40,7 @@ export function PreviewRunner({ workflowId, onExit }: PreviewRunnerProps) {
                 credentials: "include",
                 cache: "no-cache",
             });
-            if (!response.ok) {throw new Error('Failed to load workflow');}
+            if (!response.ok) { throw new Error('Failed to load workflow'); }
             return response.json();
         },
         enabled: !!workflowId,
@@ -56,11 +56,11 @@ export function PreviewRunner({ workflowId, onExit }: PreviewRunnerProps) {
     const { data: snapshotValues } = useQuery({
         queryKey: ["snapshot-values", snapshotId],
         queryFn: async () => {
-            if (!snapshotId || snapshotId === 'none') {return null;}
+            if (!snapshotId || snapshotId === 'none') { return null; }
             const response = await fetch(`/api/workflows/${workflowId}/snapshots/${snapshotId}/values`, {
                 credentials: "include",
             });
-            if (!response.ok) {throw new Error('Failed to load snapshot values');}
+            if (!response.ok) { throw new Error('Failed to load snapshot values'); }
             return response.json();
         },
         enabled: !!snapshotId && snapshotId !== 'none',
@@ -68,7 +68,7 @@ export function PreviewRunner({ workflowId, onExit }: PreviewRunnerProps) {
 
     // Create preview run ID (for docs)
     useEffect(() => {
-        if (!workflowId || previewRunId) {return;}
+        if (!workflowId || previewRunId) { return; }
         async function createRun() {
             try {
                 const res = await fetch(`/api/workflows/${workflowId}/runs`, {
@@ -86,7 +86,7 @@ export function PreviewRunner({ workflowId, onExit }: PreviewRunnerProps) {
                 // Preview mode can continue without run ID (read-only mode)
             }
         }
-        createRun();
+        void createRun();
     }, [workflowId, previewRunId]);
 
     // Init Environment
@@ -102,7 +102,7 @@ export function PreviewRunner({ workflowId, onExit }: PreviewRunnerProps) {
                 // Map alias/id to stepId
                 for (const [key, value] of Object.entries(snapshotValues)) {
                     const step = allSteps.find((s: ApiStep) => s.alias === key || s.id === key);
-                    if (step) {stepIdValues[step.id] = value;}
+                    if (step) { stepIdValues[step.id] = value; }
                 }
                 initialValues = stepIdValues;
             } else if (env) {
@@ -125,7 +125,7 @@ export function PreviewRunner({ workflowId, onExit }: PreviewRunnerProps) {
     }, [workflow?.id, JSON.stringify(workflow?.sections?.map((s: any) => s.id)), JSON.stringify(allSteps?.map((s: ApiStep) => s.id)), snapshotId, snapshotValues]);
 
     const handleRandomFill = async () => {
-        if (!env || !allSteps) {return;}
+        if (!env || !allSteps) { return; }
         setIsAiLoading(true);
         try {
             const values = await generateAIRandomValues(allSteps, workflowId, workflow.title);
@@ -142,7 +142,7 @@ export function PreviewRunner({ workflowId, onExit }: PreviewRunnerProps) {
                 };
 
                 const visibleSections = workflow.sections.filter((section: any) => {
-                    if (!section.visibleIf) {return true;}
+                    if (!section.visibleIf) { return true; }
                     try {
                         return evaluateConditionExpression(section.visibleIf, values, aliasResolver);
                     } catch (e) {
@@ -167,10 +167,10 @@ export function PreviewRunner({ workflowId, onExit }: PreviewRunnerProps) {
     };
 
     const handleRandomFillPage = async () => {
-        if (!env || !allSteps) {return;}
+        if (!env || !allSteps) { return; }
         const currentState = env.getState();
         const currentSectionId = workflow.sections[currentState.currentSectionIndex]?.id;
-        if (!currentSectionId) {return;}
+        if (!currentSectionId) { return; }
 
         const pageSteps = allSteps.filter((s: ApiStep) => s.sectionId === currentSectionId);
 
@@ -203,8 +203,8 @@ export function PreviewRunner({ workflowId, onExit }: PreviewRunnerProps) {
                 workflowId={workflowId}
                 onExit={onExit}
                 onReset={() => env.reset()}
-                onRandomFill={handleRandomFill}
-                onRandomFillPage={handleRandomFillPage}
+                onRandomFill={() => { void handleRandomFill(); }}
+                onRandomFillPage={() => { void handleRandomFillPage(); }}
                 onLoadSnapshot={(id) => setSnapshotId(id)}
                 onToggleDevTools={() => setShowDevTools(!showDevTools)}
                 showDevTools={showDevTools}

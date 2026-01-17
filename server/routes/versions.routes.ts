@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createLogger } from "../logger";
 import { hybridAuth, type AuthRequest } from '../middleware/auth';
 import { versionService } from "../services/VersionService";
+import { asyncHandler } from "../utils/asyncHandler";
 
 import type { Express, Request, Response } from "express";
 
@@ -32,7 +33,7 @@ export function registerVersionRoutes(app: Express): void {
    * GET /workflows/:id/versions
    * List all versions for a workflow
    */
-  app.get('/api/workflows/:id/versions', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:id/versions', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const userId = (req as AuthRequest).userId;
@@ -53,13 +54,13 @@ export function registerVersionRoutes(app: Express): void {
       const status = message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * GET /workflowVersions/:versionId/diff/:otherVersionId
    * Get diff between two versions
    */
-  app.get('/api/workflowVersions/:versionId/diff/:otherVersionId', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/workflowVersions/:versionId/diff/:otherVersionId', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { versionId, otherVersionId } = req.params;
 
@@ -75,14 +76,14 @@ export function registerVersionRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * POST /workflows/:id/publish
    * Publish a new version
    * Body: { graphJson, notes?, force? }
    */
-  app.post('/api/workflows/:id/publish', hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/workflows/:id/publish', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const authReq = req as AuthRequest;
@@ -112,14 +113,14 @@ export function registerVersionRoutes(app: Express): void {
       const status = message.includes("Validation failed") ? 400 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * POST /workflows/:id/rollback
    * Rollback to a previous version
    * Body: { toVersionId, notes? }
    */
-  app.post('/api/workflows/:id/rollback', hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/workflows/:id/rollback', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const authReq = req as AuthRequest;
@@ -143,14 +144,14 @@ export function registerVersionRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * POST /workflows/:id/pin
    * Pin a specific version
    * Body: { versionId }
    */
-  app.post('/api/workflows/:id/pin', hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/workflows/:id/pin', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const authReq = req as AuthRequest;
@@ -174,13 +175,13 @@ export function registerVersionRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * POST /workflows/:id/unpin
    * Unpin version
    */
-  app.post('/api/workflows/:id/unpin', hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/workflows/:id/unpin', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const authReq = req as AuthRequest;
@@ -201,13 +202,13 @@ export function registerVersionRoutes(app: Express): void {
       const message = error instanceof Error ? error.message : "Failed to unpin version";
       res.status(500).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * GET /workflows/:id/export
    * Export workflow versions as JSON
    */
-  app.get('/api/workflows/:id/export', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:id/export', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
 
@@ -223,5 +224,5 @@ export function registerVersionRoutes(app: Express): void {
       const message = error instanceof Error ? error.message : "Failed to export versions";
       res.status(500).json({ success: false, error: message });
     }
-  });
+  }));
 }

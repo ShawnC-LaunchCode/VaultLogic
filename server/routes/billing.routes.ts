@@ -5,6 +5,8 @@ import { requireWorkspace } from "../lib/authz/enforce";
 import { StripeProvider } from "../lib/billing/providers/StripeProvider";
 import { SubscriptionService } from "../lib/billing/SubscriptionService";
 import { UsageAggregator } from "../lib/metering/usageAggregator";
+import { asyncHandler } from '../utils/asyncHandler';
+import { logger } from '../logger';
 
 const router = Router();
 const provider = new StripeProvider();
@@ -13,7 +15,7 @@ const provider = new StripeProvider();
 router.use(requireWorkspace);
 
 // Get Current Subscription & Usage
-router.get("/subscription", async (req, res) => {
+router.get("/subscription", asyncHandler(async (req, res) => {
     try {
         const organizationId = (req as any).organizationId || (req as any).workspaceId; // Assuming 1:1 for now or resolved upstream
 
@@ -37,19 +39,19 @@ router.get("/subscription", async (req, res) => {
             features: sub.plan.features
         });
     } catch (e: any) {
-        console.error("Billing Error", e);
+        logger.error({ error: e }, "Billing Error");
         res.status(500).json({ error: e.message });
     }
-});
+}));
 
 // Create Stripe Portal Session
-router.post("/portal", async (req, res) => {
+router.post("/portal", asyncHandler(async (req, res) => {
     const organizationId = (req as any).workspaceId;
     // Look up customer ID ... 
     // Simplified:
     const url = await provider.getPortalUrl("mock_cus_id");
     res.json({ url });
-});
+}));
 
 export const registerBillingRoutes = (app: any) => {
     app.use("/api/billing", router);

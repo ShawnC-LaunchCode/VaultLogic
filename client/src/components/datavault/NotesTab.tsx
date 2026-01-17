@@ -158,10 +158,10 @@ export function NotesTab({ rowId, tableOwnerId }: NotesTabProps) {
 
       {/* Add note form */}
       <div className="border-t p-4 bg-background">
-        <form onSubmit={handleSubmit} className="space-y-2">
+        <form onSubmit={(e) => { e.preventDefault(); void handleSubmit(e); }} className="space-y-2">
           <Textarea
             value={noteText}
-            onChange={(e) => setNoteText(e.target.value)}
+            onChange={(e) => { void setNoteText(e.target.value); }}
             placeholder="Add a note..."
             className="min-h-[80px] resize-none"
             disabled={createNoteMutation.isPending}

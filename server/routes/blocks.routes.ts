@@ -11,8 +11,7 @@ import { blockService } from "../services/BlockService";
 import { listToolsBlockService } from "../services/ListToolsBlockService";
 import { queryBlockService } from "../services/QueryBlockService";
 import { readTableBlockService } from "../services/ReadTableBlockService";
-
-
+import { asyncHandler } from '../utils/asyncHandler';
 
 import type { Express, Request, Response } from "express";
 
@@ -27,11 +26,12 @@ export function registerBlockRoutes(app: Express): void {
    * POST /api/workflows/:workflowId/blocks
    * Create a new block
    */
-  app.post('/api/workflows/:workflowId/blocks', hybridAuth, autoRevertToDraft, async (req: Request, res: Response) => {
+  app.post('/api/workflows/:workflowId/blocks', hybridAuth, autoRevertToDraft, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
-        return res.status(401).json({ success: false, errors: ["Unauthorized - no user ID"] });
+        res.status(401).json({ success: false, errors: ["Unauthorized - no user ID"] });
+        return;
       }
 
       const { workflowId } = req.params;
@@ -39,10 +39,11 @@ export function registerBlockRoutes(app: Express): void {
 
       // Validate required fields
       if (!blockData.type || !blockData.phase || !blockData.config) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           errors: ["Missing required fields: type, phase, config"],
         });
+        return;
       }
 
       // Route to specialized service for query, read_table, and list_tools blocks (they need virtual steps)
@@ -80,17 +81,18 @@ export function registerBlockRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ success: false, errors: [message] });
     }
-  });
+  }));
 
   /**
    * GET /api/workflows/:workflowId/blocks
    * List all blocks for a workflow
    */
-  app.get('/api/workflows/:workflowId/blocks', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:workflowId/blocks', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
-        return res.status(401).json({ success: false, errors: ["Unauthorized - no user ID"] });
+        res.status(401).json({ success: false, errors: ["Unauthorized - no user ID"] });
+        return;
       }
 
       const { workflowId } = req.params;
@@ -104,17 +106,18 @@ export function registerBlockRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ success: false, errors: [message] });
     }
-  });
+  }));
 
   /**
    * GET /api/blocks/:blockId
    * Get a single block by ID
    */
-  app.get('/api/blocks/:blockId', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/blocks/:blockId', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
-        return res.status(401).json({ success: false, errors: ["Unauthorized - no user ID"] });
+        res.status(401).json({ success: false, errors: ["Unauthorized - no user ID"] });
+        return;
       }
 
       const { blockId } = req.params;
@@ -126,17 +129,18 @@ export function registerBlockRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ success: false, errors: [message] });
     }
-  });
+  }));
 
   /**
    * PUT /api/blocks/:blockId
    * Update a block
    */
-  app.put('/api/blocks/:blockId', hybridAuth, async (req: Request, res: Response) => {
+  app.put('/api/blocks/:blockId', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
-        return res.status(401).json({ success: false, errors: ["Unauthorized - no user ID"] });
+        res.status(401).json({ success: false, errors: ["Unauthorized - no user ID"] });
+        return;
       }
 
       const { blockId } = req.params;
@@ -145,7 +149,8 @@ export function registerBlockRoutes(app: Express): void {
       // Look up workflowId for auto-revert middleware
       const block = await blockRepository.findById(blockId);
       if (!block) {
-        return res.status(404).json({ success: false, errors: ["Block not found"] });
+        res.status(404).json({ success: false, errors: ["Block not found"] });
+        return;
       }
       req.params.workflowId = block.workflowId;
 
@@ -183,17 +188,18 @@ export function registerBlockRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ success: false, errors: [message] });
     }
-  });
+  }));
 
   /**
    * DELETE /api/blocks/:blockId
    * Delete a block
    */
-  app.delete('/api/blocks/:blockId', hybridAuth, async (req: Request, res: Response) => {
+  app.delete('/api/blocks/:blockId', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
-        return res.status(401).json({ success: false, errors: ["Unauthorized - no user ID"] });
+        res.status(401).json({ success: false, errors: ["Unauthorized - no user ID"] });
+        return;
       }
 
       const { blockId } = req.params;
@@ -201,7 +207,8 @@ export function registerBlockRoutes(app: Express): void {
       // Look up workflowId for auto-revert middleware
       const block = await blockRepository.findById(blockId);
       if (!block) {
-        return res.status(404).json({ success: false, errors: ["Block not found"] });
+        res.status(404).json({ success: false, errors: ["Block not found"] });
+        return;
       }
       req.params.workflowId = block.workflowId;
 
@@ -216,27 +223,29 @@ export function registerBlockRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ success: false, errors: [message] });
     }
-  });
+  }));
 
   /**
    * PUT /api/workflows/:workflowId/blocks/reorder
    * Bulk reorder blocks
    */
-  app.put('/api/workflows/:workflowId/blocks/reorder', hybridAuth, autoRevertToDraft, async (req: Request, res: Response) => {
+  app.put('/api/workflows/:workflowId/blocks/reorder', hybridAuth, autoRevertToDraft, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
-        return res.status(401).json({ success: false, errors: ["Unauthorized - no user ID"] });
+        res.status(401).json({ success: false, errors: ["Unauthorized - no user ID"] });
+        return;
       }
 
       const { workflowId } = req.params;
       const { blocks } = req.body;
 
       if (!Array.isArray(blocks)) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           errors: ["blocks must be an array of {id, order}"],
         });
+        return;
       }
 
       await blockService.reorderBlocks(workflowId, userId, blocks);
@@ -247,18 +256,19 @@ export function registerBlockRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ success: false, errors: [message] });
     }
-  });
+  }));
 
   /**
    * POST /api/workflows/:workflowId/steps/:stepId/create-list-tools
    * Create a List Tools block inline from a Choice question
    * Used for "Create List Tools" button in Choice question editor
    */
-  app.post('/api/workflows/:workflowId/steps/:stepId/create-list-tools', hybridAuth, autoRevertToDraft, async (req: Request, res: Response) => {
+  app.post('/api/workflows/:workflowId/steps/:stepId/create-list-tools', hybridAuth, autoRevertToDraft, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
-        return res.status(401).json({ success: false, errors: ["Unauthorized - no user ID"] });
+        res.status(401).json({ success: false, errors: ["Unauthorized - no user ID"] });
+        return;
       }
 
       const { workflowId, stepId } = req.params;
@@ -266,17 +276,19 @@ export function registerBlockRoutes(app: Express): void {
 
       // Validation
       if (!sourceListVar) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           errors: ["sourceListVar is required"],
         });
+        return;
       }
 
       if (!sectionId) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           errors: ["sectionId is required"],
         });
+        return;
       }
 
       // Generate unique output variable name
@@ -349,5 +361,5 @@ export function registerBlockRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ success: false, errors: [message] });
     }
-  });
+  }));
 }

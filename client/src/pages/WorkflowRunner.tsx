@@ -842,14 +842,14 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
             <div className="flex items-center justify-between pt-6 border-t border-slate-100 mt-8">
               <Button
                 variant="ghost"
-                onClick={() => setShowReview(false)}
+                onClick={() => { void setShowReview(false); }}
                 className="text-slate-500 hover:text-slate-900"
               >
                 <ChevronLeft className="w-4 h-4 mr-2" />
                 Back
               </Button>
               <Button
-                onClick={handleFinalSubmit}
+                onClick={() => { void handleFinalSubmit(); }}
                 disabled={completeMutation.isPending}
                 className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-[140px]"
               >
@@ -899,7 +899,7 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
             <div className="flex items-center justify-between pt-6 border-t border-slate-100 mt-8">
               <Button
                 variant="ghost"
-                onClick={handlePrev}
+                onClick={() => { void handlePrev(); }}
                 disabled={currentSectionIndex === 0}
                 className="text-slate-500 hover:text-slate-900"
               >
@@ -908,7 +908,7 @@ export function WorkflowRunner({ runId, previewEnvironment, isPreview = false, o
               </Button>
 
               <Button
-                onClick={handleNext}
+                onClick={() => { void handleNext(); }}
                 disabled={submitMutation.isPending || nextMutation.isPending || completeMutation.isPending}
                 className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-[120px]"
               >
@@ -998,7 +998,7 @@ function SectionSteps({
           key={step.id}
           step={step}
           value={values[step.id]}
-          onChange={(v) => onChange(step.id, v)}
+          onChange={(v) => { void onChange(step.id, v); }}
           error={errors?.[step.id]?.[0]} // Pass first error message
           context={values}
           intakeSource={
@@ -1039,7 +1039,7 @@ function StepField({ step, value, onChange, error, context, intakeSource }: { st
       <BlockRenderer
         step={step}
         value={value}
-        onChange={onChange}
+        onChange={() => { void onChange(); }}
         required={step.required}
         readOnly={false}
         error={error}

@@ -14,6 +14,8 @@ import { requireTenant } from '../middleware/tenant';
 import { workflowService } from '../services/WorkflowService';
 import { createError, formatErrorResponse } from '../utils/errors';
 import { createPaginatedResponse, decodeCursor } from '../utils/pagination';
+import { asyncHandler } from '../utils/asyncHandler';
+
 
 import {
   createWorkflowSchema,
@@ -41,7 +43,7 @@ router.get(
   hybridAuth,
   requireTenant,
   requirePermission('workflow:view'),
-  async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const tenantId = authReq.tenantId!;
@@ -100,6 +102,7 @@ router.get(
       res.status(formatted.status).json(formatted.body);
     }
   }
+  )
 );
 
 /**
@@ -111,7 +114,7 @@ router.post(
   hybridAuth,
   requireTenant,
   requirePermission('workflow:create'),
-  async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const tenantId = authReq.tenantId!;
@@ -192,6 +195,7 @@ router.post(
       res.status(formatted.status).json(formatted.body);
     }
   }
+  )
 );
 
 /**
@@ -203,7 +207,7 @@ router.get(
   hybridAuth,
   requireTenant,
   requirePermission('workflow:view'),
-  async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const tenantId = authReq.tenantId!;
@@ -240,6 +244,7 @@ router.get(
       res.status(formatted.status).json(formatted.body);
     }
   }
+  )
 );
 
 /**
@@ -251,7 +256,7 @@ router.patch(
   hybridAuth,
   requireTenant,
   requirePermission('workflow:edit'),
-  async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const tenantId = authReq.tenantId!;
@@ -305,8 +310,8 @@ router.patch(
         // Update workflow name and intakeConfig if provided
         if (data.name || data.intakeConfig) {
           const updateValues: any = { updatedAt: new Date() };
-          if (data.name) {updateValues.name = data.name;}
-          if (data.intakeConfig) {updateValues.intakeConfig = data.intakeConfig;}
+          if (data.name) { updateValues.name = data.name; }
+          if (data.intakeConfig) { updateValues.intakeConfig = data.intakeConfig; }
 
           await tx
             .update(schema.workflows)
@@ -343,6 +348,7 @@ router.patch(
       res.status(formatted.status).json(formatted.body);
     }
   }
+  )
 );
 
 /**
@@ -354,7 +360,7 @@ router.post(
   hybridAuth,
   requireTenant,
   requirePermission('workflow:publish'),
-  async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const tenantId = authReq.tenantId!;
@@ -444,6 +450,7 @@ router.post(
       res.status(formatted.status).json(formatted.body);
     }
   }
+  )
 );
 
 /**
@@ -455,7 +462,7 @@ router.get(
   hybridAuth,
   requireTenant,
   requirePermission('workflow:view'),
-  async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const tenantId = authReq.tenantId!;
@@ -520,6 +527,7 @@ router.get(
       res.status(formatted.status).json(formatted.body);
     }
   }
+  )
 );
 
 /**
@@ -531,7 +539,7 @@ router.get(
   hybridAuth,
   requireTenant,
   requirePermission('workflow:view'),
-  async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const tenantId = authReq.tenantId!;
@@ -578,6 +586,7 @@ router.get(
       res.status(formatted.status).json(formatted.body);
     }
   }
+  )
 );
 
 /**
@@ -589,7 +598,7 @@ router.post(
   hybridAuth,
   requireTenant,
   requirePermission('workflow:view'),
-  async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const tenantId = authReq.tenantId!;
@@ -667,6 +676,7 @@ router.post(
       res.status(formatted.status).json(formatted.body);
     }
   }
+  )
 );
 
 /**
@@ -678,7 +688,7 @@ router.get(
   hybridAuth,
   requireTenant,
   requirePermission('workflow:view'),
-  async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const tenantId = authReq.tenantId!;
@@ -724,6 +734,7 @@ router.get(
       res.status(formatted.status).json(formatted.body);
     }
   }
+  )
 );
 
 /**
@@ -733,7 +744,7 @@ router.get(
 router.get(
   '/engine/helpers',
   hybridAuth,
-  async (req: Request, res: Response) => {
+  asyncHandler(async (req: Request, res: Response) => {
     try {
       // Build helper metadata
       const helpers = [
@@ -765,13 +776,15 @@ router.get(
         { name: 'isEmpty', signature: 'isEmpty(value)', doc: 'Check if value is empty' },
         { name: 'not', signature: 'not(value)', doc: 'Logical NOT' },
       ];
-
       res.json({ helpers });
     } catch (error) {
       const formatted = formatErrorResponse(error);
       res.status(formatted.status).json(formatted.body);
     }
-  }
+  })
 );
 
+
+
 export default router;
+

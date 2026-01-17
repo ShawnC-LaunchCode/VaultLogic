@@ -4,6 +4,7 @@ import { logger } from '../logger';
 import { hybridAuth, getAuthUserTenantId, getAuthUserId } from '../middleware/auth';
 import { createLimiter, deleteLimiter } from '../middleware/rateLimiter';
 import { datavaultApiTokensService } from '../services/DatavaultApiTokensService';
+import { asyncHandler } from '../utils/asyncHandler';
 
 import type { Express, Request, Response } from 'express';
 
@@ -42,7 +43,7 @@ export function registerDatavaultApiTokenRoutes(app: Express): void {
   app.get(
     '/api/datavault/databases/:databaseId/tokens',
     hybridAuth,
-    async (req: Request, res: Response) => {
+    asyncHandler(async (req: Request, res: Response) => {
       try {
         const tenantId = getTenantId(req);
         const { databaseId } = req.params;
@@ -63,7 +64,7 @@ export function registerDatavaultApiTokenRoutes(app: Express): void {
         const status = message.includes('not found') ? 404 : message.includes('Access denied') ? 403 : 500;
         res.status(status).json({ message });
       }
-    }
+    })
   );
 
   /**
@@ -75,7 +76,7 @@ export function registerDatavaultApiTokenRoutes(app: Express): void {
     '/api/datavault/databases/:databaseId/tokens',
     createLimiter,
     hybridAuth,
-    async (req: Request, res: Response) => {
+    asyncHandler(async (req: Request, res: Response) => {
       try {
         const tenantId = getTenantId(req);
         const { databaseId } = req.params;
@@ -145,7 +146,7 @@ export function registerDatavaultApiTokenRoutes(app: Express): void {
         const status = message.includes('not found') ? 404 : message.includes('Access denied') ? 403 : message.includes('Validation') ? 400 : 500;
         res.status(status).json({ message });
       }
-    }
+    })
   );
 
   /**
@@ -157,7 +158,7 @@ export function registerDatavaultApiTokenRoutes(app: Express): void {
     '/api/datavault/tokens/:tokenId',
     deleteLimiter,
     hybridAuth,
-    async (req: Request, res: Response) => {
+    asyncHandler(async (req: Request, res: Response) => {
       try {
         const tenantId = getTenantId(req);
         const { tokenId } = req.params;
@@ -181,6 +182,6 @@ export function registerDatavaultApiTokenRoutes(app: Express): void {
         const status = message.includes('not found') || message.includes('Access denied') ? 404 : 500;
         res.status(status).json({ message });
       }
-    }
+    })
   );
 }

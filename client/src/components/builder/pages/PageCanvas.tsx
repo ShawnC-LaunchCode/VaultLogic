@@ -309,7 +309,7 @@ export function PageCanvas({ workflowId }: PageCanvasProps) {
               {/* Add Page Button at Bottom */}
               <div className="flex justify-center pt-4 pb-8">
                 <Button
-                  onClick={handleCreateSection} // Ensure this function is defined
+                  onClick={() => { void handleCreateSection(); }} // Ensure this function is defined
                   variant="outline"
                   className="w-full max-w-sm border-dashed text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 >

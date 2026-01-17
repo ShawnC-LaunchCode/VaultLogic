@@ -155,7 +155,7 @@ app.use(requestTimeout);
 app.use('/api', globalLimiter);
 
 
-(async () => {
+void (async () => {
     try {
         // =====================================================================
         // 📖 API DOCUMENTATION (Swagger UI)

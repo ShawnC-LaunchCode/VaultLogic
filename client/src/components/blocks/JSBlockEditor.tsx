@@ -41,8 +41,7 @@ export const JSBlockEditor: React.FC<JSBlockEditorProps> = ({ block, onChange, w
   const { data: workflowMode } = useWorkflowMode(workflowId || "");
   const isAdvancedMode = workflowMode?.mode === "advanced";
 
-  useEffect(() => {
-    onChange({
+  useEffect(() => { void onChange({
       ...block,
       config: {
         ...block.config,
@@ -54,8 +53,7 @@ export const JSBlockEditor: React.FC<JSBlockEditorProps> = ({ block, onChange, w
         timeoutMs,
         testData,
       },
-    });
-  }, [blockName, code, displayMode, inputKeys, outputKey, timeoutMs, testData]);
+    }); }, [blockName, code, displayMode, inputKeys, outputKey, timeoutMs, testData]);
 
   // Listen for Insert events from DevPanel
   useEffect(() => {
@@ -260,7 +258,7 @@ export const JSBlockEditor: React.FC<JSBlockEditorProps> = ({ block, onChange, w
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setShowPalette(!showPalette)}
+                onClick={() => { void setShowPalette(!showPalette); }}
               >
                 {showPalette ? (
                   <>
@@ -291,7 +289,7 @@ export const JSBlockEditor: React.FC<JSBlockEditorProps> = ({ block, onChange, w
               <Input
                 id="blockName"
                 value={blockName}
-                onChange={(e) => setBlockName(e.target.value)}
+                onChange={(e) => { void setBlockName(e.target.value); }}
                 placeholder="e.g., Calculate Total, Format Name, Validate Input"
                 className="text-sm"
               />
@@ -335,7 +333,7 @@ export const JSBlockEditor: React.FC<JSBlockEditorProps> = ({ block, onChange, w
                   <Badge key={key} variant="secondary" className="font-mono text-xs">
                     {getVariableDisplayName(key)}
                     <button
-                      onClick={() => handleRemoveInputKey(key)}
+                      onClick={() => { void handleRemoveInputKey(key); }}
                       className="ml-1.5 hover:text-destructive"
                     >
                       <X className="h-3 w-3" />
@@ -346,7 +344,7 @@ export const JSBlockEditor: React.FC<JSBlockEditorProps> = ({ block, onChange, w
                   <div className="relative">
                     <select
                       className="text-xs border rounded px-2 py-1"
-                      onChange={(e) => handleAddInputKey(e.target.value)}
+                      onChange={(e) => { void handleAddInputKey(e.target.value); }}
                       value=""
                     >
                       <option value="">Select variable...</option>
@@ -364,7 +362,7 @@ export const JSBlockEditor: React.FC<JSBlockEditorProps> = ({ block, onChange, w
                     variant="outline"
                     size="sm"
                     className="h-6 text-xs"
-                    onClick={() => setShowInputKeySelector(true)}
+                    onClick={() => { void setShowInputKeySelector(true); }}
                   >
                     + Add Variable
                   </Button>
@@ -384,7 +382,7 @@ export const JSBlockEditor: React.FC<JSBlockEditorProps> = ({ block, onChange, w
               <Input
                 id="outputKey"
                 value={outputKey}
-                onChange={(e) => setOutputKey(e.target.value)}
+                onChange={(e) => { void setOutputKey(e.target.value); }}
                 placeholder="e.g., computed_value, full_name, total"
                 className="font-mono text-sm"
               />
@@ -420,7 +418,7 @@ export const JSBlockEditor: React.FC<JSBlockEditorProps> = ({ block, onChange, w
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setShowTestConfig(!showTestConfig)}
+                    onClick={() => { void setShowTestConfig(!showTestConfig); }}
                     className="h-6 text-xs"
                   >
                     <Settings className="w-3 h-3 mr-1" />
@@ -449,7 +447,7 @@ export const JSBlockEditor: React.FC<JSBlockEditorProps> = ({ block, onChange, w
                           <Input
                             id={`test-${key}`}
                             value={testData[key] || ''}
-                            onChange={(e) => setTestData({ ...testData, [key]: e.target.value })}
+                            onChange={(e) => { void setTestData({ ...testData, [key]: e.target.value }); }}
                             placeholder={`Auto: ${JSON.stringify(generateMockValue(variableType))}`}
                             className="font-mono text-xs h-8"
                           />
@@ -460,7 +458,7 @@ export const JSBlockEditor: React.FC<JSBlockEditorProps> = ({ block, onChange, w
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={handleGenerateAll}
+                        onClick={() => { void handleGenerateAll(); }}
                         className="h-7 text-xs"
                       >
                         Generate All
@@ -468,7 +466,7 @@ export const JSBlockEditor: React.FC<JSBlockEditorProps> = ({ block, onChange, w
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setTestData({})}
+                        onClick={() => { void setTestData({}); }}
                         className="h-7 text-xs"
                       >
                         Reset All
@@ -493,7 +491,7 @@ export const JSBlockEditor: React.FC<JSBlockEditorProps> = ({ block, onChange, w
               <Textarea
                 ref={textareaRef}
                 value={code}
-                onChange={(e) => setCode(e.target.value)}
+                onChange={(e) => { void setCode(e.target.value); }}
                 placeholder="// Example:\n// return { fullName: input.firstName + ' ' + input.lastName };\n\n// Or perform calculations:\n// return { total: input.price * input.quantity };"
                 className="font-mono text-sm h-64 resize-none"
               />

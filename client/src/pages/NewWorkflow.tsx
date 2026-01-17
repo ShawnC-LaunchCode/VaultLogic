@@ -131,7 +131,7 @@ export default function NewWorkflow() {
       <div className="container max-w-2xl mx-auto py-8 px-4">
         <Button
           variant="ghost"
-          onClick={() => navigate("/workflows")}
+          onClick={() => { void navigate("/workflows"); }}
           className="mb-4"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -154,14 +154,14 @@ export default function NewWorkflow() {
               </TabsList>
 
               <TabsContent value="manual">
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={(e) => { e.preventDefault(); void handleSubmit(e); }} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="title">Title *</Label>
                     <Input
                       id="title"
                       placeholder="e.g., Customer Onboarding"
                       value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      onChange={(e) => { void setFormData({ ...formData, title: e.target.value }); }}
                       autoFocus
                       required
                     />
@@ -173,7 +173,7 @@ export default function NewWorkflow() {
                       id="description"
                       placeholder="Describe what this workflow is for..."
                       value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      onChange={(e) => { void setFormData({ ...formData, description: e.target.value }); }}
                       rows={4}
                     />
                   </div>
@@ -182,7 +182,7 @@ export default function NewWorkflow() {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => navigate("/workflows")}
+                      onClick={() => { void navigate("/workflows"); }}
                     >
                       Cancel
                     </Button>
@@ -206,7 +206,7 @@ export default function NewWorkflow() {
                   <p className="text-muted-foreground max-w-md">
                     Start with a pre-built workflow. Browse our library of templates for workflows and forms.
                   </p>
-                  <Button onClick={() => setIsTemplateBrowserOpen(true)} className="mt-4">
+                  <Button onClick={() => { void setIsTemplateBrowserOpen(true); }} className="mt-4">
                     Open Template Library
                   </Button>
                 </div>
@@ -231,7 +231,7 @@ export default function NewWorkflow() {
                       placeholder="e.g. A customer feedback form that asks for a rating, and if the rating is low, asks for detailed feedback and contact info."
                       className="min-h-[150px] text-base resize-none"
                       value={aiPrompt}
-                      onChange={(e) => setAiPrompt(e.target.value)}
+                      onChange={(e) => { void setAiPrompt(e.target.value); }}
                     />
                   </div>
 
@@ -239,13 +239,13 @@ export default function NewWorkflow() {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => navigate("/workflows")}
+                      onClick={() => { void navigate("/workflows"); }}
                     >
                       Cancel
                     </Button>
                     <Button
                       className="bg-indigo-600 hover:bg-indigo-700"
-                      onClick={handleAiSubmit}
+                      onClick={() => { void handleAiSubmit(); }}
                       disabled={createWorkflowMutation.isPending}
                     >
                       <Sparkles className="w-4 h-4 mr-2" />

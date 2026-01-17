@@ -8,6 +8,7 @@ import { hybridAuth, type AuthRequest } from "../middleware/auth";
 import { requireOwner, requirePermission } from "../middleware/rbac";
 import { requireTenant, validateTenantParam } from "../middleware/tenant";
 import { userRepository } from "../repositories";
+import { asyncHandler } from "../utils/asyncHandler";
 
 import type { Express, Request, Response } from "express";
 
@@ -24,7 +25,7 @@ export function registerTenantRoutes(app: Express): void {
    * GET /api/tenants/current
    * Get the current user's tenant information
    */
-  app.get('/api/tenants/current', hybridAuth, requireTenant, async (req: Request, res: Response) => {
+  app.get('/api/tenants/current', hybridAuth, requireTenant, asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const tenantId = authReq.tenantId;
@@ -64,13 +65,13 @@ export function registerTenantRoutes(app: Express): void {
         error: 'internal_error',
       });
     }
-  });
+  }));
 
   /**
    * GET /api/tenants/:tenantId
    * Get specific tenant information (must be a member of the tenant)
    */
-  app.get('/api/tenants/:tenantId', hybridAuth, validateTenantParam, async (req: Request, res: Response) => {
+  app.get('/api/tenants/:tenantId', hybridAuth, validateTenantParam, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { tenantId } = req.params;
 
@@ -102,13 +103,13 @@ export function registerTenantRoutes(app: Express): void {
         error: 'internal_error',
       });
     }
-  });
+  }));
 
   /**
    * PUT /api/tenants/:tenantId
    * Update tenant information (owner only)
    */
-  app.put('/api/tenants/:tenantId', hybridAuth, validateTenantParam, requireOwner, async (req: Request, res: Response) => {
+  app.put('/api/tenants/:tenantId', hybridAuth, validateTenantParam, requireOwner, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { tenantId } = req.params;
       const { name, billingEmail, plan } = req.body;
@@ -118,9 +119,9 @@ export function registerTenantRoutes(app: Express): void {
         updatedAt: new Date(),
       };
 
-      if (name !== undefined) {updateData.name = name;}
-      if (billingEmail !== undefined) {updateData.billingEmail = billingEmail;}
-      if (plan !== undefined) {updateData.plan = plan;}
+      if (name !== undefined) { updateData.name = name; }
+      if (billingEmail !== undefined) { updateData.billingEmail = billingEmail; }
+      if (plan !== undefined) { updateData.plan = plan; }
 
       // Update tenant
       const [updatedTenant] = await db
@@ -155,13 +156,13 @@ export function registerTenantRoutes(app: Express): void {
         error: 'internal_error',
       });
     }
-  });
+  }));
 
   /**
    * GET /api/tenants/:tenantId/users
    * Get all users in a tenant (owner or builder)
    */
-  app.get('/api/tenants/:tenantId/users', hybridAuth, validateTenantParam, requirePermission('tenant:view'), async (req: Request, res: Response) => {
+  app.get('/api/tenants/:tenantId/users', hybridAuth, validateTenantParam, requirePermission('tenant:view'), asyncHandler(async (req: Request, res: Response) => {
     try {
       const { tenantId } = req.params;
 
@@ -192,13 +193,13 @@ export function registerTenantRoutes(app: Express): void {
         error: 'internal_error',
       });
     }
-  });
+  }));
 
   /**
    * GET /api/tenants/:tenantId/projects
    * Get all projects in a tenant
    */
-  app.get('/api/tenants/:tenantId/projects', hybridAuth, validateTenantParam, requirePermission('project:view'), async (req: Request, res: Response) => {
+  app.get('/api/tenants/:tenantId/projects', hybridAuth, validateTenantParam, requirePermission('project:view'), asyncHandler(async (req: Request, res: Response) => {
     try {
       const { tenantId } = req.params;
 
@@ -219,13 +220,13 @@ export function registerTenantRoutes(app: Express): void {
         error: 'internal_error',
       });
     }
-  });
+  }));
 
   /**
    * POST /api/tenants
    * Create a new tenant (for future multi-tenant signup)
    */
-  app.post('/api/tenants', hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/tenants', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const { name, billingEmail, plan } = req.body;
@@ -275,13 +276,13 @@ export function registerTenantRoutes(app: Express): void {
         error: 'internal_error',
       });
     }
-  });
+  }));
 
   /**
    * PUT /api/tenants/:tenantId/users/:userId/role
    * Update user role in tenant (owner only)
    */
-  app.put('/api/tenants/:tenantId/users/:userId/role', hybridAuth, validateTenantParam, requireOwner, async (req: Request, res: Response) => {
+  app.put('/api/tenants/:tenantId/users/:userId/role', hybridAuth, validateTenantParam, requireOwner, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { tenantId, userId } = req.params;
       const { role } = req.body;
@@ -339,5 +340,5 @@ export function registerTenantRoutes(app: Express): void {
         error: 'internal_error',
       });
     }
-  });
+  }));
 }

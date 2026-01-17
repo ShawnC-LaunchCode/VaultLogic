@@ -111,7 +111,7 @@ export function VariablesInspector({ workflowId, className }: VariablesInspector
               placeholder="Search variables..."
               className="pl-8 h-8 text-xs"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => { void setSearchQuery(e.target.value); }}
             />
           </div>
         </div>
@@ -152,7 +152,7 @@ export function VariablesInspector({ workflowId, className }: VariablesInspector
                               variant="ghost"
                               size="icon"
                               className="h-5 w-5 p-0 shrink-0"
-                              onClick={() => toggleExpanded(variable.key)}
+                              onClick={() => { void toggleExpanded(variable.key); }}
                             >
                               {isExpanded ? (
                                 <ChevronDown className="h-3 w-3" />
@@ -191,7 +191,7 @@ export function VariablesInspector({ workflowId, className }: VariablesInspector
                             variant="ghost"
                             size="icon"
                             className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => handleCopy(variablePath)}
+                            onClick={() => { void handleCopy(variablePath); }}
                             title="Copy variable name"
                           >
                             <Copy className="h-3 w-3" />
@@ -206,16 +206,16 @@ export function VariablesInspector({ workflowId, className }: VariablesInspector
                               <div className="space-y-1">
                                 <div className="font-medium">List Properties:</div>
                                 <div className="font-mono text-[10px] space-y-0.5 pl-2">
-                                  <div className="cursor-pointer hover:text-foreground" onClick={() => handleCopy(`${variablePath}.count`)}>
+                                  <div className="cursor-pointer hover:text-foreground" onClick={() => { void handleCopy(`${variablePath}.count`); }}>
                                     .count - Number of rows
                                   </div>
-                                  <div className="cursor-pointer hover:text-foreground" onClick={() => handleCopy(`${variablePath}.rows`)}>
+                                  <div className="cursor-pointer hover:text-foreground" onClick={() => { void handleCopy(`${variablePath}.rows`); }}>
                                     .rows - Array of row objects
                                   </div>
-                                  <div className="cursor-pointer hover:text-foreground" onClick={() => handleCopy(`${variablePath}.columns`)}>
+                                  <div className="cursor-pointer hover:text-foreground" onClick={() => { void handleCopy(`${variablePath}.columns`); }}>
                                     .columns - Column metadata
                                   </div>
-                                  <div className="cursor-pointer hover:text-foreground" onClick={() => handleCopy(`${variablePath}.rows[0]`)}>
+                                  <div className="cursor-pointer hover:text-foreground" onClick={() => { void handleCopy(`${variablePath}.rows[0]`); }}>
                                     .rows[0] - First row (example)
                                   </div>
                                 </div>

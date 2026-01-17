@@ -197,7 +197,7 @@ function TemplateCard({ template, onInsert, isInserting }: TemplateCardProps) {
       </div>
       <Button
         size="sm"
-        onClick={() => onInsert(template.id)}
+        onClick={() => { void onInsert(template.id); }}
         disabled={isInserting}
         className="gap-2 shrink-0"
       >

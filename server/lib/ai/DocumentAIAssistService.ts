@@ -39,10 +39,16 @@ export class DocumentAIAssistService {
 
     constructor() {
         const apiKey = process.env.GEMINI_API_KEY;
-        if (apiKey) {
-            this.genAI = new GoogleGenerativeAI(apiKey);
-            const model = process.env.GEMINI_MODEL || "gemini-2.0-flash";
-            this.model = this.genAI.getGenerativeModel({ model });
+        if (apiKey && process.env.NODE_ENV !== 'test_without_mock') {
+            try {
+                this.genAI = new GoogleGenerativeAI(apiKey);
+                const model = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+                this.model = this.genAI.getGenerativeModel({ model });
+            } catch (e) {
+                logger.warn({ err: e }, "Failed to initialize GoogleGenerativeAI (likely mock issue in tests)");
+                this.genAI = null;
+                this.model = null;
+            }
         } else {
             logger.warn("GEMINI_API_KEY not found. AI Assist Service will run in degraded mode (deterministic only).");
         }
@@ -92,7 +98,7 @@ export class DocumentAIAssistService {
      * Suggest mappings for a list of template variables against existing workflow variables
      */
     async suggestMappings(templateVariables: Partial<AnalyzedVariable>[], workflowVariables: any[]): Promise<MappingSuggestion[]> {
-        if (!this.model) {return [];}
+        if (!this.model) { return []; }
 
         const prompt = `
         You are a Document Automation Expert.Match the Template Variables to the Workflow Variables.
@@ -122,7 +128,7 @@ export class DocumentAIAssistService {
      * Suggest aliases, formatting, and conditions
      */
     async suggestImprovements(templateVariables: string[], textSample?: string): Promise<any> {
-        if (!this.model) {return {};}
+        if (!this.model) { return {}; }
 
         const prompt = `
          Analyze these template variables and suggest improvements.

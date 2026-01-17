@@ -8,6 +8,7 @@ import { autoRevertToDraft } from "../middleware/autoRevertToDraft";
 import { sectionRepository } from "../repositories/SectionRepository";
 import { stepRepository } from "../repositories/StepRepository";
 import { stepService } from "../services/StepService";
+import { asyncHandler } from "../utils/asyncHandler";
 
 import type { Express, Request, Response, NextFunction } from "express";
 
@@ -88,7 +89,7 @@ export function registerStepRoutes(app: Express): void {
    * POST /api/workflows/:workflowId/sections/:sectionId/steps
    * Create a new step
    */
-  app.post('/api/workflows/:workflowId/sections/:sectionId/steps', hybridAuth, autoRevertToDraft, async (req: Request, res: Response) => {
+  app.post('/api/workflows/:workflowId/sections/:sectionId/steps', hybridAuth, autoRevertToDraft, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -106,13 +107,13 @@ export function registerStepRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * GET /api/workflows/:workflowId/sections/:sectionId/steps
    * Get all steps for a section
    */
-  app.get('/api/workflows/:workflowId/sections/:sectionId/steps', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:workflowId/sections/:sectionId/steps', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -128,13 +129,13 @@ export function registerStepRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * PUT /api/workflows/:workflowId/sections/:sectionId/steps/reorder
    * Reorder steps within a section
    */
-  app.put('/api/workflows/:workflowId/sections/:sectionId/steps/reorder', hybridAuth, autoRevertToDraft, async (req: Request, res: Response) => {
+  app.put('/api/workflows/:workflowId/sections/:sectionId/steps/reorder', hybridAuth, autoRevertToDraft, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -156,7 +157,7 @@ export function registerStepRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   // ===================================================================
   // SIMPLIFIED STEP ENDPOINTS (without workflowId in path)
@@ -167,7 +168,7 @@ export function registerStepRoutes(app: Express): void {
    * GET /api/sections/:sectionId/steps
    * Get all steps for a section (workflow looked up automatically)
    */
-  app.get('/api/sections/:sectionId/steps', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/sections/:sectionId/steps', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -183,13 +184,13 @@ export function registerStepRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * POST /api/sections/:sectionId/steps
    * Create a new step (workflow looked up automatically)
    */
-  app.post('/api/sections/:sectionId/steps', hybridAuth, lookupWorkflowIdFromSectionMiddleware, autoRevertToDraft, async (req: Request, res: Response) => {
+  app.post('/api/sections/:sectionId/steps', hybridAuth, lookupWorkflowIdFromSectionMiddleware, autoRevertToDraft, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -207,13 +208,13 @@ export function registerStepRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * PUT /api/sections/:sectionId/steps/reorder
    * Reorder steps (workflow looked up automatically)
    */
-  app.put('/api/sections/:sectionId/steps/reorder', hybridAuth, lookupWorkflowIdFromSectionMiddleware, autoRevertToDraft, async (req: Request, res: Response) => {
+  app.put('/api/sections/:sectionId/steps/reorder', hybridAuth, lookupWorkflowIdFromSectionMiddleware, autoRevertToDraft, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -235,13 +236,13 @@ export function registerStepRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * GET /api/steps/:stepId
    * Get a single step (workflow looked up automatically)
    */
-  app.get('/api/steps/:stepId', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/steps/:stepId', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -257,13 +258,13 @@ export function registerStepRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * PUT /api/steps/:stepId
    * Update a step (workflow looked up automatically)
    */
-  app.put('/api/steps/:stepId', hybridAuth, lookupWorkflowIdFromStepMiddleware, autoRevertToDraft, async (req: Request, res: Response) => {
+  app.put('/api/steps/:stepId', hybridAuth, lookupWorkflowIdFromStepMiddleware, autoRevertToDraft, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -281,13 +282,13 @@ export function registerStepRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * DELETE /api/steps/:stepId
    * Delete a step (workflow looked up automatically)
    */
-  app.delete('/api/steps/:stepId', hybridAuth, lookupWorkflowIdFromStepMiddleware, autoRevertToDraft, async (req: Request, res: Response) => {
+  app.delete('/api/steps/:stepId', hybridAuth, lookupWorkflowIdFromStepMiddleware, autoRevertToDraft, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = (req as AuthRequest).userId;
       if (!userId) {
@@ -303,5 +304,5 @@ export function registerStepRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 }

@@ -263,14 +263,14 @@ export function AddressBlockRenderer({ step, value, onChange, readOnly }: Addres
         let zip = "";
 
         data.address_components.forEach((comp: any) => {
-          if (comp.types.includes("street_number")) {streetNum = comp.long_name;}
-          if (comp.types.includes("route")) {route = comp.long_name;}
-          if (comp.types.includes("locality")) {city = comp.long_name;}
+          if (comp.types.includes("street_number")) { streetNum = comp.long_name; }
+          if (comp.types.includes("route")) { route = comp.long_name; }
+          if (comp.types.includes("locality")) { city = comp.long_name; }
           // If locality is missing, try sublocality or neighborhood? usually locality is city.
-          if (!city && comp.types.includes("sublocality")) {city = comp.long_name;}
+          if (!city && comp.types.includes("sublocality")) { city = comp.long_name; }
 
-          if (comp.types.includes("administrative_area_level_1")) {state = comp.short_name;}
-          if (comp.types.includes("postal_code")) {zip = comp.long_name;}
+          if (comp.types.includes("administrative_area_level_1")) { state = comp.short_name; }
+          if (comp.types.includes("postal_code")) { zip = comp.long_name; }
         });
 
         onChange({
@@ -325,7 +325,7 @@ export function AddressBlockRenderer({ step, value, onChange, readOnly }: Addres
                   data-1p-ignore // Ignore 1Password
                   data-lpignore="true" // Ignore LastPass
                   onFocus={() => {
-                    if (suggestions.length > 0) {setShowSuggestions(true);}
+                    if (suggestions.length > 0) { setShowSuggestions(true); }
                   }}
                 />
                 {loading && (
@@ -344,7 +344,7 @@ export function AddressBlockRenderer({ step, value, onChange, readOnly }: Addres
                       <CommandItem
                         key={suggestion.place_id}
                         value={suggestion.description}
-                        onSelect={() => handleSelectSuggestion(suggestion.place_id)}
+                        onSelect={() => { void handleSelectSuggestion(suggestion.place_id); }}
                       >
                         <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
                         {suggestion.description}
@@ -367,7 +367,7 @@ export function AddressBlockRenderer({ step, value, onChange, readOnly }: Addres
           id={`${step.id}-city`}
           type="text"
           value={currentValue.city || ""}
-          onChange={(e) => updateField("city", e.target.value)}
+          onChange={(e) => { void updateField("city", e.target.value); }}
           placeholder="Miami"
           disabled={readOnly}
         />
@@ -407,7 +407,7 @@ export function AddressBlockRenderer({ step, value, onChange, readOnly }: Addres
             id={`${step.id}-zip`}
             type="text"
             value={currentValue.zip || ""}
-            onChange={(e) => updateField("zip", e.target.value)}
+            onChange={(e) => { void updateField("zip", e.target.value); }}
             placeholder="33101"
             maxLength={5}
             disabled={readOnly}

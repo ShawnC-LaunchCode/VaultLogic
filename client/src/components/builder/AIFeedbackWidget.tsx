@@ -166,7 +166,7 @@ export function AIFeedbackWidget({
             </CardDescription>
           </div>
           {onClose && (
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { void onClose(); }}>
               <X className="w-4 h-4" />
             </Button>
           )}
@@ -232,7 +232,7 @@ export function AIFeedbackWidget({
               <button
                 key={value}
                 type="button"
-                onClick={() => setRating(value)}
+                onClick={() => { void setRating(value); }}
                 onMouseEnter={() => setHoveredRating(value)}
                 onMouseLeave={() => setHoveredRating(0)}
                 className="transition-transform hover:scale-110 active:scale-95"
@@ -266,7 +266,7 @@ export function AIFeedbackWidget({
               variant={rating >= 4 ? 'default' : 'outline'}
               size="sm"
               className="text-xs"
-              onClick={() => setRating(5)}
+              onClick={() => { void setRating(5); }}
             >
               <ThumbsUp className="w-3 h-3 mr-1" />
               Helpful
@@ -275,7 +275,7 @@ export function AIFeedbackWidget({
               variant={rating <= 2 ? 'default' : 'outline'}
               size="sm"
               className="text-xs"
-              onClick={() => setRating(1)}
+              onClick={() => { void setRating(1); }}
             >
               <ThumbsDown className="w-3 h-3 mr-1" />
               Not Helpful
@@ -289,7 +289,7 @@ export function AIFeedbackWidget({
           <Textarea
             placeholder="Tell us what worked well or what could be improved..."
             value={comment}
-            onChange={(e) => setComment(e.target.value)}
+            onChange={(e) => { void setComment(e.target.value); }}
             rows={3}
             className="text-sm resize-none"
           />
@@ -313,12 +313,12 @@ export function AIFeedbackWidget({
         {/* Submit */}
         <div className="flex gap-2 justify-end pt-2">
           {onClose && (
-            <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
+            <Button variant="outline" onClick={() => { void onClose(); }} disabled={isSubmitting}>
               Skip
             </Button>
           )}
           <Button
-            onClick={handleSubmit}
+            onClick={() => { void handleSubmit(); }}
             disabled={rating === 0 || isSubmitting}
             className="bg-indigo-600 hover:bg-indigo-700"
           >

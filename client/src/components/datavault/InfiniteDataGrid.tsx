@@ -80,7 +80,7 @@ export function InfiniteDataGrid({
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
+          void fetchNextPage();
         }
       },
       { threshold: 0.1 }
@@ -99,7 +99,7 @@ export function InfiniteDataGrid({
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   if (isLoading) {
-    return <DataGridSkeleton rows={10} columns={(columns.length > 0) || 5} />;
+    return <DataGridSkeleton rows={10} columns={columns.length > 0 ? columns.length : 5} />;
   }
 
   if (isError) {

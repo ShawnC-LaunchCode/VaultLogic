@@ -7,7 +7,7 @@ import { hybridAuth } from '../middleware/auth';
 import { requireUser, type UserRequest } from '../middleware/requireUser';
 import { validateProjectId } from '../middleware/validateId';
 import { projectService } from "../services/ProjectService";
-
+import { asyncHandler } from "../utils/asyncHandler";
 
 
 import type { Express, Request, Response } from "express";
@@ -21,7 +21,7 @@ export function registerProjectRoutes(app: Express): void {
    * POST /api/projects
    * Create a new project
    */
-  app.post('/api/projects', hybridAuth, requireUser, async (req: Request, res: Response) => {
+  app.post('/api/projects', hybridAuth, requireUser, asyncHandler(async (req: Request, res: Response) => {
     try {
       const user = (req as UserRequest).user;
 
@@ -47,13 +47,13 @@ export function registerProjectRoutes(app: Express): void {
         error: process.env.NODE_ENV === 'development' && error instanceof Error ? error.message : undefined,
       });
     }
-  });
+  }));
 
   /**
    * GET /api/projects
    * Get all projects for the authenticated user
    */
-  app.get('/api/projects', hybridAuth, requireUser, async (req: Request, res: Response) => {
+  app.get('/api/projects', hybridAuth, requireUser, asyncHandler(async (req: Request, res: Response) => {
     try {
       const user = (req as UserRequest).user;
 
@@ -67,13 +67,13 @@ export function registerProjectRoutes(app: Express): void {
       logger.error({ error }, "Error fetching projects");
       res.status(500).json({ message: "Failed to fetch projects" });
     }
-  });
+  }));
 
   /**
    * GET /api/projects/:projectId
    * Get a single project with contained workflows
    */
-  app.get('/api/projects/:projectId', hybridAuth, requireUser, validateProjectId(), async (req: Request, res: Response) => {
+  app.get('/api/projects/:projectId', hybridAuth, requireUser, validateProjectId(), asyncHandler(async (req: Request, res: Response) => {
     try {
       const user = (req as UserRequest).user;
       const { projectId } = req.params;
@@ -86,13 +86,13 @@ export function registerProjectRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * GET /api/projects/:projectId/workflows
    * Get all workflows in a project
    */
-  app.get('/api/projects/:projectId/workflows', hybridAuth, requireUser, validateProjectId(), async (req: Request, res: Response) => {
+  app.get('/api/projects/:projectId/workflows', hybridAuth, requireUser, validateProjectId(), asyncHandler(async (req: Request, res: Response) => {
     try {
       const user = (req as UserRequest).user;
       const { projectId } = req.params;
@@ -105,13 +105,13 @@ export function registerProjectRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * PUT /api/projects/:projectId
    * Update a project
    */
-  app.put('/api/projects/:projectId', hybridAuth, requireUser, validateProjectId(), async (req: Request, res: Response) => {
+  app.put('/api/projects/:projectId', hybridAuth, requireUser, validateProjectId(), asyncHandler(async (req: Request, res: Response) => {
     try {
       const user = (req as UserRequest).user;
       const { projectId } = req.params;
@@ -130,13 +130,13 @@ export function registerProjectRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * PUT /api/projects/:projectId/archive
    * Archive a project (soft delete)
    */
-  app.put('/api/projects/:projectId/archive', hybridAuth, requireUser, validateProjectId(), async (req: Request, res: Response) => {
+  app.put('/api/projects/:projectId/archive', hybridAuth, requireUser, validateProjectId(), asyncHandler(async (req: Request, res: Response) => {
     try {
       const user = (req as UserRequest).user;
       const { projectId } = req.params;
@@ -149,13 +149,13 @@ export function registerProjectRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * PUT /api/projects/:projectId/unarchive
    * Unarchive a project
    */
-  app.put('/api/projects/:projectId/unarchive', hybridAuth, requireUser, validateProjectId(), async (req: Request, res: Response) => {
+  app.put('/api/projects/:projectId/unarchive', hybridAuth, requireUser, validateProjectId(), asyncHandler(async (req: Request, res: Response) => {
     try {
       const user = (req as UserRequest).user;
       const { projectId } = req.params;
@@ -168,14 +168,14 @@ export function registerProjectRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * DELETE /api/projects/:projectId
    * Delete a project (hard delete)
    * Note: Workflows in the project will have their projectId set to null
    */
-  app.delete('/api/projects/:projectId', hybridAuth, requireUser, validateProjectId(), async (req: Request, res: Response) => {
+  app.delete('/api/projects/:projectId', hybridAuth, requireUser, validateProjectId(), asyncHandler(async (req: Request, res: Response) => {
     try {
       const user = (req as UserRequest).user;
       const { projectId } = req.params;
@@ -188,7 +188,7 @@ export function registerProjectRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   // ===================================================================
   // PROJECT ACCESS (ACL) ENDPOINTS
@@ -198,7 +198,7 @@ export function registerProjectRoutes(app: Express): void {
    * GET /api/projects/:projectId/access
    * Get all ACL entries for a project
    */
-  app.get('/api/projects/:projectId/access', hybridAuth, requireUser, validateProjectId(), async (req: Request, res: Response) => {
+  app.get('/api/projects/:projectId/access', hybridAuth, requireUser, validateProjectId(), asyncHandler(async (req: Request, res: Response) => {
     try {
       const user = (req as UserRequest).user;
       const { projectId } = req.params;
@@ -211,14 +211,14 @@ export function registerProjectRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * PUT /api/projects/:projectId/access
    * Grant or update access to a project
    * Body: { entries: [{ principalType: 'user' | 'team', principalId: string, role: 'view' | 'edit' | 'owner' }] }
    */
-  app.put('/api/projects/:projectId/access', hybridAuth, requireUser, validateProjectId(), async (req: Request, res: Response) => {
+  app.put('/api/projects/:projectId/access', hybridAuth, requireUser, validateProjectId(), asyncHandler(async (req: Request, res: Response) => {
     try {
       const user = (req as UserRequest).user;
       const { projectId } = req.params;
@@ -232,7 +232,7 @@ export function registerProjectRoutes(app: Express): void {
       });
 
       const { entries } = schema.parse(req.body);
-      const access = await projectService.grantProjectAccess(projectId, user.id, entries);
+      const access = await projectService.grantProjectAccess(projectId, user.id, entries as any);
       res.json({ success: true, data: access });
     } catch (error) {
       logger.error({ error }, "Error granting project access");
@@ -249,14 +249,14 @@ export function registerProjectRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") || message.includes("Only the") ? 403 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * DELETE /api/projects/:projectId/access
    * Revoke access from a project
    * Body: { entries: [{ principalType: 'user' | 'team', principalId: string }] }
    */
-  app.delete('/api/projects/:projectId/access', hybridAuth, requireUser, validateProjectId(), async (req: Request, res: Response) => {
+  app.delete('/api/projects/:projectId/access', hybridAuth, requireUser, validateProjectId(), asyncHandler(async (req: Request, res: Response) => {
     try {
       const user = (req as UserRequest).user;
       const { projectId } = req.params;
@@ -286,14 +286,14 @@ export function registerProjectRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * PUT /api/projects/:projectId/owner
    * Transfer project ownership
    * Body: { userId: string }
    */
-  app.put('/api/projects/:projectId/owner', hybridAuth, requireUser, validateProjectId(), async (req: Request, res: Response) => {
+  app.put('/api/projects/:projectId/owner', hybridAuth, requireUser, validateProjectId(), asyncHandler(async (req: Request, res: Response) => {
     try {
       const user = (req as UserRequest).user;
       const { projectId } = req.params;
@@ -320,7 +320,7 @@ export function registerProjectRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Only the") ? 403 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * POST /api/projects/:projectId/transfer
@@ -328,7 +328,7 @@ export function registerProjectRoutes(app: Express): void {
    * Cascades to all child workflows
    * Body: { targetOwnerType: 'user' | 'org', targetOwnerUuid: string }
    */
-  app.post('/api/projects/:projectId/transfer', hybridAuth, requireUser, validateProjectId(), async (req: Request, res: Response) => {
+  app.post('/api/projects/:projectId/transfer', hybridAuth, requireUser, validateProjectId(), asyncHandler(async (req: Request, res: Response) => {
     try {
       const user = (req as UserRequest).user;
       const { projectId } = req.params;
@@ -363,5 +363,5 @@ export function registerProjectRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 }

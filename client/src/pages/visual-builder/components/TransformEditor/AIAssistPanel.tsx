@@ -56,8 +56,8 @@ export const AIAssistPanel: React.FC<AIAssistPanelProps> = ({ transforms, onUpda
             <div className="p-4 border-b">
                 <h3 className="font-semibold text-slate-700">AI Assistant</h3>
                 <div className="flex text-xs space-x-2 mt-2">
-                    <button onClick={() => setMode('generate')} className={`px-2 py-1 rounded ${mode === 'generate' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100'}`}>Generate</button>
-                    <button onClick={() => setMode('revise')} className={`px-2 py-1 rounded ${mode === 'revise' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100'}`}>Revise</button>
+                    <button onClick={() => { void setMode('generate'); }} className={`px-2 py-1 rounded ${mode === 'generate' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100'}`}>Generate</button>
+                    <button onClick={() => { void setMode('revise'); }} className={`px-2 py-1 rounded ${mode === 'revise' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100'}`}>Revise</button>
                 </div>
             </div>
 
@@ -67,7 +67,7 @@ export const AIAssistPanel: React.FC<AIAssistPanelProps> = ({ transforms, onUpda
                     {mode === 'revise' && "Describe how to change existing transforms."}
                 </p>
 
-                <button onClick={handleDebug} className="w-full mb-4 bg-orange-100 text-orange-700 py-1 rounded text-sm hover:bg-orange-200">
+                <button onClick={() => { void handleDebug(); }} className="w-full mb-4 bg-orange-100 text-orange-700 py-1 rounded text-sm hover:bg-orange-200">
                     Check for Issues
                 </button>
             </div>
@@ -83,7 +83,7 @@ export const AIAssistPanel: React.FC<AIAssistPanelProps> = ({ transforms, onUpda
                 />
                 <button
                     disabled={loading}
-                    onClick={handleSubmit}
+                    onClick={() => { void handleSubmit(); }}
                     className="w-full mt-2 bg-indigo-600 text-white py-2 rounded text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
                     {loading ? 'Thinking...' : 'Submit'}
                 </button>

@@ -27,6 +27,7 @@ import { finalBlockRenderer, createTemplateResolver } from '../services/document
 import { runService } from '../services/RunService.js';
 import { workflowService } from '../services/WorkflowService.js';
 import { createError } from '../utils/errors.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 
 import type { FinalBlockConfig } from '../../shared/types/stepConfigs.js';
 import type { Express, Response } from 'express';
@@ -79,10 +80,11 @@ export function registerFinalBlockRoutes(app: Express): void {
   app.post(
     '/api/runs/:runId/generate-final',
     creatorOrRunTokenAuth,
-    async (req: RunAuthRequest, res: Response) => {
+    asyncHandler(async (req: any, res: Response) => {
       try {
+        const runAuthReq = req as RunAuthRequest;
         const { runId } = req.params;
-        const userId = req.userId || ''; // Handle undefined userId (run token)
+        const userId = runAuthReq.userId || ''; // Handle undefined userId (run token)
 
         // Validate request body
         const { stepId, toPdf, pdfStrategy } = generateFinalDocumentsSchema.parse(req.body);
@@ -104,7 +106,7 @@ export function registerFinalBlockRoutes(app: Express): void {
           // Fallback for run token or public run logic if getRun is too strict
           // For now, assuming middleware ensures access, we can fetch no-auth if getRun fails?
           // But getRun handles 'creator:...' check.
-          if (userId) {throw e;}
+          if (userId) { throw e; }
           run = await runService.getRunWithValuesNoAuth(runId);
         }
 
@@ -117,7 +119,7 @@ export function registerFinalBlockRoutes(app: Express): void {
           // If verifyAccess fails (e.g. anon with run token), we might need to fetch public workflow
           // preventing error if we are authorized via run token
           const w = await workflowService['workflowRepo'].findById(run.workflowId);
-          if (w) {return w;}
+          if (w) { return w; }
           throw createError.notFound('Workflow', run.workflowId);
         });
 
@@ -195,7 +197,7 @@ export function registerFinalBlockRoutes(app: Express): void {
           error: message,
         });
       }
-    }
+    })
   );
 
   /**
@@ -207,10 +209,11 @@ export function registerFinalBlockRoutes(app: Express): void {
   app.post(
     '/api/workflows/:workflowId/preview/generate-final',
     hybridAuth,
-    async (req: AuthRequest, res: Response) => {
+    asyncHandler(async (req: any, res: Response) => {
       try {
+        const authReq = req as AuthRequest;
         const { workflowId } = req.params;
-        const userId = req.userId;
+        const userId = authReq.userId;
 
         if (!userId) {
           throw createError.unauthorized();
@@ -290,7 +293,7 @@ export function registerFinalBlockRoutes(app: Express): void {
           error: message,
         });
       }
-    }
+    })
   );
 
   /**
@@ -302,10 +305,11 @@ export function registerFinalBlockRoutes(app: Express): void {
   app.get(
     '/api/runs/:runId/final-documents/:filename/download',
     creatorOrRunTokenAuth,
-    async (req: RunAuthRequest, res: Response) => {
+    asyncHandler(async (req: any, res: Response) => {
       try {
+        const runAuthReq = req as RunAuthRequest;
         const { runId, filename } = req.params;
-        const userId = req.userId || '';
+        const userId = runAuthReq.userId || '';
 
         logger.info({
           runId,
@@ -319,7 +323,7 @@ export function registerFinalBlockRoutes(app: Express): void {
         try {
           run = await runService.getRun(runId, userId);
         } catch (e) {
-          if (userId) {throw e;}
+          if (userId) { throw e; }
           // If no user ID, allow if token is valid? 
           // RunService doesn't have explicit run token check, but if we reached here via middleware
           // we assume valid token.
@@ -367,7 +371,7 @@ export function registerFinalBlockRoutes(app: Express): void {
           error: 'Download failed',
         });
       }
-    }
+    })
   );
 }
 

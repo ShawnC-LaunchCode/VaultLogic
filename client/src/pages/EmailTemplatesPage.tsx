@@ -39,9 +39,7 @@ export default function EmailTemplatesPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   // Load templates
-  useEffect(() => {
-    loadTemplates();
-  }, []);
+  useEffect(() => { void loadTemplates(); }, []);
 
   const loadTemplates = async () => {
     setIsLoading(true);
@@ -118,7 +116,7 @@ export default function EmailTemplatesPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => navigate(`/projects/${projectId}/settings/branding`)}
+                    onClick={() => { void navigate(`/projects/${projectId}/settings/branding`); }}
                   >
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Back to Branding
@@ -157,7 +155,7 @@ export default function EmailTemplatesPage() {
                 <Input
                   placeholder="Search templates..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => { void setSearchQuery(e.target.value); }}
                   className="pl-10"
                 />
               </div>
@@ -174,7 +172,7 @@ export default function EmailTemplatesPage() {
                   <Card
                     key={template.id}
                     className="hover:border-primary/50 transition-colors cursor-pointer"
-                    onClick={() => navigate(`/projects/${projectId}/settings/email-templates/${template.id}`)}
+                    onClick={() => { void navigate(`/projects/${projectId}/settings/email-templates/${template.id}`); }}
                   >
                     <CardHeader>
                       <div className="flex items-start justify-between">

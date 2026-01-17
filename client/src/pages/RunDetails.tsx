@@ -94,7 +94,7 @@ export default function RunDetails() {
       <div className="container mx-auto py-6">
         <div className="text-center">
           <p className="text-destructive">Error loading run details</p>
-          <Button onClick={() => setLocation('/runs')} className="mt-4">
+          <Button onClick={() => { void setLocation('/runs'); }} className="mt-4">
             Back to Runs
           </Button>
         </div>
@@ -130,7 +130,7 @@ export default function RunDetails() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setLocation('/runs')}
+            onClick={() => { void setLocation('/runs'); }}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
@@ -175,7 +175,7 @@ export default function RunDetails() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => shareMutation.mutate()}
+            onClick={() => { void shareMutation.mutate(); }}
             disabled={shareMutation.isPending}
           >
             <Share2 className="h-4 w-4 mr-2" />
@@ -184,7 +184,7 @@ export default function RunDetails() {
 
           <Button
             size="sm"
-            onClick={() => rerunMutation.mutate()}
+            onClick={() => { void rerunMutation.mutate(); }}
             disabled={rerunMutation.isPending}
           >
             <PlayCircle className="h-4 w-4 mr-2" />
@@ -407,7 +407,7 @@ export default function RunDetails() {
                 readOnly
               />
             </div>
-            <Button type="button" size="sm" className="px-3" onClick={handleCopyLink}>
+            <Button type="button" size="sm" className="px-3" onClick={() => { void handleCopyLink(); }}>
               <span className="sr-only">Copy</span>
               <Copy className="h-4 w-4" />
             </Button>

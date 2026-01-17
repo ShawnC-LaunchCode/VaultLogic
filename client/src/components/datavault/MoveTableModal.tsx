@@ -119,12 +119,12 @@ export function MoveTableModal({
         <DialogFooter>
           <Button
             variant="outline"
-            onClick={() => onOpenChange(false)}
+            onClick={() => { void onOpenChange(false); }}
             disabled={isLoading}
           >
             Cancel
           </Button>
-          <Button onClick={handleMove} disabled={!hasChanged || isLoading}>
+          <Button onClick={() => { void handleMove(); }} disabled={!hasChanged || isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Move Table
           </Button>

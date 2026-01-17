@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 import { db } from '../../server/db';
 import { canAccessAsset, isOrgMember, canManageOrg, getUserOrgIds, canCreateWithOwnership } from '../../server/utils/ownershipAccess';
-import { organizationMemberships, organizations, users } from '../../shared/schema';
+import { organizationMemberships, organizations, users, tenants } from '../../shared/schema';
 
 /**
  * Tests for Organization Ownership Access Control
@@ -20,22 +20,30 @@ describe('Ownership Access Control', () => {
   const userId2 = '00000000-0000-0000-0000-000000000002';
   const orgId1 = '10000000-0000-0000-0000-000000000001';
   const orgId2 = '10000000-0000-0000-0000-000000000002';
+  const tenantId = '00000000-0000-0000-0000-000000000099';
 
   // Setup test data before each test
   beforeEach(async () => {
     try {
+      // Create test tenant
+      await db.insert(tenants).values({
+        id: tenantId,
+        name: 'Ownership Test Tenant',
+      }).onConflictDoNothing();
+
       // Create test organizations
       await db.insert(organizations).values([
-        { id: orgId1, name: 'Test Org 1' },
-        { id: orgId2, name: 'Test Org 2' },
+        { id: orgId1, name: 'Test Org 1', tenantId },
+        { id: orgId2, name: 'Test Org 2', tenantId },
       ]).onConflictDoNothing();
 
       // Create test users
       await db.insert(users).values([
-        { id: userId1, email: 'user1@test.com', fullName: 'User 1' },
-        { id: userId2, email: 'user2@test.com', fullName: 'User 2' },
+        { id: userId1, email: 'user1@test.com', fullName: 'User 1', tenantId },
+        { id: userId2, email: 'user2@test.com', fullName: 'User 2', tenantId },
       ]).onConflictDoNothing();
     } catch (error) {
+      console.error('Setup error:', error);
       // Ignore setup errors if data already exists
     }
   });

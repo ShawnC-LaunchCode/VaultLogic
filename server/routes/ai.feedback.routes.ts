@@ -5,6 +5,7 @@ import { aiWorkflowFeedback } from "../../shared/schema";
 import { db } from "../db";
 import { createLogger } from "../logger";
 import { hybridAuth, type AuthRequest } from '../middleware/auth';
+import { asyncHandler } from '../utils/asyncHandler';
 
 import type { Express, Request, Response } from "express";
 
@@ -38,7 +39,7 @@ export function registerAiFeedbackRoutes(app: Express): void {
   app.post(
     '/api/ai/feedback',
     hybridAuth,
-    async (req: Request, res: Response) => {
+    asyncHandler(async (req: Request, res: Response) => {
       try {
         const authReq = req as AuthRequest;
         const userId = authReq.userId;
@@ -83,11 +84,12 @@ export function registerAiFeedbackRoutes(app: Express): void {
         });
       } catch (error: any) {
         if (error.name === 'ZodError') {
-          return res.status(400).json({
+          res.status(400).json({
             success: false,
             message: 'Invalid feedback data',
             errors: error.errors,
           });
+          return;
         }
 
         logger.error({ error }, 'Failed to submit AI feedback');
@@ -96,7 +98,7 @@ export function registerAiFeedbackRoutes(app: Express): void {
           message: 'Failed to submit feedback',
         });
       }
-    }
+    })
   );
 
   /**
@@ -106,7 +108,7 @@ export function registerAiFeedbackRoutes(app: Express): void {
   app.get(
     '/api/ai/feedback/stats',
     hybridAuth,
-    async (req: Request, res: Response) => {
+    asyncHandler(async (req: Request, res: Response) => {
       try {
         const authReq = req as AuthRequest;
         const userId = authReq.userId;
@@ -174,6 +176,6 @@ export function registerAiFeedbackRoutes(app: Express): void {
           message: 'Failed to get feedback statistics',
         });
       }
-    }
+    })
   );
 }

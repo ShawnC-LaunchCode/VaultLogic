@@ -118,10 +118,10 @@ export function VersionHistoryPanel({
                                                 </span>
                                             </div>
                                             <div className="flex gap-1">
-                                                <Button size="icon" variant="ghost" title="Compare" onClick={() => onDiff(version)}>
+                                                <Button size="icon" variant="ghost" title="Compare" onClick={() => { void onDiff(version); }}>
                                                     <FileDiff className="h-4 w-4" />
                                                 </Button>
-                                                <Button size="icon" variant="ghost" title="Restore" onClick={() => handleRestore(version)}>
+                                                <Button size="icon" variant="ghost" title="Restore" onClick={() => { void handleRestore(version); }}>
                                                     <RotateCcw className="h-4 w-4" />
                                                 </Button>
                                             </div>

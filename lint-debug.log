@@ -1,0 +1,293 @@
+npm warn Unknown project config "puppeteer_skip_download". This will stop working in the next major version of npm.
+
+> ezbuildr@1.0.0 lint:report
+> eslint . --ext .ts,.tsx,.js,.jsx --format json --output-file eslint-report.json
+
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\api\workflows.ts
+Line 784, column 2: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\api\workflows.ts
+Line 784, column 2: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\api\workflows.ts
+Line 784, column 2: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\api\workflows.ts
+Line 784, column 2: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\api\workflows.ts
+Line 784, column 2: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\api\workflows.ts
+Line 784, column 2: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\api\workflows.ts
+Line 784, column 2: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\api\workflows.ts
+Line 784, column 2: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 112, column 3: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 112, column 3: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 112, column 3: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 112, column 3: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\api\workflows.ts
+Line 784, column 2: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 112, column 3: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 112, column 3: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 112, column 3: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 112, column 3: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 112, column 3: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 112, column 3: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\api\workflows.ts
+Line 784, column 2: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 112, column 3: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\api\workflows.ts
+Line 784, column 2: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\api\workflows.ts
+Line 784, column 2: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\api\workflows.ts
+Line 784, column 2: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\api\workflows.ts
+Line 784, column 2: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\api\workflows.ts
+Line 784, column 2: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\api\workflows.ts
+Line 784, column 2: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\api\workflows.ts
+Line 784, column 2: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\api\workflows.ts
+Line 784, column 2: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\api\workflows.ts
+Line 784, column 2: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\api\workflows.ts
+Line 784, column 2: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\api\workflows.ts
+Line 784, column 2: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\api\workflows.ts
+Line 784, column 2: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\api\workflows.ts
+Line 784, column 2: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\api\workflows.ts
+Line 784, column 2: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\api\workflows.ts
+Line 784, column 2: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\api\workflows.ts
+Line 784, column 2: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\api\workflows.ts
+Line 784, column 2: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\api\workflows.ts
+Line 784, column 2: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored
+
+Error while parsing C:\Users\scoot\poll\VaultLogic\server\routes\auth.routes.ts
+Line 132, column 1: Declaration or statement expected.
+`parseForESLint` from parser `@typescript-eslint/parser` is invalid and will just be ignored

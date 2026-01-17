@@ -67,7 +67,7 @@ export function LogicInspectorPanel({ workflowId, currentWorkflow, isOpen, onClo
                     <GitGraph className="w-5 h-5 text-blue-500" />
                     Logic Inspector
                 </h2>
-                <Button variant="ghost" size="sm" onClick={onClose}>Close</Button>
+                <Button variant="ghost" size="sm" onClick={() => { void onClose(); }}>Close</Button>
             </div>
 
             <div className="flex-1 overflow-hidden">
@@ -88,11 +88,11 @@ export function LogicInspectorPanel({ workflowId, currentWorkflow, isOpen, onClo
                                 <Input
                                     placeholder="e.g. Show spouse details if marital status is Married"
                                     value={description}
-                                    onChange={(e) => setDescription(e.target.value)}
+                                    onChange={(e) => { void setDescription(e.target.value); }}
                                 />
                                 <Button
                                     className="w-full"
-                                    onClick={handleGenerate}
+                                    onClick={() => { void handleGenerate(); }}
                                     disabled={connectMutation.isPending || !description}
                                 >
                                     {connectMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Zap className="w-4 h-4 mr-2" />}
@@ -145,7 +145,7 @@ export function LogicInspectorPanel({ workflowId, currentWorkflow, isOpen, onClo
                             <Button
                                 variant="outline"
                                 className="w-full"
-                                onClick={handleDebug}
+                                onClick={() => { void handleDebug(); }}
                                 disabled={debugMutation.isPending}
                             >
                                 {debugMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Bug className="w-4 h-4 mr-2" />}

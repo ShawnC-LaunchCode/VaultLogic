@@ -6,6 +6,7 @@ import { logger } from "../logger";
 import { authService } from "../services/AuthService";
 import { portalAuthService } from "../services/PortalAuthService";
 import { portalService } from "../services/PortalService";
+import { asyncHandler } from "../utils/asyncHandler";
 
 
 const router = Router();
@@ -68,7 +69,7 @@ router.get("/auth/csrf-token", (req, res) => {
  * POST /api/portal/auth/send
  * Send a magic link to the provided email
  */
-router.post("/auth/send", ipLimiter, magicLinkLimiter, async (req, res) => {
+router.post("/auth/send", ipLimiter, magicLinkLimiter, asyncHandler(async (req: Request, res: Response) => {
     try {
         const { email } = sendMagicLinkSchema.parse(req.body);
 
@@ -86,16 +87,16 @@ router.post("/auth/send", ipLimiter, magicLinkLimiter, async (req, res) => {
         logger.error({ error }, "Error sending magic link");
         res.status(400).json({ error: "Invalid request" });
     }
-});
+}));
 
 /**
  * POST /api/portal/auth/verify
  * Verify a magic link token and return a JWT
  */
-router.post("/auth/verify", async (req, res) => {
+router.post("/auth/verify", asyncHandler(async (req: Request, res: Response) => {
     try {
         const { token } = req.body;
-        if (!token) {return res.status(400).json({ error: "Token required" });}
+        if (!token) { return res.status(400).json({ error: "Token required" }); }
 
         const user = await portalAuthService.verifyMagicLink(token);
         if (!user) {
@@ -110,7 +111,7 @@ router.post("/auth/verify", async (req, res) => {
         logger.error({ error }, "Error verifying token");
         res.status(500).json({ error: "Verification failed" });
     }
-});
+}));
 
 /**
  * POST /api/portal/auth/logout
@@ -124,7 +125,7 @@ router.post("/auth/logout", (req, res) => {
  * GET /api/portal/runs
  * List runs for the authenticated user
  */
-router.get("/runs", requirePortalAuth, async (req, res) => {
+router.get("/runs", requirePortalAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
         const email = (req as any).portalEmail;
         const runs = await portalService.listRunsForEmail(email);
@@ -133,7 +134,7 @@ router.get("/runs", requirePortalAuth, async (req, res) => {
         logger.error({ error }, "Error listing portal runs");
         res.status(500).json({ error: "Failed to list runs" });
     }
-});
+}));
 
 /**
  * GET /api/portal/me

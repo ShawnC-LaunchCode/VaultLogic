@@ -91,7 +91,7 @@ export default function EditTemplateModal({ open, onClose, template }: EditTempl
             <Input
               id="name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => { void setName(e.target.value); }}
               placeholder="e.g., Customer Feedback Questions"
               disabled={update.isPending}
             />
@@ -101,7 +101,7 @@ export default function EditTemplateModal({ open, onClose, template }: EditTempl
             <Textarea
               id="description"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => { void setDescription(e.target.value); }}
               placeholder="Brief description of what this template contains..."
               rows={3}
               disabled={update.isPending}
@@ -112,7 +112,7 @@ export default function EditTemplateModal({ open, onClose, template }: EditTempl
             <Input
               id="tags"
               value={tags}
-              onChange={(e) => setTags(e.target.value)}
+              onChange={(e) => { void setTags(e.target.value); }}
               placeholder="e.g., customer, feedback, nps (comma separated)"
               disabled={update.isPending}
             />
@@ -124,12 +124,12 @@ export default function EditTemplateModal({ open, onClose, template }: EditTempl
         <DialogFooter>
           <Button
             variant="outline"
-            onClick={onClose}
+            onClick={() => { void onClose(); }}
             disabled={update.isPending}
           >
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={update.isPending}>
+          <Button onClick={() => { void handleSave(); }} disabled={update.isPending}>
             {update.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             Save changes
           </Button>

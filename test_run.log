@@ -1,0 +1,1374 @@
+npm warn Unknown project config "puppeteer_skip_download". This will stop working in the next major version of npm.
+
+> ezbuildr@1.0.0 test
+> cross-env VITEST_INTEGRATION=true vitest run --coverage
+
+
+[1m[46m RUN [49m[22m [36mv4.0.16 [39m[90mC:/Users/scoot/poll/VaultLogic[39m
+      [2mCoverage enabled with [22m[33mv8[39m
+
+[90mstdout[2m | tests/integration/auth.flows.real.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+
+[90mstdout[2m | tests/integration/mfa.flow.real.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+
+[90mstdout[2m | tests/integration/organizationInvites.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+
+[90mstdout[2m | tests/integration/auth.routes.real.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+
+[90mstdout[2m | tests/integration/auth/jwt.authentication.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
+
+[90mstdout[2m | tests/integration/auth/auth.middleware.integration.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+
+[90mstdout[2m | tests/integration/auth/oauth2.token-refresh.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+
+[90mstdout[2m | tests/integration/auth/protected.routes.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+
+[90mstdout[2m | tests/integration/trusted.devices.real.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+
+[90mstdout[2m | tests/integration/auth/session.management.integration.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+
+[90mstdout[2m | tests/unit/services/WorkflowTemplateService.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+
+[90mstdout[2m | tests/integration/datavault.autonumber.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+
+[90mstdout[2m | tests/integration/transferOwnership.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+
+[90mstdout[2m | tests/integration/session.management.real.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+
+[90mstdout[2m | tests/integration/transferOwnership.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+
+[90mstdout[2m | tests/unit/services/WorkflowTemplateService.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+
+[90mstdout[2m | tests/integration/datavault.autonumber.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+
+[90mstdout[2m | tests/integration/organizationInvites.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+
+[90mstdout[2m | tests/integration/auth/oauth2.token-refresh.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+
+[90mstdout[2m | tests/integration/auth/auth.middleware.integration.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+
+[90mstdout[2m | tests/integration/session.management.real.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+
+[90mstdout[2m | tests/integration/auth/protected.routes.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+
+[90mstdout[2m | tests/integration/mfa.flow.real.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+
+[90mstdout[2m | tests/integration/auth.flows.real.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+
+[90mstdout[2m | tests/integration/auth.routes.real.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
+
+[90mstdout[2m | tests/integration/auth/jwt.authentication.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+
+[90mstdout[2m | tests/integration/auth/session.management.integration.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+
+[90mstdout[2m | tests/integration/trusted.devices.real.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+
+[90mstdout[2m | tests/integration/trusted.devices.real.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+DB: Skipping auto-init because NODE_ENV=test
+
+[90mstdout[2m | tests/integration/auth.flows.real.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+DB: Skipping auto-init because NODE_ENV=test
+
+[90mstdout[2m | tests/integration/session.management.real.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+DB: Skipping auto-init because NODE_ENV=test
+
+[90mstdout[2m | tests/integration/auth/oauth2.token-refresh.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+DB: Skipping auto-init because NODE_ENV=test
+
+[90mstdout[2m | tests/integration/organizationInvites.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+DB: Skipping auto-init because NODE_ENV=test
+
+[90mstdout[2m | tests/integration/auth.routes.real.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+DB: Skipping auto-init because NODE_ENV=test
+
+[90mstdout[2m | tests/integration/auth/jwt.authentication.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+DB: Skipping auto-init because NODE_ENV=test
+
+[90mstdout[2m | tests/integration/auth/session.management.integration.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+DB: Skipping auto-init because NODE_ENV=test
+
+[90mstdout[2m | tests/integration/auth/protected.routes.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+DB: Skipping auto-init because NODE_ENV=test
+
+[90mstdout[2m | tests/integration/transferOwnership.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+DB: Skipping auto-init because NODE_ENV=test
+
+[90mstdout[2m | tests/integration/auth/auth.middleware.integration.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+DB: Skipping auto-init because NODE_ENV=test
+
+[90mstdout[2m | tests/integration/mfa.flow.real.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+DB: Skipping auto-init because NODE_ENV=test
+
+[90mstdout[2m | tests/unit/services/WorkflowTemplateService.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+DB: Skipping auto-init because NODE_ENV=test
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+DB: Skipping auto-init because NODE_ENV=test
+
+[90mstdout[2m | tests/integration/datavault.autonumber.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+DB: Skipping auto-init because NODE_ENV=test
+
+[90mstdout[2m | tests/integration/organizationInvites.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w6_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+[90mstdout[2m | tests/integration/organizationInvites.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w6_v3 (Reused: true)
+
+[90mstdout[2m | tests/unit/services/WorkflowTemplateService.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w0_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+[90mstdout[2m | tests/unit/services/WorkflowTemplateService.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w0_v3 (Reused: true)
+
+[90mstdout[2m | tests/integration/organizationInvites.test.ts
+[22m[39m📊 Schema test_schema_w6_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+{"level":30,"time":1768680717648,"env":"test","msg":"DB: initializing... Local"}
+{"level":30,"time":1768680717649,"env":"test","msg":"DB: Configured pool to set search_path=\"test_schema_w6_v3\",public on all connections"}
+[90mstdout[2m | tests/unit/services/WorkflowTemplateService.test.ts
+[22m[39m📊 Schema test_schema_w0_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+{"level":30,"time":1768680717716,"env":"test","msg":"DB: initializing... Local"}
+{"level":30,"time":1768680717717,"env":"test","msg":"DB: Configured pool to set search_path=\"test_schema_w0_v3\",public on all connections"}
+{"level":30,"time":1768680717744,"env":"test","msg":"DB: initialized flag set."}
+{"level":30,"time":1768680717789,"env":"test","msg":"DB: initialized flag set."}
+[90mstdout[2m | tests/integration/datavault.autonumber.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w3_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+[90mstdout[2m | tests/integration/datavault.autonumber.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w3_v3 (Reused: true)
+
+[90mstdout[2m | tests/integration/transferOwnership.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w14_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+[90mstdout[2m | tests/integration/transferOwnership.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w14_v3 (Reused: true)
+
+[90mstdout[2m | tests/integration/datavault.autonumber.test.ts
+[22m[39m📊 Schema test_schema_w3_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+{"level":30,"time":1768680718242,"env":"test","msg":"DB: initializing... Local"}
+{"level":30,"time":1768680718243,"env":"test","msg":"DB: Configured pool to set search_path=\"test_schema_w3_v3\",public on all connections"}
+{"level":30,"time":1768680718310,"env":"test","msg":"DB: initialized flag set."}
+[90mstdout[2m | tests/integration/transferOwnership.test.ts
+[22m[39m📊 Schema test_schema_w14_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+{"level":30,"time":1768680718498,"env":"test","msg":"DB: initializing... Local"}
+{"level":30,"time":1768680718500,"env":"test","msg":"DB: Configured pool to set search_path=\"test_schema_w14_v3\",public on all connections"}
+{"level":30,"time":1768680718659,"env":"test","msg":"DB: initialized flag set."}
+{"level":30,"time":1768680720035,"env":"test","module":"metrics-service","msg":"MetricsService initialized"}
+{"level":30,"time":1768680720052,"env":"test","module":"metrics-service","msg":"MetricsService initialized"}
+{"level":30,"time":1768680720067,"env":"test","module":"metrics-service","msg":"MetricsService initialized"}
+{"level":30,"time":1768680720083,"env":"test","module":"metrics-service","msg":"MetricsService initialized"}
+{"level":30,"time":1768680720106,"env":"test","module":"metrics-service","msg":"MetricsService initialized"}
+{"level":30,"time":1768680720139,"env":"test","module":"metrics-service","msg":"MetricsService initialized"}
+[90mstdout[2m | tests/integration/auth/oauth2.token-refresh.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w13_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+[90mstdout[2m | tests/integration/session.management.real.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w5_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+[90mstdout[2m | tests/integration/auth.routes.real.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w11_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+[90mstdout[2m | tests/integration/auth/oauth2.token-refresh.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w13_v3 (Reused: true)
+
+[90mstdout[2m | tests/integration/session.management.real.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w5_v3 (Reused: true)
+
+[90mstdout[2m | tests/integration/auth.flows.real.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w9_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+[90mstdout[2m | tests/integration/mfa.flow.real.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w4_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+[90mstdout[2m | tests/integration/auth.routes.real.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w11_v3 (Reused: true)
+
+[90mstdout[2m | tests/integration/auth.flows.real.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w9_v3 (Reused: true)
+
+[90mstdout[2m | tests/integration/trusted.devices.real.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w7_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+[90mstdout[2m | tests/integration/mfa.flow.real.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w4_v3 (Reused: true)
+
+[90mstdout[2m | tests/integration/trusted.devices.real.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w7_v3 (Reused: true)
+
+[90mstdout[2m | tests/integration/session.management.real.test.ts
+[22m[39m📊 Schema test_schema_w5_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+{"level":30,"time":1768680721084,"env":"test","msg":"DB: initializing... Local"}
+{"level":30,"time":1768680721084,"env":"test","msg":"DB: Configured pool to set search_path=\"test_schema_w5_v3\",public on all connections"}
+{"level":30,"time":1768680721139,"env":"test","msg":"DB: initialized flag set."}
+[90mstdout[2m | tests/integration/auth/oauth2.token-refresh.test.ts
+[22m[39m📊 Schema test_schema_w13_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+{"level":30,"time":1768680721192,"env":"test","msg":"DB: initializing... Local"}
+{"level":30,"time":1768680721192,"env":"test","msg":"DB: Configured pool to set search_path=\"test_schema_w13_v3\",public on all connections"}
+{"level":30,"time":1768680721239,"env":"test","msg":"DB: initialized flag set."}
+[90mstdout[2m | tests/integration/auth.routes.real.test.ts
+[22m[39m📊 Schema test_schema_w11_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+{"level":30,"time":1768680721249,"env":"test","msg":"DB: initializing... Local"}
+[90mstdout[2m | tests/integration/trusted.devices.real.test.ts
+[22m[39m📊 Schema test_schema_w7_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+{"level":30,"time":1768680721262,"env":"test","msg":"DB: initializing... Local"}
+{"level":30,"time":1768680721262,"env":"test","msg":"DB: Configured pool to set search_path=\"test_schema_w7_v3\",public on all connections"}
+[90mstdout[2m | tests/integration/auth.flows.real.test.ts
+[22m[39m📊 Schema test_schema_w9_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+{"level":30,"time":1768680721292,"env":"test","msg":"DB: initializing... Local"}
+{"level":30,"time":1768680721292,"env":"test","msg":"DB: Configured pool to set search_path=\"test_schema_w9_v3\",public on all connections"}
+[90mstdout[2m | tests/integration/mfa.flow.real.test.ts
+[22m[39m📊 Schema test_schema_w4_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+{"level":30,"time":1768680721305,"env":"test","msg":"DB: initializing... Local"}
+{"level":30,"time":1768680721305,"env":"test","msg":"DB: Configured pool to set search_path=\"test_schema_w4_v3\",public on all connections"}
+{"level":30,"time":1768680721249,"env":"test","msg":"DB: Configured pool to set search_path=\"test_schema_w11_v3\",public on all connections"}
+{"level":30,"time":1768680721304,"env":"test","msg":"DB: initialized flag set."}
+{"level":30,"time":1768680721312,"env":"test","msg":"DB: initialized flag set."}
+{"level":30,"time":1768680721346,"env":"test","msg":"DB: initialized flag set."}
+{"level":30,"time":1768680721369,"env":"test","msg":"DB: initialized flag set."}
+{"level":30,"time":1768680724722,"env":"test","module":"metrics-service","msg":"MetricsService initialized"}
+{"level":30,"time":1768680724739,"env":"test","module":"metrics-service","msg":"MetricsService initialized"}
+{"level":30,"time":1768680724747,"env":"test","module":"metrics-service","msg":"MetricsService initialized"}
+{"level":30,"time":1768680724878,"env":"test","module":"metrics-service","msg":"MetricsService initialized"}
+{"level":30,"time":1768680724884,"env":"test","module":"metrics-service","msg":"MetricsService initialized"}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts
+[22m[39m✅ OpenAPI specification loaded successfully
+
+[90mstdout[2m | tests/integration/auth/protected.routes.test.ts
+[22m[39m✅ OpenAPI specification loaded successfully
+
+[90mstdout[2m | tests/integration/auth/session.management.integration.test.ts
+[22m[39m✅ OpenAPI specification loaded successfully
+
+[90mstdout[2m | tests/integration/auth/jwt.authentication.test.ts
+[22m[39m✅ OpenAPI specification loaded successfully
+
+[90mstdout[2m | tests/integration/auth/auth.middleware.integration.test.ts
+[22m[39m✅ OpenAPI specification loaded successfully
+
+[90mstdout[2m | tests/integration/auth/protected.routes.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w1_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+[90mstdout[2m | tests/integration/auth/session.management.integration.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w10_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+[90mstdout[2m | tests/integration/auth/protected.routes.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w1_v3 (Reused: true)
+
+[90mstdout[2m | tests/integration/auth/session.management.integration.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w10_v3 (Reused: true)
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w2_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+[90mstdout[2m | tests/integration/auth/jwt.authentication.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w12_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+[90mstdout[2m | tests/integration/auth/auth.middleware.integration.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w8_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w2_v3 (Reused: true)
+
+[90mstdout[2m | tests/integration/auth/jwt.authentication.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w12_v3 (Reused: true)
+
+[90mstdout[2m | tests/integration/auth/auth.middleware.integration.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w8_v3 (Reused: true)
+
+[90mstdout[2m | tests/integration/auth/protected.routes.test.ts
+[22m[39m📊 Schema test_schema_w1_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+{"level":30,"time":1768680733835,"env":"test","msg":"DB: initializing... Local"}
+[90mstdout[2m | tests/integration/auth/session.management.integration.test.ts
+[22m[39m📊 Schema test_schema_w10_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+{"level":30,"time":1768680733862,"env":"test","msg":"DB: initializing... Local"}
+{"level":30,"time":1768680733863,"env":"test","msg":"DB: Configured pool to set search_path=\"test_schema_w10_v3\",public on all connections"}
+[90mstdout[2m | tests/integration/auth/auth.middleware.integration.test.ts
+[22m[39m📊 Schema test_schema_w8_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+{"level":30,"time":1768680733921,"env":"test","msg":"DB: initializing... Local"}
+{"level":30,"time":1768680733922,"env":"test","msg":"DB: Configured pool to set search_path=\"test_schema_w8_v3\",public on all connections"}
+{"level":30,"time":1768680733925,"env":"test","msg":"DB: initialized flag set."}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts
+[22m[39m📊 Schema test_schema_w2_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+[90mstdout[2m | tests/integration/auth/jwt.authentication.test.ts
+[22m[39m📊 Schema test_schema_w12_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+{"level":30,"time":1768680733975,"env":"test","msg":"DB: initializing... Local"}
+{"level":30,"time":1768680733976,"env":"test","msg":"DB: Configured pool to set search_path=\"test_schema_w12_v3\",public on all connections"}
+{"level":30,"time":1768680733974,"env":"test","msg":"DB: initializing... Local"}
+{"level":30,"time":1768680733836,"env":"test","msg":"DB: Configured pool to set search_path=\"test_schema_w1_v3\",public on all connections"}
+{"level":30,"time":1768680733964,"env":"test","msg":"DB: initialized flag set."}
+{"level":30,"time":1768680734000,"env":"test","msg":"DB: initialized flag set."}
+{"level":30,"time":1768680734039,"env":"test","msg":"DB: initialized flag set."}
+{"level":30,"time":1768680733975,"env":"test","msg":"DB: Configured pool to set search_path=\"test_schema_w2_v3\",public on all connections"}
+{"level":30,"time":1768680734074,"env":"test","msg":"DB: initialized flag set."}
+{"level":30,"time":1768681016704,"env":"test","msg":"DB: closing pool..."}
+[90mstdout[2m | tests/unit/services/WorkflowTemplateService.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+{"level":30,"time":1768681016735,"env":"test","msg":"DB: closing pool..."}
+[90mstdout[2m | tests/integration/organizationInvites.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+{"level":30,"time":1768681017401,"env":"test","msg":"DB: closing pool..."}
+[90mstdout[2m | tests/integration/datavault.autonumber.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+{"level":30,"time":1768681017469,"env":"test","msg":"DB: closing pool..."}
+[90mstdout[2m | tests/integration/transferOwnership.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+{"level":30,"time":1768681020219,"env":"test","msg":"DB: closing pool..."}
+[90mstdout[2m | tests/integration/auth/oauth2.token-refresh.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+{"level":30,"time":1768681020222,"env":"test","msg":"DB: closing pool..."}
+[90mstdout[2m | tests/integration/auth.flows.real.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+{"level":30,"time":1768681020267,"env":"test","msg":"DB: closing pool..."}
+[90mstdout[2m | tests/integration/auth.routes.real.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+{"level":30,"time":1768681020311,"env":"test","msg":"DB: closing pool..."}
+[90mstdout[2m | tests/integration/session.management.real.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+{"level":30,"time":1768681020325,"env":"test","msg":"DB: closing pool..."}
+[90mstdout[2m | tests/integration/mfa.flow.real.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+{"level":30,"time":1768681020333,"env":"test","msg":"DB: closing pool..."}
+[90mstdout[2m | tests/integration/trusted.devices.real.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+{"level":30,"time":1768681032881,"env":"test","msg":"DB: closing pool..."}
+[90mstdout[2m | tests/integration/auth/protected.routes.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+{"level":30,"time":1768681032892,"env":"test","msg":"DB: closing pool..."}
+{"level":30,"time":1768681032893,"env":"test","msg":"DB: closing pool..."}
+[90mstdout[2m | tests/integration/auth/session.management.integration.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+[90mstdout[2m | tests/integration/auth/jwt.authentication.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+{"level":30,"time":1768681032897,"env":"test","msg":"DB: closing pool..."}
+[90mstdout[2m | tests/integration/datavault-v4-regression.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+{"level":30,"time":1768681032951,"env":"test","msg":"DB: closing pool..."}
+[90mstdout[2m | tests/integration/auth/auth.middleware.integration.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+ [31m❯[39m tests/unit/services/WorkflowTemplateService.test.ts [2m([22m[2m21 tests[22m[2m | [22m[33m21 skipped[39m[2m)[22m[33m 600031[2mms[22m[39m
+       [2m[90m↓[39m[22m should throw error if template belongs to different project
+       [2m[90m↓[39m[22m should automatically unset other primaries when setting new primary
+         [2m[90m↓[39m[22m should list all templates for workflow version
+         [2m[90m↓[39m[22m should return empty array for version with no templates
+         [2m[90m↓[39m[22m should get template mapping by id and version
+         [2m[90m↓[39m[22m should throw error if mapping not found
+         [2m[90m↓[39m[22m should get template by key
+         [2m[90m↓[39m[22m should throw error if key not found
+         [2m[90m↓[39m[22m should get primary template for workflow version
+         [2m[90m↓[39m[22m should return null when no primary template exists
+         [2m[90m↓[39m[22m should update mapping key
+         [2m[90m↓[39m[22m should update isPrimary flag
+         [2m[90m↓[39m[22m should throw error if new key already exists
+         [2m[90m↓[39m[22m should throw error if mapping not found
+         [2m[90m↓[39m[22m should unset other primaries when setting isPrimary to true
+         [2m[90m↓[39m[22m should detach template from workflow version
+         [2m[90m↓[39m[22m should throw error if mapping not found
+         [2m[90m↓[39m[22m should set template as primary
+         [2m[90m↓[39m[22m should throw error if mapping not found
+         [2m[90m↓[39m[22m should support operations within a transaction
+         [2m[90m↓[39m[22m should rollback on transaction error
+ [31m❯[39m tests/integration/organizationInvites.test.ts [2m([22m[2m17 tests[22m[2m | [22m[33m17 skipped[39m[2m)[22m[33m 600048[2mms[22m[39m
+       [2m[90m↓[39m[22m should create placeholder user for non-existent email
+       [2m[90m↓[39m[22m should create invite for existing user without creating placeholder
+       [2m[90m↓[39m[22m should prevent duplicate pending invites
+       [2m[90m↓[39m[22m should prevent inviting existing members
+       [2m[90m↓[39m[22m should require admin access to create invite
+       [2m[90m↓[39m[22m should set expiry to 7 days from now
+       [2m[90m↓[39m[22m should accept invite and create membership
+       [2m[90m↓[39m[22m should convert placeholder user to real user on accept
+       [2m[90m↓[39m[22m should reject expired invite
+       [2m[90m↓[39m[22m should reject already accepted invite
+       [2m[90m↓[39m[22m should verify email matches invite
+       [2m[90m↓[39m[22m should reject invalid token
+       [2m[90m↓[39m[22m should return pending invites for user email
+       [2m[90m↓[39m[22m should not return expired invites
+       [2m[90m↓[39m[22m should not return accepted invites
+       [2m[90m↓[39m[22m should allow admin to revoke invite
+       [2m[90m↓[39m[22m should prevent accepting revoked invite
+[90mstdout[2m | tests/integration/organizationService.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+
+[90mstdout[2m | tests/integration/api.workflows.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
+
+ [31m❯[39m tests/integration/datavault.autonumber.test.ts [2m([22m[2m5 tests[22m[2m | [22m[33m5 skipped[39m[2m)[22m[33m 600019[2mms[22m[39m
+     [2m[90m↓[39m[22m should generate basic autonumber without prefix
+     [2m[90m↓[39m[22m should generate autonumber with prefix
+     [2m[90m↓[39m[22m should generate autonumber with yearly reset format
+     [2m[90m↓[39m[22m should be atomic and prevent race conditions
+     [2m[90m↓[39m[22m should prevent manual updates to autonumber values
+ [31m❯[39m tests/integration/transferOwnership.test.ts [2m([22m[2m11 tests[22m[2m | [22m[33m11 skipped[39m[2m)[22m[33m 600016[2mms[22m[39m
+       [2m[90m↓[39m[22m should transfer user-owned project to org
+       [2m[90m↓[39m[22m should prevent transfer to org if user is not a member
+       [2m[90m↓[39m[22m should allow org member to transfer org-owned project to another org they belong to
+       [2m[90m↓[39m[22m should detach workflow from project when transferring to different owner
+       [2m[90m↓[39m[22m should keep workflow in project when transferring to same owner
+       [2m[90m↓[39m[22m should prevent non-member from transferring org workflow
+       [2m[90m↓[39m[22m should transfer database ownership
+       [2m[90m↓[39m[22m should allow org member to transfer org database
+       [2m[90m↓[39m[22m should prevent transfer to org if user is not a member
+       [2m[90m↓[39m[22m should only allow transfer to self when targetOwnerType is user
+       [2m[90m↓[39m[22m should allow transfer from user to self (org member transferring org asset to themselves)
+[90mstdout[2m | tests/integration/organizationService.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
+
+[90mstdout[2m | tests/integration/organizations-audit-fixes.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+
+[90mstdout[2m | tests/unit/repositories/WorkflowTemplateRepository.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+
+[90mstdout[2m | tests/integration/organizationService.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+DB: Skipping auto-init because NODE_ENV=test
+
+[90mstdout[2m | tests/integration/api.workflows.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+
+[90mstdout[2m | tests/integration/api.workflows.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+DB: Skipping auto-init because NODE_ENV=test
+
+[90mstdout[2m | tests/unit/repositories/WorkflowTemplateRepository.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
+
+[90mstdout[2m | tests/integration/organizations-audit-fixes.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+
+[90mstdout[2m | tests/integration/organizationService.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w15_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+[90mstdout[2m | tests/integration/organizationService.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w15_v3 (Reused: true)
+
+[90mstdout[2m | tests/integration/organizationService.test.ts
+[22m[39m📊 Schema test_schema_w15_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+{"level":30,"time":1768681319556,"env":"test","msg":"DB: initializing... Local"}
+{"level":30,"time":1768681319557,"env":"test","msg":"DB: Configured pool to set search_path=\"test_schema_w15_v3\",public on all connections"}
+{"level":30,"time":1768681319604,"env":"test","msg":"DB: initialized flag set."}
+[90mstdout[2m | tests/integration/organizations-audit-fixes.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+DB: Skipping auto-init because NODE_ENV=test
+
+[90mstdout[2m | tests/unit/repositories/WorkflowTemplateRepository.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
+DB: Skipping auto-init because NODE_ENV=test
+
+ [31m❯[39m tests/integration/auth/oauth2.token-refresh.test.ts [2m([22m[2m25 tests[22m[2m | [22m[33m25 skipped[39m[2m)[22m[33m 600050[2mms[22m[39m
+       [2m[90m↓[39m[22m should refresh access token with valid refresh token
+       [2m[90m↓[39m[22m should rotate refresh token after use
+       [2m[90m↓[39m[22m should return 401 when refresh token is missing
+       [2m[90m↓[39m[22m should return 401 for invalid refresh token
+       [2m[90m↓[39m[22m should return 401 for expired refresh token
+       [2m[90m↓[39m[22m should return 401 for revoked refresh token
+       [2m[90m↓[39m[22m should return 401 when user is not found
+       [2m[90m↓[39m[22m should update refresh token metadata on rotation
+       [2m[90m↓[39m[22m should handle concurrent refresh token requests (token reuse detection)
+       [2m[90m↓[39m[22m should set secure cookie in production
+       [2m[90m↓[39m[22m should set proper cookie attributes
+       [2m[90m↓[39m[22m should include user role information in response
+       [2m[90m↓[39m[22m should create refresh token on login
+       [2m[90m↓[39m[22m should revoke refresh token on logout
+       [2m[90m↓[39m[22m should handle logout without refresh token gracefully
+       [2m[90m↓[39m[22m should support multiple active refresh tokens per user
+       [2m[90m↓[39m[22m should revoke all user tokens on password reset
+       [2m[90m↓[39m[22m should use cryptographically strong random tokens
+       [2m[90m↓[39m[22m should hash refresh tokens before storing in database
+       [2m[90m↓[39m[22m should prevent refresh token reuse after rotation
+       [2m[90m↓[39m[22m should validate token ownership
+       [2m[90m↓[39m[22m should set HttpOnly flag to prevent XSS
+       [2m[90m↓[39m[22m should set SameSite=Strict to prevent CSRF
+       [2m[90m↓[39m[22m should set proper cookie path
+       [2m[90m↓[39m[22m should set appropriate expiry (30 days)
+ [31m❯[39m tests/integration/auth.flows.real.test.ts [2m([22m[2m11 tests[22m[2m | [22m[33m11 skipped[39m[2m)[22m[33m 600024[2mms[22m[39m
+       [2m[90m↓[39m[22m should complete registration, verify email, then login
+       [2m[90m↓[39m[22m should lock account after 5 failed attempts, then unlock after waiting
+       [2m[90m↓[39m[22m should record all login attempts
+       [2m[90m↓[39m[22m should complete MFA setup and login with TOTP
+       [2m[90m↓[39m[22m should login with backup code when TOTP unavailable
+       [2m[90m↓[39m[22m should complete full password reset flow
+       [2m[90m↓[39m[22m should invalidate all sessions after password reset
+       [2m[90m↓[39m[22m should rotate refresh token on each use
+       [2m[90m↓[39m[22m should detect and prevent refresh token reuse (token theft)
+       [2m[90m↓[39m[22m should list all active sessions
+       [2m[90m↓[39m[22m should revoke specific session
+ [31m❯[39m tests/integration/session.management.real.test.ts [2m([22m[2m18 tests[22m[2m | [22m[33m18 skipped[39m[2m)[22m[33m 600068[2mms[22m[39m
+       [2m[90m↓[39m[22m should list all active sessions for current user
+       [2m[90m↓[39m[22m should mark current session correctly
+       [2m[90m↓[39m[22m should exclude revoked sessions
+       [2m[90m↓[39m[22m should order sessions by last used (most recent first)
+       [2m[90m↓[39m[22m should filter sessions by current user only
+       [2m[90m↓[39m[22m should return 401 for unauthenticated request
+       [2m[90m↓[39m[22m should revoke specific session
+       [2m[90m↓[39m[22m should prevent revoking current session
+       [2m[90m↓[39m[22m should return 404 for non-existent session
+       [2m[90m↓[39m[22m should prevent revoking other user's session
+       [2m[90m↓[39m[22m should revoke all other sessions
+       [2m[90m↓[39m[22m should keep current session active
+       [2m[90m↓[39m[22m should return 400 if no active session found
+       [2m[90m↓[39m[22m should revoke all trusted devices
+       [2m[90m↓[39m[22m should handle user with single session gracefully
+       [2m[90m↓[39m[22m should include device metadata in sessions
+       [2m[90m↓[39m[22m should not expose sensitive token data
+       [2m[90m↓[39m[22m should track session activity timestamps
+ [31m❯[39m tests/integration/mfa.flow.real.test.ts [2m([22m[2m20 tests[22m[2m | [22m[33m20 skipped[39m[2m)[22m[33m 600080[2mms[22m[39m
+       [2m[90m↓[39m[22m should complete full MFA setup flow
+       [2m[90m↓[39m[22m should reject invalid TOTP code during setup
+       [2m[90m↓[39m[22m should not allow MFA setup if already enabled
+       [2m[90m↓[39m[22m should generate unique backup codes
+       [2m[90m↓[39m[22m should store hashed backup codes
+       [2m[90m↓[39m[22m should require MFA for enabled users
+       [2m[90m↓[39m[22m should complete MFA login with valid TOTP
+       [2m[90m↓[39m[22m should reject invalid TOTP during login
+       [2m[90m↓[39m[22m should accept TOTP codes within 60-second window
+       [2m[90m↓[39m[22m should login with valid backup code
+       [2m[90m↓[39m[22m should mark backup code as used
+       [2m[90m↓[39m[22m should prevent backup code reuse
+       [2m[90m↓[39m[22m should try TOTP before backup code
+       [2m[90m↓[39m[22m should return MFA status for user
+       [2m[90m↓[39m[22m should return backup codes count for MFA users
+       [2m[90m↓[39m[22m should disable MFA with password verification
+       [2m[90m↓[39m[22m should require correct password to disable MFA
+       [2m[90m↓[39m[22m should regenerate backup codes
+       [2m[90m↓[39m[22m should return error if MFA not enabled
+       [2m[90m↓[39m[22m should enforce MFA for tenant users when required by tenant
+[90mstdout[2m | tests/unit/repositories/WorkflowTemplateRepository.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w17_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+ [31m❯[39m tests/integration/auth.routes.real.test.ts [2m([22m[2m26 tests[22m[2m | [22m[33m26 skipped[39m[2m)[22m[33m 600182[2mms[22m[39m
+       [2m[90m↓[39m[22m should register a new user successfully
+       [2m[90m↓[39m[22m should return 400 for invalid email format
+       [2m[90m↓[39m[22m should return 400 for weak password
+       [2m[90m↓[39m[22m should return 409 for duplicate email
+       [2m[90m↓[39m[22m should set httpOnly refresh token cookie
+       [2m[90m↓[39m[22m should login with valid credentials
+       [2m[90m↓[39m[22m should return 401 for invalid password
+       [2m[90m↓[39m[22m should return 401 for non-existent user
+       [2m[90m↓[39m[22m should return 403 for unverified email
+       [2m[90m↓[39m[22m should record failed login attempt
+       [2m[90m↓[39m[22m should return requiresMfa=true for MFA-enabled users
+       [2m[90m↓[39m[22m should lock account after 5 failed attempts
+       [2m[90m↓[39m[22m should logout and clear refresh token cookie
+       [2m[90m↓[39m[22m should refresh access token with valid refresh token
+       [2m[90m↓[39m[22m should return 401 for missing refresh token
+       [2m[90m↓[39m[22m should rotate refresh token after use
+       [2m[90m↓[39m[22m should send password reset email for existing user
+       [2m[90m↓[39m[22m should not reveal if email exists (security)
+       [2m[90m↓[39m[22m should reset password with valid token
+       [2m[90m↓[39m[22m should return 400 for invalid token
+       [2m[90m↓[39m[22m should return 400 for weak new password
+       [2m[90m↓[39m[22m should return current user for valid token
+       [2m[90m↓[39m[22m should return 401 for missing token
+       [2m[90m↓[39m[22m should return 401 for invalid token
+         [2m[90m↓[39m[22m should complete MFA login with valid TOTP code
+         [2m[90m↓[39m[22m should reject invalid MFA code
+[90mstdout[2m | tests/unit/repositories/WorkflowTemplateRepository.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w17_v3 (Reused: true)
+
+ [31m❯[39m tests/integration/trusted.devices.real.test.ts [2m([22m[2m14 tests[22m[2m | [22m[33m14 skipped[39m[2m)[22m[33m 600156[2mms[22m[39m
+       [2m[90m↓[39m[22m should trust current device
+       [2m[90m↓[39m[22m should set trust expiry to 30 days
+       [2m[90m↓[39m[22m should update expiry if device already trusted
+       [2m[90m↓[39m[22m should require authentication
+       [2m[90m↓[39m[22m should list all trusted devices
+       [2m[90m↓[39m[22m should mark current device
+       [2m[90m↓[39m[22m should exclude revoked devices
+       [2m[90m↓[39m[22m should exclude expired devices
+       [2m[90m↓[39m[22m should revoke specific device
+       [2m[90m↓[39m[22m should return 404 for non-existent device
+       [2m[90m↓[39m[22m should prevent revoking other user's device
+       [2m[90m↓[39m[22m should skip MFA for trusted device
+       [2m[90m↓[39m[22m should require MFA for untrusted device
+       [2m[90m↓[39m[22m should update lastUsedAt on trusted device login
+[90mstdout[2m | tests/integration/organizations-audit-fixes.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w18_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+[90mstdout[2m | tests/integration/organizations-audit-fixes.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w18_v3 (Reused: true)
+
+[90mstdout[2m | tests/unit/repositories/WorkflowTemplateRepository.test.ts
+[22m[39m📊 Schema test_schema_w17_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+{"level":30,"time":1768681320903,"env":"test","msg":"DB: initializing... Local"}
+{"level":30,"time":1768681320904,"env":"test","msg":"DB: Configured pool to set search_path=\"test_schema_w17_v3\",public on all connections"}
+{"level":30,"time":1768681320953,"env":"test","msg":"DB: initialized flag set."}
+[90mstdout[2m | tests/integration/organizations-audit-fixes.test.ts
+[22m[39m📊 Schema test_schema_w18_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+{"level":30,"time":1768681321157,"env":"test","msg":"DB: initializing... Local"}
+{"level":30,"time":1768681321158,"env":"test","msg":"DB: Configured pool to set search_path=\"test_schema_w18_v3\",public on all connections"}
+{"level":30,"time":1768681321242,"env":"test","msg":"DB: initialized flag set."}
+[90mstdout[2m | tests/integration/datavault.permissions.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+
+[90mstdout[2m | tests/integration/lifecycle-hooks-execution.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+
+[90mstdout[2m | tests/integration/datavault.api-tokens.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: ✅ audit secrets and track compliance: https://dotenvx.com/ops
+
+[90mstdout[2m | tests/unit/services/PdfQueueService.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+
+[90mstdout[2m | tests/integration/auth/oauth2.sessions.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: ⚙️  override existing env vars with { override: true }
+
+[90mstdout[2m | tests/unit/engine/templateNode.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+
+[90mstdout[2m | tests/unit/engine/templateNode.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+
+[90mstdout[2m | tests/unit/services/PdfQueueService.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+
+[90mstdout[2m | tests/integration/datavault.api-tokens.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+
+[90mstdout[2m | tests/integration/datavault.permissions.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+
+[90mstdout[2m | tests/integration/datavault.permissions.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+DB: Skipping auto-init because NODE_ENV=test
+
+[90mstdout[2m | tests/unit/engine/templateNode.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+DB: Skipping auto-init because NODE_ENV=test
+
+[90mstdout[2m | tests/unit/services/PdfQueueService.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+DB: Skipping auto-init because NODE_ENV=test
+
+[90mstdout[2m | tests/integration/lifecycle-hooks-execution.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+
+[90mstdout[2m | tests/integration/datavault.api-tokens.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
+DB: Skipping auto-init because NODE_ENV=test
+
+[90mstdout[2m | tests/integration/lifecycle-hooks-execution.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+DB: Skipping auto-init because NODE_ENV=test
+
+[90mstdout[2m | tests/integration/auth/oauth2.sessions.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+
+[90mstdout[2m | tests/integration/auth/oauth2.sessions.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  suppress all logs with { quiet: true }
+DB: Skipping auto-init because NODE_ENV=test
+
+[90mstdout[2m | tests/unit/services/PdfQueueService.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w22_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+[90mstdout[2m | tests/unit/services/PdfQueueService.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w22_v3 (Reused: true)
+
+[90mstdout[2m | tests/unit/engine/templateNode.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w24_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+[90mstdout[2m | tests/unit/engine/templateNode.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w24_v3 (Reused: true)
+
+[90mstdout[2m | tests/integration/datavault.api-tokens.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w21_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+[90mstdout[2m | tests/integration/datavault.api-tokens.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w21_v3 (Reused: true)
+
+[90mstdout[2m | tests/unit/services/PdfQueueService.test.ts
+[22m[39m📊 Schema test_schema_w22_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+[90mstdout[2m | tests/integration/datavault.api-tokens.test.ts
+[22m[39m📊 Schema test_schema_w21_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+{"level":30,"time":1768681324715,"env":"test","msg":"DB: initializing... Local"}
+[90mstdout[2m | tests/unit/engine/templateNode.test.ts
+[22m[39m📊 Schema test_schema_w24_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+{"level":30,"time":1768681324729,"env":"test","msg":"DB: initializing... Local"}
+{"level":30,"time":1768681324730,"env":"test","msg":"DB: Configured pool to set search_path=\"test_schema_w24_v3\",public on all connections"}
+{"level":30,"time":1768681324716,"env":"test","msg":"DB: Configured pool to set search_path=\"test_schema_w21_v3\",public on all connections"}
+{"level":30,"time":1768681324805,"env":"test","msg":"DB: initialized flag set."}
+{"level":30,"time":1768681324804,"env":"test","msg":"DB: initialized flag set."}
+{"level":30,"time":1768681326763,"env":"test","module":"metrics-service","msg":"MetricsService initialized"}
+{"level":30,"time":1768681326804,"env":"test","module":"metrics-service","msg":"MetricsService initialized"}
+[90mstdout[2m | tests/integration/auth/oauth2.sessions.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w20_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+[90mstdout[2m | tests/integration/auth/oauth2.sessions.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w20_v3 (Reused: true)
+
+[90mstdout[2m | tests/integration/auth/oauth2.sessions.test.ts
+[22m[39m📊 Schema test_schema_w20_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+{"level":30,"time":1768681327978,"env":"test","msg":"DB: initializing... Local"}
+{"level":30,"time":1768681327979,"env":"test","msg":"DB: Configured pool to set search_path=\"test_schema_w20_v3\",public on all connections"}
+{"level":30,"time":1768681328032,"env":"test","msg":"DB: initialized flag set."}
+{"level":30,"time":1768681328675,"env":"test","module":"metrics-service","msg":"MetricsService initialized"}
+{"level":30,"time":1768681328785,"env":"test","module":"metrics-service","msg":"MetricsService initialized"}
+[90mstdout[2m | tests/integration/api.workflows.test.ts
+[22m[39m✅ OpenAPI specification loaded successfully
+
+[90mstdout[2m | tests/integration/api.workflows.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w16_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+[90mstdout[2m | tests/integration/api.workflows.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w16_v3 (Reused: true)
+
+[90mstdout[2m | tests/integration/api.workflows.test.ts
+[22m[39m📊 Schema test_schema_w16_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+{"level":30,"time":1768681330231,"env":"test","msg":"DB: initializing... Local"}
+{"level":30,"time":1768681330232,"env":"test","msg":"DB: Configured pool to set search_path=\"test_schema_w16_v3\",public on all connections"}
+{"level":30,"time":1768681330285,"env":"test","msg":"DB: initialized flag set."}
+[90mstdout[2m | tests/integration/datavault.permissions.test.ts
+[22m[39m✅ OpenAPI specification loaded successfully
+
+[90mstdout[2m | tests/integration/lifecycle-hooks-execution.test.ts
+[22m[39m✅ OpenAPI specification loaded successfully
+
+[90mstdout[2m | tests/integration/lifecycle-hooks-execution.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w19_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+[90mstdout[2m | tests/integration/lifecycle-hooks-execution.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w19_v3 (Reused: true)
+
+[90mstdout[2m | tests/integration/datavault.permissions.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w23_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+[90mstdout[2m | tests/integration/datavault.permissions.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w23_v3 (Reused: true)
+
+[90mstdout[2m | tests/integration/lifecycle-hooks-execution.test.ts
+[22m[39m📊 Schema test_schema_w19_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+{"level":30,"time":1768681332014,"env":"test","msg":"DB: initializing... Local"}
+{"level":30,"time":1768681332015,"env":"test","msg":"DB: Configured pool to set search_path=\"test_schema_w19_v3\",public on all connections"}
+{"level":30,"time":1768681332074,"env":"test","msg":"DB: initialized flag set."}
+[90mstdout[2m | tests/integration/datavault.permissions.test.ts
+[22m[39m📊 Schema test_schema_w23_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+{"level":30,"time":1768681332100,"env":"test","msg":"DB: initializing... Local"}
+{"level":30,"time":1768681332101,"env":"test","msg":"DB: Configured pool to set search_path=\"test_schema_w23_v3\",public on all connections"}
+{"level":30,"time":1768681332158,"env":"test","msg":"DB: initialized flag set."}
+ [31m❯[39m tests/integration/auth/protected.routes.test.ts [2m([22m[2m33 tests[22m[2m | [22m[33m33 skipped[39m[2m)[22m[33m 600044[2mms[22m[39m
+       [2m[90m↓[39m[22m should allow access with valid Bearer token
+       [2m[90m↓[39m[22m should reject access without Authorization header
+       [2m[90m↓[39m[22m should reject access with empty Bearer token
+       [2m[90m↓[39m[22m should reject access with malformed Authorization header
+       [2m[90m↓[39m[22m should reject access with wrong token type
+       [2m[90m↓[39m[22m should allow POST with valid Bearer token
+       [2m[90m↓[39m[22m should reject POST without Bearer token
+       [2m[90m↓[39m[22m should reject POST with invalid token
+       [2m[90m↓[39m[22m should allow PUT with valid Bearer token
+       [2m[90m↓[39m[22m should reject PUT without Bearer token
+       [2m[90m↓[39m[22m should allow DELETE with valid Bearer token
+       [2m[90m↓[39m[22m should reject DELETE without Bearer token
+       [2m[90m↓[39m[22m should allow PATCH with valid Bearer token
+       [2m[90m↓[39m[22m should reject PATCH without Bearer token
+       [2m[90m↓[39m[22m should handle Bearer token with extra spaces
+       [2m[90m↓[39m[22m should handle token with newlines
+       [2m[90m↓[39m[22m should handle very long invalid token
+       [2m[90m↓[39m[22m should handle empty Authorization header
+       [2m[90m↓[39m[22m should handle Authorization header with only Bearer
+       [2m[90m↓[39m[22m should handle multiple Authorization headers
+       [2m[90m↓[39m[22m should reject token with SQL injection attempt
+       [2m[90m↓[39m[22m should reject token with XSS attempt
+       [2m[90m↓[39m[22m should reject token with missing userId
+       [2m[90m↓[39m[22m should reject token with non-existent userId
+       [2m[90m↓[39m[22m should not allow user to access another user's resources
+       [2m[90m↓[39m[22m should inject userId into request context
+       [2m[90m↓[39m[22m should inject tenantId into request context
+       [2m[90m↓[39m[22m should inject role into request context
+       [2m[90m↓[39m[22m should not apply general rate limiting to authenticated requests
+       [2m[90m↓[39m[22m should handle request with both Bearer token and cookies
+       [2m[90m↓[39m[22m should prioritize Bearer token over cookie when both present
+       [2m[90m↓[39m[22m should allow unauthenticated access to optional auth routes
+       [2m[90m↓[39m[22m should enhance optional auth routes with user context when authenticated
+ [31m❯[39m tests/integration/auth/jwt.authentication.test.ts [2m([22m[2m27 tests[22m[2m | [22m[33m27 skipped[39m[2m)[22m[33m 600020[2mms[22m[39m
+       [2m[90m↓[39m[22m should generate valid JWT token on successful login
+       [2m[90m↓[39m[22m should include correct payload in JWT token
+       [2m[90m↓[39m[22m should set JWT expiry to 15 minutes
+       [2m[90m↓[39m[22m should accept valid JWT token on protected routes
+       [2m[90m↓[39m[22m should reject request without authorization header
+       [2m[90m↓[39m[22m should reject request with malformed token
+       [2m[90m↓[39m[22m should accept request with missing Bearer prefix (lenient)
+       [2m[90m↓[39m[22m should reject token with invalid signature
+       [2m[90m↓[39m[22m should reject expired JWT token
+       [2m[90m↓[39m[22m should return token_expired error code for expired tokens
+       [2m[90m↓[39m[22m should authenticate with Bearer token in Authorization header
+       [2m[90m↓[39m[22m should work with Bearer token on POST requests
+       [2m[90m↓[39m[22m should work with Bearer token on PUT requests
+       [2m[90m↓[39m[22m should work with Bearer token on DELETE requests
+       [2m[90m↓[39m[22m should exchange valid session cookie for JWT token
+       [2m[90m↓[39m[22m should reject token exchange without valid cookie
+       [2m[90m↓[39m[22m should prefer Bearer token over cookie when both present
+       [2m[90m↓[39m[22m should fall back to cookie if Bearer token is invalid
+       [2m[90m↓[39m[22m should allow GET requests with cookie auth only
+       [2m[90m↓[39m[22m should reject POST requests with cookie auth only (mutation-strict)
+       [2m[90m↓[39m[22m should allow anonymous access to public workflows
+       [2m[90m↓[39m[22m should attach user info if authenticated on optional auth routes
+       [2m[90m↓[39m[22m should refresh access token using refresh token
+       [2m[90m↓[39m[22m should rotate refresh token on use
+       [2m[90m↓[39m[22m should detect token reuse and revoke all user tokens
+       [2m[90m↓[39m[22m should revoke refresh token on logout
+       [2m[90m↓[39m[22m should clear refresh token cookie on logout
+ [31m❯[39m tests/integration/auth/session.management.integration.test.ts [2m([22m[2m18 tests[22m[2m | [22m[33m18 skipped[39m[2m)[22m[33m 600024[2mms[22m[39m
+       [2m[90m↓[39m[22m should create refresh token on login
+       [2m[90m↓[39m[22m should track device metadata in session
+       [2m[90m↓[39m[22m should create separate sessions for multiple device logins
+       [2m[90m↓[39m[22m should list all active sessions for user
+       [2m[90m↓[39m[22m should mark current session correctly
+       [2m[90m↓[39m[22m should not include revoked sessions
+       [2m[90m↓[39m[22m should order sessions by last used (most recent first)
+       [2m[90m↓[39m[22m should require authentication
+       [2m[90m↓[39m[22m should revoke specific session
+       [2m[90m↓[39m[22m should prevent revoking current session
+       [2m[90m↓[39m[22m should not allow revoking other users sessions
+       [2m[90m↓[39m[22m should return 404 for non-existent session ID
+       [2m[90m↓[39m[22m should revoke all sessions except current
+       [2m[90m↓[39m[22m should revoke all trusted devices
+       [2m[90m↓[39m[22m should require active session
+       [2m[90m↓[39m[22m should reject refresh token after 30 days
+       [2m[90m↓[39m[22m should handle multiple concurrent logins
+       [2m[90m↓[39m[22m should handle concurrent token refreshes
+ [31m❯[39m tests/integration/datavault-v4-regression.test.ts [2m([22m[2m23 tests[22m[2m | [22m[33m23 skipped[39m[2m)[22m[33m 600026[2mms[22m[39m
+       [2m[90m↓[39m[22m should create a select column with options
+       [2m[90m↓[39m[22m should create a multiselect column with options
+       [2m[90m↓[39m[22m should validate select value against options
+       [2m[90m↓[39m[22m should validate multiselect values as array
+       [2m[90m↓[39m[22m should create an autonumber column with sequence
+       [2m[90m↓[39m[22m should format autonumber with prefix
+       [2m[90m↓[39m[22m should create a note for a row
+       [2m[90m↓[39m[22m should get all notes for a row
+       [2m[90m↓[39m[22m should delete a note
+       [2m[90m↓[39m[22m should not allow deleting notes by other users
+       [2m[90m↓[39m[22m should create an API token
+       [2m[90m↓[39m[22m should validate API token scopes
+       [2m[90m↓[39m[22m should revoke (delete) an API token
+       [2m[90m↓[39m[22m should deny access with expired token
+       [2m[90m↓[39m[22m should grant table permission
+       [2m[90m↓[39m[22m should list table permissions
+       [2m[90m↓[39m[22m should update table permission role
+       [2m[90m↓[39m[22m should revoke table permission
+       [2m[90m↓[39m[22m should enforce RBAC - only owners can manage permissions
+       [2m[90m↓[39m[22m should paginate rows efficiently
+       [2m[90m↓[39m[22m should return user-friendly error for invalid column type
+       [2m[90m↓[39m[22m should return user-friendly error for missing required fields
+       [2m[90m↓[39m[22m should handle network errors gracefully
+ [31m❯[39m tests/integration/auth/auth.middleware.integration.test.ts [2m([22m[2m27 tests[22m[2m | [22m[33m27 skipped[39m[2m)[22m[33m 600038[2mms[22m[39m
+       [2m[90m↓[39m[22m should allow access with valid JWT Bearer token
+       [2m[90m↓[39m[22m should return 401 when no token provided
+       [2m[90m↓[39m[22m should return 401 with invalid token
+       [2m[90m↓[39m[22m should return 401 with expired token
+       [2m[90m↓[39m[22m should proceed without authentication if no token provided
+       [2m[90m↓[39m[22m should authenticate with JWT Bearer token
+       [2m[90m↓[39m[22m should authenticate with refresh token cookie (GET only)
+       [2m[90m↓[39m[22m should reject cookie auth for POST requests (mutation-strict)
+       [2m[90m↓[39m[22m should reject cookie auth for PUT requests
+       [2m[90m↓[39m[22m should reject cookie auth for DELETE requests
+       [2m[90m↓[39m[22m should allow cookie auth for HEAD requests
+       [2m[90m↓[39m[22m should prioritize JWT over cookie when both present
+       [2m[90m↓[39m[22m should return 401 when no auth provided
+       [2m[90m↓[39m[22m should return 401 when both JWT and cookie are invalid
+       [2m[90m↓[39m[22m should authenticate with JWT if provided
+       [2m[90m↓[39m[22m should authenticate with cookie if JWT not provided
+       [2m[90m↓[39m[22m should proceed anonymously if no auth provided
+       [2m[90m↓[39m[22m should proceed anonymously if both JWT and cookie are invalid
+       [2m[90m↓[39m[22m should only allow safe methods for cookie auth
+       [2m[90m↓[39m[22m should ignore cookies when Bearer token present
+       [2m[90m↓[39m[22m should attach userId to request
+       [2m[90m↓[39m[22m should attach userEmail to request
+       [2m[90m↓[39m[22m should return consistent error format for missing token
+       [2m[90m↓[39m[22m should return consistent error format for invalid token
+       [2m[90m↓[39m[22m should return consistent error format for expired token
+       [2m[90m↓[39m[22m should handle malformed JWT gracefully
+       [2m[90m↓[39m[22m should handle JWT with wrong algorithm
+[90mstdout[2m | tests/integration/organizations-workflow.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+
+[90mstdout[2m | tests/integration/api.templates-runs.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+
+[90mstdout[2m | tests/integration/ai/workflowEdit.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+
+[90mstdout[2m | tests/integration/dataBlocks.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+
+[90mstdout[2m | tests/integration/workflows/runtime-pipelines.test.ts
+[22m[39mSETUP: Loading setup.ts...
+[dotenv@17.2.3] injecting env (20) from .env -- tip: 🔄 add secrets lifecycle management: https://dotenvx.com/ops
+
+[90mstdout[2m | tests/integration/organizations-workflow.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+
+[90mstdout[2m | tests/integration/organizations-workflow.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+DB: Skipping auto-init because NODE_ENV=test
+
+[90mstdout[2m | tests/integration/api.templates-runs.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+
+[90mstdout[2m | tests/integration/api.templates-runs.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+DB: Skipping auto-init because NODE_ENV=test
+
+[90mstdout[2m | tests/integration/dataBlocks.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+
+[90mstdout[2m | tests/integration/dataBlocks.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+DB: Skipping auto-init because NODE_ENV=test
+
+[90mstdout[2m | tests/integration/workflows/runtime-pipelines.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+
+[90mstdout[2m | tests/integration/workflows/runtime-pipelines.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+DB: Skipping auto-init because NODE_ENV=test
+
+[90mstdout[2m | tests/integration/organizations-workflow.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w25_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+[90mstdout[2m | tests/integration/organizations-workflow.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w25_v3 (Reused: true)
+
+[90mstdout[2m | tests/integration/ai/workflowEdit.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+
+[90mstdout[2m | tests/integration/organizations-workflow.test.ts
+[22m[39m📊 Schema test_schema_w25_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+{"level":30,"time":1768681336982,"env":"test","msg":"DB: initializing... Local"}
+{"level":30,"time":1768681336982,"env":"test","msg":"DB: Configured pool to set search_path=\"test_schema_w25_v3\",public on all connections"}
+[90mstdout[2m | tests/integration/ai/workflowEdit.test.ts
+[22m[39m[dotenv@17.2.3] injecting env (0) from .env -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+DB: Skipping auto-init because NODE_ENV=test
+
+{"level":30,"time":1768681337146,"env":"test","msg":"DB: initialized flag set."}
+[90mstdout[2m | tests/integration/ai/workflowEdit.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w26_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+[90mstdout[2m | tests/integration/ai/workflowEdit.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w26_v3 (Reused: true)
+
+[90mstdout[2m | tests/integration/ai/workflowEdit.test.ts
+[22m[39m📊 Schema test_schema_w26_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+{"level":30,"time":1768681338096,"env":"test","msg":"DB: initializing... Local"}
+{"level":30,"time":1768681338097,"env":"test","msg":"DB: Configured pool to set search_path=\"test_schema_w26_v3\",public on all connections"}
+{"level":30,"time":1768681338176,"env":"test","msg":"DB: initialized flag set."}
+[90mstdout[2m | tests/integration/workflows/runtime-pipelines.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w29_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+[90mstdout[2m | tests/integration/workflows/runtime-pipelines.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w29_v3 (Reused: true)
+
+[90mstdout[2m | tests/integration/workflows/runtime-pipelines.test.ts
+[22m[39m📊 Schema test_schema_w29_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+{"level":30,"time":1768681339017,"env":"test","msg":"DB: initializing... Local"}
+{"level":30,"time":1768681339018,"env":"test","msg":"DB: Configured pool to set search_path=\"test_schema_w29_v3\",public on all connections"}
+{"level":30,"time":1768681339065,"env":"test","msg":"DB: initialized flag set."}
+[90mstdout[2m | tests/integration/dataBlocks.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w27_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+[90mstdout[2m | tests/integration/dataBlocks.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w27_v3 (Reused: true)
+
+[90mstdout[2m | tests/integration/dataBlocks.test.ts
+[22m[39m📊 Schema test_schema_w27_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+{"level":30,"time":1768681340589,"env":"test","msg":"DB: initializing... Local"}
+{"level":30,"time":1768681340590,"env":"test","msg":"DB: Configured pool to set search_path=\"test_schema_w27_v3\",public on all connections"}
+{"level":30,"time":1768681340590,"env":"test","module":"metrics-service","msg":"MetricsService initialized"}
+{"level":30,"time":1768681340642,"env":"test","msg":"DB: initialized flag set."}
+[90mstdout[2m | tests/integration/api.templates-runs.test.ts
+[22m[39m✅ OpenAPI specification loaded successfully
+
+[90mstdout[2m | tests/integration/api.templates-runs.test.ts
+[22m[39m[SchemaManager] Reusing existing isolated schema: test_schema_w28_v3
+[SchemaManager] Processing URL: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech (Port: )
+[SchemaManager] Removing -pooler from hostname: ep-gentle-leaf-ahsz38kq-pooler.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Switched to Direct Connection for schema isolation.
+[SchemaManager] Final Connection String (Host): ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech
+[SchemaManager] Final Connection String (Options): null
+
+[90mstdout[2m | tests/integration/api.templates-runs.test.ts
+[22m[39m🔒 Test Schema Isolated: test_schema_w28_v3 (Reused: true)
+
+[90mstdout[2m | tests/integration/api.templates-runs.test.ts
+[22m[39m📊 Schema test_schema_w28_v3 has 110 tables - skipping migrations
+[SETUP] DATABASE_URL sent to db module: postgresql://neondb_owner:npg_LYP2cC3DhGsx@ep-gentle-leaf-ahsz38kq.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+
+{"level":30,"time":1768681344022,"env":"test","msg":"DB: initializing... Local"}
+{"level":30,"time":1768681344022,"env":"test","msg":"DB: Configured pool to set search_path=\"test_schema_w28_v3\",public on all connections"}
+{"level":30,"time":1768681344085,"env":"test","msg":"DB: initialized flag set."}
+{"level":30,"time":1768681618607,"env":"test","msg":"DB: closing pool..."}
+[90mstdout[2m | tests/integration/organizationService.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+{"level":30,"time":1768681619891,"env":"test","msg":"DB: closing pool..."}
+[90mstdout[2m | tests/unit/repositories/WorkflowTemplateRepository.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+{"level":30,"time":1768681620055,"env":"test","msg":"DB: closing pool..."}
+[90mstdout[2m | tests/integration/organizations-audit-fixes.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+[90mstdout[2m | tests/unit/services/PdfQueueService.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+{"level":30,"time":1768681623753,"env":"test","msg":"DB: closing pool..."}
+[90mstdout[2m | tests/unit/engine/templateNode.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+{"level":30,"time":1768681623856,"env":"test","msg":"DB: closing pool..."}
+[90mstdout[2m | tests/integration/datavault.api-tokens.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+{"level":30,"time":1768681626950,"env":"test","msg":"DB: closing pool..."}
+[90mstdout[2m | tests/integration/auth/oauth2.sessions.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+{"level":30,"time":1768681629400,"env":"test","msg":"DB: closing pool..."}
+[90mstdout[2m | tests/integration/api.workflows.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+{"level":30,"time":1768681631180,"env":"test","msg":"DB: closing pool..."}
+[90mstdout[2m | tests/integration/datavault.permissions.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+{"level":30,"time":1768681631193,"env":"test","msg":"DB: closing pool..."}
+[90mstdout[2m | tests/integration/lifecycle-hooks-execution.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+{"level":30,"time":1768681636014,"env":"test","msg":"DB: closing pool..."}
+[90mstdout[2m | tests/integration/organizations-workflow.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+{"level":30,"time":1768681637112,"env":"test","msg":"DB: closing pool..."}
+[90mstdout[2m | tests/integration/ai/workflowEdit.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+{"level":30,"time":1768681637985,"env":"test","msg":"DB: closing pool..."}
+[90mstdout[2m | tests/integration/workflows/runtime-pipelines.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+{"level":30,"time":1768681639734,"env":"test","msg":"DB: closing pool..."}
+[90mstdout[2m | tests/integration/dataBlocks.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+{"level":30,"time":1768681643089,"env":"test","msg":"DB: closing pool..."}
+[90mstdout[2m | tests/integration/api.templates-runs.test.ts
+[22m[39m🧹 Cleaning up test environment...
+
+ [31m❯[39m tests/integration/organizationService.test.ts [2m([22m[2m13 tests[22m[2m | [22m[33m13 skipped[39m[2m)[22m[33m 600011[2mms[22m[39m
+       [2m[90m↓[39m[22m should create organization and auto-create admin membership
+       [2m[90m↓[39m[22m should return all organizations for user
+       [2m[90m↓[39m[22m should return empty array for user with no memberships
+       [2m[90m↓[39m[22m should allow admin to update organization
+       [2m[90m↓[39m[22m should deny non-admin from updating organization
+       [2m[90m↓[39m[22m should return all members of organization
+       [2m[90m↓[39m[22m should allow admin to promote member
+       [2m[90m↓[39m[22m should allow admin to demote other admin
+       [2m[90m↓[39m[22m should prevent self-demotion
+       [2m[90m↓[39m[22m should allow admin to remove member
+       [2m[90m↓[39m[22m should prevent self-removal
+       [2m[90m↓[39m[22m should allow member to leave organization
+       [2m[90m↓[39m[22m should allow admin to leave organization
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: ENOENT: no such file or directory, open 'C:\Users\scoot\poll\VaultLogic\coverage\.tmp\coverage-15.json'[39m
+[90m [2m❯[22m open node:internal/fs/promises:[2m642:25[22m[39m
+[90m [2m❯[22m Object.writeFile node:internal/fs/promises:[2m1249:14[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22m[39m
+[31m[1mSerialized Error:[22m[39m [90m{ errno: -4058, code: 'ENOENT', syscall: 'open', path: 'C:\Users\scoot\poll\VaultLogic\coverage\.tmp\coverage-15.json' }[39m
+
+
+

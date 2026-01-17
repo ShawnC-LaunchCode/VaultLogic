@@ -137,7 +137,7 @@ export function FillPageWithRandomDataButton({
           <Button
             variant="outline"
             size="sm"
-            onClick={handleFillPage}
+            onClick={() => { void handleFillPage(); }}
             disabled={isFilling}
             className={className}
           >

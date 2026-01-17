@@ -101,7 +101,7 @@ export function VariablePalette({ workflowId, onInsert }: VariablePaletteProps) 
                       variant="ghost"
                       size="icon"
                       className="h-6 w-6"
-                      onClick={() => handleCopy(variable.key)}
+                      onClick={() => { void handleCopy(variable.key); }}
                       title="Copy key"
                     >
                       <Copy className="h-3 w-3" />
@@ -110,7 +110,7 @@ export function VariablePalette({ workflowId, onInsert }: VariablePaletteProps) 
                       variant="ghost"
                       size="icon"
                       className="h-6 w-6"
-                      onClick={() => onInsert(variable.key)}
+                      onClick={() => { void onInsert(variable.key); }}
                       title="Insert key"
                     >
                       <ChevronRight className="h-3 w-3" />

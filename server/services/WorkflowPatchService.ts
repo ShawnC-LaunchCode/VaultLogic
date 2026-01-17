@@ -137,7 +137,7 @@ export class WorkflowPatchService {
         const message = error instanceof Error ? error.message : "Unknown error";
         errors.push(`Failed to apply ${op.op}: ${message}`);
         logger.error({ error, op }, "Failed to apply operation");
-        throw error; // Rethrow to make sure we see the stack trace in test output
+        break; // Stop applying subsequent operations
       }
     }
 

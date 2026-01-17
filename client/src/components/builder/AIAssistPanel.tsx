@@ -84,7 +84,7 @@ export function AIAssistPanel({ workflowId, currentWorkflow, isOpen, onClose }: 
     }, [reviseMutation.isPending, inspirationalPhrases.length]);
 
     const handleSend = async () => {
-        if (!input.trim()) {return;}
+        if (!input.trim()) { return; }
 
         const userMsg: Message = { role: 'user', content: input, timestamp: Date.now() };
         setMessages(prev => [...prev, userMsg]);
@@ -168,7 +168,7 @@ export function AIAssistPanel({ workflowId, currentWorkflow, isOpen, onClose }: 
     };
 
     const handleApply = async () => {
-        if (!proposedWorkflow) {return;}
+        if (!proposedWorkflow) { return; }
         try {
             await updateMutation.mutateAsync({
                 id: workflowId,
@@ -278,10 +278,10 @@ export function AIAssistPanel({ workflowId, currentWorkflow, isOpen, onClose }: 
 
                                         {msg.status === 'pending' && proposedWorkflow && idx === messages.length - 1 && (
                                             <div className="flex gap-2 justify-end pt-2 border-t border-purple-200/50">
-                                                <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={handleDiscard}>
+                                                <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { void handleDiscard(); }}>
                                                     <X className="w-3 h-3 mr-1" /> Discard
                                                 </Button>
-                                                <Button size="sm" className="h-7 text-xs bg-purple-600 hover:bg-purple-700 text-white" onClick={handleApply}>
+                                                <Button size="sm" className="h-7 text-xs bg-purple-600 hover:bg-purple-700 text-white" onClick={() => { void handleApply(); }}>
                                                     <Check className="w-3 h-3 mr-1" /> Apply
                                                 </Button>
                                             </div>
@@ -330,13 +330,13 @@ export function AIAssistPanel({ workflowId, currentWorkflow, isOpen, onClose }: 
                         className="flex gap-2"
                         onSubmit={(e) => {
                             e.preventDefault();
-                            handleSend();
+                            void handleSend();
                         }}
                     >
                         <Input
                             placeholder={mode === 'easy' ? "Describe changes to auto-apply..." : "Describe changes..."}
                             value={input}
-                            onChange={(e) => setInput(e.target.value)}
+                            onChange={(e) => { void setInput(e.target.value); }}
                             disabled={reviseMutation.isPending || !!proposedWorkflow}
                         />
                         <Button type="submit" size="icon" disabled={!input.trim() || reviseMutation.isPending || !!proposedWorkflow}>

@@ -91,7 +91,7 @@ export default function TemplateTestRunner() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={handleBackToTemplates}
+            onClick={() => { void handleBackToTemplates(); }}
             className="mr-2"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -115,13 +115,13 @@ export default function TemplateTestRunner() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setOutputType('docx')}>
+              <DropdownMenuItem onClick={() => { void setOutputType('docx'); }}>
                 DOCX Only
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setOutputType('pdf')}>
+              <DropdownMenuItem onClick={() => { void setOutputType('pdf'); }}>
                 PDF Only
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setOutputType('both')}>
+              <DropdownMenuItem onClick={() => { void setOutputType('both'); }}>
                 Both (DOCX + PDF)
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -130,7 +130,7 @@ export default function TemplateTestRunner() {
           <StatusPill status={status} />
 
           <Button
-            onClick={handleRunTest}
+            onClick={() => { void handleRunTest(); }}
             disabled={!parsedSampleData || status === 'validating' || status === 'rendering'}
             title={!parsedSampleData ? "Fix JSON errors before running test" : ""}
           >

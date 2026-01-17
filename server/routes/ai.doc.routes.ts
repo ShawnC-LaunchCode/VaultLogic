@@ -6,6 +6,7 @@ import { documentAIAssistService } from "../lib/ai/DocumentAIAssistService";
 import { logger } from "../logger";
 import { hybridAuth } from "../middleware/auth";
 import { MAX_FILE_SIZE, ALLOWED_FILE_TYPES } from "../services/fileService";
+import { asyncHandler } from "../utils/asyncHandler";
 
 const router = Router();
 // SECURITY FIX: Add file size and type validation
@@ -98,18 +99,21 @@ router.post("/analyze", (req, res, next) => {
 
         next();
     });
-}, async (req, res) => {
+}, asyncHandler(async (req, res) => {
     try {
-        if (!req.file) {return res.status(400).json({ error: "No file provided" });}
+        if (!req.file) {
+            res.status(400).json({ error: "No file provided" });
+            return;
+        }
 
         const result = await documentAIAssistService.analyzeTemplate(req.file.buffer, req.file.originalname);
         res.json({ data: result });
     } catch (err) {
-        console.error('CRITICAL AI ROUTE ERROR:', err);
         logger.error({ error: err }, 'Template analysis failed');
-        res.status(500).json({ error: "Analysis failed" });
+        const message = err instanceof Error ? err.message : 'Analysis failed';
+        res.status(500).json({ error: message });
     }
-});
+}));
 
 /**
  * POST /api/ai/doc/extract-text
@@ -123,9 +127,12 @@ router.post("/extract-text", (req, res, next) => {
         }
         next();
     });
-}, async (req, res) => {
+}, asyncHandler(async (req, res) => {
     try {
-        if (!req.file) {return res.status(400).json({ error: "No file provided" });}
+        if (!req.file) {
+            res.status(400).json({ error: "No file provided" });
+            return;
+        }
 
         const text = await documentAIAssistService.extractTextContent(req.file.buffer, req.file.originalname);
         res.json({ text });
@@ -133,35 +140,37 @@ router.post("/extract-text", (req, res, next) => {
         logger.error({ error: err }, 'Text extraction failed');
         res.status(500).json({ error: "Text extraction failed" });
     }
-});
+}));
 
 /**
  * POST /api/ai/template/suggest-mappings
  * Body: { templateVariables: [...], workflowVariables: [...] }
  */
-router.post("/suggest-mappings", async (req, res) => {
+router.post("/suggest-mappings", asyncHandler(async (req, res) => {
     try {
         const { templateVariables, workflowVariables } = req.body;
         const mappings = await documentAIAssistService.suggestMappings(templateVariables, workflowVariables);
         res.json({ data: mappings });
     } catch (err) {
+        logger.error({ error: err }, 'Mapping suggestion failed');
         res.status(500).json({ error: "Mapping suggestion failed" });
     }
-});
+}));
 
 /**
  * POST /api/ai/template/suggest-improvements
  * Body: { variables: [...] }
  * Returns aliases, formatting suggestions
  */
-router.post("/suggest-improvements", async (req, res) => {
+router.post("/suggest-improvements", asyncHandler(async (req, res) => {
     try {
         const { variables } = req.body;
         const result = await documentAIAssistService.suggestImprovements(variables);
         res.json({ data: result });
     } catch (err) {
+        logger.error({ error: err }, 'Improvement suggestion failed');
         res.status(500).json({ error: "Improvement suggestion failed" });
     }
-});
+}));
 
 export default router;

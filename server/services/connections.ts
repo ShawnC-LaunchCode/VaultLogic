@@ -5,7 +5,7 @@
 
 import { eq, and } from 'drizzle-orm';
 
-import { connections, projects } from '@shared/schema';
+import { externalConnections as connections, projects } from '@shared/schema';
 import {
   Connection,
   CreateConnectionInput,

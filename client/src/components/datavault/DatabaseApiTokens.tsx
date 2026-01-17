@@ -165,7 +165,7 @@ export function DatabaseApiTokens({ databaseId }: DatabaseApiTokensProps) {
                 Manage API tokens for external access to this database
               </CardDescription>
             </div>
-            <Button onClick={() => setIsCreateOpen(true)} size="sm">
+            <Button onClick={() => { void setIsCreateOpen(true); }} size="sm">
               <Plus className="w-4 h-4 mr-2" />
               Create Token
             </Button>
@@ -229,7 +229,7 @@ export function DatabaseApiTokens({ databaseId }: DatabaseApiTokensProps) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setDeleteTokenId(token.id)}
+                    onClick={() => { void setDeleteTokenId(token.id); }}
                     disabled={deleteMutation.isPending}
                   >
                     <Trash2 className="w-4 h-4 text-destructive" />
@@ -258,7 +258,7 @@ export function DatabaseApiTokens({ databaseId }: DatabaseApiTokensProps) {
               <Input
                 id="label"
                 value={label}
-                onChange={(e) => setLabel(e.target.value)}
+                onChange={(e) => { void setLabel(e.target.value); }}
                 placeholder="e.g., Production API"
               />
             </div>
@@ -297,7 +297,7 @@ export function DatabaseApiTokens({ databaseId }: DatabaseApiTokensProps) {
                 id="expiresAt"
                 type="datetime-local"
                 value={expiresAt}
-                onChange={(e) => setExpiresAt(e.target.value)}
+                onChange={(e) => { void setExpiresAt(e.target.value); }}
               />
               <p className="text-xs text-muted-foreground">
                 Leave empty for a token that never expires
@@ -305,11 +305,11 @@ export function DatabaseApiTokens({ databaseId }: DatabaseApiTokensProps) {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
+            <Button variant="outline" onClick={() => { void setIsCreateOpen(false); }}>
               Cancel
             </Button>
             <Button
-              onClick={handleCreateToken}
+              onClick={() => { void handleCreateToken(); }}
               disabled={createMutation.isPending}
             >
               {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -350,7 +350,7 @@ export function DatabaseApiTokens({ databaseId }: DatabaseApiTokensProps) {
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={handleCopyToken}
+                  onClick={() => { void handleCopyToken(); }}
                 >
                   {copiedToken ? (
                     <Check className="h-4 w-4 text-green-600" />
@@ -362,7 +362,7 @@ export function DatabaseApiTokens({ databaseId }: DatabaseApiTokensProps) {
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={() => setIsTokenRevealOpen(false)}>
+            <Button onClick={() => { void setIsTokenRevealOpen(false); }}>
               Done
             </Button>
           </DialogFooter>
@@ -381,7 +381,7 @@ export function DatabaseApiTokens({ databaseId }: DatabaseApiTokensProps) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteToken}>
+            <AlertDialogAction onClick={() => { void handleDeleteToken(); }}>
               Revoke Token
             </AlertDialogAction>
           </AlertDialogFooter>

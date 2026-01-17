@@ -52,7 +52,7 @@ export default function PortalLogin() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Button variant="outline" onClick={() => setSubmitted(false)} className="mt-4">
+                        <Button variant="outline" onClick={() => { void setSubmitted(false); }} className="mt-4">
                             Use a different email
                         </Button>
                     </CardContent>
@@ -71,13 +71,13 @@ export default function PortalLogin() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={(e) => { e.preventDefault(); void handleSubmit(e); }} className="space-y-4">
                         <div className="space-y-2">
                             <Input
                                 type="email"
                                 placeholder="name@example.com"
                                 value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                onChange={(e) => { void setEmail(e.target.value); }}
                                 required
                                 disabled={loading}
                             />

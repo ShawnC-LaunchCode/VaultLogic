@@ -291,14 +291,14 @@ export function TemplatesTab({ workflowId }: TemplatesTabProps) {
                 </div>
               </CardContent>
               <CardFooter className="pt-0 flex gap-2 justify-end border-t bg-slate-50/30 p-3">
-                <Button size="sm" variant="default" className="h-7 text-xs px-3 shadow-sm" onClick={() => setEditingTemplate(template)}>
+                <Button size="sm" variant="default" className="h-7 text-xs px-3 shadow-sm" onClick={() => { void setEditingTemplate(template); }}>
                   <Edit className="w-3 h-3 mr-1.5" />
                   {template.type === 'pdf' ? 'Map Fields' : 'Preview'}
                 </Button>
-                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleTest(template.id)} title="Test Generation">
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => { void handleTest(template.id); }} title="Test Generation">
                   <TestTube className="w-3.5 h-3.5 text-slate-500" />
                 </Button>
-                <Button size="sm" variant="ghost" className="h-7 w-7 p-0 hover:bg-destructive/10 hover:text-destructive text-slate-400" onClick={() => handleDelete(template.id, template.name)} title="Delete Template">
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0 hover:bg-destructive/10 hover:text-destructive text-slate-400" onClick={() => { void handleDelete(template.id, template.name); }} title="Delete Template">
                   <Trash2 className="w-3.5 h-3.5" />
                 </Button>
               </CardFooter>
@@ -347,12 +347,12 @@ export function TemplatesTab({ workflowId }: TemplatesTabProps) {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="key">Display Name</Label>
-                  <Input id="key" value={templateKey} onChange={(e) => setTemplateKey(e.target.value)} />
+                  <Input id="key" value={templateKey} onChange={(e) => { void setTemplateKey(e.target.value); }} />
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setUploadDialogOpen(false)}>Cancel</Button>
-                <Button onClick={handleUpload} disabled={isUploading}>{isUploading ? "Uploading..." : "Upload"}</Button>
+                <Button variant="outline" onClick={() => { void setUploadDialogOpen(false); }}>Cancel</Button>
+                <Button onClick={() => { void handleUpload(); }} disabled={isUploading}>{isUploading ? "Uploading..." : "Upload"}</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -421,7 +421,7 @@ export function TemplatesTab({ workflowId }: TemplatesTabProps) {
                 size="sm"
                 variant="default"
                 className="bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={() => toast({ description: "Email templates coming soon" })}
+                onClick={() => { void toast({ description: "Email templates coming soon" }); }}
               >
                 Create
               </Button>

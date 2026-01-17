@@ -1,8 +1,9 @@
 import { z } from "zod";
 
 import { createLogger } from "../logger";
-import { hybridAuth } from "../middleware/auth";
+import { hybridAuth, type AuthRequest } from "../middleware/auth";
 import { teamService } from "../services/TeamService";
+import { asyncHandler } from "../utils/asyncHandler";
 
 import type { Express, Request, Response } from "express";
 
@@ -30,9 +31,9 @@ export function registerTeamRoutes(app: Express): void {
    * POST /api/teams
    * Create a new team (user becomes team admin)
    */
-  app.post("/api/teams", hybridAuth, async (req: Request, res: Response) => {
+  app.post("/api/teams", hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
-      const userId = req.userId;
+      const userId = (req as AuthRequest).userId;
       if (!userId) {
         return res.status(401).json({ success: false, error: "Unauthorized - no user ID" });
       }
@@ -57,13 +58,13 @@ export function registerTeamRoutes(app: Express): void {
         error: "Failed to create team",
       });
     }
-  });
+  }));
 
   /**
    * GET /api/teams
    * Get all teams for the authenticated user
    */
-  app.get("/api/teams", hybridAuth, async (req: Request, res: Response) => {
+  app.get("/api/teams", hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = req.userId;
       if (!userId) {
@@ -80,13 +81,13 @@ export function registerTeamRoutes(app: Express): void {
         error: "Failed to fetch teams",
       });
     }
-  });
+  }));
 
   /**
    * GET /api/teams/:id
    * Get team details with members
    */
-  app.get("/api/teams/:id", hybridAuth, async (req: Request, res: Response) => {
+  app.get("/api/teams/:id", hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = req.userId;
       if (!userId) {
@@ -110,13 +111,13 @@ export function registerTeamRoutes(app: Express): void {
 
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * PUT /api/teams/:id
    * Update team details (admin only)
    */
-  app.put("/api/teams/:id", hybridAuth, async (req: Request, res: Response) => {
+  app.put("/api/teams/:id", hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = req.userId;
       if (!userId) {
@@ -146,13 +147,13 @@ export function registerTeamRoutes(app: Express): void {
 
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * DELETE /api/teams/:id
    * Delete a team (admin only)
    */
-  app.delete("/api/teams/:id", hybridAuth, async (req: Request, res: Response) => {
+  app.delete("/api/teams/:id", hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const userId = req.userId;
       if (!userId) {
@@ -172,13 +173,13 @@ export function registerTeamRoutes(app: Express): void {
 
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * POST /api/teams/:id/members
    * Add or update a team member (admin only)
    */
-  app.post("/api/teams/:id/members", hybridAuth, async (req: Request, res: Response) => {
+  app.post("/api/teams/:id/members", hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const requestorId = req.userId;
       if (!requestorId) {
@@ -212,13 +213,13 @@ export function registerTeamRoutes(app: Express): void {
 
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * DELETE /api/teams/:id/members/:userId
    * Remove a team member (admin only)
    */
-  app.delete("/api/teams/:id/members/:userId", hybridAuth, async (req: Request, res: Response) => {
+  app.delete("/api/teams/:id/members/:userId", hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const requestorId = req.userId;
       if (!requestorId) {
@@ -242,5 +243,5 @@ export function registerTeamRoutes(app: Express): void {
 
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 }

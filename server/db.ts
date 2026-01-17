@@ -1,15 +1,14 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+import { env } from "./config/env";
 import * as schema from "@shared/schema";
-
 import { logger } from './logger';
 
 import type { Pool as NeonPool } from '@neondatabase/serverless';
 import type { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { Pool } from 'pg';
-
 
 type DrizzleDB = NodePgDatabase<typeof schema> | NeonDatabase<typeof schema>;
 
@@ -20,9 +19,9 @@ let dbInitPromise: Promise<void>;
 
 // Initialize database connection
 async function initializeDatabase() {
-  if (dbInitialized) {return;}
+  if (dbInitialized) { return; }
 
-  const databaseUrl = process.env.DATABASE_URL;
+  const databaseUrl = env.DATABASE_URL;
   const isDatabaseConfigured = !!databaseUrl && databaseUrl !== 'undefined' && databaseUrl !== '';
 
   if (!isDatabaseConfigured) {
@@ -35,7 +34,7 @@ async function initializeDatabase() {
   // In TEST environment, we force 'pg' (local/TCP) driver because Neon Serverless (WebSockets)
   // does not support 'search_path' in startup options, which is required for schema isolation.
   const isNeonDatabase = isDatabaseConfigured &&
-    process.env.NODE_ENV !== 'test' &&
+    env.NODE_ENV !== 'test' &&
     (databaseUrl.includes('neon.tech') || databaseUrl.includes('neon.co'));
 
   logger.info(`DB: initializing... ${isNeonDatabase ? "Neon" : "Local"}`);
@@ -53,8 +52,31 @@ async function initializeDatabase() {
     // Use standard PostgreSQL driver for local databases
     logger.debug("DB: importing pg...");
     const pg = await import('pg');
+
+    // Check if we need to set search_path for test isolation
+    const testSchema = process.env.TEST_SCHEMA || (global as any).__TEST_SCHEMA__;
+
     logger.debug("DB: creating pool...");
     pool = new pg.default.Pool({ connectionString: databaseUrl });
+
+    // For test schemas, set search_path using synchronous 'connect' event
+    if (testSchema && env.NODE_ENV === 'test') {
+      // The 'connect' event fires synchronously when a new physical connection is established
+      // This ensures search_path is set before the connection is used
+      pool.on('connect', (client) => {
+        // Execute search_path synchronously using the callback API
+        client.query(`SET LOCAL search_path TO "${testSchema}", public`, (err) => {
+          if (err) {
+            logger.warn(`DB: Failed to set search_path:`, err);
+          } else {
+            logger.debug(`DB: Set search_path on connection: "${testSchema}",public`);
+          }
+        });
+      });
+
+      logger.info(`DB: Configured pool with search_path="${testSchema}",public via connect event`);
+    }
+
     logger.debug("DB: importing drizzle...");
     const { drizzle: drizzlePg } = await import('drizzle-orm/node-postgres');
     _db = drizzlePg(pool as any, { schema });
@@ -68,9 +90,9 @@ async function initializeDatabase() {
 // Start initialization immediately only if database is configured
 // If not configured, create a lazy promise that will reject when awaited
 // For tests, we might initialize later manually
-const initialDatabaseUrl = process.env.DATABASE_URL;
+const initialDatabaseUrl = env.DATABASE_URL;
 const isInitialConfigured = !!initialDatabaseUrl && initialDatabaseUrl !== 'undefined' && initialDatabaseUrl !== '';
-const isTest = process.env.NODE_ENV === 'test';
+const isTest = env.NODE_ENV === 'test';
 
 if (isInitialConfigured) {
   if (isTest) {

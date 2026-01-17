@@ -147,9 +147,7 @@ export function EditableDataGrid({
   );
 
   // Update local columns when props change
-  useEffect(() => {
-    setLocalColumns(columns);
-  }, [columns]);
+  useEffect(() => { void setLocalColumns(columns); }, [columns]);
 
   // Sort columns by orderIndex (memoized to prevent unnecessary recalculations)
   const sortedColumns = useMemo(
@@ -385,20 +383,20 @@ export function EditableDataGrid({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setSelectedRowId(row.row.id)}>
+                      <DropdownMenuItem onClick={() => { void setSelectedRowId(row.row.id); }}>
                         <FileText className="w-4 h-4 mr-2" />
                         View Details
                       </DropdownMenuItem>
                       {(onEditRow || onDeleteRow) && <DropdownMenuSeparator />}
                       {onEditRow && (
-                        <DropdownMenuItem onClick={() => onEditRow(row.row.id, row.values)}>
+                        <DropdownMenuItem onClick={() => { void onEditRow(row.row.id, row.values); }}>
                           <Edit2 className="w-4 h-4 mr-2" />
                           Edit Row
                         </DropdownMenuItem>
                       )}
                       {onDeleteRow && (
                         <DropdownMenuItem
-                          onClick={() => onDeleteRow(row.row.id)}
+                          onClick={() => { void onDeleteRow(row.row.id); }}
                           className="text-destructive focus:text-destructive"
                         >
                           <Trash2 className="w-4 h-4 mr-2" />

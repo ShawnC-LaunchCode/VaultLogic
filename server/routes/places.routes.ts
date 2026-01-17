@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import { creatorOrRunTokenAuth } from "../middleware/runTokenAuth";
 import { googlePlacesService } from "../services/GooglePlacesService";
+import { asyncHandler } from '../utils/asyncHandler';
 
 const router = Router();
 
@@ -18,7 +19,7 @@ router.use(creatorOrRunTokenAuth);
 // Actually, looking at `routes/index.ts`: `registerAuthRoutes(app)` etc.
 // `server/middleware/auth.ts` probably exists. 
 
-router.get("/autocomplete", async (req, res) => {
+router.get("/autocomplete", asyncHandler(async (req, res) => {
     try {
         const input = req.query.input as string;
         const lat = req.query.lat ? parseFloat(req.query.lat as string) : undefined;
@@ -26,29 +27,32 @@ router.get("/autocomplete", async (req, res) => {
         const radius = req.query.radius ? parseFloat(req.query.radius as string) : undefined;
 
         if (!input) {
-            return res.status(400).json({ error: "Input is required" });
+            res.status(400).json({ error: "Input is required" });
+            return;
         }
         const suggestions = await googlePlacesService.getAutocompleteSuggestions(input, lat, lng, radius);
         res.json(suggestions);
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch suggestions" });
     }
-});
+}));
 
-router.get("/details", async (req, res) => {
+router.get("/details", asyncHandler(async (req, res) => {
     try {
         const placeId = req.query.placeId as string;
         if (!placeId) {
-            return res.status(400).json({ error: "Place ID is required" });
+            res.status(400).json({ error: "Place ID is required" });
+            return;
         }
         const details = await googlePlacesService.getPlaceDetails(placeId);
         if (!details) {
-            return res.status(404).json({ error: "Place not found" });
+            res.status(404).json({ error: "Place not found" });
+            return;
         }
         res.json(details);
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch details" });
     }
-});
+}));
 
 export const placesRouter = router;

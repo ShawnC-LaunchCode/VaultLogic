@@ -168,7 +168,7 @@ export function AssignmentTab({ workflowId }: { workflowId: string }) {
                                                 variant="ghost"
                                                 size="sm"
                                                 className="ml-4"
-                                                onClick={() => setEditingRuleId(editingRuleId === target.id ? null : target.id)}
+                                                onClick={() => { void setEditingRuleId(editingRuleId === target.id ? null : target.id); }}
                                             >
                                                 {editingRuleId === target.id ? "Close Condition" : "Edit Condition"}
                                             </Button>

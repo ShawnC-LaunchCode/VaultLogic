@@ -406,7 +406,7 @@ export function QuestionCard({
   };
 
   return (
-    <div ref={setNodeRef} style={style} data-step-id={step.id} onFocus={handleFocus} onBlur={handleBlur}>
+    <div ref={setNodeRef} style={style} data-step-id={step.id} onFocus={() => { void handleFocus(); }} onBlur={() => { void handleBlur(); }}>
       <Card className={cn("shadow-sm transition-all duration-300", isDragging && "opacity-50", isLockedByOther && "ring-2 ring-indigo-400/50 border-indigo-200")}>
         <CardContent className="p-3 relative">
           {/* Lock Overlay */}
@@ -455,7 +455,7 @@ export function QuestionCard({
                 variant="ghost"
                 size="icon"
                 className="h-5 w-5"
-                onClick={onToggleExpand}
+                onClick={() => { void onToggleExpand(); }}
               >
                 {isExpanded ? (
                   <ChevronDown className="h-3 w-3" />
@@ -501,7 +501,7 @@ export function QuestionCard({
                       name={`question-title-${step.id}`}
                       ref={titleInputRef}
                       value={step.title}
-                      onChange={(e) => handleTitleChange(e.target.value)}
+                      onChange={(e) => { void handleTitleChange(e.target.value); }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           e.currentTarget.blur();
@@ -543,7 +543,7 @@ export function QuestionCard({
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
-                  onClick={handleDelete}
+                  onClick={() => { void handleDelete(); }}
                   tabIndex={0}
                   aria-label={`Delete question ${step.title}`}
                 >
@@ -587,7 +587,7 @@ export function QuestionCard({
                       id={`alias-${step.id}`}
                       name={`alias-${step.id}`}
                       value={step.alias || ""}
-                      onChange={(e) => handleAliasChange(e.target.value)}
+                      onChange={(e) => { void handleAliasChange(e.target.value); }}
                       placeholder={mode === 'easy' ? "e.g. clientName or client.name" : "e.g., user_email, phone_number"}
                       className={cn(
                         "h-9 text-sm font-mono",
@@ -636,7 +636,7 @@ export function QuestionCard({
                         id={`description-${step.id}`}
                         name={`description-${step.id}`}
                         value={step.description || ""}
-                        onChange={(e) => handleDescriptionChange(e.target.value)}
+                        onChange={(e) => { void handleDescriptionChange(e.target.value); }}
                         placeholder="Add instructions for the user..."
                         minRows={1}
                         maxRows={4}
@@ -648,7 +648,7 @@ export function QuestionCard({
                     {(localType === "radio" || localType === "multiple_choice") && (
                       <OptionsEditor
                         options={localOptions}
-                        onChange={handleOptionsChange}
+                        onChange={() => { void handleOptionsChange(); }}
                         elementId={step.id}
                       />
                     )}
@@ -724,7 +724,7 @@ export function QuestionCard({
                                         ? ""
                                         : String(step.defaultValue)
                                     }
-                                    onChange={(e) => handleDefaultValueChange(e.target.value)}
+                                    onChange={(e) => { void handleDefaultValueChange(e.target.value); }}
                                     placeholder="Enter default value..."
                                     className="h-9 text-sm"
                                   />
@@ -802,7 +802,7 @@ export function QuestionCard({
                                     ? JSON.stringify(step.defaultValue)
                                     : String(step.defaultValue)
                               }
-                              onChange={(e) => handleDefaultValueChange(e.target.value)}
+                              onChange={(e) => { void handleDefaultValueChange(e.target.value); }}
                               placeholder="Enter default value..."
                               className="h-9 text-sm"
                             />
@@ -815,7 +815,7 @@ export function QuestionCard({
                     {localType === "js_question" && (
                       <JSQuestionEditor
                         config={localJsConfig}
-                        onChange={handleJsConfigChange}
+                        onChange={() => { void handleJsConfigChange(); }}
                         elementId={step.id}
                         workflowId={workflowId}
                       />
@@ -853,7 +853,7 @@ export function QuestionCard({
                             elementId={step.id}
                             elementType="step"
                             value={(step.visibleIf as ConditionExpression) || null}
-                            onChange={handleVisibilityChange}
+                            onChange={() => { void handleVisibilityChange(); }}
                             isSaving={updateStepMutation.isPending}
                           />
                         </CollapsibleContent>

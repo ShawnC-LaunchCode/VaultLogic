@@ -75,7 +75,7 @@ function getBlockSummary(block: any): string | null {
       const config = block.config || {};
       const mode = config.mode === 'create' ? 'Insert' : config.mode === 'update' ? 'Update' : 'Upsert';
       const mappingCount = config.columnMappings?.length || 0;
-      if (!mappingCount) {return null;}
+      if (!mappingCount) { return null; }
       return `${mode} ${mappingCount} field${mappingCount === 1 ? '' : 's'}`;
     }
 
@@ -96,7 +96,7 @@ function getBlockSummary(block: any): string | null {
     if (block.type === 'external_send') {
       const config = block.config || {};
       const mappingCount = config.payloadMappings?.length || 0;
-      if (!mappingCount) {return null;}
+      if (!mappingCount) { return null; }
       return `${mappingCount} field${mappingCount === 1 ? '' : 's'}`;
     }
 
@@ -167,7 +167,7 @@ export function BlockCard({ item, workflowId, sectionId, isExpanded = false, onT
 
   // Helper to check if read/write blocks are configured
   const isReadWriteConfigured = () => {
-    if (item.kind !== 'block') {return true;}
+    if (item.kind !== 'block') { return true; }
     const { type, config } = item.data;
     if (type === 'read_table') {
       return !!(config?.tableId && config?.outputKey);
@@ -562,7 +562,7 @@ export function BlockCard({ item, workflowId, sectionId, isExpanded = false, onT
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
-              onClick={handleDelete}
+              onClick={(e) => { void handleDelete(e); }}
             >
               <Trash2 className="h-4 w-4" />
             </Button>

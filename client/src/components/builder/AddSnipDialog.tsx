@@ -169,7 +169,7 @@ export function AddSnipDialog({ workflowId, open, onOpenChange }: AddSnipDialogP
                                         ? "ring-2 ring-indigo-500 border-indigo-500"
                                         : "hover:border-indigo-300"
                                         }`}
-                                    onClick={() => setSelectedSnipId(snip.id)}
+                                    onClick={() => { void setSelectedSnipId(snip.id); }}
                                 >
                                     <CardHeader className="pb-3">
                                         <div className="flex items-start justify-between">
@@ -202,10 +202,10 @@ export function AddSnipDialog({ workflowId, open, onOpenChange }: AddSnipDialogP
                     </div>
 
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => onOpenChange(false)} disabled={importing}>
+                        <Button variant="outline" onClick={() => { void onOpenChange(false); }} disabled={importing}>
                             Cancel
                         </Button>
-                        <Button onClick={handleImportClick} disabled={!selectedSnipId || importing}>
+                        <Button onClick={() => { void handleImportClick(); }} disabled={!selectedSnipId || importing}>
                             {importing ? (
                                 <>
                                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />

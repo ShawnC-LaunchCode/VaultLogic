@@ -218,7 +218,7 @@ export default function EmailTemplateEditorPage() {
               <Button
                 variant="outline"
                 className="mt-4"
-                onClick={() => navigate(`/projects/${projectId}/settings/email-templates`)}
+                onClick={() => { void navigate(`/projects/${projectId}/settings/email-templates`); }}
               >
                 Back to Templates
               </Button>
@@ -245,7 +245,7 @@ export default function EmailTemplateEditorPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => navigate(`/projects/${projectId}/settings/email-templates`)}
+                    onClick={() => { void navigate(`/projects/${projectId}/settings/email-templates`); }}
                   >
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Back to Templates
@@ -260,7 +260,7 @@ export default function EmailTemplateEditorPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setShowPreview(!showPreview)}
+                onClick={() => { void setShowPreview(!showPreview); }}
               >
                 <Eye className="h-4 w-4 mr-2" />
                 {showPreview ? 'Hide' : 'Show'} Preview
@@ -281,11 +281,11 @@ export default function EmailTemplateEditorPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" onClick={handleReset}>
+                      <Button variant="outline" size="sm" onClick={() => { void handleReset(); }}>
                         <RotateCcw className="h-4 w-4 mr-2" />
                         Discard
                       </Button>
-                      <Button size="sm" onClick={handleSave} disabled={isSaving}>
+                      <Button size="sm" onClick={() => { void handleSave(); }} disabled={isSaving}>
                         {isSaving ? (
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                         ) : (
@@ -316,7 +316,7 @@ export default function EmailTemplateEditorPage() {
                       <Input
                         id="name"
                         value={formData.name}
-                        onChange={(e) => handleChange('name', e.target.value)}
+                        onChange={(e) => { void handleChange('name', e.target.value); }}
                         placeholder="Workflow Invitation"
                       />
                     </div>
@@ -326,7 +326,7 @@ export default function EmailTemplateEditorPage() {
                       <Textarea
                         id="description"
                         value={formData.description || ''}
-                        onChange={(e) => handleChange('description', e.target.value)}
+                        onChange={(e) => { void handleChange('description', e.target.value); }}
                         placeholder="Brief description of when this template is used"
                         rows={3}
                       />
@@ -337,7 +337,7 @@ export default function EmailTemplateEditorPage() {
                       <Input
                         id="subjectPreview"
                         value={formData.subjectPreview || ''}
-                        onChange={(e) => handleChange('subjectPreview', e.target.value)}
+                        onChange={(e) => { void handleChange('subjectPreview', e.target.value); }}
                         placeholder="You've been invited to complete a workflow"
                       />
                       <p className="text-xs text-muted-foreground">
@@ -408,13 +408,13 @@ export default function EmailTemplateEditorPage() {
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
-                      onClick={handleReset}
+                      onClick={() => { void handleReset(); }}
                       disabled={!hasUnsavedChanges || isSaving}
                     >
                       <RotateCcw className="h-4 w-4 mr-2" />
                       Discard Changes
                     </Button>
-                    <Button onClick={handleSave} disabled={!hasUnsavedChanges || isSaving}>
+                    <Button onClick={() => { void handleSave(); }} disabled={!hasUnsavedChanges || isSaving}>
                       {isSaving ? (
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       ) : (

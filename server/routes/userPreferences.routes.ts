@@ -1,6 +1,7 @@
 import { createLogger } from "../logger";
 import { hybridAuth, type AuthRequest } from '../middleware/auth';
 import { userPreferencesService } from "../services/UserPreferencesService";
+import { asyncHandler } from "../utils/asyncHandler";
 
 import type { Express, Request, Response } from "express";
 
@@ -14,7 +15,7 @@ export function registerUserPreferencesRoutes(app: Express): void {
    * GET /api/preferences
    * Get current user's preferences
    */
-  app.get('/api/preferences', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/preferences', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const userId = authReq.userId;
@@ -28,13 +29,13 @@ export function registerUserPreferencesRoutes(app: Express): void {
       logger.error({ error }, "Error fetching user preferences");
       res.status(500).json({ message: "Failed to fetch preferences" });
     }
-  });
+  }));
 
   /**
    * PUT /api/preferences
    * Update current user's preferences
    */
-  app.put('/api/preferences', hybridAuth, async (req: Request, res: Response) => {
+  app.put('/api/preferences', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const userId = authReq.userId;
@@ -49,13 +50,13 @@ export function registerUserPreferencesRoutes(app: Express): void {
       logger.error({ error }, "Error updating user preferences");
       res.status(500).json({ message: "Failed to update preferences" });
     }
-  });
+  }));
 
   /**
    * POST /api/preferences/reset
    * Reset user's preferences to defaults
    */
-  app.post('/api/preferences/reset', hybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/preferences/reset', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const userId = authReq.userId;
@@ -69,5 +70,5 @@ export function registerUserPreferencesRoutes(app: Express): void {
       logger.error({ error }, "Error resetting user preferences");
       res.status(500).json({ message: "Failed to reset preferences" });
     }
-  });
+  }));
 }

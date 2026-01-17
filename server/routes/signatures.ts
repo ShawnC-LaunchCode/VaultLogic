@@ -2,10 +2,11 @@ import express from "express";
 import { z } from "zod";
 
 import { logger } from "../logger";
-import { hybridAuth } from "../middleware/auth";
+import { hybridAuth, type AuthRequest } from "../middleware/auth";
 import { signatureRequestService } from "../services";
 import { resumeRunFromNode } from "../services/runs";
 import { createError } from "../utils/errors";
+import { asyncHandler } from "../utils/asyncHandler";
 
 const router = express.Router();
 
@@ -24,10 +25,11 @@ const signActionSchema = z.object({
  * GET /api/signatures/requests/:id
  * Get signature request by ID (authenticated)
  */
-router.get("/requests/:id", hybridAuth, async (req, res, next) => {
+router.get("/requests/:id", hybridAuth, asyncHandler(async (req, res, next) => {
   try {
     const { id } = req.params;
-    const userId = (req.user as any).id;
+    const userId = (req as AuthRequest).userId;
+    if (!userId) throw new Error("Unauthorized");
 
     const request = await signatureRequestService.getSignatureRequest(id, userId);
 
@@ -35,16 +37,17 @@ router.get("/requests/:id", hybridAuth, async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-});
+}));
 
 /**
  * GET /api/signatures/requests/project/:projectId
  * Get pending signature requests for a project
  */
-router.get("/requests/project/:projectId", hybridAuth, async (req, res, next) => {
+router.get("/requests/project/:projectId", hybridAuth, asyncHandler(async (req, res, next) => {
   try {
     const { projectId } = req.params;
-    const userId = (req.user as any).id;
+    const userId = (req as AuthRequest).userId;
+    if (!userId) throw new Error("Unauthorized");
 
     const requests = await signatureRequestService.getPendingRequestsByProject(
       projectId,
@@ -55,16 +58,17 @@ router.get("/requests/project/:projectId", hybridAuth, async (req, res, next) =>
   } catch (error) {
     next(error);
   }
-});
+}));
 
 /**
  * GET /api/signatures/requests/:id/events
  * Get signature events for a request
  */
-router.get("/requests/:id/events", hybridAuth, async (req, res, next) => {
+router.get("/requests/:id/events", hybridAuth, asyncHandler(async (req, res, next) => {
   try {
     const { id } = req.params;
-    const userId = (req.user as any).id;
+    const userId = (req as AuthRequest).userId;
+    if (!userId) throw new Error("Unauthorized");
 
     const events = await signatureRequestService.getSignatureEvents(id, userId);
 
@@ -72,14 +76,14 @@ router.get("/requests/:id/events", hybridAuth, async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-});
+}));
 
 /**
  * GET /api/sign/:token
  * Get signature request by token (public, no auth)
  * Used by the signing portal
  */
-router.get("/sign/:token", async (req, res, next) => {
+router.get("/sign/:token", asyncHandler(async (req, res, next) => {
   try {
     const { token } = req.params;
 
@@ -101,7 +105,7 @@ router.get("/sign/:token", async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-});
+}));
 
 /**
  * POST /api/sign/:token
@@ -109,7 +113,7 @@ router.get("/sign/:token", async (req, res, next) => {
  *
  * Body: { action: 'sign' | 'decline', reason?: string }
  */
-router.post("/sign/:token", async (req, res, next) => {
+router.post("/sign/:token", asyncHandler(async (req, res, next) => {
   try {
     const { token } = req.params;
 
@@ -146,6 +150,6 @@ router.post("/sign/:token", async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-});
+}));
 
 export default router;

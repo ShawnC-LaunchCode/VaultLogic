@@ -6,7 +6,7 @@ import { createLogger } from "../logger";
 import { hybridAuth, optionalHybridAuth, type AuthRequest } from '../middleware/auth';
 import { creatorOrRunTokenAuth, type RunAuthRequest } from "../middleware/runTokenAuth";
 import { runService } from "../services/RunService";
-
+import { asyncHandler } from "../utils/asyncHandler";
 
 
 import type { Express, Request, Response } from "express";
@@ -24,7 +24,7 @@ export function registerRunRoutes(app: Express): void {
    * No authentication required - creates anonymous run
    * Body: { initialValues?: Record<string, any> } - Optional key/value pairs to pre-populate steps
    */
-  app.post('/api/workflows/public/:publicLinkSlug/start', async (req: Request, res: Response) => {
+  app.post('/api/workflows/public/:publicLinkSlug/start', asyncHandler(async (req: Request, res: Response) => {
     try {
       const { publicLinkSlug } = req.params;
       const { initialValues } = req.body;
@@ -48,7 +48,7 @@ export function registerRunRoutes(app: Express): void {
           message.includes("not public") ? 403 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * POST /api/workflows/:workflowId/runs
@@ -64,7 +64,7 @@ export function registerRunRoutes(app: Express): void {
    *   ...runData
    * }
    */
-  app.post('/api/workflows/:workflowId/runs', optionalHybridAuth, async (req: Request, res: Response) => {
+  app.post('/api/workflows/:workflowId/runs', optionalHybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { workflowId } = req.params;
       const { publicLink } = req.query;
@@ -143,14 +143,14 @@ export function registerRunRoutes(app: Express): void {
             message.includes("not configured") ? 503 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * GET /api/runs/:runId
    * Get a workflow run
    * Accepts creator session OR Bearer runToken
    */
-  app.get('/api/runs/:runId', creatorOrRunTokenAuth, async (req: RunAuthRequest, res) => {
+  app.get('/api/runs/:runId', creatorOrRunTokenAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { runId } = req.params;
       const authReq = req as AuthRequest;
@@ -167,19 +167,19 @@ export function registerRunRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * GET /api/runs/:runId/values
    * Get a workflow run with all step values
    * Accepts creator session OR Bearer runToken
    */
-  app.get('/api/runs/:runId/values', creatorOrRunTokenAuth, async (req: RunAuthRequest, res) => {
+  app.get('/api/runs/:runId/values', creatorOrRunTokenAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { runId } = req.params;
-      const authReq = req as AuthRequest;
-      const userId = authReq.userId;
-      const runAuth = req.runAuth;
+      const runAuthReq = req as RunAuthRequest;
+      const userId = (req as AuthRequest).userId;
+      const runAuth = runAuthReq.runAuth;
 
       // For run token auth, verify the runId matches
       if (runAuth) {
@@ -194,7 +194,7 @@ export function registerRunRoutes(app: Express): void {
       // For session/token auth, we need userId
       if (!userId) {
         logger.warn({
-          hasUser: !!(req as AuthRequest).userId,
+          hasUser: !!userId,
           path: req.path
         }, "No userId found for auth");
         return res.status(401).json({ success: false, error: "Unauthorized - no user ID found" });
@@ -206,28 +206,27 @@ export function registerRunRoutes(app: Express): void {
       logger.error({
         error: error instanceof Error ? { message: error.message, stack: error.stack } : error,
         runId: req.params.runId,
-        hasUser: !!req.user,
-        hasRunAuth: !!req.runAuth,
+        hasUser: !!(req as any).user,
+        hasRunAuth: !!(req as RunAuthRequest).runAuth,
         userId: (req as AuthRequest).userId
       }, "Error fetching run with values");
       const message = error instanceof Error ? error.message : "Failed to fetch run";
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * POST /api/runs/:runId/values
    * Upsert a single step value
    * Accepts creator session OR Bearer runToken
    */
-  app.post('/api/runs/:runId/values', creatorOrRunTokenAuth, async (req: RunAuthRequest, res) => {
+  app.post('/api/runs/:runId/values', creatorOrRunTokenAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { runId } = req.params;
       const { stepId, value } = req.body;
-      const authReq = req as AuthRequest;
-      const userId = authReq.userId;
-      const runAuth = req.runAuth;
+      const userId = (req as AuthRequest).userId;
+      const runAuth = (req as RunAuthRequest).runAuth;
 
       if (!stepId) {
         return res.status(400).json({ success: false, error: "stepId is required" });
@@ -260,7 +259,7 @@ export function registerRunRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * POST /api/runs/:runId/sections/:sectionId/submit
@@ -268,13 +267,12 @@ export function registerRunRoutes(app: Express): void {
    * Executes onSectionSubmit blocks (transform + validate)
    * Accepts creator session OR Bearer runToken
    */
-  app.post('/api/runs/:runId/sections/:sectionId/submit', creatorOrRunTokenAuth, async (req: RunAuthRequest, res) => {
+  app.post('/api/runs/:runId/sections/:sectionId/submit', creatorOrRunTokenAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { runId, sectionId } = req.params;
       const { values } = req.body;
-      const authReq = req as AuthRequest;
-      const userId = authReq.userId;
-      const runAuth = req.runAuth;
+      const userId = (req as AuthRequest).userId;
+      const runAuth = (req as RunAuthRequest).runAuth;
 
       logger.info({
         runId,
@@ -331,19 +329,18 @@ export function registerRunRoutes(app: Express): void {
           message.includes("already completed") ? 400 : 500;
       res.status(status).json({ success: false, errors: [message] });
     }
-  });
+  }));
 
   /**
    * POST /api/runs/:runId/next
    * Navigate to next section (executes branch blocks)
    * Accepts creator session OR Bearer runToken
    */
-  app.post('/api/runs/:runId/next', creatorOrRunTokenAuth, async (req: RunAuthRequest, res) => {
+  app.post('/api/runs/:runId/next', creatorOrRunTokenAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { runId } = req.params;
-      const authReq = req as AuthRequest;
-      const userId = authReq.userId;
-      const runAuth = req.runAuth;
+      const userId = (req as AuthRequest).userId;
+      const runAuth = (req as RunAuthRequest).runAuth;
 
       // For run token auth
       if (runAuth) {
@@ -368,20 +365,19 @@ export function registerRunRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ success: false, errors: [message] });
     }
-  });
+  }));
 
   /**
    * POST /api/runs/:runId/values/bulk
    * Bulk upsert step values
    * Accepts creator session OR Bearer runToken
    */
-  app.post('/api/runs/:runId/values/bulk', creatorOrRunTokenAuth, async (req: RunAuthRequest, res) => {
+  app.post('/api/runs/:runId/values/bulk', creatorOrRunTokenAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { runId } = req.params;
       const { values } = req.body;
-      const authReq = req as AuthRequest;
-      const userId = authReq.userId;
-      const runAuth = req.runAuth;
+      const userId = (req as AuthRequest).userId;
+      const runAuth = (req as RunAuthRequest).runAuth;
 
       if (!Array.isArray(values)) {
         return res.status(400).json({ success: false, error: "values must be an array" });
@@ -410,7 +406,7 @@ export function registerRunRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   // NOTE: Duplicate route removed - /api/runs/:runId/next is already defined above with creatorOrRunTokenAuth
 
@@ -419,12 +415,11 @@ export function registerRunRoutes(app: Express): void {
    * Mark a run as complete (with validation)
    * Accepts creator session OR Bearer runToken
    */
-  app.put('/api/runs/:runId/complete', creatorOrRunTokenAuth, async (req: RunAuthRequest, res) => {
+  app.put('/api/runs/:runId/complete', creatorOrRunTokenAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { runId } = req.params;
-      const authReq = req as AuthRequest;
-      const userId = authReq.userId;
-      const runAuth = req.runAuth;
+      const userId = (req as AuthRequest).userId;
+      const runAuth = (req as RunAuthRequest).runAuth;
 
       // For run token auth
       if (runAuth) {
@@ -448,13 +443,13 @@ export function registerRunRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : message.includes("Missing required") ? 400 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * GET /api/workflows/:workflowId/runs
    * List all runs for a workflow
    */
-  app.get('/api/workflows/:workflowId/runs', hybridAuth, async (req: Request, res: Response) => {
+  app.get('/api/workflows/:workflowId/runs', hybridAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const authReq = req as AuthRequest;
       const userId = authReq.userId;
@@ -471,14 +466,14 @@ export function registerRunRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ message });
     }
-  });
+  }));
 
   /**
    * GET /api/runs/:runId/documents
    * Get generated documents for a workflow run
    * Accepts creator session OR Bearer runToken
    */
-  app.get('/api/runs/:runId/documents', creatorOrRunTokenAuth, async (req: RunAuthRequest, res) => {
+  app.get('/api/runs/:runId/documents', creatorOrRunTokenAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { runId } = req.params;
 
@@ -490,9 +485,8 @@ export function registerRunRoutes(app: Express): void {
         });
       }
 
-      const authReq = req as AuthRequest;
-      const userId = authReq.userId;
-      const runAuth = req.runAuth;
+      const userId = (req as AuthRequest).userId;
+      const runAuth = (req as RunAuthRequest).runAuth;
 
       // For run token auth, verify the runId matches
       if (runAuth) {
@@ -517,7 +511,7 @@ export function registerRunRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * POST /api/runs/:runId/generate-documents
@@ -526,7 +520,7 @@ export function registerRunRoutes(app: Express): void {
    * Idempotent - won't regenerate if documents already exist
    * Accepts creator session OR Bearer runToken
    */
-  app.post('/api/runs/:runId/generate-documents', creatorOrRunTokenAuth, async (req: RunAuthRequest, res) => {
+  app.post('/api/runs/:runId/generate-documents', creatorOrRunTokenAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { runId } = req.params;
 
@@ -538,7 +532,7 @@ export function registerRunRoutes(app: Express): void {
         });
       }
 
-      const runAuth = req.runAuth;
+      const runAuth = (req as RunAuthRequest).runAuth;
 
       // For run token auth, verify the runId matches
       if (runAuth && runAuth.runId !== runId) {
@@ -555,14 +549,14 @@ export function registerRunRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * DELETE /api/runs/:runId/documents
    * Delete all generated documents for a run (for regeneration)
    * Accepts creator session OR Bearer runToken
    */
-  app.delete('/api/runs/:runId/documents', creatorOrRunTokenAuth, async (req: RunAuthRequest, res) => {
+  app.delete('/api/runs/:runId/documents', creatorOrRunTokenAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { runId } = req.params;
 
@@ -574,7 +568,7 @@ export function registerRunRoutes(app: Express): void {
         });
       }
 
-      const runAuth = req.runAuth;
+      const runAuth = (req as RunAuthRequest).runAuth;
 
       // For run token auth, verify the runId matches
       if (runAuth && runAuth.runId !== runId) {
@@ -591,19 +585,18 @@ export function registerRunRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * POST /api/runs/:runId/share
    * Generate a shareable link for a run
    * Accepts creator session OR Bearer runToken
    */
-  app.post('/api/runs/:runId/share', creatorOrRunTokenAuth, async (req: RunAuthRequest, res) => {
+  app.post('/api/runs/:runId/share', creatorOrRunTokenAuth, asyncHandler(async (req: Request, res: Response) => {
     try {
       const { runId } = req.params;
-      const authReq = req as AuthRequest;
-      const userId = authReq.userId;
-      const runAuth = req.runAuth;
+      const userId = (req as AuthRequest).userId;
+      const runAuth = (req as RunAuthRequest).runAuth;
 
       // Determine auth type
       const authType = runAuth ? 'runToken' : 'creator';
@@ -617,13 +610,13 @@ export function registerRunRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : message.includes("Access denied") ? 403 : 500;
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
   /**
    * GET /api/shared/runs/:token
    * Get a shared run by token with documents and configuration
    */
-  app.get('/api/shared/runs/:token', async (req, res) => {
+  app.get('/api/shared/runs/:token', asyncHandler(async (req: Request, res: Response) => {
     try {
       const { token } = req.params;
       const result = await runService.getSharedRunDetails(token);
@@ -634,6 +627,6 @@ export function registerRunRoutes(app: Express): void {
       const status = message.includes("not found") ? 404 : 400; // 400 for expired
       res.status(status).json({ success: false, error: message });
     }
-  });
+  }));
 
 }

@@ -88,10 +88,10 @@ export function WorkflowHistoryDialog({
                                 </TabsList>
 
                                 <div className="flex gap-2">
-                                    <Button variant="outline" size="sm" onClick={() => handleExportRuns('csv')}>
+                                    <Button variant="outline" size="sm" onClick={() => { void handleExportRuns('csv'); }}>
                                         <Download className="w-3 h-3 mr-2" /> Export CSV
                                     </Button>
-                                    <Button variant="outline" size="sm" onClick={() => handleExportRuns('json')}>
+                                    <Button variant="outline" size="sm" onClick={() => { void handleExportRuns('json'); }}>
                                         <Download className="w-3 h-3 mr-2" /> Export JSON
                                     </Button>
                                 </div>
@@ -120,7 +120,7 @@ export function WorkflowHistoryDialog({
                                                 </TableRow>
                                             ) : (
                                                 runs?.map((run) => (
-                                                    <TableRow key={run.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedRunId(run.id)}>
+                                                    <TableRow key={run.id} className="cursor-pointer hover:bg-muted/50" onClick={() => { void setSelectedRunId(run.id); }}>
                                                         <TableCell>
                                                             <div className="flex items-center gap-2">
                                                                 {run.completed ? (

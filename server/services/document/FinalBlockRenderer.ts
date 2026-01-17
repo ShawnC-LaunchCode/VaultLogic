@@ -56,9 +56,6 @@ export interface FinalBlockRenderRequest {
   /** Whether to convert documents to PDF */
   toPdf?: boolean;
 
-  /** PDF conversion strategy */
-  pdfStrategy?: 'puppeteer' | 'libreoffice';
-
   /** Output directory (optional, defaults to server/files/archives) */
   outputDir?: string;
 }
@@ -132,7 +129,6 @@ export class FinalBlockRenderer {
       runId,
       resolveTemplate,
       toPdf = false,
-      pdfStrategy = 'puppeteer',
       outputDir = path.join(process.cwd(), 'server', 'files', 'archives'),
     } = request;
 
@@ -186,7 +182,6 @@ export class FinalBlockRenderer {
       stepValues: enhancedStepValues,
       outputDir,
       toPdf,
-      pdfStrategy,
     });
 
     logger.info({

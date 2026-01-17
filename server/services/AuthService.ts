@@ -13,6 +13,7 @@ import {
     type User
 } from "@shared/schema";
 
+
 import {
     PASSWORD_CONFIG,
     JWT_CONFIG,
@@ -21,6 +22,7 @@ import {
     EMAIL_VERIFICATION_CONFIG,
     PASSWORD_POLICY
 } from "../config/auth";
+import { env } from "../config/env";
 import { db } from "../db";
 import {
     InvalidTokenError,
@@ -33,54 +35,9 @@ import { hashToken } from "../utils/encryption";
 import { accountLockoutService } from "./AccountLockoutService";
 import { sendPasswordResetEmail, sendVerificationEmail } from "./emailService";
 
-
-
-const log = createLogger({ module: 'auth-service' });
-
-// Configuration constants (using centralized config)
 const SALT_ROUNDS = PASSWORD_CONFIG.SALT_ROUNDS;
-const JWT_EXPIRY = process.env.JWT_EXPIRY || '15m'; // Short expiry (15m) to mitigating revocation gaps
-
-/**
- * Get JWT secret with proper security validation
- */
-function getJwtSecret(): string {
-    const jwtSecret = process.env.JWT_SECRET;
-    const sessionSecret = process.env.SESSION_SECRET;
-    const isProduction = process.env.NODE_ENV === 'production';
-
-    if (jwtSecret) {
-        if (jwtSecret.length < 32) {
-            log.warn('JWT_SECRET is less than 32 characters');
-        }
-        return jwtSecret;
-    }
-
-    if (isProduction) {
-        // SECURITY FIX: Fail fast in production if secret is missing
-        const errorMsg = 'FATAL: JWT_SECRET environment variable is not set in production.';
-        log.error(errorMsg);
-        throw new Error(errorMsg);
-    }
-
-    if (sessionSecret) {
-        log.warn('JWT_SECRET not set - falling back to SESSION_SECRET.');
-        return sessionSecret;
-    }
-
-    log.warn('JWT_SECRET not set. Generating a random secret for development mode.');
-    log.warn('WARNING: Tokens will be invalidated on server restart.');
-
-    // Generate a random 32-byte hex string for dev security
-    return crypto.randomBytes(32).toString('hex');
-}
-
-const JWT_SECRET = getJwtSecret();
-
-export interface RefreshTokenMetadata {
-    ip?: string;
-    userAgent?: string;
-}
+const JWT_EXPIRY = process.env.JWT_EXPIRY || '15m';
+const JWT_SECRET = env.JWT_SECRET;
 
 export interface PortalTokenPayload {
     email: string;
@@ -173,7 +130,7 @@ export class AuthService {
      * ```
      */
     verifyToken(token: string): JWTPayload {
-        if (!JWT_SECRET) {throw new Error('JWT not configured');}
+        if (!JWT_SECRET) { throw new Error('JWT not configured'); }
 
         try {
             return jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }) as JWTPayload;
@@ -189,7 +146,7 @@ export class AuthService {
      * Create a special JWT token for Portal users (email-only)
      */
     createPortalToken(email: string): string {
-        if (!JWT_SECRET) {throw new Error('JWT_SECRET not configured');}
+        if (!JWT_SECRET) { throw new Error('JWT_SECRET not configured'); }
         const payload = { email, portal: true };
         return jwt.sign(payload, JWT_SECRET, { expiresIn: '24h', algorithm: 'HS256' });
     }
@@ -198,10 +155,10 @@ export class AuthService {
      * Verify a Portal JWT token
      */
     verifyPortalToken(token: string): { email: string } {
-        if (!JWT_SECRET) {throw new Error('JWT not configured');}
+        if (!JWT_SECRET) { throw new Error('JWT not configured'); }
         try {
             const payload = jwt.verify(token, JWT_SECRET) as PortalTokenPayload;
-            if (!payload.portal || !payload.email) {throw new Error('Invalid portal token');}
+            if (!payload.portal || !payload.email) { throw new Error('Invalid portal token'); }
             return { email: payload.email };
         } catch (error) {
             throw new Error('Invalid portal token');
@@ -226,7 +183,7 @@ export class AuthService {
      * Extract token from Authorization header
      */
     extractTokenFromHeader(authHeader: string | undefined): string | null {
-        if (!authHeader) {return null;}
+        if (!authHeader) { return null; }
         if (authHeader.startsWith('Bearer ')) {
             return authHeader.substring(7);
         }
@@ -237,7 +194,7 @@ export class AuthService {
      * Check if a token looks like a JWT
      */
     looksLikeJwt(token: string): boolean {
-        if (!token) {return false;}
+        if (!token) { return false; }
         const parts = token.split('.');
         return parts.length === 3 && parts.every(part => part.length > 0);
     }
@@ -530,7 +487,7 @@ export class AuthService {
             where: eq(users.email, email)
         });
 
-        if (!user) {return null;}
+        if (!user) { return null; }
 
         const plainToken = crypto.randomBytes(32).toString('hex');
         const tokenHash = hashToken(plainToken);
@@ -564,7 +521,7 @@ export class AuthService {
             )
         });
 
-        if (!storedToken) {return null;}
+        if (!storedToken) { return null; }
         return storedToken.userId;
     }
 
@@ -605,7 +562,7 @@ export class AuthService {
             )
         });
 
-        if (!storedToken) {return false;}
+        if (!storedToken) { return false; }
 
         await this.db.update(users)
             .set({ emailVerified: true })

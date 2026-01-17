@@ -11,34 +11,33 @@ import { Settings, Play, Eye, EyeOff, ChevronDown, ArrowLeft, Database, GitCommi
 
 // Tab components
 // VisualBuilderTab removed
-import { DataSourcesTab } from "@/components/builder/tabs/DataSourcesTab";
-import { SettingsTab } from "@/components/builder/tabs/SettingsTab";
-import { SnapshotsTab } from "@/components/builder/tabs/SnapshotsTab";
-import { ReviewTab } from "@/components/builder/tabs/ReviewTab";
-import { ActivateToggle } from "@/components/builder/ActivateToggle";
-import { CollectionsDrawer } from "@/components/builder/data-sources/CollectionsDrawer";
-import { AssignmentTab } from "@/components/builder/tabs/AssignmentTab";
 
 
 // Versioning Imports
-import { useVersions, usePublishWorkflow, useRestoreVersion } from "@/lib/vault-hooks";
-import { VersionBadge } from "@/components/builder/versioning/VersionBadge";
-import { VersionHistoryPanel } from "@/components/builder/versioning/VersionHistoryPanel";
 import { DiffViewer } from "@/components/builder/versioning/DiffViewer";
 import { PublishWorkflowDialog } from "@/components/builder/versioning/PublishWorkflowDialog";
 import { ApiWorkflowVersion, authAPI } from "@/lib/vault-api";
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useLocation } from "wouter";
+import { ActivateToggle } from "@/components/builder/ActivateToggle";
 
 import { AIAssistPanel } from "@/components/builder/AIAssistPanel";
-import { ResizableBuilderLayout } from "@/components/builder/layout/ResizableBuilderLayout";
 import { AiConversationPanel } from "@/components/builder/AiConversationPanel";
+import { CollectionsDrawer } from "@/components/builder/data-sources/CollectionsDrawer";
 import { IntakeProvider } from "@/components/builder/IntakeContext";
 import { BuilderTabNav, type BuilderTab } from "@/components/builder/layout/BuilderTabNav";
+import { ResizableBuilderLayout } from "@/components/builder/layout/ResizableBuilderLayout";
 import { LogicInspectorPanel } from "@/components/builder/LogicInspectorPanel";
+import { AssignmentTab } from "@/components/builder/tabs/AssignmentTab";
+import { DataSourcesTab } from "@/components/builder/tabs/DataSourcesTab";
+import { ReviewTab } from "@/components/builder/tabs/ReviewTab";
 import { SectionsTab } from "@/components/builder/tabs/SectionsTab";
+import { SettingsTab } from "@/components/builder/tabs/SettingsTab";
+import { SnapshotsTab } from "@/components/builder/tabs/SnapshotsTab";
 import { TemplatesTab } from "@/components/builder/tabs/TemplatesTab";
+import { VersionBadge } from "@/components/builder/versioning/VersionBadge";
+import { VersionHistoryPanel } from "@/components/builder/versioning/VersionHistoryPanel";
 import { CollaborationProvider, useCollaboration } from "@/components/collab/CollaborationContext";
 import { PresenceAvatars } from "@/components/collab/PresenceAvatars";
 import FeedbackWidget from "@/components/FeedbackWidget";
@@ -58,7 +57,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { UI_LABELS } from "@/lib/labels";
 import { getModeLabel, type Mode } from "@/lib/mode";
-import { useWorkflow, useCreateRun, useSetWorkflowMode, queryKeys, useSections, useLogicRules, useTransformBlocks } from "@/lib/vault-hooks";
+import { useVersions, usePublishWorkflow, useRestoreVersion , useWorkflow, useCreateRun, useSetWorkflowMode, queryKeys, useSections, useLogicRules, useTransformBlocks } from "@/lib/vault-hooks";
 import { usePreviewStore } from "@/store/preview";
 import { useWorkflowBuilder } from "@/store/workflow-builder";
 
@@ -214,7 +213,7 @@ export default function WorkflowBuilder() {
               <div className="sticky top-0 z-10 bg-background">
                 <div className="border-b px-6 py-3 flex items-center justify-between bg-card">
                   <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="sm" onClick={() => navigate('/workflows')} className="mr-2">
+                    <Button variant="ghost" size="sm" onClick={() => { void navigate('/workflows'); }} className="mr-2">
                       <ArrowLeft className="w-4 h-4 mr-2" /> Back
                     </Button>
                     <h1 className="text-xl font-semibold">{workflow.title}</h1>
@@ -241,7 +240,7 @@ export default function WorkflowBuilder() {
                       <VersionBadge
                         versionLabel={versionLabel}
                         isDraft={true}
-                        onClick={() => setHistoryOpen(true)}
+                        onClick={() => { void setHistoryOpen(true); }}
                       />
                     </div>
 
@@ -254,10 +253,10 @@ export default function WorkflowBuilder() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-56">
-                        <DropdownMenuItem onClick={() => setWorkflowModeMutation.mutate({ workflowId: workflowId, modeOverride: 'easy' })}>
+                        <DropdownMenuItem onClick={() => { void setWorkflowModeMutation.mutate({ workflowId: workflowId, modeOverride: 'easy' }); }}>
                           Switch to Easy Mode
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setWorkflowModeMutation.mutate({ workflowId: workflowId, modeOverride: 'advanced' })}>
+                        <DropdownMenuItem onClick={() => { void setWorkflowModeMutation.mutate({ workflowId: workflowId, modeOverride: 'advanced' }); }}>
                           Switch to Advanced Mode
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -275,19 +274,19 @@ export default function WorkflowBuilder() {
                     </div>
 
                     {mode === 'advanced' && (
-                      <Button variant="outline" size="sm" onClick={() => navigate(`/workflows/${workflowId}/visual-builder`)} className="mr-2">
+                      <Button variant="outline" size="sm" onClick={() => { void navigate(`/workflows/${workflowId}/visual-builder`); }} className="mr-2">
                         <GitGraph className="w-4 h-4 mr-2" /> Visual Builder
                       </Button>
                     )}
 
-                    <Button variant="outline" size="sm" onClick={() => setIsPreviewMode(true)} disabled={launchingPreview}>
+                    <Button variant="outline" size="sm" onClick={() => { void setIsPreviewMode(true); }} disabled={launchingPreview}>
                       <Eye className="w-4 h-4 mr-2" /> Preview
                     </Button>
 
                     <Button
                       variant={aiPanelOpen ? "secondary" : "outline"}
                       size="sm"
-                      onClick={() => setAiPanelOpen(!aiPanelOpen)}
+                      onClick={() => { void setAiPanelOpen(!aiPanelOpen); }}
                     >
                       <Sparkles className="w-4 h-4 mr-2" /> AI Assist
                     </Button>
@@ -391,8 +390,6 @@ function CollabHeader() {
 
 function CollabSync({ mode }: { mode: 'easy' | 'advanced' }) {
   const { updateMode } = useCollaboration();
-  useEffect(() => {
-    updateMode(mode);
-  }, [mode, updateMode]);
+  useEffect(() => { void updateMode(mode); }, [mode, updateMode]);
   return null;
 }

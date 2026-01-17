@@ -96,7 +96,7 @@ export default function PortalDashboard() {
                         <div className="bg-blue-600 text-white p-1 rounded font-bold text-sm">VL</div>
                         <h1 className="font-semibold text-lg">My Portal</h1>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={handleLogout} className="text-gray-500">
+                    <Button variant="ghost" size="sm" onClick={() => { void handleLogout(); }} className="text-gray-500">
                         <LogOut className="h-4 w-4 mr-2" />
                         Sign Out
                     </Button>
@@ -142,14 +142,14 @@ export default function PortalDashboard() {
 
                                     <div className="flex items-center gap-2">
                                         {run.status === 'completed' && run.accessSettings?.allow_redownload !== false && run.shareToken && (
-                                            <Button variant="outline" size="sm" onClick={() => setLocation(`/share/${run.shareToken}`)}>
+                                            <Button variant="outline" size="sm" onClick={() => { void setLocation(`/share/${run.shareToken}`); }}>
                                                 <FileText className="h-4 w-4 mr-2" />
                                                 View Documents
                                             </Button>
                                         )}
 
                                         {run.status !== 'completed' && run.accessSettings?.allow_resume !== false && (
-                                            <Button size="sm" onClick={() => handleResume(run.id)}>
+                                            <Button size="sm" onClick={() => { void handleResume(run.id); }}>
                                                 <Play className="h-4 w-4 mr-2" />
                                                 Resume
                                             </Button>

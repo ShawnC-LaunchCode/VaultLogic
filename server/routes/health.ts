@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import { Router, Request, Response } from 'express';
 
 import { db } from '../db';
+import { asyncHandler } from '../utils/asyncHandler';
 
 const router = Router();
 
@@ -41,7 +42,7 @@ interface HealthCheckResponse {
   requestId?: string;
 }
 
-router.get('/health', async (req: Request, res: Response) => {
+router.get('/health', asyncHandler(async (req: Request, res: Response) => {
   const startTime = Date.now();
   const healthCheck: HealthCheckResponse = {
     status: 'healthy',
@@ -52,7 +53,7 @@ router.get('/health', async (req: Request, res: Response) => {
     database: {
       connected: false,
     },
-    requestId: req.id,
+    requestId: (req as any).id,
   };
 
   try {
@@ -77,10 +78,10 @@ router.get('/health', async (req: Request, res: Response) => {
 
   // Set appropriate HTTP status code
   const statusCode = healthCheck.status === 'healthy' ? 200 :
-                     healthCheck.status === 'degraded' ? 200 : 503;
+    healthCheck.status === 'degraded' ? 200 : 503;
 
   res.status(statusCode).json(healthCheck);
-});
+}));
 
 /**
  * Readiness Check Endpoint
@@ -90,7 +91,7 @@ router.get('/health', async (req: Request, res: Response) => {
  * Similar to /health but specifically for Kubernetes/container orchestration.
  * Only returns 200 if the service is fully ready to accept traffic.
  */
-router.get('/ready', async (_req: Request, res: Response) => {
+router.get('/ready', asyncHandler(async (_req: Request, res: Response) => {
   try {
     // Check database connectivity
     await db.execute(sql`SELECT 1 as ready_check`);
@@ -106,7 +107,7 @@ router.get('/ready', async (_req: Request, res: Response) => {
       error: error instanceof Error ? error.message : 'Service not ready',
     });
   }
-});
+}));
 
 /**
  * Liveness Check Endpoint

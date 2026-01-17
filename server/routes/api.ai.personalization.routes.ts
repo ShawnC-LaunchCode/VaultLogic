@@ -6,11 +6,15 @@ import { userPersonalizationSettings, workflowPersonalizationSettings } from "..
 import { db } from "../db";
 import { personalizationService } from "../lib/ai/personalization";
 import { hybridAuth } from "../middleware/auth";
+import { asyncHandler } from '../utils/asyncHandler';
+import { createLogger } from '../logger';
+
+const logger = createLogger({ module: 'ai-personalization-routes' });
 
 const router = Router();
 
 // Middleware to get user settings
-const getUserContext = async (req: any, res: any, next: any) => {
+const getUserContext = asyncHandler(async (req: any, res: any, next: any) => {
     try {
         const userId = req.user.id;
         // Get user-specific settings
@@ -49,15 +53,18 @@ const getUserContext = async (req: any, res: any, next: any) => {
         };
         next();
     } catch (error) {
-        console.error("Personalization Context Error:", error);
+        logger.error({ error }, "Personalization Context Error");
         res.status(500).json({ error: "Failed to load personalization context" });
     }
-};
+});
 
-router.post("/block", hybridAuth, getUserContext, async (req: any, res) => {
+router.post("/block", hybridAuth, getUserContext, asyncHandler(async (req: any, res) => {
     try {
         const { block } = req.body;
-        if (!block?.text) { return res.status(400).json({ error: "Block data required" }); }
+        if (!block?.text) {
+            res.status(400).json({ error: "Block data required" });
+            return;
+        }
 
         const rewrittenText = await personalizationService.rewriteBlockText(
             block.text,
@@ -66,15 +73,18 @@ router.post("/block", hybridAuth, getUserContext, async (req: any, res) => {
 
         res.json({ text: rewrittenText });
     } catch (error) {
-        console.error("Personalization Block Error:", error);
+        logger.error({ error }, "Personalization Block Error");
         res.status(500).json({ error: "Personalization failed", details: error instanceof Error ? error.message : String(error) });
     }
-});
+}));
 
-router.post("/help", hybridAuth, getUserContext, async (req: any, res) => {
+router.post("/help", hybridAuth, getUserContext, asyncHandler(async (req: any, res) => {
     try {
         const { text } = req.body;
-        if (!text) { return res.status(400).json({ error: "Text required" }); }
+        if (!text) {
+            res.status(400).json({ error: "Text required" });
+            return;
+        }
 
         const helpText = await personalizationService.generateHelpText(
             text,
@@ -83,15 +93,18 @@ router.post("/help", hybridAuth, getUserContext, async (req: any, res) => {
 
         res.json({ text: helpText });
     } catch (error) {
-        console.error("Personalization Help Error:", error);
+        logger.error({ error }, "Personalization Help Error");
         res.status(500).json({ error: "Help generation failed", details: error instanceof Error ? error.message : String(error) });
     }
-});
+}));
 
-router.post("/clarify", hybridAuth, getUserContext, async (req: any, res) => {
+router.post("/clarify", hybridAuth, getUserContext, asyncHandler(async (req: any, res) => {
     try {
         const { question, answer } = req.body;
-        if (!question || !answer) { return res.status(400).json({ error: "Question and answer required" }); }
+        if (!question || !answer) {
+            res.status(400).json({ error: "Question and answer required" });
+            return;
+        }
 
         const clarification = await personalizationService.generateClarification(
             question,
@@ -101,47 +114,50 @@ router.post("/clarify", hybridAuth, getUserContext, async (req: any, res) => {
 
         res.json({ clarification });
     } catch (error) {
-        console.error("Personalization Clarify Error:", error);
+        logger.error({ error }, "Personalization Clarify Error");
         res.status(500).json({ error: "Clarification generation failed", details: error instanceof Error ? error.message : String(error) });
     }
-});
+}));
 
-router.post("/followup", hybridAuth, getUserContext, async (req: any, res) => {
+router.post("/followup", hybridAuth, getUserContext, asyncHandler(async (req: any, res) => {
     try {
         const { question, answer } = req.body;
         const result = await personalizationService.generateFollowUp(question, answer, req.personalizationContext);
         res.json({ followup: result });
     } catch (error) {
-        console.error("Personalization Followup Error:", error);
+        logger.error({ error }, "Personalization Followup Error");
         res.status(500).json({ error: "Followup generation failed", details: error instanceof Error ? error.message : String(error) });
     }
-});
+}));
 
-router.post("/translate", hybridAuth, getUserContext, async (req: any, res) => {
+router.post("/translate", hybridAuth, getUserContext, asyncHandler(async (req: any, res) => {
     try {
         const { text, targetLanguage } = req.body;
-        if (!text || !targetLanguage) { return res.status(400).json({ error: "Text and targetLanguage required" }); }
+        if (!text || !targetLanguage) {
+            res.status(400).json({ error: "Text and targetLanguage required" });
+            return;
+        }
 
         const translated = await personalizationService.translateText(text, targetLanguage);
         res.json({ text: translated });
     } catch (error) {
-        console.error("Personalization Translate Error:", error);
+        logger.error({ error }, "Personalization Translate Error");
         res.status(500).json({ error: "Translation failed", details: error instanceof Error ? error.message : String(error) });
     }
-});
+}));
 
 // Settings Management
-router.get("/settings", hybridAuth, async (req: any, res) => {
+router.get("/settings", hybridAuth, asyncHandler(async (req: any, res) => {
     try {
         const [settings] = await db.select().from(userPersonalizationSettings).where(eq(userPersonalizationSettings.userId, req.user.id)).limit(1);
         res.json({ settings });
     } catch (err) {
-        console.error("Personalization Settings Fetch Error:", err);
+        logger.error({ error: err }, "Personalization Settings Fetch Error");
         res.status(500).json({ error: "Failed to fetch settings", details: err instanceof Error ? err.message : String(err) });
     }
-});
+}));
 
-router.post("/settings", hybridAuth, async (req: any, res) => {
+router.post("/settings", hybridAuth, asyncHandler(async (req: any, res) => {
     try {
         const settings = req.body;
         // Upsert
@@ -154,9 +170,9 @@ router.post("/settings", hybridAuth, async (req: any, res) => {
         });
         res.json({ success: true });
     } catch (err) {
-        console.error("Personalization Settings Save Error:", err);
+        logger.error({ error: err }, "Personalization Settings Save Error");
         res.status(500).json({ error: "Failed to save settings", details: err instanceof Error ? err.message : String(err) });
     }
-});
+}));
 
 export default router;
