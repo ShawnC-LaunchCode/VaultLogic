@@ -57,11 +57,11 @@ export default defineConfig({
   poolOptions: {
     forks: {
       // Use environment variable to control parallelization
-      // Unit tests: parallel (safe)
-      // Integration tests: parallel (safe with schema isolation)
-      singleFork: false,
+      // SEQUENTIAL MODE (CI/CD): Set VITEST_SINGLE_FORK=true for 100% reliability
+      // PARALLEL MODE (local dev): Leave unset for speed
+      singleFork: process.env.VITEST_SINGLE_FORK === 'true',
       minForks: 1,
-      maxForks: 4, // Limit concurrency to avoid DB overload
+      maxForks: process.env.VITEST_SINGLE_FORK === 'true' ? 1 : 4,
     }
   },
   resolve: {

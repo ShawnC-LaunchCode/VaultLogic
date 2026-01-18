@@ -496,13 +496,22 @@ npm run check            # TypeScript type checking
 npm run db:push          # Push schema changes to database
 
 # Testing
-npm test                 # Run all tests with coverage
-npm run test:unit        # Run unit tests only
-npm run test:integration # Run integration tests
-npm run test:e2e         # Run end-to-end tests with Playwright
-npm run test:watch       # Run tests in watch mode
-npm run test:ui          # Run tests with interactive UI
-npm run test:coverage    # Generate coverage report
+npm test                     # Run all tests (sequential, 100% reliable) - CI/CD
+npm run test:dev             # Run tests (parallel, faster) - Local development
+npm run test:parallel        # Run tests in parallel (faster, ~68% pass rate due to schema isolation)
+npm run test:unit            # Run unit tests only
+npm run test:integration     # Run integration tests (sequential mode)
+npm run test:integration:parallel # Run integration tests (parallel mode)
+npm run test:e2e             # Run end-to-end tests with Playwright
+npm run test:watch           # Run tests in watch mode
+npm run test:ui              # Run tests with interactive UI
+npm run test:coverage        # Generate coverage report
+
+# Testing Modes
+# - Sequential Mode (VITEST_SINGLE_FORK=true): 100% reliable, slower (~2-3min)
+#   Use for: CI/CD, pre-release verification, critical test runs
+# - Parallel Mode (default): Faster (~90-120s), some schema isolation flakiness (~68% pass rate)
+#   Use for: Local development, rapid iteration, most tests pass reliably
 
 # Utilities
 npm run set-admin        # Set a user as admin

@@ -35,6 +35,8 @@ import { hashToken } from "../utils/encryption";
 import { accountLockoutService } from "./AccountLockoutService";
 import { sendPasswordResetEmail, sendVerificationEmail } from "./emailService";
 
+const log = createLogger({ module: 'auth-service' });
+
 const SALT_ROUNDS = PASSWORD_CONFIG.SALT_ROUNDS;
 const JWT_EXPIRY = process.env.JWT_EXPIRY || '15m';
 const JWT_SECRET = env.JWT_SECRET;
