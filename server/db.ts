@@ -53,28 +53,22 @@ async function initializeDatabase() {
     logger.debug("DB: importing pg...");
     const pg = await import('pg');
 
-    // Check if we need to set search_path for test isolation
-    const testSchema = process.env.TEST_SCHEMA || (global as any).__TEST_SCHEMA__;
-
     logger.debug("DB: creating pool...");
     pool = new pg.default.Pool({ connectionString: databaseUrl });
 
-    // For test schemas, set search_path using synchronous 'connect' event
+    // For test schemas, set search_path on new connections via on('connect')
+    const testSchema = process.env.TEST_SCHEMA || (global as any).__TEST_SCHEMA__;
     if (testSchema && env.NODE_ENV === 'test') {
-      // The 'connect' event fires synchronously when a new physical connection is established
-      // This ensures search_path is set before the connection is used
-      pool.on('connect', (client) => {
-        // Execute search_path synchronously using the callback API
-        client.query(`SET LOCAL search_path TO "${testSchema}", public`, (err) => {
-          if (err) {
-            logger.warn(`DB: Failed to set search_path:`, err);
-          } else {
-            logger.debug(`DB: Set search_path on connection: "${testSchema}",public`);
-          }
-        });
+      pool.on('connect', async (client) => {
+        try {
+          await client.query(`SET search_path TO "${testSchema}", public`);
+          logger.debug(`DB: Set search_path on new connection: "${testSchema}",public`);
+        } catch (err: any) {
+          logger.warn(`DB: Failed to set search_path on connection: ${err.message}`);
+        }
       });
 
-      logger.info(`DB: Configured pool with search_path="${testSchema}",public via connect event`);
+      logger.info(`DB: Configured on('connect') to set search_path="${testSchema}",public`);
     }
 
     logger.debug("DB: importing drizzle...");

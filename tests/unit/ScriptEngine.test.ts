@@ -24,20 +24,20 @@ describe('ScriptEngine', () => {
     vi.mocked(SandboxExecutor.executeCodeWithHelpers).mockImplementation(async (params) => {
       // Python Mocking
       if (params.language === 'python') {
-        if (params.code.includes('emit({"result": input["a"] + input["b"]})')) {return { ok: true, output: { result: 8 } };}
-        if (params.code.includes('emit({"keys": list(input.keys())})')) {return { ok: true, output: { keys: ['a', 'b'] } };}
-        if (params.code.includes('raise ValueError')) {return { ok: false, error: 'ValueError: Test error' };}
-        if (params.code.includes('missing emit')) {return { ok: false, error: 'emit' };}
-        if (params.code === 'x = 5') {return { ok: false, error: 'emit' };} // Missing emit
-        if (params.code.includes('time.sleep')) {return { ok: false, error: 'Timeout' };}
+        if (params.code.includes('emit({"result": input["a"] + input["b"]})')) { return { ok: true, output: { result: 8 } }; }
+        if (params.code.includes('emit({"keys": list(input.keys())})')) { return { ok: true, output: { keys: ['a', 'b'] } }; }
+        if (params.code.includes('raise ValueError')) { return { ok: false, error: 'ValueError: Test error' }; }
+        if (params.code.includes('missing emit')) { return { ok: false, error: 'emit' }; }
+        if (params.code === 'x = 5') { return { ok: false, error: 'emit' }; } // Missing emit
+        if (params.code.includes('time.sleep')) { return { ok: false, error: 'Timeout' }; }
         return { ok: true, output: {} };
       }
 
       // JavaScript Mocking using new Function (Execution Simulation)
       try {
-        if (params.code.includes('while(true)')) {return { ok: false, error: 'Timeout' };}
-        if (params.code.includes('throw new Error')) {return { ok: false, error: 'Error: Test error' };}
-        if (params.code.includes('const x = 5;')) {return { ok: false, error: 'emit was not called' };} // Simulating missing emit if it relies on emit check? 
+        if (params.code.includes('while(true)')) { return { ok: false, error: 'Timeout' }; }
+        if (params.code.includes('throw new Error')) { return { ok: false, error: 'Error: Test error' }; }
+        if (params.code.includes('const x = 5;')) { return { ok: false, error: 'emit was not called' }; } // Simulating missing emit if it relies on emit check? 
         // Actually, if emit is not called, result output is undefined? 
         // The real executor wraps it. Let's simulate a basic version.
 
@@ -444,7 +444,7 @@ describe('ScriptEngine', () => {
     });
   });
 
-  describe.skip('test() - integration tests', () => {
+  describe('test() - integration tests', () => {
     // These are integration tests that require full sandbox executor setup
     // Skip for now as they depend on actual code execution
     it('should test execute with sample data', async () => {

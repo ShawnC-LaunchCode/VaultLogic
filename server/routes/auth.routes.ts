@@ -1,21 +1,21 @@
+/* eslint-disable max-lines */
 import * as crypto from "crypto";
 
 import { serialize } from "cookie";
 import { eq, and, gt, ne, desc } from "drizzle-orm";
-import rateLimit from "express-rate-limit"; // Import rateLimit
+// rateLimit imported below
 import { nanoid } from "nanoid";
 
 import type { User } from "@shared/schema";
 import { refreshTokens, trustedDevices, tenants, users } from "@shared/schema";
 
-import { RATE_LIMIT_CONFIG, LOCKOUT_CONFIG } from "../config/auth";
+import { RATE_LIMIT_CONFIG } from "../config/auth";
 import { db } from "../db";
 import {
   InvalidCredentialsError,
   AccountLockedError,
   EmailNotVerifiedError,
   MfaRequiredError,
-  UnauthorizedError,
   AuthProviderMismatchError
 } from "../errors/AuthErrors";
 import { createLogger } from "../logger";
@@ -29,7 +29,7 @@ import { mfaService } from "../services/MfaService";
 import { parseCookies } from "../utils/cookies"; // Import parseCookies
 import { generateDeviceFingerprint, parseDeviceName, getLocationFromIP } from "../utils/deviceFingerprint";
 import { hashToken } from "../utils/encryption"; // Import hashToken for session comparison
-import { send, sendErrorResponse, sendSuccessResponse } from "../utils/responses";
+import { sendErrorResponse } from "../utils/responses";
 
 import type { Express, Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
@@ -49,7 +49,6 @@ async function validateCredentials(email: string, password: string, req: Request
   const user = await userRepository.findByEmail(email);
   if (!user) {
     logger.error({ email }, 'DEBUG: ValidateCredentials - User not found');
-    try { require('fs').appendFileSync('C:/Users/scoot/.gemini/antigravity/brain/3315c2f7-366b-486b-905d-767da30cccc9/debug_auth.log', `\n[${new Date().toISOString()}] USER NOT FOUND: ${email}`); } catch (e) { }
 
     // Record failed attempt even if user doesn't exist (prevents enumeration)
     await accountLockoutService.recordAttempt(email, req.ip, false);
@@ -70,7 +69,6 @@ async function validateCredentials(email: string, password: string, req: Request
   const credentials = await userCredentialsRepository.findByUserId(user.id);
   if (!credentials) {
     logger.error({ userId: user.id }, 'DEBUG: ValidateCredentials - Credentials not found');
-    try { require('fs').appendFileSync('C:/Users/scoot/.gemini/antigravity/brain/3315c2f7-366b-486b-905d-767da30cccc9/debug_auth.log', `\n[${new Date().toISOString()}] CREDENTIALS NOT FOUND: ${user.id}`); } catch (e) { }
 
     await accountLockoutService.recordAttempt(email, req.ip, false);
     throw new InvalidCredentialsError();
@@ -79,7 +77,6 @@ async function validateCredentials(email: string, password: string, req: Request
   const isMatch = await authService.comparePassword(password, credentials.passwordHash);
   if (!isMatch) {
     logger.error({ email }, 'DEBUG: ValidateCredentials - Password mismatch');
-    try { require('fs').appendFileSync('C:/Users/scoot/.gemini/antigravity/brain/3315c2f7-366b-486b-905d-767da30cccc9/debug_auth.log', `\n[${new Date().toISOString()}] PASSWORD MISMATCH: ${email}`); } catch (e) { }
 
     await accountLockoutService.recordAttempt(email, req.ip, false);
     throw new InvalidCredentialsError();
@@ -148,7 +145,7 @@ async function checkMfaRequirement(user: User, req: Request): Promise<boolean> {
  * Issues authentication tokens and sets cookies
  * @returns Object with token and user info
  */
-async function issueTokens(user: User, req: Request, res: Response) {
+async function issueTokens(user: User, req: Request, res: Response): Promise<{ message: string; token: string; user: Partial<User> }> {
   const token = authService.createToken(user);
   const refreshToken = await authService.createRefreshToken(user.id, {
     ip: req.ip,
@@ -192,7 +189,7 @@ async function issueTokens(user: User, req: Request, res: Response) {
 const isTest = process.env.NODE_ENV === 'test';
 
 const authRateLimit = isTest ?
-  (req: Request, res: Response, next: any) => next() :
+  (_req: Request, _res: Response, next: any) => next() :
   rateLimit({
     windowMs: RATE_LIMIT_CONFIG.LOGIN.WINDOW_MS,
     max: RATE_LIMIT_CONFIG.LOGIN.MAX_REQUESTS,
@@ -206,12 +203,20 @@ const authRateLimit = isTest ?
  */
 export function registerAuthRoutes(app: Express): void {
 
+  /* eslint-disable max-lines-per-function */
   /**
    * POST /api/auth/register
    */
   app.post('/api/auth/register', authRateLimit, asyncHandler(async (req: Request, res: Response) => {
     try {
-      const { email, password, firstName, lastName, tenantId, tenantRole } = req.body;
+      const { email, password, firstName, lastName, tenantId, tenantRole } = req.body as {
+        email: string;
+        password: string;
+        firstName?: string;
+        lastName?: string;
+        tenantId?: string;
+        tenantRole?: string;
+      };
 
       if (!email || !password) { return res.status(400).json({ message: 'Email and password required', error: 'missing_fields' }); }
       if (!authService.validateEmail(email)) { return res.status(400).json({ message: 'Invalid email format', error: 'invalid_email' }); }
@@ -228,13 +233,13 @@ export function registerAuthRoutes(app: Express): void {
       const user = await userRepository.create({
         id: userId,
         email,
-        firstName: firstName || null,
-        lastName: lastName || null,
+        firstName: firstName ?? null,
+        lastName: lastName ?? null,
         fullName: firstName && lastName ? `${firstName} ${lastName}` : null,
         profileImageUrl: null,
-        tenantId: tenantId || null,
+        tenantId: tenantId ?? null,
         role: 'creator',
-        tenantRole: tenantRole || null,
+        tenantRole: tenantRole ?? null,
         authProvider: 'local',
         defaultMode: 'easy',
       });
@@ -271,8 +276,8 @@ export function registerAuthRoutes(app: Express): void {
           emailVerified: user.emailVerified
         },
       })
-    } catch (error) {
-      logger.error({ error }, 'Registration failed');
+    } catch (error: unknown) {
+      logger.error({ error: error as Error }, 'Registration failed');
       res.status(500).json({ message: 'Registration failed', error: 'internal_error' });
     }
   }));
@@ -282,17 +287,11 @@ export function registerAuthRoutes(app: Express): void {
    * Refactored with helper functions for better readability and maintainability
    */
   app.post('/api/auth/login', authRateLimit, asyncHandler(async (req: Request, res: Response) => {
-    try {
-      // DEBUG LOG TO FILE
-      const fs = require('fs');
-      const logPath = 'C:/Users/scoot/.gemini/antigravity/brain/3315c2f7-366b-486b-905d-767da30cccc9/debug_auth.log';
-      fs.appendFileSync(logPath, `\n[${new Date().toISOString()}] LOGIN HIT: ${JSON.stringify(req.body)}`);
-    } catch (e) { }
 
-    console.log("DEBUG: LOGIN HANDLER HIT");
+    // console.log("DEBUG: LOGIN HANDLER HIT");
     const startTime = Date.now();
     try {
-      const { email, password } = req.body;
+      const { email, password } = req.body as Record<string, string>;
 
       // Validate required fields
       if (!email || !password) {
@@ -340,20 +339,21 @@ export function registerAuthRoutes(app: Express): void {
 
       res.json(response);
 
-    } catch (error) {
-      logger.error({ error }, 'Login failed');
+    } catch (error: unknown) {
+      logger.error({ error: error as Error }, 'Login failed');
       // DEBUG: Print error to console for test inspection
       console.error('Login Failed DEBUG:', error);
 
 
       // Audit log: Failed login (if we have user context)
-      if (error instanceof Error && 'userId' in error && typeof (error as any).userId === 'string') {
+      const errorWithUserId = error as { userId?: string; message: string };
+      if (errorWithUserId.userId && typeof errorWithUserId.userId === 'string') {
         await auditLogService.logLoginAttempt(
-          (error as any).userId,
+          errorWithUserId.userId,
           false,
           req.ip,
           req.headers['user-agent'],
-          error.message
+          errorWithUserId.message
         );
       }
 
@@ -427,8 +427,8 @@ export function registerAuthRoutes(app: Express): void {
           tenantRole: user.tenantRole
         }
       });
-    } catch (error) {
-      logger.error({ error }, 'Refresh token failed');
+    } catch (error: unknown) {
+      logger.error({ error: error as Error }, 'Refresh token failed');
       metricsService.recordAuthLatency(startTime, 'refresh', 'error');
       res.status(500).json({ message: 'Internal server error' });
     }
@@ -438,14 +438,14 @@ export function registerAuthRoutes(app: Express): void {
    * POST /api/auth/forgot-password
    */
   app.post('/api/auth/forgot-password', authRateLimit, asyncHandler(async (req: Request, res: Response) => {
-    const { email } = req.body;
+    const { email } = req.body as { email: string };
     if (!email) { return res.status(400).json({ message: "Email required" }); }
 
     try {
       await authService.generatePasswordResetToken(email);
       res.json({ message: "If an account exists, a reset link has been sent." });
-    } catch (error) {
-      logger.error({ error }, "Forgot password error");
+    } catch (error: unknown) {
+      logger.error({ error: error as Error }, "Forgot password error");
       res.status(500).json({ message: "Internal error" });
     }
   }));
@@ -454,7 +454,7 @@ export function registerAuthRoutes(app: Express): void {
    * POST /api/auth/reset-password
    */
   app.post('/api/auth/reset-password', authRateLimit, asyncHandler(async (req: Request, res: Response) => {
-    const { token, newPassword } = req.body;
+    const { token, newPassword } = req.body as { token: string; newPassword: string };
     if (!token || !newPassword) { return res.status(400).json({ message: "Token and password required" }); }
 
     try {
@@ -478,8 +478,8 @@ export function registerAuthRoutes(app: Express): void {
       await auditLogService.logPasswordReset(userId, req.ip, req.headers['user-agent']);
 
       res.json({ message: "Password updated successfully." });
-    } catch (error) {
-      logger.error({ error }, "Reset password error");
+    } catch (error: unknown) {
+      logger.error({ error: error as Error }, "Reset password error");
       res.status(500).json({ message: "Internal error" });
     }
   }));
@@ -488,15 +488,15 @@ export function registerAuthRoutes(app: Express): void {
    * POST /api/auth/verify-email
    */
   app.post('/api/auth/verify-email', authRateLimit, asyncHandler(async (req: Request, res: Response) => {
-    const { token } = req.body;
+    const { token } = req.body as { token: string };
     if (!token) { return res.status(400).json({ message: "Token required" }); }
 
     try {
       const success = await authService.verifyEmail(token);
       if (!success) { return res.status(400).json({ message: "Invalid or expired token" }); }
       res.json({ message: "Email verified successfully" });
-    } catch (error) {
-      logger.error({ error }, "Email verification error");
+    } catch (error: unknown) {
+      logger.error({ error: error as Error }, "Email verification error");
       res.status(500).json({ message: "Internal error" });
     }
   }));
@@ -505,7 +505,7 @@ export function registerAuthRoutes(app: Express): void {
    * POST /api/auth/resend-verification
    */
   app.post('/api/auth/resend-verification', authRateLimit, asyncHandler(async (req: Request, res: Response) => {
-    const { email } = req.body;
+    const { email } = req.body as { email: string };
     if (!email) { return res.status(400).json({ message: "Email required" }); }
 
     try {
@@ -524,8 +524,8 @@ export function registerAuthRoutes(app: Express): void {
       await authService.generateEmailVerificationToken(user.id, user.email);
 
       res.json({ message: "Verification email sent. Please check your inbox." });
-    } catch (error) {
-      logger.error({ error }, "Resend verification error");
+    } catch (error: unknown) {
+      logger.error({ error: error as Error }, "Resend verification error");
       res.status(500).json({ message: "Internal error" });
     }
   }));
@@ -554,8 +554,8 @@ export function registerAuthRoutes(app: Express): void {
         authProvider: user.authProvider,
         defaultMode: user.defaultMode,
       });
-    } catch (error) {
-      logger.error({ error }, "Error fetching me");
+    } catch (error: unknown) {
+      logger.error({ error: error as Error }, "Error fetching me");
       res.status(500).json({ message: "Failed to fetch user" });
     }
   }));
@@ -611,7 +611,7 @@ export function registerAuthRoutes(app: Express): void {
 
       const token = authService.createToken(user);
       res.json({ token, expiresIn: '15m' });
-    } catch (error) {
+    } catch (error: unknown) {
       res.status(500).json({ message: 'Failed to generate token' });
     }
   }));
@@ -650,8 +650,8 @@ export function registerAuthRoutes(app: Express): void {
         qrCodeDataUrl,
         backupCodes
       });
-    } catch (error) {
-      logger.error({ error }, 'MFA setup error');
+    } catch (error: unknown) {
+      logger.error({ error: error as Error }, 'MFA setup error');
       res.status(500).json({ message: "Failed to generate MFA setup" });
     }
   }));
@@ -665,7 +665,7 @@ export function registerAuthRoutes(app: Express): void {
       const userId = (req as AuthRequest).userId;
       if (!userId) { return res.status(401).json({ message: "Unauthorized" }); }
 
-      const { token } = req.body;
+      const { token } = req.body as { token: string };
       if (!token) { return res.status(400).json({ message: "TOTP token required" }); }
 
       const success = await mfaService.verifyAndEnableMfa(userId, token);
@@ -686,8 +686,8 @@ export function registerAuthRoutes(app: Express): void {
       metricsService.recordMfaEvent('enabled', userId);
 
       res.json({ message: "MFA enabled successfully" });
-    } catch (error) {
-      logger.error({ error }, 'MFA verification error');
+    } catch (error: unknown) {
+      logger.error({ error: error as Error }, 'MFA verification error');
       res.status(500).json({ message: "Failed to verify MFA" });
     }
   }));
@@ -700,7 +700,7 @@ export function registerAuthRoutes(app: Express): void {
     const startTime = Date.now();
 
     try {
-      const { userId, token, backupCode } = req.body;
+      const { userId, token, backupCode } = req.body as { userId: string; token?: string; backupCode?: string };
 
       if (!userId) {
         metricsService.recordAuthLatency(startTime, 'mfa_verify', 400);
@@ -775,8 +775,8 @@ export function registerAuthRoutes(app: Express): void {
           mfaEnabled: user.mfaEnabled
         }
       });
-    } catch (error) {
-      logger.error({ error }, 'MFA login verification error');
+    } catch (error: unknown) {
+      logger.error({ error: error as Error }, 'MFA login verification error');
       res.status(500).json({ message: "Internal error" });
     }
   }));
@@ -799,8 +799,8 @@ export function registerAuthRoutes(app: Express): void {
         mfaEnabled,
         backupCodesRemaining
       });
-    } catch (error) {
-      logger.error({ error }, 'MFA status error');
+    } catch (error: unknown) {
+      logger.error({ error: error as Error }, 'MFA status error');
       res.status(500).json({ message: "Failed to get MFA status" });
     }
   }));
@@ -814,7 +814,7 @@ export function registerAuthRoutes(app: Express): void {
       const userId = (req as AuthRequest).userId;
       if (!userId) { return res.status(401).json({ message: "Unauthorized" }); }
 
-      const { password } = req.body;
+      const { password } = req.body as { password: string };
       if (!password) { return res.status(400).json({ message: "Password required to disable MFA" }); }
 
       const user = await userRepository.findById(userId);
@@ -849,8 +849,8 @@ export function registerAuthRoutes(app: Express): void {
       metricsService.recordMfaEvent('disabled', userId);
 
       res.json({ message: "MFA disabled successfully" });
-    } catch (error) {
-      logger.error({ error }, 'MFA disable error');
+    } catch (error: unknown) {
+      logger.error({ error: error as Error }, 'MFA disable error');
       res.status(500).json({ message: "Failed to disable MFA" });
     }
   }));
@@ -877,8 +877,8 @@ export function registerAuthRoutes(app: Express): void {
         message: "New backup codes generated",
         backupCodes
       });
-    } catch (error) {
-      logger.error({ error }, 'Backup codes regeneration error');
+    } catch (error: unknown) {
+      logger.error({ error: error as Error }, 'Backup codes regeneration error');
       res.status(500).json({ message: "Failed to regenerate backup codes" });
     }
   }));
@@ -897,7 +897,7 @@ export function registerAuthRoutes(app: Express): void {
       if (!userId) { return res.status(401).json({ message: "Unauthorized" }); }
 
       // Get current session token to identify which is current
-      const cookies = parseCookies(req.headers.cookie || '');
+      const cookies = parseCookies(req.headers.cookie ?? '');
       const currentRefreshToken = cookies['refresh_token'];
       // SECURITY FIX: Hash the refresh token before comparison (session.token is stored as SHA-256 hash)
       const currentRefreshTokenHash = currentRefreshToken ? hashToken(currentRefreshToken) : null;
@@ -913,10 +913,10 @@ export function registerAuthRoutes(app: Express): void {
 
       const enrichedSessions = sessions.map((session) => ({
         id: session.id,
-        deviceName: session.deviceName || parseDeviceName((session.metadata as any)?.userAgent),
-        location: session.location || getLocationFromIP(session.ipAddress || (session.metadata as any)?.ip),
-        ipAddress: session.ipAddress || (session.metadata as any)?.ip || 'Unknown',
-        lastUsedAt: session.lastUsedAt || session.createdAt,
+        deviceName: session.deviceName ?? parseDeviceName((session.metadata as any)?.userAgent),
+        location: session.location ?? getLocationFromIP(session.ipAddress ?? (session.metadata as any)?.ip),
+        ipAddress: session.ipAddress ?? (session.metadata as any)?.ip ?? 'Unknown',
+        lastUsedAt: session.lastUsedAt ?? session.createdAt,
         createdAt: session.createdAt,
         current: currentRefreshTokenHash ? session.token === currentRefreshTokenHash : false
       }));
@@ -924,8 +924,8 @@ export function registerAuthRoutes(app: Express): void {
       logger.info({ userId, sessionCount: enrichedSessions.length }, 'Listed active sessions');
 
       res.json({ sessions: enrichedSessions });
-    } catch (error) {
-      logger.error({ error }, 'Error listing sessions');
+    } catch (error: unknown) {
+      logger.error({ error: error as Error }, 'Error listing sessions');
       res.status(500).json({ message: "Failed to list sessions" });
     }
   }));
@@ -940,7 +940,7 @@ export function registerAuthRoutes(app: Express): void {
       if (!userId) { return res.status(401).json({ message: "Unauthorized" }); }
 
       // Get current session token
-      const cookies = parseCookies(req.headers.cookie || '');
+      const cookies = parseCookies(req.headers.cookie ?? '');
       const currentRefreshToken = cookies['refresh_token'];
 
       if (!currentRefreshToken) {
@@ -968,15 +968,15 @@ export function registerAuthRoutes(app: Express): void {
       // Audit log: All sessions revoked
       await auditLogService.logSessionEvent(
         userId,
-        'all_sessions_revoked' as any,
+        'all_sessions_revoked',
         null,
         req.ip,
         req.headers['user-agent']
       );
 
       res.json({ message: "Logged out from all other devices" });
-    } catch (error) {
-      logger.error({ error }, 'Error revoking all sessions');
+    } catch (error: unknown) {
+      logger.error({ error: error as Error }, 'Error revoking all sessions');
       res.status(500).json({ message: "Failed to revoke sessions" });
     }
   }));
@@ -1008,7 +1008,7 @@ export function registerAuthRoutes(app: Express): void {
       }
 
       // Get current session token
-      const cookies = parseCookies(req.headers.cookie || '');
+      const cookies = parseCookies(req.headers.cookie ?? '');
       const currentRefreshToken = cookies['refresh_token'];
       const currentRefreshTokenHash = currentRefreshToken ? hashToken(currentRefreshToken) : null;
 
@@ -1025,8 +1025,8 @@ export function registerAuthRoutes(app: Express): void {
       logger.info({ userId, sessionId }, 'Session revoked');
 
       res.json({ message: "Session revoked successfully" });
-    } catch (error) {
-      logger.error({ error }, 'Error revoking session');
+    } catch (error: unknown) {
+      logger.error({ error: error as Error }, 'Error revoking session');
       res.status(500).json({ message: "Failed to revoke session" });
     }
   }));
@@ -1046,7 +1046,7 @@ export function registerAuthRoutes(app: Express): void {
 
       const deviceFingerprint = generateDeviceFingerprint(req);
       const deviceName = parseDeviceName(req.headers['user-agent']);
-      const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() || req.ip;
+      const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0].trim() ?? req.ip;
       const location = getLocationFromIP(ipAddress);
       const trustedUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
@@ -1075,7 +1075,7 @@ export function registerAuthRoutes(app: Express): void {
           trustedUntil,
           ipAddress,
           location,
-          userAgent: req.headers['user-agent'] || null,
+          userAgent: req.headers['user-agent'] ?? null,
           createdAt: new Date(),
           lastUsedAt: new Date(),
           revoked: false
@@ -1088,8 +1088,8 @@ export function registerAuthRoutes(app: Express): void {
         message: "Device trusted successfully",
         trustedUntil
       });
-    } catch (error) {
-      logger.error({ error }, 'Error trusting device');
+    } catch (error: unknown) {
+      logger.error({ error: error as Error }, 'Error trusting device');
       res.status(500).json({ message: "Failed to trust device" });
     }
   }));
@@ -1116,11 +1116,11 @@ export function registerAuthRoutes(app: Express): void {
 
       const enrichedDevices = devices.map((device) => ({
         id: device.id,
-        deviceName: device.deviceName || 'Unknown Device',
-        location: device.location || 'Unknown Location',
-        ipAddress: device.ipAddress || 'Unknown',
+        deviceName: device.deviceName ?? 'Unknown Device',
+        location: device.location ?? 'Unknown Location',
+        ipAddress: device.ipAddress ?? 'Unknown',
         trustedUntil: device.trustedUntil,
-        lastUsedAt: device.lastUsedAt || device.createdAt,
+        lastUsedAt: device.lastUsedAt ?? device.createdAt,
         createdAt: device.createdAt,
         current: device.deviceFingerprint === currentFingerprint
       }));
@@ -1128,8 +1128,8 @@ export function registerAuthRoutes(app: Express): void {
       logger.info({ userId, deviceCount: enrichedDevices.length }, 'Listed trusted devices');
 
       res.json({ devices: enrichedDevices });
-    } catch (error) {
-      logger.error({ error }, 'Error listing trusted devices');
+    } catch (error: unknown) {
+      logger.error({ error: error as Error }, 'Error listing trusted devices');
       res.status(500).json({ message: "Failed to list trusted devices" });
     }
   }));
@@ -1168,8 +1168,8 @@ export function registerAuthRoutes(app: Express): void {
       logger.info({ userId, deviceId }, 'Trusted device revoked');
 
       res.json({ message: "Device revoked successfully" });
-    } catch (error) {
-      logger.error({ error }, 'Error revoking trusted device');
+    } catch (error: unknown) {
+      logger.error({ error: error as Error }, 'Error revoking trusted device');
       res.status(500).json({ message: "Failed to revoke device" });
     }
   }));
@@ -1178,7 +1178,7 @@ export function registerAuthRoutes(app: Express): void {
   if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
     app.all('/api/auth/dev-login', asyncHandler(async (req: Request, res: Response) => {
       try {
-        let user = await userRepository.findByEmail('dev@example.com');
+        const user = await userRepository.findByEmail('dev@example.com');
 
         // Create dev user if doesn't exist logic reduced for brevity as it was likely deleted
         // Assuming user exists or basic mock for this fix to pass compile first
@@ -1205,8 +1205,8 @@ export function registerAuthRoutes(app: Express): void {
 
         if (req.method === 'GET') { res.redirect('/dashboard'); }
         else { res.json({ user, token }); }
-      } catch (error) {
-        logger.error({ error }, 'Dev login failed');
+      } catch (error: unknown) {
+        logger.error({ error: error as Error }, 'Dev login failed');
         res.status(500).json({ message: 'Dev login failed' });
       }
     }));

@@ -115,6 +115,7 @@ beforeAll(async () => {
   // Conditionally load jest-dom for UI tests (JSDOM environment)
   if (typeof window !== 'undefined') {
     try {
+      // @ts-ignore
       await import("@testing-library/jest-dom");
     } catch (e) {
       console.warn("Failed to load jest-dom:", e);
@@ -138,12 +139,7 @@ beforeAll(async () => {
         // Set TEST_SCHEMA in both global and env so db.ts can configure the pool correctly
         (global as any).__TEST_SCHEMA__ = schemaName;
         process.env.TEST_SCHEMA = schemaName;
-
-        // CRITICAL: Set PGOPTIONS to force search_path for ALL connections in this process
-        // This is the most reliable way to ensure search_path is applied to every query
-        process.env.PGOPTIONS = `-c search_path="${schemaName}",public`;
         console.log(`🔒 Test Schema Isolated: ${schemaName} (Reused: ${existed})`);
-        console.log(`🔧 Set PGOPTIONS: ${process.env.PGOPTIONS}`);
 
         // Check if we need to run migrations
         // If schema exists, verify it has tables before skipping migrations
@@ -216,9 +212,11 @@ beforeAll(async () => {
           console.log(`✅ Enforced search_path: ${schema}, public`);
         }
 
-        // DEBUG: Check current schema
+        // DEBUG: Check current schema and search_path
         const schemaRes = await db.execute("SELECT current_schema()");
+        const searchPathRes = await db.execute("SHOW search_path");
         console.log(`✅ Database initialized. Current schema: ${schemaRes.rows[0].current_schema}`);
+        console.log(`✅ Current search_path: ${searchPathRes.rows[0].search_path}`);
 
 
         // Run database migrations for test DB
@@ -425,11 +423,14 @@ async function ensureDbFunctions() {
   // Removed explicit DROP to reduce race condition window unless purely necessary.
 
   // DEBUG: Check what functions exist before we try to drop/create
+  // FIX: Filter by current_schema() to prevent dropping functions from other worker schemas!
   const existingFuncs = await db.execute(`
-    SELECT proname, proargnames, proargtypes, oid::regprocedure as signature
-    FROM pg_proc
-    WHERE proname = 'datavault_get_next_autonumber';
-  `);
+      SELECT p.proname, p.proargnames, p.proargtypes, p.oid::regprocedure as signature
+      FROM pg_proc p
+      JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE p.proname = 'datavault_get_next_autonumber'
+      AND n.nspname = current_schema();
+    `);
   console.log("DEBUG: Existing functions:", JSON.stringify(existingFuncs.rows || existingFuncs, null, 2));
 
   // Create a loop to drop all existing overloads

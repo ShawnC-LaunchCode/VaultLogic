@@ -118,6 +118,20 @@ export function ListToolsBlockEditor({ workflowId, config, onChange, mode }: Lis
         </div>
       )}
 
+      {/* Execution Order Info */}
+      <div className="flex items-center justify-center gap-2 text-[10px] text-muted-foreground py-2 bg-muted/20 rounded border border-dashed mb-2">
+        <span className="font-medium">Execution Order:</span>
+        <span>Filter</span>
+        <span>→</span>
+        <span>Sort</span>
+        <span>→</span>
+        <span>Range</span>
+        <span>→</span>
+        <span>Select</span>
+        <span>→</span>
+        <span>Dedupe</span>
+      </div>
+
       {/* Source & Output */}
       <Card className="border-green-200 bg-green-50/30">
         <CardHeader className="pb-3 cursor-pointer" onClick={() => toggleSection('source')}>

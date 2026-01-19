@@ -1,4 +1,0 @@
-{
-  "ok": false,
-  "error": "SandboxEnvironmentError: isolated-vm is not available"
-}

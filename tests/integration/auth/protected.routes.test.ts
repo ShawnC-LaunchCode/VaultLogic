@@ -38,7 +38,9 @@ describe.sequential("Protected Routes Integration Tests", () => {
     });
 
     afterAll(async () => {
-        await ctx.cleanup();
+        if (ctx) {
+            await ctx.cleanup();
+        }
     });
 
     beforeEach(async () => {

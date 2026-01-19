@@ -1,7 +1,56 @@
+/* eslint-disable max-depth */
 import { eq, inArray } from "drizzle-orm";
 
-import type { Workflow, InsertWorkflow, Section, Step, LogicRule, WorkflowAccess, PrincipalType, AccessRole } from "@shared/schema";
+import type { Workflow, InsertWorkflow, Section, Step, LogicRule, WorkflowAccess, PrincipalType, AccessRole, TransformBlock, WorkflowVersion } from "@shared/schema";
 import { workflowVersions, workflows, sections, steps, logicRules, auditLogs, projects } from "@shared/schema";
+
+interface GraphConfig {
+  title?: string;
+  message?: string;
+  [key: string]: unknown;
+}
+
+interface GraphNode {
+  type: string;
+  data?: {
+    config?: GraphConfig;
+  };
+}
+
+interface GraphJson {
+  nodes?: GraphNode[];
+}
+
+interface WorkflowSectionData {
+  id?: string;
+  title: string;
+  description?: string;
+  order?: number;
+  visibleIf?: string;
+  steps?: Array<{
+    id?: string;
+    type: string;
+    title: string;
+    description?: string;
+    required?: boolean;
+    options?: string[];
+    order?: number;
+  }>;
+}
+
+interface WorkflowContentData {
+  title?: string;
+  description?: string;
+  sections?: WorkflowSectionData[];
+  logicRules?: Array<{
+    conditionStepAlias: string;
+    operator: string;
+    conditionValue: string;
+    targetType: string;
+    targetAlias: string;
+    action: string;
+  }>;
+}
 
 import { db } from "../db";
 import { logger } from "../logger";
@@ -31,6 +80,7 @@ export class WorkflowService {
   private workflowAccessRepo: typeof workflowAccessRepository;
   private projectRepo: typeof projectRepository;
 
+  // eslint-disable-next-line max-params
   constructor(
     workflowRepo?: typeof workflowRepository,
     sectionRepo?: typeof sectionRepository,
@@ -39,12 +89,12 @@ export class WorkflowService {
     workflowAccessRepo?: typeof workflowAccessRepository,
     projectRepo?: typeof projectRepository
   ) {
-    this.workflowRepo = workflowRepo || workflowRepository;
-    this.sectionRepo = sectionRepo || sectionRepository;
-    this.stepRepo = stepRepo || stepRepository;
-    this.logicRuleRepo = logicRuleRepo || logicRuleRepository;
-    this.workflowAccessRepo = workflowAccessRepo || workflowAccessRepository;
-    this.projectRepo = projectRepo || projectRepository;
+    this.workflowRepo = workflowRepo ?? workflowRepository;
+    this.sectionRepo = sectionRepo ?? sectionRepository;
+    this.stepRepo = stepRepo ?? stepRepository;
+    this.logicRuleRepo = logicRuleRepo ?? logicRuleRepository;
+    this.workflowAccessRepo = workflowAccessRepo ?? workflowAccessRepository;
+    this.projectRepo = projectRepo ?? projectRepository;
   }
 
   /**
@@ -109,8 +159,8 @@ export class WorkflowService {
    */
   async createWorkflow(data: InsertWorkflow, creatorId: string): Promise<Workflow> {
     // Validate ownership before creating
-    const ownerType = data.ownerType || 'user';
-    const ownerUuid = data.ownerUuid || creatorId;
+    const ownerType = data.ownerType ?? 'user';
+    const ownerUuid = data.ownerUuid ?? creatorId;
 
     const { canCreateWithOwnership } = await import('../utils/ownershipAccess');
     const canCreate = await canCreateWithOwnership(creatorId, ownerType, ownerUuid);
@@ -163,7 +213,7 @@ export class WorkflowService {
       this.sectionRepo.findByWorkflowId(workflowId),
       this.logicRuleRepo.findByWorkflowId(workflowId),
       db.query.transformBlocks.findMany({
-        where: (tb: any, { eq }: any) => eq(tb.workflowId, workflowId),
+        where: (tb, { eq }) => eq(tb.workflowId, workflowId),
       }),
     ]);
 
@@ -192,7 +242,7 @@ export class WorkflowService {
 
     const sectionsWithSteps = sections.map((section) => ({
       ...section,
-      steps: stepsBySectionMap.get(section.id) || [],
+      steps: stepsBySectionMap.get(section.id) ?? [],
     }));
 
     // OPTIMIZATION: Single query for current version (if exists)
@@ -204,7 +254,7 @@ export class WorkflowService {
           : eq(workflowVersions.workflowId, workflowId),
         orderBy: workflow.currentVersionId
           ? undefined
-          : (v: any, { desc }: any) => [desc(v.versionNumber)],
+          : (v, { desc }) => [desc(v.versionNumber)],
       });
     }
 
@@ -225,9 +275,6 @@ export class WorkflowService {
     return this.workflowRepo.findByUserAccess(userId);
   }
 
-  /**
-   * Update workflow
-   */
   /**
    * Update workflow
    */
@@ -516,7 +563,7 @@ export class WorkflowService {
   async updateIntakeConfig(
     workflowId: string,
     userId: string,
-    intakeConfig: Record<string, any>,
+    intakeConfig: Record<string, unknown>,
     tx?: DbTransaction
   ): Promise<Workflow> {
     // Verify user has edit access
@@ -577,22 +624,21 @@ export class WorkflowService {
    * Construct full public URL from slug
    */
   private constructPublicUrl(slug: string): string {
-    const baseUrl = process.env.BASE_URL || process.env.VITE_BASE_URL || 'http://localhost:5000';
+    const baseUrl = process.env.BASE_URL ?? process.env.VITE_BASE_URL ?? 'http://localhost:5000';
     return `${baseUrl}/run/${slug}`;
   }
   /**
-   * Sync workflow graph changes to sections/steps (Legacy Support)
    * Specifically ensures 'final' nodes are converted to Final Sections for the Runner
    */
-  async syncWithGraph(workflowId: string, graphJson: any, userId: string): Promise<void> {
+  async syncWithGraph(workflowId: string, graphJson: GraphJson, userId: string): Promise<void> {
     if (!graphJson?.nodes) { return; }
 
     // 1. Find 'final' node in graph
-    const finalNode = graphJson.nodes.find((n: any) => n.type === 'final');
+    const finalNode = graphJson.nodes.find((n) => n.type === 'final');
 
     // 2. Manage Final Document Section
     const existingSections = await this.sectionRepo.findByWorkflowId(workflowId);
-    const finalSection = existingSections.find(s => (s.config as any)?.finalBlock === true);
+    const finalSection = existingSections.find(s => (s.config as Record<string, unknown>)?.finalBlock === true);
 
     if (finalNode) {
       const sectionConfig = {
@@ -634,11 +680,12 @@ export class WorkflowService {
    * Replace full workflow content (Deep Update)
    * Used by AI Assistant to apply full structural changes
    */
+  /* eslint-disable-next-line complexity, sonarjs/cognitive-complexity */
   async replaceWorkflowContent(
     workflowId: string,
     userId: string,
-    data: any
-  ): Promise<any> {
+    data: WorkflowContentData
+  ): Promise<Workflow> {
     // 1. Authorization
     const hasAccess = await aclService.hasWorkflowRole(userId, workflowId, 'edit');
     if (!hasAccess) {
@@ -657,7 +704,7 @@ export class WorkflowService {
         .where(eq(workflows.id, workflowId))
         .returning();
 
-      if (!updatedWorkflow) {
+      if (updatedWorkflow.length === 0) {
         throw new Error("Workflow not found");
       }
 
@@ -671,13 +718,14 @@ export class WorkflowService {
       const incomingSectionIds = new Set<string>();
 
       if (Array.isArray(data.sections)) {
-        data.sections.forEach((sectionData: any, index: number) => {
+        data.sections.forEach((sectionData, index: number) => {
+          // eslint-disable-next-line no-param-reassign
           sectionData.order = sectionData.order ?? index;
         });
 
         for (const sectionData of data.sections) {
           let sectionId = sectionData.id;
-          const isExisting = sectionId && existingSectionIds.has(sectionId);
+          const isExisting = (sectionId !== undefined && sectionId !== null) && existingSectionIds.has(sectionId);
 
           if (isExisting) {
             incomingSectionIds.add(sectionId);
@@ -713,9 +761,10 @@ export class WorkflowService {
             }
             const incomingStepIds = new Set<string>();
 
+            // eslint-disable-next-line max-depth
             for (const [stepIndex, stepData] of sectionData.steps.entries()) {
               const stepId = stepData.id;
-              const isStepExisting = stepId && existingStepIds.has(stepId);
+              const isStepExisting = (stepId !== undefined && stepId !== null) && existingStepIds.has(stepId);
 
               if (isStepExisting) {
                 incomingStepIds.add(stepId);
@@ -734,8 +783,8 @@ export class WorkflowService {
                   type: stepData.type,
                   title: stepData.title,
                   description: stepData.description,
-                  required: stepData.required || false,
-                  options: stepData.options || [],
+                  required: stepData.required ?? false,
+                  options: stepData.options ?? [],
                   order: stepData.order ?? stepIndex,
                 });
               }
@@ -743,6 +792,7 @@ export class WorkflowService {
 
             if (isExisting) {
               const stepsToDelete = [...existingStepIds].filter(id => !incomingStepIds.has(id));
+              // eslint-disable-next-line max-depth
               if (stepsToDelete.length > 0) {
                 await tx.delete(steps).where(inArray(steps.id, stepsToDelete));
               }
@@ -761,12 +811,12 @@ export class WorkflowService {
 
       if (Array.isArray(data.logicRules) && data.logicRules.length > 0) {
         await tx.insert(logicRules).values(
-          data.logicRules.map((rule: any) => ({
+          data.logicRules.map((rule) => ({
             workflowId,
             conditionStepAlias: rule.conditionStepAlias,
             operator: rule.operator,
             conditionValue: rule.conditionValue,
-            targetType: rule.targetType,
+            targetType: rule.targetType as 'section' | 'step',
             targetAlias: rule.targetAlias,
             action: rule.action,
           }))
@@ -821,18 +871,13 @@ export class WorkflowService {
       });
 
       // Detach if project ownership differs from target ownership
-      if (project) {
-        if (
-          project.ownerType !== targetOwnerType ||
-          project.ownerUuid !== targetOwnerUuid
-        ) {
-          shouldDetachFromProject = true;
-        }
+      if (project && (project.ownerType !== targetOwnerType || project.ownerUuid !== targetOwnerUuid)) {
+        shouldDetachFromProject = true;
       }
     }
 
     // Update workflow ownership
-    const updateData: any = {
+    const updateData: Partial<InsertWorkflow> = {
       ownerType: targetOwnerType,
       ownerUuid: targetOwnerUuid,
     };

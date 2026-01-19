@@ -3,7 +3,7 @@ import { randomUUID } from "crypto";
 import { eq } from "drizzle-orm";
 
 import { workflowVersions } from "@shared/schema";
-import type { WorkflowRun, InsertWorkflowRun, InsertStepValue } from "@shared/schema";
+import type { WorkflowRun, InsertWorkflowRun, InsertStepValue, StepValue } from "@shared/schema";
 
 import { db } from "../db";
 import { logger } from "../logger";
@@ -161,7 +161,7 @@ export class RunService {
     idOrSlug: string,
     userId: string | undefined,
     data: Omit<InsertWorkflowRun, 'workflowId' | 'runToken'>,
-    initialValues?: Record<string, any>,
+    initialValues?: Record<string, unknown>,
     options?: CreateRunOptions
   ): Promise<WorkflowRun> {
     const workflow = await this.authResolver.verifyCreateAccess(idOrSlug, userId);
@@ -177,7 +177,7 @@ export class RunService {
     const runToken = randomUUID();
 
     // Load snapshot values if snapshotId provided
-    let snapshotValueMap: Record<string, { value: any; stepId: string; stepUpdatedAt: string }> | undefined;
+    let snapshotValueMap: Record<string, { value: unknown; stepId: string; stepUpdatedAt: string }> | undefined;
     let mergedInitialValues = { ...initialValues };
 
     if (options?.snapshotId) {
@@ -254,7 +254,7 @@ export class RunService {
   /**
    * Get run with all values
    */
-  async getRunWithValues(runId: string, userId: string) {
+  async getRunWithValues(runId: string, userId: string): Promise<WorkflowRun & { values: StepValue[] }> {
     const run = await this.getRun(runId, userId);
     const values = await this.valueRepo.findByRunId(runId);
     return { ...run, values };
@@ -264,7 +264,7 @@ export class RunService {
    * Get run with all values without ownership check
    * Used for preview/run token authentication
    */
-  async getRunWithValuesNoAuth(runId: string) {
+  async getRunWithValuesNoAuth(runId: string): Promise<WorkflowRun & { values: StepValue[] }> {
     const run = await this.runRepo.findById(runId);
     if (!run) { throw new Error("Run not found"); }
 
@@ -346,7 +346,7 @@ export class RunService {
   async bulkUpsertValues(
     runId: string,
     userId: string,
-    values: Array<{ stepId: string; value: any }>
+    values: Array<{ stepId: string; value: unknown }>
   ): Promise<void> {
     const { run, access } = await this.authResolver.resolveRun(runId, userId);
     if (!run || access === 'none') { throw new Error("Run not found"); }
@@ -359,7 +359,7 @@ export class RunService {
    */
   async bulkUpsertValuesNoAuth(
     runId: string,
-    values: Array<{ stepId: string; value: any }>
+    values: Array<{ stepId: string; value: unknown }>
   ): Promise<void> {
     const run = await this.runRepo.findById(runId);
     if (!run) { throw new Error("Run not found"); }
@@ -386,7 +386,7 @@ export class RunService {
     runId: string,
     sectionId: string,
     userId: string,
-    values: Array<{ stepId: string; value: any }>
+    values: Array<{ stepId: string; value: unknown }>
   ): Promise<{ success: boolean; errors?: string[] }> {
     const { run, access } = await this.authResolver.resolveRun(runId, userId);
     if (!run || access === 'none') {
@@ -412,7 +412,7 @@ export class RunService {
   async submitSectionNoAuth(
     runId: string,
     sectionId: string,
-    values: Array<{ stepId: string; value: any }>
+    values: Array<{ stepId: string; value: unknown }>
   ): Promise<{ success: boolean; errors?: string[] }> {
     const run = await this.runRepo.findById(runId);
     if (!run) { throw new Error("Run not found"); }
@@ -484,7 +484,7 @@ export class RunService {
    * @param publicLinkSlug - The workflow's public link slug
    * @param initialValues - Optional key/value pairs to pre-populate step values (key can be alias or stepId)
    */
-  async createAnonymousRun(publicLinkSlug: string, initialValues?: Record<string, any>): Promise<WorkflowRun> {
+  async createAnonymousRun(publicLinkSlug: string, initialValues?: Record<string, unknown>): Promise<WorkflowRun> {
     // Look up workflow by public link slug
     const workflow = await this.workflowRepo.findByPublicLink(publicLinkSlug);
     if (!workflow) {
@@ -543,7 +543,7 @@ export class RunService {
    * Get generated documents for a run
    * Returns all documents generated during workflow completion
    */
-  async getGeneratedDocuments(runId: string) {
+  async getGeneratedDocuments(runId: string): Promise<unknown> {
     return this.stateService.getGeneratedDocuments(runId);
   }
 
@@ -592,7 +592,7 @@ export class RunService {
   async determineStartSection(
     runId: string,
     workflowId: string,
-    snapshotValues?: Record<string, { value: any; stepId: string; stepUpdatedAt: string }>
+    snapshotValues?: Record<string, { value: unknown; stepId: string; stepUpdatedAt: string }>
   ): Promise<string> {
     return this.lifecycleService.determineStartSection(runId, workflowId, snapshotValues);
   }
@@ -600,7 +600,7 @@ export class RunService {
   /**
    * Generate a share token for a completed run
    */
-  async shareRun(runId: string, userId: string | undefined, authType: 'creator' | 'runToken', authContext: any): Promise<{ shareToken: string; expiresAt: Date | null }> {
+  async shareRun(runId: string, userId: string | undefined, authType: 'creator' | 'runToken', authContext: unknown): Promise<{ shareToken: string; expiresAt: Date | null }> {
     return this.shareService.shareRun(runId, userId, authType, authContext);
   }
 
@@ -614,7 +614,7 @@ export class RunService {
   /**
    * Get shared run details including final block config
    */
-  async getSharedRunDetails(token: string) {
+  async getSharedRunDetails(token: string): Promise<unknown> {
     return this.shareService.getSharedRunDetails(token);
   }
 }

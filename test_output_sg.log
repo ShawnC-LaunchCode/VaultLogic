@@ -1,7 +1,0 @@
-npm warn Unknown project config "puppeteer_skip_download". This will stop working in the next major version of npm.
-Testing SendGrid config...
-API Key present: true
-From Email: notifications@ezbuildr.com
-Γ¥î Failed to send email: SendGrid authentication failed. Please check API key permissions and sender verification.
-[14:31:26] [31mERROR[39m: [36mSendGrid email error:[39m
-    [35menv[39m: "development"

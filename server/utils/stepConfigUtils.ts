@@ -15,7 +15,28 @@ import type {
   AddressValue,
   MultiFieldValue,
   ChoiceValue,
-  FileUploadValue,
+  StepConfig,
+  ChoiceOption,
+  ChoiceAdvancedConfig,
+  MultiFieldConfig,
+  AddressConfig,
+  AddressAdvancedConfig,
+  ScaleConfig,
+  ScaleAdvancedConfig,
+  BooleanAdvancedConfig,
+  EmailConfig,
+  EmailAdvancedConfig,
+  PhoneConfig,
+  PhoneAdvancedConfig,
+  WebsiteConfig,
+  WebsiteAdvancedConfig,
+  NumberConfig,
+  NumberAdvancedConfig,
+  NumberValidation,
+  CurrencyConfig,
+  LegacyMultipleChoiceConfig,
+  LegacyYesNoConfig,
+  FileUploadConfig,
 } from '@shared/types/stepConfigs';
 import { validateStepConfig } from '@shared/validation/stepConfigSchemas';
 
@@ -34,12 +55,12 @@ import { validateStepConfig } from '@shared/validation/stepConfigSchemas';
  */
 export function validateAndNormalizeConfig(
   stepType: string,
-  config: any,
+  config: StepConfig,
   options: {
     strict?: boolean;        // Throw on validation errors (default: true)
     normalize?: boolean;     // Apply normalization (default: true)
   } = {}
-): any {
+): StepConfig {
   const { strict = true, normalize = true } = options;
 
   // Validate config
@@ -72,57 +93,67 @@ export function validateAndNormalizeConfig(
  * @param config - Validated configuration
  * @returns Normalized config
  */
-function normalizeConfig(stepType: string, config: any): any {
-  if (!config) {return config;}
+function normalizeConfig(stepType: string, config: StepConfig): StepConfig {
+  if (!config) { return config; }
 
   // Type-specific normalization
   switch (stepType) {
-    case 'choice':
+    case 'choice': {
+      const choiceConfig = config as ChoiceAdvancedConfig;
       // Ensure all options have aliases
-      if (config.options) {
-        config.options = config.options.map((opt: any) => ({
+      if (Array.isArray(choiceConfig.options)) {
+        choiceConfig.options = choiceConfig.options.map((opt) => ({
           ...opt,
           alias: opt.alias || opt.id,
-        }));
+        })).filter(Boolean); // Ensure no nulls if filter is needed, though map preserves length
       }
       break;
+    }
 
-    case 'multi_field':
+    case 'multi_field': {
+      const mfConfig = config as MultiFieldConfig;
       // Ensure fields have default values
-      if (config.fields) {
-        config.fields = config.fields.map((field: any) => ({
-          required: false,
+      if (mfConfig.fields) {
+        mfConfig.fields = mfConfig.fields.map((field) => ({
           ...field,
+          required: field.required ?? false,
         }));
       }
       break;
+    }
 
     case 'address':
-    case 'address_advanced':
+    case 'address_advanced': {
+      const addrConfig = config as AddressConfig;
       // Ensure required fields are marked
-      if (config.requireAll === undefined) {
-        config.requireAll = true;
+      if (addrConfig.requireAll === undefined) {
+        addrConfig.requireAll = true;
       }
       break;
+    }
 
     case 'scale':
-    case 'scale_advanced':
+    case 'scale_advanced': {
+      const scaleConfig = config as ScaleConfig;
       // Set default step if not provided
-      if (!config.step) {
-        config.step = 1;
+      if (!scaleConfig.step) {
+        scaleConfig.step = 1;
       }
-      if (config.showValue === undefined) {
-        config.showValue = true;
+      if (scaleConfig.showValue === undefined) {
+        scaleConfig.showValue = true;
       }
       break;
+    }
 
-    case 'boolean':
+    case 'boolean': {
+      const boolConfig = config as BooleanAdvancedConfig;
       // Ensure storeAsBoolean has aliases if false
-      if (!config.storeAsBoolean && (!config.trueAlias || !config.falseAlias)) {
-        config.trueAlias = config.trueAlias || 'true';
-        config.falseAlias = config.falseAlias || 'false';
+      if (!boolConfig.storeAsBoolean && (!boolConfig.trueAlias || !boolConfig.falseAlias)) {
+        boolConfig.trueAlias = boolConfig.trueAlias || 'true';
+        boolConfig.falseAlias = boolConfig.falseAlias || 'false';
       }
       break;
+    }
   }
 
   return config;
@@ -142,9 +173,9 @@ function normalizeConfig(stepType: string, config: any): any {
  */
 export function sanitizeStepValue(
   stepType: string,
-  value: any,
-  config?: any
-): any {
+  value: unknown,
+  config?: StepConfig
+): unknown {
   if (value === null || value === undefined) {
     return value;
   }
@@ -199,10 +230,14 @@ export function sanitizeStepValue(
 /**
  * Sanitize email value
  */
-function sanitizeEmailValue(value: any, config?: any): string | string[] {
+/**
+ * Sanitize email value
+ */
+function sanitizeEmailValue(value: unknown, config?: StepConfig): string | string[] {
+  const emailConfig = config as (EmailConfig | EmailAdvancedConfig) | undefined;
   if (typeof value === 'string') {
     const email = value.trim().toLowerCase();
-    if (config?.allowMultiple && email.includes(',')) {
+    if (emailConfig?.allowMultiple && email.includes(',')) {
       return email.split(',').map(e => e.trim()).filter(Boolean);
     }
     return email;
@@ -210,13 +245,13 @@ function sanitizeEmailValue(value: any, config?: any): string | string[] {
   if (Array.isArray(value)) {
     return value.map(e => String(e).trim().toLowerCase()).filter(Boolean);
   }
-  return value;
+  return value as string | string[];
 }
 
 /**
  * Sanitize phone value
  */
-function sanitizePhoneValue(value: any, config?: any): string {
+function sanitizePhoneValue(value: unknown, _config?: StepConfig): string {
   if (typeof value !== 'string') {
     return String(value);
   }
@@ -227,7 +262,8 @@ function sanitizePhoneValue(value: any, config?: any): string {
 /**
  * Sanitize website value
  */
-function sanitizeWebsiteValue(value: any, config?: any): string {
+function sanitizeWebsiteValue(value: unknown, config?: StepConfig): string {
+  const webConfig = config as (WebsiteConfig | WebsiteAdvancedConfig) | undefined;
   if (typeof value !== 'string') {
     return String(value);
   }
@@ -235,8 +271,8 @@ function sanitizeWebsiteValue(value: any, config?: any): string {
   let url = value.trim();
 
   // Add protocol if required and missing
-  if (config?.requireProtocol && !url.match(/^[a-z]+:\/\//i)) {
-    url = `https://${  url}`;
+  if (webConfig?.requireProtocol && !url.match(/^[a-z]+:\/\//i)) {
+    url = `https://${url}`;
   }
 
   return url;
@@ -245,7 +281,7 @@ function sanitizeWebsiteValue(value: any, config?: any): string {
 /**
  * Sanitize number value
  */
-function sanitizeNumberValue(value: any, config?: any): number | null {
+function sanitizeNumberValue(value: unknown, config?: StepConfig): number | null {
   if (value === null || value === undefined || value === '') {
     return null;
   }
@@ -256,13 +292,18 @@ function sanitizeNumberValue(value: any, config?: any): number | null {
     return null;
   }
 
+  const numConfig = config as (NumberConfig | NumberAdvancedConfig | CurrencyConfig) | undefined;
+
   // Apply precision if specified
-  if (config?.validation?.precision !== undefined) {
-    return parseFloat(num.toFixed(config.validation.precision));
+  const precision = (numConfig as NumberValidation)?.precision ?? (numConfig as NumberAdvancedConfig)?.validation?.precision;
+  if (precision !== undefined) {
+    return parseFloat(num.toFixed(precision));
   }
 
   // For currency modes with no decimal
-  if (config?.mode === 'currency_whole' || (config?.allowDecimal === false)) {
+  // Safe cast for checking mode/allowDecimal presence
+  const currencyConfig = numConfig as CurrencyConfig & NumberAdvancedConfig & NumberConfig;
+  if (currencyConfig?.mode === 'currency_whole' || (currencyConfig?.allowDecimal === false)) {
     return Math.round(num);
   }
 
@@ -272,20 +313,22 @@ function sanitizeNumberValue(value: any, config?: any): number | null {
 /**
  * Sanitize address value
  */
-function sanitizeAddressValue(value: any, config?: any): AddressValue {
+function sanitizeAddressValue(value: unknown, config?: StepConfig): AddressValue {
   if (!value || typeof value !== 'object') {
     return {};
   }
 
   const address: AddressValue = {};
+  const addrConfig = config as (AddressConfig | AddressAdvancedConfig) | undefined;
 
   // Ensure all expected fields are present
-  const fields = config?.fields || ['street', 'city', 'state', 'zip'];
+  const fields = addrConfig?.fields || ['street', 'city', 'state', 'zip'];
 
   for (const field of fields) {
     const fieldKey = typeof field === 'string' ? field : field.key;
-    if (value[fieldKey]) {
-      (address as Record<string, string>)[fieldKey] = String(value[fieldKey]).trim();
+    const valObj = value as Record<string, unknown>;
+    if (valObj[fieldKey]) {
+      (address as Record<string, string>)[fieldKey] = String(valObj[fieldKey]).trim();
     }
   }
 
@@ -295,30 +338,32 @@ function sanitizeAddressValue(value: any, config?: any): AddressValue {
 /**
  * Sanitize multi-field value
  */
-function sanitizeMultiFieldValue(value: any, config?: any): MultiFieldValue {
+function sanitizeMultiFieldValue(value: unknown, config?: StepConfig): MultiFieldValue {
   if (!value || typeof value !== 'object') {
     return {};
   }
 
   const result: MultiFieldValue = {};
-  const fields = config?.fields || [];
+  const mfConfig = config as MultiFieldConfig | undefined;
+  const fields = mfConfig?.fields || [];
 
   for (const field of fields) {
     const key = field.key;
-    if (value[key] !== undefined) {
+    const valObj = value as Record<string, unknown>;
+    if (valObj[key] !== undefined) {
       // Type-specific sanitization
       switch (field.type) {
         case 'email':
-          result[key] = sanitizeEmailValue(value[key], {});
+          result[key] = sanitizeEmailValue(valObj[key], {}); // Recursion safe
           break;
         case 'phone':
-          result[key] = sanitizePhoneValue(value[key], {});
+          result[key] = sanitizePhoneValue(valObj[key], {});
           break;
         case 'number':
-          result[key] = sanitizeNumberValue(value[key], {});
+          result[key] = sanitizeNumberValue(valObj[key], {});
           break;
         default:
-          result[key] = value[key];
+          result[key] = valObj[key] as string | number | boolean | null | string[];
       }
     }
   }
@@ -329,15 +374,19 @@ function sanitizeMultiFieldValue(value: any, config?: any): MultiFieldValue {
 /**
  * Sanitize choice value
  */
-function sanitizeChoiceValue(value: any, config?: any): ChoiceValue {
+/**
+ * Sanitize choice value
+ */
+function sanitizeChoiceValue(value: unknown, config?: StepConfig): ChoiceValue {
   if (Array.isArray(value)) {
-    return value.filter(Boolean);
+    return (value as unknown[]).filter(Boolean).map(String);
   }
   if (typeof value === 'string') {
     return value;
   }
   if (value === null || value === undefined) {
-    return config?.allowMultiple ? [] : '';
+    const choiceConfig = config as (ChoiceAdvancedConfig | LegacyMultipleChoiceConfig) | undefined;
+    return choiceConfig?.allowMultiple ? [] : '';
   }
   return String(value);
 }
@@ -345,7 +394,7 @@ function sanitizeChoiceValue(value: any, config?: any): ChoiceValue {
 /**
  * Sanitize date/time value
  */
-function sanitizeDateTimeValue(value: any, config?: any): string | null {
+function sanitizeDateTimeValue(value: unknown, _config?: StepConfig): string | null {
   if (!value) {
     return null;
   }
@@ -369,25 +418,27 @@ function sanitizeDateTimeValue(value: any, config?: any): string | null {
 /**
  * Sanitize scale value
  */
-function sanitizeScaleValue(value: any, config?: any): number | null {
+function sanitizeScaleValue(value: unknown, config?: StepConfig): number | null {
   const num = sanitizeNumberValue(value, {});
 
   if (num === null) {
     return null;
   }
 
+  const scaleConfig = config as (ScaleConfig | ScaleAdvancedConfig) | undefined;
+
   // Clamp to min/max
-  if (config?.min !== undefined && num < config.min) {
-    return config.min;
+  if (scaleConfig?.min !== undefined && num < scaleConfig.min) {
+    return scaleConfig.min;
   }
-  if (config?.max !== undefined && num > config.max) {
-    return config.max;
+  if (scaleConfig?.max !== undefined && num > scaleConfig.max) {
+    return scaleConfig.max;
   }
 
   // Round to nearest step
-  if (config?.step) {
-    const steps = Math.round((num - (config.min || 0)) / config.step);
-    return (config.min || 0) + (steps * config.step);
+  if (scaleConfig?.step) {
+    const steps = Math.round((num - (scaleConfig.min || 0)) / scaleConfig.step);
+    return (scaleConfig.min || 0) + (steps * scaleConfig.step);
   }
 
   return num;
@@ -408,8 +459,8 @@ function sanitizeScaleValue(value: any, config?: any): number | null {
  */
 export function validateStepValue(
   stepType: string,
-  value: any,
-  config?: any,
+  value: unknown,
+  config?: StepConfig,
   required?: boolean
 ): {
   valid: boolean;
@@ -526,7 +577,7 @@ function validateWebsite(value: any, config: any, errors: string[]): void {
   }
 
   try {
-    const url = new URL(value.startsWith('http') ? value : `https://${  value}`);
+    const url = new URL(value.startsWith('http') ? value : `https://${value}`);
 
     if (config?.requireProtocol && !value.match(/^[a-z]+:\/\//i)) {
       errors.push('URL must include protocol (http:// or https://)');
@@ -615,28 +666,31 @@ function validateAddress(value: any, config: any, errors: string[]): void {
   }
 }
 
-function validateMultiField(value: any, config: any, errors: string[]): void {
+function validateMultiField(value: unknown, config: StepConfig | undefined, errors: string[]): void {
   if (!value || typeof value !== 'object') {
     errors.push('Multi-field value must be an object');
     return;
   }
 
-  for (const field of config?.fields || []) {
-    if (field.required && (!value[field.key] || value[field.key] === '')) {
+  const mfConfig = config as MultiFieldConfig | undefined;
+  const valObj = value as Record<string, unknown>;
+
+  for (const field of mfConfig?.fields || []) {
+    if (field.required && (!valObj[field.key] || valObj[field.key] === '')) {
       errors.push(`${field.label} is required`);
     }
 
     // Type-specific validation for each field
-    if (value[field.key]) {
+    if (valObj[field.key]) {
       switch (field.type) {
         case 'email':
-          validateEmail(value[field.key], {}, errors);
+          validateEmail(valObj[field.key], {} as any, errors);
           break;
         case 'phone':
-          validatePhone(value[field.key], {}, errors);
+          validatePhone(valObj[field.key], {} as any, errors);
           break;
         case 'number':
-          validateNumber(value[field.key], field.validation || {}, errors);
+          validateNumber(valObj[field.key], field.validation || {} as any, errors);
           break;
       }
     }
@@ -673,23 +727,30 @@ export function isMultiValueType(stepType: string): boolean {
 /**
  * Get the default value for a step type
  */
-export function getDefaultValue(stepType: string, config?: any): any {
+export function getDefaultValue(stepType: string, config?: StepConfig): unknown {
   switch (stepType) {
     case 'choice':
-    case 'multiple_choice':
-      return config?.allowMultiple ? [] : '';
+    case 'multiple_choice': {
+      const choiceConfig = config as (ChoiceAdvancedConfig | LegacyMultipleChoiceConfig) | undefined;
+      return choiceConfig?.allowMultiple || (choiceConfig && 'minSelections' in choiceConfig) ? [] : '';
+    }
 
     case 'boolean':
     case 'yes_no':
-    case 'true_false':
-      return config?.defaultValue ?? false;
+    case 'true_false': {
+      const boolConfig = config as (BooleanAdvancedConfig | LegacyYesNoConfig) | undefined;
+      return boolConfig?.defaultValue ?? false;
+    }
 
     case 'number':
     case 'number_advanced':
     case 'currency':
     case 'scale':
-    case 'scale_advanced':
-      return config?.min ?? 0;
+    case 'scale_advanced': {
+      const numOrScale = config as (NumberConfig | ScaleConfig) | undefined;
+      const advNum = config as NumberAdvancedConfig | undefined;
+      return numOrScale?.min ?? advNum?.validation?.min ?? 0;
+    }
 
     case 'address':
     case 'address_advanced':
@@ -698,8 +759,10 @@ export function getDefaultValue(stepType: string, config?: any): any {
     case 'multi_field':
       return {};
 
-    case 'file_upload':
-      return config?.maxFiles > 1 ? [] : null;
+    case 'file_upload': {
+      const fileConfig = config as FileUploadConfig | undefined;
+      return (fileConfig?.maxFiles ?? 1) > 1 ? [] : null;
+    }
 
     default:
       return '';

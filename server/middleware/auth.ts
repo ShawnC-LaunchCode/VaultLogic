@@ -66,7 +66,7 @@ export async function optionalAuth(req: Request, res: Response, next: NextFuncti
     const authHeader = req.headers.authorization;
     const token = authService.extractTokenFromHeader(authHeader);
 
-    if (!token) {return next();}
+    if (!token) { return next(); }
 
     const payload = authService.verifyToken(token);
     await attachUserToRequest(req, payload);
@@ -113,12 +113,12 @@ async function jwtStrategy(req: Request): Promise<boolean> {
 async function cookieStrategy(req: Request): Promise<boolean> {
   // 1. Strict Method Check: Only allow cookie auth for safe methods
   const safeMethods = ['GET', 'HEAD', 'OPTIONS'];
-  if (!safeMethods.includes(req.method)) {return false;}
+  if (!safeMethods.includes(req.method)) { return false; }
 
   // 2. Precedence Check: If a Bearer header exists, ignore cookies (JWT wins)
   // This prevents ambiguity if a client sends both
   const authHeader = req.headers.authorization;
-  if (authHeader?.startsWith('Bearer ')) {return false;}
+  if (authHeader?.startsWith('Bearer ')) { return false; }
 
   try {
     const cookies = parseCookies(req.headers.cookie || '');
@@ -156,11 +156,8 @@ async function cookieStrategy(req: Request): Promise<boolean> {
   return false;
 }
 
-/**
- * Hybrid Authentication Middleware (Mutation-Strict)
- * Supports both JWT Bearer tokens and HTTP-Only Refresh Token cookies.
- */
-export async function hybridAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
+
+async function hybridAuthLogic(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     // 1. Try JWT Strategy
     if (await jwtStrategy(req)) {
@@ -177,16 +174,16 @@ export async function hybridAuth(req: Request, res: Response, next: NextFunction
     // 3. No valid auth found
     throw new UnauthorizedError('Authentication required');
   } catch (error) {
-    logger.error({ error }, 'Hybrid auth error');
+    logger.error({ error: error as Error }, 'Hybrid auth error');
     sendErrorResponse(res, error as Error);
   }
 }
 
-/**
- * Optional Hybrid Authentication Middleware
- * Tries both strategies but proceeds even if both fail (anonymous access).
- */
-export async function optionalHybridAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
+export const hybridAuth = (req: Request, res: Response, next: NextFunction): void => {
+  void hybridAuthLogic(req, res, next);
+};
+
+async function optionalHybridAuthLogic(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     if (await jwtStrategy(req)) {
       next();
@@ -204,6 +201,10 @@ export async function optionalHybridAuth(req: Request, res: Response, next: Next
     next();
   }
 }
+
+export const optionalHybridAuth = (req: Request, res: Response, next: NextFunction): void => {
+  void optionalHybridAuthLogic(req, res, next);
+};
 
 // =================================================================
 // HELPERS
