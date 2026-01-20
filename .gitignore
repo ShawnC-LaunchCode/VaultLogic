@@ -10,6 +10,24 @@ vite.config.ts.*
 # Test outputs
 playwright-report/
 test-results/
+*.log
+test-output.json
+vitest-summary.json
+integration-results.json
+
+# Lint reports
+eslint-report.json
+eslint-*-report.json
+*-lint-report.json
+*_lint_report.json
+lint-*.json
+server-services-lint.json
+
+# Temporary files
+*.txt
+!README.txt
+outdated.json
+testDoc.docx
 
 # Environment files
 .env
