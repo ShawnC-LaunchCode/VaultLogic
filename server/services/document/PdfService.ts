@@ -6,7 +6,7 @@
  * - node-qpdf2 (qpdf): For robust unlocking/decryption of government forms
  * - pdf-lib: For field extraction and filling
  */
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
@@ -14,7 +14,10 @@ import { promisify } from 'util';
 import { PDFDocument, PDFTextField, PDFCheckBox, PDFDropdown, PDFRadioGroup } from 'pdf-lib';
 import { logger } from '../../logger';
 import { createError } from '../../utils/errors';
-const execAsync = promisify(exec);
+
+// SECURITY: Use execFile with argument arrays to prevent shell injection
+// execFile does NOT spawn a shell, making it immune to command injection
+const execFileAsync = promisify(execFile);
 export interface PdfField {
     name: string;
     type: 'text' | 'checkbox' | 'radio' | 'dropdown' | 'button' | 'signature' | 'unknown';
@@ -40,10 +43,10 @@ export class PdfService {
         const outputPath = path.join(tempDir, `unlocked-${Date.now()}.pdf`);
         try {
             await fs.writeFile(inputPath, inputBuffer);
-            // Sanitize paths for command line
+            // SECURITY: Use execFile with argument array (no shell, no injection risk)
             // qpdf --decrypt input.pdf output.pdf
             // This command removes restrictions (like filling prevention)
-            await execAsync(`qpdf --decrypt "${inputPath}" "${outputPath}"`);
+            await execFileAsync('qpdf', ['--decrypt', inputPath, outputPath]);
             return await fs.readFile(outputPath);
         } catch (error: any) {
             logger.error({ error }, 'Failed to unlock PDF with qpdf');
