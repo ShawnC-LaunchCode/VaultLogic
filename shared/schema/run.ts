@@ -94,7 +94,7 @@ export const workflowRuns = pgTable("workflow_runs", {
     shareToken: varchar("share_token").unique(),
     shareTokenExpiresAt: timestamp("share_token_expires_at"),
     ownerType: varchar("owner_type", { length: 50 }),
-    ownerUuid: uuid("owner_uuid"),
+    ownerUuid: varchar("owner_uuid"),
 }, (table) => [
     index("workflow_runs_workflow_idx").on(table.workflowId),
     index("workflow_runs_version_idx").on(table.workflowVersionId),

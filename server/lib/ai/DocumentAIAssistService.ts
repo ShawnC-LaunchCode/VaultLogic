@@ -11,6 +11,7 @@ import { logger } from "../../logger"; // Adjust path if needed (../../logger)
 const require = createRequire(import.meta.url);
 const pdfLib = require('pdf-parse');
 
+import { documentProcessingLimiter } from "../../services/processingLimiter";
 export interface AIAnalysisResult {
     variables: AnalyzedVariable[];
     suggestions: string[];
@@ -57,9 +58,9 @@ export class DocumentAIAssistService {
     /**
      * Analyze a document template (DOCX/PDF/Text) to find variables and suggestions
      */
-    async analyzeTemplate(buffer: Buffer, filename: string): Promise<AIAnalysisResult> {
+    async analyzeTemplate(filePath: string, filename: string): Promise<AIAnalysisResult> {
         // 1. Deterministic Extraction (Tags)
-        const explicitVariables = await this.extractExplicitVariables(buffer, filename);
+        const explicitVariables = await this.extractExplicitVariables(filePath, filename);
 
         // 2. AI Extraction (Context & Inference)
         let aiVariables: AnalyzedVariable[] = [];
@@ -67,7 +68,7 @@ export class DocumentAIAssistService {
 
         if (this.model) {
             try {
-                const textContent = await this.extractTextContent(buffer, filename);
+                const textContent = await this.extractTextContent(filePath, filename);
                 const aiResult = await this.performAIExtraction(textContent);
                 aiVariables = aiResult.variables;
                 aiSuggestions = aiResult.suggestions;
@@ -154,13 +155,13 @@ Requirements:
      * For now, this returns a list of *actions* rather than rewriting the file directly via AI, 
      * as modifying binaries via LLM is risky.
      */
-    async suggestCleanupActions(buffer: Buffer, filename: string): Promise<any[]> {
+    async suggestCleanupActions(filePath: string, filename: string): Promise<any[]> {
         // Implement logic to detect split tags (using TemplateScanner logic usually)
         // and identifying "dead" fields.
         const actions = [];
 
         // Example: Check for simple inconsistencies
-        const text = await this.extractTextContent(buffer, filename);
+        const text = await this.extractTextContent(filePath, filename);
         if (text.includes("{{ ")) { // Space inside
             actions.push({ type: 'syntax', description: "Found spaces in placeholders '{{ '", fix: "Normalize to '{{'" });
         }
@@ -170,11 +171,19 @@ Requirements:
 
     // --- Helpers ---
 
-    private async extractExplicitVariables(buffer: Buffer, filename: string): Promise<AnalyzedVariable[]> {
+    private async extractExplicitVariables(filePath: string, filename: string): Promise<AnalyzedVariable[]> {
         const variables: AnalyzedVariable[] = [];
 
         if (filename.endsWith('.docx')) {
             try {
+                const fs = await import('fs/promises');
+                const buffer = await fs.readFile(filePath);
+
+                const { validateMagicBytes } = await import('../../utils/magicBytes');
+                if (!validateMagicBytes(buffer, filename)) {
+                    throw new Error(`File type mismatch: ${filename}`);
+                }
+
                 const zip = new PizZip(buffer);
                 const doc = new Docxtemplater(zip, {
                     paragraphLoop: true,
@@ -182,7 +191,7 @@ Requirements:
                     delimiters: { start: '{{', end: '}}' }
                 });
 
-                const text = doc.getFullText();
+                const text = await documentProcessingLimiter.run(async () => doc.getFullText());
                 const matches = text.match(/{{(.*?)}}/g);
 
                 if (matches) {
@@ -212,21 +221,26 @@ Requirements:
         return variables;
     }
 
-    public async extractTextContent(buffer: Buffer, filename: string): Promise<string> {
+    public async extractTextContent(filePath: string, filename: string): Promise<string> {
+        await checkFileSignature(filePath, filename);
         if (filename.endsWith('.docx')) {
-            const result = await mammoth.extractRawText({ buffer });
+            const result = await documentProcessingLimiter.run(() => mammoth.extractRawText({ path: filePath }));
             return result.value;
         } else if (filename.endsWith('.pdf')) {
             try {
+                const fs = await import('fs/promises');
+                const buffer = await fs.readFile(filePath);
                 // PDFParse is a function in v1.1.1
-                const data = await pdfLib(buffer);
+                const data = await documentProcessingLimiter.run(() => pdfLib(buffer)) as any;
                 return data.text;
             } catch (e) {
                 logger.error({ error: e }, "PDF parsing failed");
                 return "";
             }
         }
-        return buffer.toString('utf-8'); // Fallback for MD/txt
+        // Fallback for MD/txt
+        const fs = await import('fs/promises');
+        return await fs.readFile(filePath, 'utf-8');
     }
 
     private async performAIExtraction(text: string): Promise<{ variables: AnalyzedVariable[], suggestions: string[] }> {
@@ -262,3 +276,23 @@ Requirements:
 }
 
 export const documentAIAssistService = new DocumentAIAssistService();
+
+// Helper to validate signature without loading full file if possible
+async function checkFileSignature(filePath: string, filename: string) {
+    // Import dynamically to avoid circular dep issues in some contexts, or strict dep
+    const { validateMagicBytes } = await import('../../utils/magicBytes');
+    const fs = await import('fs/promises');
+
+    // Read first 4 bytes
+    const handle = await fs.open(filePath, 'r');
+    const buffer = Buffer.alloc(4);
+    try {
+        await handle.read(buffer, 0, 4, 0);
+    } finally {
+        await handle.close();
+    }
+
+    if (!validateMagicBytes(buffer, filename)) {
+        throw new Error(`File type mismatch: ${filename} does not match its extension signature.`);
+    }
+}

@@ -19,12 +19,24 @@ import { eq, and } from 'drizzle-orm';
 import { setupIntegrationTest, type IntegrationTestContext } from '../helpers/integrationTestHelper';
 import { getTemplateFilePath, deleteTemplateFile } from '../../server/services/templates';
 
+// Mock template scanner to avoid needing valid DOCX files
+vi.mock('../../server/services/document/TemplateScanner', () => ({
+  templateScanner: {
+    scanAndFix: vi.fn().mockImplementation(async (buffer) => ({
+      isValid: true,
+      fixed: false,
+      buffer: buffer,
+      repairs: []
+    }))
+  }
+}));
+
 // Create a minimal valid DOCX file for testing
 const createMinimalDocx = (): Buffer => {
   // A minimal valid DOCX is a ZIP file with specific XML structure
   // For testing, we'll use a pre-generated minimal DOCX buffer
   // This is the binary content of a minimal valid DOCX
-  const minimalDocxBase64 = 'UEsDBBQAAAAIAAAAAACzfDxbXQAAAGEAAAALAAAAX3JlbHMvLnJlbHONzrEKwjAQgOG9T3HkbpsODiJNNxfRVYi6hyO92hBzCblSfXtTBxcHJ/9/8L+sTBOsM8uVJcKoVNImJ3J2D0kQ3j+UEk3Jb1bSJt0qEL0G/D+P17vgaVgU0XN8Y3UtTW3ddoaNJVOH3gQ33WZWePDhwhPM6EJPuDWBsQz2H+RjC+MbYJjkNzDxKdYCK15HQVL+PKL8AlBLAwQUAAAACAAAAAAAnQDDcV0AAABhAAAAEQAAAGRvY1Byb3BzL2NvcmUueG1sbc5BCsIwEAXQvadYsneT6kJEknYhrtyLC3EZxtRWmkmYCdXbi4ILXf6fz0+t3bh2zxixT9HAXCow6EPqe9cYuJwPswMwZutkChQN3BHBrouTvJJhSOjz+5PRxJoR00AL5kPOEcOCvcR58ujyz1caveR8jQ2HMq7kwKQulJIU8R28Xsp9XYX4R7y+AFBLAwQUAAAACAAAAAAAbJlTSkIAAABEAAAAEAAAAGRvY1Byb3BzL2FwcC54bWyzsa/IzVEoSyzSUShLLSrOUNBRSE4t8kxRSs5ITMpJVSjPL8pJAQBQSwMEFAAAAAgAAAAAAKeLlj9zAAAA+gAAABMAAABbQ29udGVudF9UeXBlc10ueG1svY/LCsIwEEX3fkXI3k5bFyJSdSMuXQoux/RRSzNDMon4+QZBXIh7l3c4c2fKi2uc7aEBMjTYOGNlUr4DuMtXiYjDTCFZSTKhuePx8YGtwUgOzHNLDPr3JIEYx7fQhNArcgQ2sM2x7jXksDjxiY+ysznQqQn5LbRUfxrx6v8CUEsBAj8DFAAAAAgAAAAAALN8PFtdAAAAYQAAAAsAJAAAAAAAAAAgAAAAAAAAAF9yZWxzLy5yZWxzCgAgAAAAAAABGAAAAAAAAAAAAAAAAAAAAFBLAQI/AxQAAAAIAAAAAACdAMNxXQAAAGEAAAARACQAAAAAAAAAIAAAAIYAAABkb2NQcm9wcy9jb3JlLnhtbAoAIAAAAAAAARgAAAAAAAAAAAAAAAAAAABQSwECPwMUAAAACAAAAAAAbJlTSkIAAABEAAAAEAAkAAAAAAAAACAAAAACwQAAZG9jUHJvcHMvYXBwLnhtbAoAIAAAAAAAARgAAAAAAAAAAAAAAAAAAABQSwECPwMUAAAACAAAAAAApouWP3MAAAD6AAAAE''AAkAAAAAAAAAIAAAAGIBAABbQ29udGVudF9UeXBlc10ueG1sCgAgAAAAAAABGAAAAAAAAAAAAAAAAAAAAFBLBQYAAAAABAAEAEsBAAD2AQAAAAA=';
+  const minimalDocxBase64 = 'UEsDBBQAAAAIAAAAAACzfDxbXQAAAGEAAAALAAAAX3JlbHMvLnJlbHONzrEKwjAQgOG9T3HkbpsODiJNNxfRVYi6hyO92hBzCblSfXtTBxcHJ/9/8L+sTBOsM8uVJcKoVNImJ3J2D0kQ3j+UEk3Jb1bSJt0qEL0G/D+P17vgaVgU0XN8Y3UtTW3ddoaNJVOH3gQ33WZWePDhwhPM6EJPuDWBsQz2H+RjC+MbYJjkNzDxKdYCK15HQVL+PKL8AlBLAwQUAAAACAAAAAAAnQDDcV0AAABhAAAAEQAAAGRvY1Byb3BzL2NvcmUueG1sbc5BCsIwEAXQvadYsneT6kJEknYhrtyLC3EZxtRWmkmYCdXbi4ILXf6fz0+t3bh2zxixT9HAXCow6EPqe9cYuJwPswMwZutkChQN3BHBrouTvJJhSOjz+5PRxJoR00AL5kPOEcOCvcR58ujyz1caveR8jQ2HMq7kwKQulJIU8R28Xsp9XYX4R7y+AFBLAwQUAAAACAAAAAAAbJlTSkIAAABEAAAAEAAAAGRvY1Byb3BzL2FwcC54bWyzsa/IzVEoSyzSUShLLSrOUNBRSE4t8kxRSs5ITMpJVSjPL8pJAQBQSwMEFAAAAAgAAAAAAKeLlj9zAAAA+gAAABMAAABbQ29udGVudF9UeXBlc10ueG1svY/LCsIwEEX3fkXI3k5bFyJSdSMuXQoux/RRSzNDMon4+QZBXIh7l3c4c2fKi2uc7aEBMjTYOGNlUr4DuMtXiYjDTCFZSTKhuePx8YGtwUgOzHNLDPr3JIEYx7fQhNArcgQ2sM2x7jXksDjxiY+ysznQqQn5LbRUfxrx6v8CUEsBAj8DFAAAAAgAAAAAALN8PFtdAAAAYQAAAAsAJAAAAAAAAAAgAAAAAAAAAF9yZWxzLy5yZWxzCgAgAAAAAAABGAAAAAAAAAAAAAAAAAAAAFBLAQI/AxQAAAAIAAAAAACdAMNxXQAAAGEAAAARACQAAAAAAAAAIAAAAIYAAABkb2NQcm9wcy9jb3JlLnhtbAoAIAAAAAAAARgAAAAAAAAAAAAAAAAAAABQSwECPwMUAAAACAAAAAAAbJlTSkIAAABEAAAAEAAkAAAAAAAAACAAAAACwQAAZG9jUHJvcHMvYXBwLnhtbAoAIAAAAAAAARgAAAAAAAAAAAAAAAAAAABQSwECPwMUAAAACAAAAAAApouWP3MAAAD6AAAAEAAkAAAAAAAAACAAAAGIBAABbQ29udGVudF9UeXBlc10ueG1sCgAgAAAAAAABGAAAAAAAAAAAAAAAAAAAAFBLBQYAAAAABAAEAEsBAAD2AQAAAAA=';
   return Buffer.from(minimalDocxBase64, 'base64');
 };
 
@@ -58,7 +70,12 @@ describe.sequential('Templates Behavioral Tests - DB Failure Simulation', () => 
       .set('Authorization', `Bearer ${ctx.authToken}`)
       .attach('file', templateBuffer, 'test-template.docx')
       .field('name', `Test Template ${nanoid(6)}`)
-      .expect(201);
+
+
+    if (createResponse.status !== 201) {
+      console.error('Failed to create template:', JSON.stringify(createResponse.body, null, 2));
+    }
+    expect(createResponse.status).toBe(201);
 
     testTemplateId = createResponse.body.id;
     originalFileRef = createResponse.body.fileRef;

@@ -11,6 +11,8 @@ import { hybridAuth } from '../middleware/auth';
 import { requirePermission } from '../middleware/rbac';
 import { requireTenant } from '../middleware/tenant';
 import { templateScanner } from '../services/document/TemplateScanner';
+import { uploadLimiter } from '../middleware/rateLimiter';
+import { documentProcessingLimiter } from '../services/processingLimiter';
 import { virusScanner } from '../services/security/VirusScanner';
 import {
   saveTemplateFile,
@@ -19,6 +21,8 @@ import {
 } from '../services/templates';
 import { createError, formatErrorResponse } from '../utils/errors';
 import { createPaginatedResponse, decodeCursor } from '../utils/pagination';
+
+import { storageQuotaService } from '../services/StorageQuotaService';
 
 import {
   createTemplateSchema,
@@ -228,6 +232,7 @@ router.get(
  */
 router.post(
   '/projects/:projectId/templates',
+  uploadLimiter,
   upload.single('file'),
   hybridAuth,
   requireTenant,
@@ -275,6 +280,15 @@ router.post(
       // Read file buffer from disk
       let fileBuffer = await fs.readFile(req.file.path);
 
+      // SECURITY: Validate Magic Bytes (Fail fast check)
+      const { validateMagicBytes } = await import('../utils/magicBytes');
+      const isValidMagic = validateMagicBytes(fileBuffer, req.file.originalname);
+
+      if (!isValidMagic) {
+        await cleanupFile(req.file.path);
+        throw createError.validation('File type mismatch (Magic Bytes validation failed)');
+      }
+
       // SECURITY: Virus scan BEFORE any processing
       const scanResult = await virusScanner().scan(fileBuffer, req.file.originalname);
       if (!scanResult.safe) {
@@ -285,6 +299,9 @@ router.post(
         );
         throw createError.validation(`File rejected: potential malware detected (${scanResult.threatName})`);
       }
+
+      // QUOTA: Check storage quota
+      await storageQuotaService.checkQuota(tenantId, fileBuffer.length);
       logger.debug(
         { filename: req.file.originalname, scanner: scanResult.scannerName, durationMs: scanResult.scanDurationMs },
         'Virus scan passed'
@@ -296,7 +313,7 @@ router.post(
 
       if (!isPdf) {
         try {
-          const scanResult = await templateScanner.scanAndFix(fileBuffer);
+          const scanResult = await documentProcessingLimiter.run(() => templateScanner.scanAndFix(fileBuffer));
 
           if (!scanResult.isValid) {
             throw createError.validation(
@@ -318,11 +335,13 @@ router.post(
       } else {
         // Handle PDF
         try {
-          // 1. Unlock PDF (remove restrictions)
-          fileBuffer = await pdfService.unlockPdf(fileBuffer);
-
-          // 2. Extract fields
-          pdfMetadata = await pdfService.extractFields(fileBuffer);
+          fileBuffer = await documentProcessingLimiter.run(async () => {
+            // 1. Unlock PDF (remove restrictions)
+            const unlocked = await pdfService.unlockPdf(fileBuffer);
+            // 2. Extract fields
+            pdfMetadata = await pdfService.extractFields(unlocked);
+            return unlocked;
+          });
         } catch (error: any) {
           await cleanupFile(req.file.path);
           logger.error({ error }, 'PDF processing failed');
@@ -349,7 +368,10 @@ router.post(
           fileRef,
           type: isPdf ? 'pdf' : 'docx',
           helpersVersion: 1,
-          metadata: isPdf ? pdfMetadata : {},
+          metadata: {
+            ...(isPdf ? pdfMetadata : {}),
+            size: fileBuffer.length
+          },
         })
         .returning();
 
@@ -421,6 +443,7 @@ router.patch(
   hybridAuth,
   requireTenant,
   requirePermission('template:edit'),
+  uploadLimiter,
   upload.single('file'),
   async (req: Request, res: Response) => {
     let newFileRef: string | undefined;
@@ -458,6 +481,13 @@ router.patch(
       if (req.file) {
         let fileBuffer = await fs.readFile(req.file.path);
 
+        // SECURITY: Validate Magic Bytes
+        const { validateMagicBytes } = await import('../utils/magicBytes');
+        if (!validateMagicBytes(fileBuffer, req.file.originalname)) {
+          await cleanupFile(req.file.path);
+          throw createError.validation('File type mismatch (Magic Bytes validation failed)');
+        }
+
         // SECURITY: Virus scan BEFORE any processing
         const virusScanResult = await virusScanner().scan(fileBuffer, req.file.originalname);
         if (!virusScanResult.safe) {
@@ -468,6 +498,10 @@ router.patch(
           );
           throw createError.validation(`File rejected: potential malware detected (${virusScanResult.threatName})`);
         }
+
+        // QUOTA: Check
+        await storageQuotaService.checkQuota(tenantId, fileBuffer.length);
+
         logger.debug(
           { filename: req.file.originalname, scanner: virusScanResult.scannerName },
           'Virus scan passed (PATCH)'
@@ -479,7 +513,7 @@ router.patch(
 
         if (!isPdf) {
           try {
-            const docxScanResult = await templateScanner.scanAndFix(fileBuffer);
+            const docxScanResult = await documentProcessingLimiter.run(() => templateScanner.scanAndFix(fileBuffer));
 
             if (!docxScanResult.isValid) {
               logger.error({ errors: docxScanResult.errors }, 'Template validation failed in API (PATCH)');
@@ -500,8 +534,11 @@ router.patch(
         } else {
           // Handle PDF
           try {
-            fileBuffer = await pdfService.unlockPdf(fileBuffer);
-            pdfMetadata = await pdfService.extractFields(fileBuffer);
+            fileBuffer = await documentProcessingLimiter.run(async () => {
+              const unlocked = await pdfService.unlockPdf(fileBuffer);
+              pdfMetadata = await pdfService.extractFields(unlocked);
+              return unlocked;
+            });
           } catch (error: any) {
             await cleanupFile(req.file.path);
             logger.error({ error }, 'PDF processing failed (PATCH)');
@@ -521,7 +558,10 @@ router.patch(
 
         // Update data object with new type/metadata if file changed
         (data as any).type = isPdf ? 'pdf' : 'docx';
-        (data as any).metadata = isPdf ? pdfMetadata : {};
+        (data as any).metadata = {
+          ...(isPdf ? pdfMetadata : {}),
+          size: fileBuffer.length
+        };
 
         // CRITICAL: Track old file for cleanup AFTER successful DB update (atomicity fix)
         oldFileRef = template.fileRef;

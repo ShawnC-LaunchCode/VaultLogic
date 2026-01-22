@@ -94,6 +94,10 @@ export function StepPropertiesPanel({ stepId, sectionId: propSectionId }: StepPr
     );
   }
 
+  const handleTitleChange = (title: string) => {
+    updateStepMutation.mutate({ id: stepId, sectionId, title });
+  };
+
   const handleDescriptionChange = (description: string) => {
     updateStepMutation.mutate({ id: stepId, sectionId, description });
   };
@@ -199,10 +203,18 @@ export function StepPropertiesPanel({ stepId, sectionId: propSectionId }: StepPr
   return (
     <div className="p-4 space-y-6">
       <div>
-        <h3 className="font-semibold mb-1">{step.title}</h3>
-        <p className="text-xs text-muted-foreground">
-          {step.type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-        </p>
+        <div className="space-y-1">
+          <Input
+            value={step.title}
+            onChange={(e) => handleTitleChange(e.target.value)}
+            className="font-semibold text-lg px-2 -ml-2 border-transparent hover:border-input focus:border-input transition-colors h-auto py-1"
+            placeholder="Step Title"
+            autoFocus
+          />
+          <p className="text-xs text-muted-foreground px-0.5">
+            {step.type.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+          </p>
+        </div>
       </div>
 
       <Separator />
@@ -271,8 +283,8 @@ export function StepPropertiesPanel({ stepId, sectionId: propSectionId }: StepPr
             }
             onValueChange={(val) => {
               let finalVal: boolean | null = null;
-              if (val === "true") {finalVal = true;}
-              else if (val === "false") {finalVal = false;}
+              if (val === "true") { finalVal = true; }
+              else if (val === "false") { finalVal = false; }
 
               updateStepMutation.mutate({
                 id: stepId,

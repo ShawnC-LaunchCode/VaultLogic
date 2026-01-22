@@ -487,6 +487,12 @@ export class WorkflowService {
   ): Promise<Workflow> {
     // Verify user has edit access
     await this.verifyAccess(workflowId, userId, 'edit');
+
+    if (!intakeConfig || typeof intakeConfig !== 'object' || Array.isArray(intakeConfig)) {
+      // Assuming createError is imported or available, otherwise throw Error
+      throw new Error("Invalid intakeConfig: must be a JSON object");
+    }
+
     return this.workflowRepo.update(
       workflowId,
       {

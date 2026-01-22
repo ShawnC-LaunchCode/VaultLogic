@@ -13,7 +13,7 @@ describe('Templates Routes - No Duplicate Routes', () => {
   let sourceCode: string;
 
   beforeAll(async () => {
-    const sourcePath = path.join(__dirname, '../../../server/api/templates.ts');
+    const sourcePath = path.join(__dirname, '../../../server/routes/templates.routes.ts');
     sourceCode = await fs.readFile(sourcePath, 'utf-8');
   });
 
@@ -73,7 +73,7 @@ describe('Templates Routes - Virus Scanning', () => {
   let sourceCode: string;
 
   beforeAll(async () => {
-    const sourcePath = path.join(__dirname, '../../../server/api/templates.ts');
+    const sourcePath = path.join(__dirname, '../../../server/routes/templates.routes.ts');
     sourceCode = await fs.readFile(sourcePath, 'utf-8');
   });
 
@@ -112,7 +112,7 @@ describe('Templates Routes - Atomic File Replacement', () => {
   let sourceCode: string;
 
   beforeAll(async () => {
-    const sourcePath = path.join(__dirname, '../../../server/api/templates.ts');
+    const sourcePath = path.join(__dirname, '../../../server/routes/templates.routes.ts');
     sourceCode = await fs.readFile(sourcePath, 'utf-8');
   });
 

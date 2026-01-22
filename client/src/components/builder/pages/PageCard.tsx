@@ -3,7 +3,7 @@
  * Displays one page (section) with its questions and logic blocks
  * Includes toolbars for adding questions and logic
  */
-import { useSortable , SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { useSortable, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Settings, Trash2, ChevronDown, ChevronRight, EyeOff, FileText } from "lucide-react";
 import React, { useState, useEffect, useRef } from "react";
@@ -25,7 +25,7 @@ import { combinePageItems, getNextOrder } from "@/lib/dnd";
 import { UI_LABELS } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 import type { ApiSection, ApiBlock, ApiStep } from "@/lib/vault-api";
-import {  useTransformBlocks, useUpdateSection, useDeleteSection, useReorderBlocks, useWorkflowMode } from "@/lib/vault-hooks";
+import { useTransformBlocks, useUpdateSection, useDeleteSection, useReorderBlocks, useWorkflowMode } from "@/lib/vault-hooks";
 import { useWorkflowBuilder } from "@/store/workflow-builder";
 import { FinalDocumentsSectionEditor } from "../final/FinalDocumentsSectionEditor";
 import { QuestionCard } from "../questions/QuestionCard";
@@ -93,38 +93,40 @@ export function PageCard({ workflowId, page, blocks, allSteps: steps, index, tot
   const allPageBlocks = [...pageBlocks, ...pageTransformBlocks];
   const items = combinePageItems(filteredSteps, allPageBlocks);
   // Auto-expand and focus newly selected items
+  // We track a "pending" focus ID to handle the race condition where selection updates
+  // before the new step data has propagated to the props.
+  const [pendingFocusId, setPendingFocusId] = useState<string | null>(null);
+
   useEffect(() => {
-    // Check if a new step was just selected
-    if (
-      selection?.type === "step" &&
-      selection.id &&
-      prevSelectionRef.current?.id !== selection.id
-    ) {
-      // Check if this step belongs to this page
-      const stepInThisPage = steps.find((s) => s.id === selection.id);
-      if (stepInThisPage) {
-        // Expand and auto-focus
-        setExpandedStepIds((prev) => new Set(prev).add(selection.id));
-        setAutoFocusStepId(selection.id);
-        // Clear auto-focus after a short delay
-        setTimeout(() => setAutoFocusStepId(null), 100);
-      }
-    }
-    // Check if a new block was just selected
-    if (
-      selection?.type === "block" &&
-      selection.id &&
-      prevSelectionRef.current?.id !== selection.id
-    ) {
-      // Check if this block belongs to this page
-      const blockInThisPage = allPageBlocks.find((b) => b.id === selection.id);
-      if (blockInThisPage) {
-        // Expand the block
-        setExpandedBlockIds((prev) => new Set(prev).add(selection.id));
+    // If we have a selected step
+    if (selection?.type === "step" && selection.id) {
+      // Check if it's a new selection
+      const isNewSelection = prevSelectionRef.current?.id !== selection.id;
+
+      // If it's a new selection, we validly want to try to focus it
+      if (isNewSelection) {
+        setPendingFocusId(selection.id);
       }
     }
     prevSelectionRef.current = selection;
-  }, [selection, steps, allPageBlocks]);
+  }, [selection]);
+
+  // Effect to apply focus once the step is available
+  useEffect(() => {
+    if (pendingFocusId) {
+      const stepInThisPage = steps.find((s) => s.id === pendingFocusId);
+
+      if (stepInThisPage) {
+        // Step is now available!
+        setExpandedStepIds((prev) => new Set(prev).add(pendingFocusId));
+        setAutoFocusStepId(pendingFocusId);
+        setPendingFocusId(null);
+
+        // Clear auto-focus after a short delay to allow animation
+        setTimeout(() => setAutoFocusStepId(null), 100);
+      }
+    }
+  }, [pendingFocusId, steps]);
   // Auto-expand newly created items
   useEffect(() => {
     if (items.length > prevItemsLengthRef.current && prevItemsLengthRef.current > 0) {

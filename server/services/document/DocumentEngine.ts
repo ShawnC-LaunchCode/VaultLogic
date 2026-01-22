@@ -5,6 +5,7 @@ import { PdfConverter } from './PdfConverter';
 import { TemplateParser } from './TemplateParser';
 export interface DocumentGenerationOptions {
     templatePath: string;
+    templateBuffer?: Buffer;
     data: Record<string, any>;
     outputName: string;
     outputDir?: string;
@@ -26,6 +27,7 @@ export class DocumentEngine {
     async generate(options: DocumentGenerationOptions): Promise<DocumentGenerationResult> {
         const {
             templatePath,
+            templateBuffer, // Extract buffer if provided
             data,
             outputName,
             outputDir = path.join(process.cwd(), 'server', 'files', 'outputs'),
@@ -35,7 +37,7 @@ export class DocumentEngine {
         // Ensure output directory exists
         await fs.mkdir(outputDir, { recursive: true });
         // 1. Render DOCX
-        const buffer = await this.parser.render({ templatePath, data });
+        const buffer = await this.parser.render({ templatePath, templateBuffer, data });
         // Generate output filename
         const timestamp = Date.now();
         const docxFileName = `${outputName}-${timestamp}.docx`;

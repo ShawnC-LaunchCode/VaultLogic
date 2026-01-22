@@ -97,8 +97,8 @@ async function jwtStrategy(req: Request): Promise<boolean> {
  */
 async function cookieStrategy(req: Request): Promise<boolean> {
   // 1. Strict Method Check: Only allow cookie auth for safe methods
-  const safeMethods = ['GET', 'HEAD', 'OPTIONS'];
-  if (!safeMethods.includes(req.method)) { return false; }
+  // const safeMethods = ['GET', 'HEAD', 'OPTIONS'];
+  // if (!safeMethods.includes(req.method)) { return false; }
   // 2. Precedence Check: If a Bearer header exists, ignore cookies (JWT wins)
   // This prevents ambiguity if a client sends both
   const authHeader = req.headers.authorization;

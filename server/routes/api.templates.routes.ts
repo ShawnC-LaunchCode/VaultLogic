@@ -1,4 +1,4 @@
-import templatesRouter from "../api/templates";
+import templatesRouter from "./templates.routes";
 
 import type { Express } from "express";
 

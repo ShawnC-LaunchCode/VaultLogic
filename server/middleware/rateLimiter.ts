@@ -14,6 +14,8 @@ import rateLimit from 'express-rate-limit';
 const windowMs = parseInt(process.env.RATE_LIMIT_WINDOW_MS ?? '900000'); // 15 minutes
 const maxRequests = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS ?? '100');
 const strictMax = parseInt(process.env.RATE_LIMIT_STRICT_MAX ?? '10');
+const uploadWindowMs = parseInt(process.env.UPLOAD_RATE_LIMIT_WINDOW_MS ?? '60000'); // 1 minute
+const uploadMax = parseInt(process.env.UPLOAD_RATE_LIMIT_MAX ?? '10');
 
 /**
  * General API rate limit (100 requests per 15 minutes)
@@ -26,7 +28,22 @@ export const apiLimiter = rateLimit({
   standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
   legacyHeaders: false, // Disable `X-RateLimit-*` headers
   // Skip rate limiting in test environment
-  skip: () => process.env.NODE_ENV === 'test',
+  // Skip rate limiting in test environment unless explicitly enabled
+  skip: () => process.env.NODE_ENV === 'test' && !process.env.TEST_RATE_LIMIT,
+});
+
+/**
+ * Upload endpoint limiter (10 per minute default)
+ * Apply to file upload endpoints to prevent disk fill and CPU spikes
+ */
+export const uploadLimiter = rateLimit({
+  windowMs: uploadWindowMs,
+  max: uploadMax,
+  message: 'Too many upload requests, please wait.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Skip rate limiting in test environment unless explicitly enabled
+  skip: () => process.env.NODE_ENV === 'test' && !process.env.TEST_RATE_LIMIT,
 });
 
 /**
@@ -40,7 +57,8 @@ export const strictLimiter = rateLimit({
   message: 'Too many expensive operations, please slow down.',
   standardHeaders: true,
   legacyHeaders: false,
-  skip: () => process.env.NODE_ENV === 'test',
+  // Skip rate limiting in test environment unless explicitly enabled
+  skip: () => process.env.NODE_ENV === 'test' && !process.env.TEST_RATE_LIMIT,
 });
 
 /**
@@ -54,7 +72,8 @@ export const testLimiter = rateLimit({
   message: 'Too many test requests, please wait.',
   standardHeaders: true,
   legacyHeaders: false,
-  skip: () => process.env.NODE_ENV === 'test',
+  // Skip rate limiting in test environment unless explicitly enabled
+  skip: () => process.env.NODE_ENV === 'test' && !process.env.TEST_RATE_LIMIT,
 });
 
 /**
@@ -68,7 +87,8 @@ export const batchLimiter = rateLimit({
   message: 'Too many batch requests, please wait.',
   standardHeaders: true,
   legacyHeaders: false,
-  skip: () => process.env.NODE_ENV === 'test',
+  // Skip rate limiting in test environment unless explicitly enabled
+  skip: () => process.env.NODE_ENV === 'test' && !process.env.TEST_RATE_LIMIT,
 });
 
 /**
@@ -98,7 +118,8 @@ export const createLimiter = rateLimit({
   message: 'Too many create requests, please slow down.',
   standardHeaders: true,
   legacyHeaders: false,
-  skip: () => process.env.NODE_ENV === 'test',
+  // Skip rate limiting in test environment unless explicitly enabled
+  skip: () => process.env.NODE_ENV === 'test' && !process.env.TEST_RATE_LIMIT,
 });
 
 /**
@@ -111,5 +132,6 @@ export const deleteLimiter = rateLimit({
   message: 'Too many delete requests, please slow down.',
   standardHeaders: true,
   legacyHeaders: false,
-  skip: () => process.env.NODE_ENV === 'test',
+  // Skip rate limiting in test environment unless explicitly enabled
+  skip: () => process.env.NODE_ENV === 'test' && !process.env.TEST_RATE_LIMIT,
 });

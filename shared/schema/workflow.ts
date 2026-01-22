@@ -87,7 +87,7 @@ export const projects = pgTable("projects", {
     createdBy: varchar("created_by").references(() => users.id, { onDelete: 'cascade' }), // New field
     ownerId: varchar("owner_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
     ownerType: ownerTypeEnum("owner_type"),
-    ownerUuid: uuid("owner_uuid"),
+    ownerUuid: varchar("owner_uuid"),
     status: projectStatusEnum("status").default('active').notNull(),
     archived: boolean("archived").default(false).notNull(), // DEPRECATED
     createdAt: timestamp("created_at").defaultNow(),
@@ -126,7 +126,7 @@ export const workflows = pgTable("workflows", {
     // Common
     status: workflowStatusEnum("status").default('draft').notNull(),
     ownerType: ownerTypeEnum("owner_type"),
-    ownerUuid: uuid("owner_uuid"),
+    ownerUuid: varchar("owner_uuid"),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
     // Stage 15

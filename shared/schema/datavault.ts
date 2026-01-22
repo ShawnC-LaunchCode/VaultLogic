@@ -48,7 +48,7 @@ export const datavaultDatabases = pgTable("datavault_databases", {
     scopeType: datavaultScopeTypeEnum("scope_type").notNull().default('account'),
     scopeId: uuid("scope_id"),
     ownerType: ownerTypeEnum("owner_type"),
-    ownerUuid: uuid("owner_uuid"),
+    ownerUuid: varchar("owner_uuid"),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [

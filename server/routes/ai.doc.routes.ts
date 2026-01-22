@@ -1,14 +1,26 @@
 import { Router } from "express";
 import multer from "multer";
+import fs from "fs/promises";
+import path from "path";
+import os from "os";
 import { documentAIAssistService } from "../lib/ai/DocumentAIAssistService";
 import { logger } from "../logger";
 import { hybridAuth } from "../middleware/auth";
 import { MAX_FILE_SIZE } from "../services/fileService";
 import { asyncHandler } from "../utils/asyncHandler";
+import { uploadLimiter } from "../middleware/rateLimiter";
+
 const router = Router();
-// SECURITY FIX: Add file size and type validation
+
+// SECURITY FIX: Use disk storage instead of memory to prevent DoS (OOM)
 const upload = multer({
-    storage: multer.memoryStorage(), // Memory storage for parsing
+    storage: multer.diskStorage({
+        destination: os.tmpdir(),
+        filename: (req, file, cb) => {
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+            cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+        }
+    }),
     limits: {
         fileSize: MAX_FILE_SIZE, // 10MB default
         files: 1
@@ -29,13 +41,16 @@ const upload = multer({
             'text/markdown'
         ];
         const allowedExtensions = ['.pdf', '.docx', '.doc', '.txt', '.md'];
+
         logger.debug({ filename: file.originalname, mimeType: file.mimetype, size: file.size }, 'Upload Debug: File received');
+
         // Two-tier validation: MIME type OR file extension
         // This handles cases where MIME type is unreliable (common with PDFs)
         const mimeValid = allowedMimeTypes.includes(file.mimetype);
         const extValid = allowedExtensions.some(ext =>
             file.originalname.toLowerCase().endsWith(ext)
         );
+
         if (!mimeValid && !extValid) {
             logger.warn({ filename: file.originalname, mimeType: file.mimetype }, 'Upload Rejected: Invalid file');
             return cb(new Error(
@@ -43,28 +58,47 @@ const upload = multer({
                 `Received: ${file.originalname} (${file.mimetype})`
             ));
         }
+
         // Additional security: Check for suspicious double extensions
         const filename = file.originalname.toLowerCase();
         const suspiciousPatterns = [
             '.exe', '.bat', '.cmd', '.sh', '.ps1', '.vbs', '.js', '.jar', '.app',
             '.dmg', '.pkg', '.deb', '.rpm', '.msi', '.scr', '.com'
         ];
+
         if (suspiciousPatterns.some(pattern => filename.includes(pattern))) {
             logger.warn({ filename: file.originalname }, 'Upload Rejected: Suspicious extension');
             return cb(new Error(
                 `File contains suspicious extension. Only PDF and DOCX files are allowed.`
             ));
         }
+
         cb(null, true);
     }
 });
+
 // Middleware
 router.use(hybridAuth);
+
+// Helper to cleanup temp files
+const cleanupFile = async (filePath?: string) => {
+    if (filePath) {
+        try {
+            await fs.unlink(filePath);
+        } catch (e: any) {
+            // Ignore if file doesn't exist (ENOENT)
+            if (e.code !== 'ENOENT') {
+                logger.warn({ error: e, filePath }, 'Failed to cleanup temp upload file');
+            }
+        }
+    }
+};
+
 /**
  * POST /api/ai/template/analyze
- * Upload a file buffer, get analysis (variables + suggestions)
+ * Upload a file, save to temp disk, analyze, then delete.
  */
-router.post("/analyze", (req, res, next) => {
+router.post("/analyze", uploadLimiter, (req, res, next) => {
     // SECURITY FIX: Add multer error handling
     upload.single('file')(req, res, (err) => {
         if (err) {
@@ -92,19 +126,23 @@ router.post("/analyze", (req, res, next) => {
             res.status(400).json({ error: "No file provided" });
             return;
         }
-        const result = await documentAIAssistService.analyzeTemplate(req.file.buffer, req.file.originalname);
+
+        const result = await documentAIAssistService.analyzeTemplate(req.file.path, req.file.originalname);
         res.json({ data: result });
     } catch (err) {
         logger.error({ error: err }, 'Template analysis failed');
         const message = err instanceof Error ? err.message : 'Analysis failed';
         res.status(500).json({ error: message });
+    } finally {
+        await cleanupFile(req.file?.path);
     }
 }));
+
 /**
  * POST /api/ai/doc/extract-text
  * Upload a file, return raw extracted text for chat context
  */
-router.post("/extract-text", (req, res, next) => {
+router.post("/extract-text", uploadLimiter, (req, res, next) => {
     upload.single('file')(req, res, (err) => {
         if (err) {
             logger.error({ error: err }, 'Upload Error: Multer failed');
@@ -118,13 +156,17 @@ router.post("/extract-text", (req, res, next) => {
             res.status(400).json({ error: "No file provided" });
             return;
         }
-        const text = await documentAIAssistService.extractTextContent(req.file.buffer, req.file.originalname);
+
+        const text = await documentAIAssistService.extractTextContent(req.file.path, req.file.originalname);
         res.json({ text });
     } catch (err) {
         logger.error({ error: err }, 'Text extraction failed');
         res.status(500).json({ error: "Text extraction failed" });
+    } finally {
+        await cleanupFile(req.file?.path);
     }
 }));
+
 /**
  * POST /api/ai/template/suggest-mappings
  * Body: { templateVariables: [...], workflowVariables: [...] }
@@ -139,6 +181,7 @@ router.post("/suggest-mappings", asyncHandler(async (req, res) => {
         res.status(500).json({ error: "Mapping suggestion failed" });
     }
 }));
+
 /**
  * POST /api/ai/template/suggest-improvements
  * Body: { variables: [...] }
@@ -154,4 +197,5 @@ router.post("/suggest-improvements", asyncHandler(async (req, res) => {
         res.status(500).json({ error: "Improvement suggestion failed" });
     }
 }));
+
 export default router;

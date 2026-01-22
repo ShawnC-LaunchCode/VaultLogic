@@ -3,7 +3,7 @@
  * PR4: Full UI implementation with stubs
  */
 import axios from "axios";
-import { Upload, FileText, Trash2, TestTube, AlertCircle, CheckCircle, ExternalLink , Edit } from "lucide-react";
+import { Upload, FileText, Trash2, TestTube, AlertCircle, CheckCircle, ExternalLink, Edit } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -66,7 +66,7 @@ export function TemplatesTab({ workflowId }: TemplatesTabProps) {
   // Fetch templates for this project
   const fetchTemplates = async () => {
     try {
-      if (!workflowProjectId) {return;}
+      if (!workflowProjectId) { return; }
       const response = await axios.get(`/api/projects/${workflowProjectId}/templates`);
       const data = response.data;
       const mappedTemplates = (data.items || []).map((t: any) => ({
@@ -108,7 +108,9 @@ export function TemplatesTab({ workflowId }: TemplatesTabProps) {
     if (!selectedFile || !templateKey || !workflowProjectId) {
       toast({
         title: "Missing information",
-        description: "Please select a file and provide a display name.",
+        description: !workflowProjectId
+          ? "No project context found. Please save the workflow to a project first."
+          : "Please select a file and provide a display name.",
         variant: "destructive",
       });
       return;
@@ -286,7 +288,7 @@ export function TemplatesTab({ workflowId }: TemplatesTabProps) {
           {/* Upload Dialog Trigger */}
           <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
             <DialogTrigger asChild>
-              <Button disabled={!workflowProjectId}>
+              <Button>
                 <Upload className="w-4 h-4 mr-2" />
                 Upload Template
               </Button>

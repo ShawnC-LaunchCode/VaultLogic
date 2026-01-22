@@ -37,7 +37,7 @@ import { createError } from '../utils/errors';
 
 import { EnhancedDocumentEngine } from './document/EnhancedDocumentEngine';
 import { mappingValidator } from './document/MappingValidator';
-import { getStorageProvider } from './storage';
+import { storageProvider } from './storage';
 
 import type { DocumentMapping } from './document/MappingInterpreter';
 
@@ -147,8 +147,8 @@ export class TemplatePreviewService {
       }
 
       // Step 3: Load template file from storage
-      const storage = getStorageProvider();
-      const templateBuffer = await storage.download(template.fileRef);
+      const storage = storageProvider;
+      const templateBuffer = await storage.getFile(template.fileRef);
 
       // Step 4: Create temporary file path for preview
       const previewFileName = `preview-${nanoid(16)}.${outputFormat}`;
@@ -164,6 +164,7 @@ export class TemplatePreviewService {
 
       const result = await engine.generateWithMapping({
         templatePath: template.fileRef, // Reference for error messages
+        templateBuffer,
         rawData: sampleData,
         mapping,
         outputName: `preview-${nanoid(8)}`,
@@ -183,32 +184,24 @@ export class TemplatePreviewService {
       const fileSize = fileBuffer.length;
 
       // Upload to storage with preview prefix
-      await storage.upload(fileBuffer, previewKey, {
-        contentType:
-          outputFormat === 'pdf'
-            ? 'application/pdf'
-            : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        metadata: {
+      await storage.uploadFile(previewKey, fileBuffer,
+        outputFormat === 'pdf'
+          ? 'application/pdf'
+          : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        {
           preview: 'true',
           templateId,
           expiresAt: new Date(Date.now() + expiresIn * 1000).toISOString(),
-        },
-      });
+        }
+      );
 
       // Step 7: Generate signed URL
-      const previewUrl = await storage.getSignedUrl(previewKey, {
-        expiresIn,
-        contentType:
-          outputFormat === 'pdf'
-            ? 'application/pdf'
-            : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        contentDisposition: `inline; filename="preview.${outputFormat}"`,
-      });
+      const previewUrl = await storage.getSignedUrl(previewKey, expiresIn);
 
       // Step 8: Clean up local temp file
-      await fs.unlink(generatedFilePath).catch(() => {});
+      await fs.unlink(generatedFilePath).catch(() => { });
       if (result.docxPath && result.pdfPath && outputFormat === 'pdf') {
-        await fs.unlink(result.docxPath).catch(() => {});
+        await fs.unlink(result.docxPath).catch(() => { });
       }
 
       // Step 9: Schedule cleanup of preview file
@@ -227,10 +220,10 @@ export class TemplatePreviewService {
       // Step 10: Prepare mapping metadata
       const mappingMetadata = result.mappingResult
         ? {
-            mappedFields: result.mappingResult.mapped.length,
-            unmappedFields: result.mappingResult.unused.length,
-            missingVariables: result.mappingResult.missing,
-          }
+          mappedFields: result.mappingResult.mapped.length,
+          unmappedFields: result.mappingResult.unused.length,
+          missingVariables: result.mappingResult.missing,
+        }
         : undefined;
 
       return {
@@ -254,8 +247,8 @@ export class TemplatePreviewService {
   private scheduleCleanup(fileKey: string, delaySeconds: number): void {
     setTimeout(async () => {
       try {
-        const storage = getStorageProvider();
-        await storage.delete(fileKey);
+        const storage = storageProvider;
+        await storage.deleteFile(fileKey);
         logger.debug({ fileKey }, 'Preview file cleaned up');
       } catch (error) {
         logger.error({ error, fileKey }, 'Failed to clean up preview file');
@@ -271,7 +264,7 @@ export class TemplatePreviewService {
     logger.info('Cleaning up expired preview files');
 
     try {
-      const storage = getStorageProvider();
+      const storage = storageProvider;
       const previewFiles = await storage.list(this.previewDir);
 
       let cleaned = 0;
@@ -285,7 +278,7 @@ export class TemplatePreviewService {
             const expiresAt = new Date((metadata as any).expiresAt);
 
             if (expiresAt < new Date()) {
-              await storage.delete(fileKey);
+              await storage.deleteFile(fileKey);
               cleaned++;
               logger.debug({ fileKey }, 'Expired preview file deleted');
             }
@@ -308,8 +301,8 @@ export class TemplatePreviewService {
    * Delete a specific preview file
    */
   async deletePreview(fileKey: string): Promise<void> {
-    const storage = getStorageProvider();
-    await storage.delete(fileKey);
+    const storage = storageProvider;
+    await storage.deleteFile(fileKey);
     logger.info({ fileKey }, 'Preview file deleted');
   }
 }

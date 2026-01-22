@@ -19,5 +19,22 @@ export function initCronJobs() {
         }
     });
 
+    // Run temp file cleanup every hour
+    cron.schedule('0 * * * *', async () => {
+        log.info('Running scheduled execution: cleanupTempFiles');
+        try {
+            // Import dynamically or assume imports are present
+            const { cleanupTempFiles } = await import('./services/fileService');
+            const { templatePreviewService } = await import('./services/TemplatePreviewService');
+
+            const count = await cleanupTempFiles();
+            const previews = await templatePreviewService.cleanupExpiredPreviews();
+
+            log.info({ count, previews }, 'Completed scheduled execution: cleanupTempFiles');
+        } catch (error) {
+            log.error({ error }, 'Failed to run scheduled execution: cleanupTempFiles');
+        }
+    });
+
     log.info('Cron jobs initialized');
 }

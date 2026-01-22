@@ -9,6 +9,7 @@ import { docxHelpers } from '../docxHelpers';
 
 export interface TemplateParserOptions {
     templatePath: string;
+    templateBuffer?: Buffer;
     data: Record<string, any>;
 }
 
@@ -19,11 +20,11 @@ export class TemplateParser {
      */
     private createExpressionParser(tag: string) {
         const getNestedValue = (obj: any, path: string): any => {
-            if (!path) {return obj;}
+            if (!path) { return obj; }
             const keys = path.split('.');
             let current = obj;
             for (const key of keys) {
-                if (current == null) {return undefined;}
+                if (current == null) { return undefined; }
                 current = current[key];
             }
             return current;
@@ -71,10 +72,10 @@ export class TemplateParser {
     /**
      * Render a DOCX template with data
      */
-    async render({ templatePath, data }: TemplateParserOptions): Promise<Buffer> {
+    async render({ templatePath, templateBuffer, data }: TemplateParserOptions): Promise<Buffer> {
         try {
-            // Read template file
-            const content = await fs.readFile(templatePath, 'binary');
+            // Read template file (or use provided buffer)
+            const content = templateBuffer || (await fs.readFile(templatePath, 'binary'));
             const zip = new PizZip(content);
 
             // Merge data with helpers for template use (top-level access)
@@ -92,7 +93,6 @@ export class TemplateParser {
                 parser: ((tag: string) => this.createExpressionParser(tag)) as any,
             });
 
-            // Set data and render
             // Set data and render
             doc.setData(templateData);
 
@@ -112,7 +112,7 @@ export class TemplateParser {
             // Log the raw error for debugging
             logger.error({ error, props: error.properties }, 'Template rendering raw error');
 
-            if (error.code && error.status) {throw error;} // Re-throw known errors
+            if (error.code && error.status) { throw error; } // Re-throw known errors
 
             // If it's a MultiError from docxtemplater that wasn't caught by handleRenderError
             if (error.properties?.errors) {
@@ -133,9 +133,9 @@ export class TemplateParser {
             const errorDetails = error.properties.errors
                 .map((err: any) => {
                     const parts = [err.name];
-                    if (err.message) {parts.push(err.message);}
-                    if (err.properties?.id) {parts.push(`at ${err.properties.id}`);}
-                    if (err.properties?.explanation) {parts.push(`(${err.properties.explanation})`);}
+                    if (err.message) { parts.push(err.message); }
+                    if (err.properties?.id) { parts.push(`at ${err.properties.id}`); }
+                    if (err.properties?.explanation) { parts.push(`(${err.properties.explanation})`); }
                     return parts.join(': ');
                 })
                 .join(' | ');

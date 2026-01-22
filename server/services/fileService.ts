@@ -76,7 +76,7 @@ export const upload = multerInstance({
 
 // Validate file upload configuration
 export function validateFileUploadConfig(config: any) {
-  if (!config) {return true;} // No restrictions
+  if (!config) { return true; } // No restrictions
 
   const errors: string[] = [];
 
@@ -105,7 +105,7 @@ export function isFileTypeAccepted(mimeType: string, acceptedTypes?: string[]): 
     if (type.includes('*')) {
       // Handle wildcards like 'image/*'
       const [category] = type.split('/');
-      return mimeType.startsWith(`${category  }/`);
+      return mimeType.startsWith(`${category}/`);
     }
 
     if (type.startsWith('.')) {
@@ -169,4 +169,53 @@ export async function getFileStats(filename: string) {
   } catch {
     return null;
   }
+}
+
+/**
+ * Scan specific directories and cleanup files older than maxAgeMs
+ */
+export async function cleanupTempFiles(maxAgeMs = 3600000): Promise<number> {
+  const dirsToClean = [
+    UPLOAD_DIR,
+    path.join(process.cwd(), 'server', 'files', 'outputs', 'previews'),
+    require('os').tmpdir()
+  ];
+
+  let cleaned = 0;
+  const now = Date.now();
+
+  for (const dir of dirsToClean) {
+    try {
+      await fs.promises.access(dir).catch(() => null);
+      const files = await fs.promises.readdir(dir);
+
+      for (const file of files) {
+        const isSystemTemp = dir === require('os').tmpdir();
+        // Prefixes used by our app in temp
+        // file- : multer default (we changed to fieldname-...) fieldname is 'file' so 'file-'
+        // preview- : TemplatePreviewService
+        // upload- : some other uploads?
+        // rec- : recording?
+        const safePrefixes = ['file-', 'preview-', 'upload-', 'rec-'];
+
+        if (isSystemTemp && !safePrefixes.some(p => file.startsWith(p))) {
+          continue;
+        }
+
+        const filePath = path.join(dir, file);
+        try {
+          const stats = await fs.promises.stat(filePath);
+          if (now - stats.mtimeMs > maxAgeMs) {
+            await fs.promises.unlink(filePath);
+            cleaned++;
+          }
+        } catch (e) {
+          // Ignore
+        }
+      }
+    } catch (e) {
+      logger.warn({ dir, error: e }, 'Failed to scan temp dir for cleanup');
+    }
+  }
+  return cleaned;
 }

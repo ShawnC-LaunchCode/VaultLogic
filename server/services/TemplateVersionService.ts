@@ -22,7 +22,7 @@ import { db } from '../db';
 import { logger } from '../logger';
 import { createError } from '../utils/errors';
 
-import { getStorageProvider } from './storage';
+import { storageProvider } from './storage';
 
 export interface CreateVersionOptions {
   templateId: string;
@@ -202,7 +202,7 @@ export class TemplateVersionService {
     }
 
     // Copy the version's file (if needed)
-    const storage = getStorageProvider();
+    const storage = storageProvider;
     const versionFileExists = await storage.exists(version.fileRef);
 
     if (!versionFileExists) {

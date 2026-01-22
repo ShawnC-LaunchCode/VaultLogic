@@ -1,39 +1,22 @@
-import fs from 'fs/promises';
+
 import path from 'path';
-
-import { nanoid } from 'nanoid';
-
 import { logger } from '../logger';
 import { createError } from '../utils/errors';
-
 import {
   extractPlaceholdersFromDocx,
   renderDocx,
-  validateTemplateData,
 } from './docxRenderer';
-
 import type { PlaceholderInfo } from '../api/validators/templates';
 
+import { storageProvider } from './storage';
 
-// Local file storage directory
-const FILES_DIR = path.join(process.cwd(), 'server', 'files');
 const OUTPUTS_DIR = path.join(process.cwd(), 'server', 'files', 'outputs');
-
-/**
- * Template Service
- * Handles file storage and placeholder extraction for document templates
- */
 
 /**
  * Initialize file storage directory
  */
 export async function initializeFileStorage(): Promise<void> {
-  try {
-    await fs.mkdir(FILES_DIR, { recursive: true });
-  } catch (error) {
-    logger.error({ error }, 'Failed to create files directory');
-    throw createError.internal('Failed to initialize file storage');
-  }
+  await storageProvider.init();
 }
 
 /**
@@ -54,57 +37,29 @@ export async function saveTemplateFile(
     throw createError.invalidFileType('Only .docx and .pdf files are supported', { mimeType });
   }
 
-  // Ensure files directory exists
-  await initializeFileStorage();
-
-  // Generate unique filename
-  const ext = path.extname(originalName);
-  const fileName = `${nanoid(16)}${ext}`;
-  const filePath = path.join(FILES_DIR, fileName);
-
-  try {
-    await fs.writeFile(filePath, fileBuffer);
-    return fileName; // Return just the filename as fileRef
-  } catch (error) {
-    logger.error({ error }, 'Failed to save template file');
-    throw createError.internal('Failed to save template file');
-  }
+  return storageProvider.saveFile(fileBuffer, originalName, mimeType);
 }
 
 /**
  * Delete template file from local storage
  */
 export async function deleteTemplateFile(fileRef: string): Promise<void> {
-  const filePath = path.join(FILES_DIR, fileRef);
-
-  try {
-    await fs.unlink(filePath);
-  } catch (error) {
-    // Ignore error if file doesn't exist
-    if ((error as any).code !== 'ENOENT') {
-      logger.error({ error }, 'Failed to delete template file');
-    }
-  }
+  await storageProvider.deleteFile(fileRef);
 }
 
 /**
  * Get file path for a template
  */
 export function getTemplateFilePath(fileRef: string): string {
-  return path.join(FILES_DIR, fileRef);
+  // Legacy support: We assume disk storage provider structure for now.
+  return path.join(process.cwd(), 'server', 'files', fileRef);
 }
 
 /**
  * Check if template file exists
  */
 export async function templateFileExists(fileRef: string): Promise<boolean> {
-  try {
-    const filePath = getTemplateFilePath(fileRef);
-    await fs.access(filePath);
-    return true;
-  } catch {
-    return false;
-  }
+  return storageProvider.exists(fileRef);
 }
 
 /**
@@ -118,6 +73,8 @@ export function getOutputFilePath(fileRef: string): string {
  * Check if output file exists
  */
 export async function outputFileExists(fileRef: string): Promise<boolean> {
+  // Outputs are still local-only for now
+  const fs = await import('fs/promises');
   try {
     const filePath = getOutputFilePath(fileRef);
     await fs.access(filePath);
@@ -129,22 +86,14 @@ export async function outputFileExists(fileRef: string): Promise<boolean> {
 
 /**
  * Validate template against allowed placeholders
- * @param fileRef - Template file reference
- * @param allowedVars - List of allowed variable names
- * @returns Validation result with missing/invalid placeholders
  */
 export async function validateTemplate(
   fileRef: string,
   allowedVars: string[]
 ): Promise<{ valid: boolean; missingVars: string[]; extraVars: string[] }> {
-  // Extract placeholders from template
   const placeholders = await extractPlaceholders(fileRef);
   const placeholderNames = placeholders.map((p) => p.name);
-
-  // Check for placeholders not in allowed vars
   const extraVars = placeholderNames.filter((name) => !allowedVars.includes(name));
-
-  // Check for required vars missing from template
   const missingVars = allowedVars.filter((name) => !placeholderNames.includes(name));
 
   return {
@@ -156,28 +105,20 @@ export async function validateTemplate(
 
 /**
  * Extract placeholders from docx template
- *
- * @param fileRef - Template file reference
- * @returns Array of placeholder information
  */
 export async function extractPlaceholders(fileRef: string): Promise<PlaceholderInfo[]> {
-  // Verify file exists
   const exists = await templateFileExists(fileRef);
   if (!exists) {
     throw createError.notFound('Template file');
   }
 
-  // Get template file path
   const templatePath = getTemplateFilePath(fileRef);
-
-  // Extract placeholders using docxtemplater
   const placeholderNames = await extractPlaceholdersFromDocx(templatePath);
 
-  // Convert to PlaceholderInfo format
   const placeholders: PlaceholderInfo[] = placeholderNames.map((name) => ({
     name,
-    type: 'text', // Default to text type
-    example: '', // Could be enhanced to provide better examples
+    type: 'text',
+    example: '',
   }));
 
   return placeholders;
@@ -185,11 +126,6 @@ export async function extractPlaceholders(fileRef: string): Promise<PlaceholderI
 
 /**
  * Render template with context data
- *
- * @param fileRef - Template file reference
- * @param context - Data to populate the template
- * @param options - Rendering options
- * @returns Path to the rendered document (fileRef)
  */
 export async function renderTemplate(
   fileRef: string,
@@ -199,17 +135,14 @@ export async function renderTemplate(
     outputName?: string;
   }
 ): Promise<{ fileRef: string; pdfRef?: string; size: number; format: string }> {
-  // Verify file exists
   const exists = await templateFileExists(fileRef);
   if (!exists) {
     throw createError.notFound('Template file');
   }
 
-  // Get template file path
   const templatePath = getTemplateFilePath(fileRef);
 
   try {
-    // Render the template using docxtemplater
     const result = await renderDocx({
       templatePath,
       data: context,
@@ -218,7 +151,6 @@ export async function renderTemplate(
       toPdf: options?.toPdf || false,
     });
 
-    // Extract just the filename (fileRef) from the full path
     const docxFileRef = path.basename(result.docxPath);
     const pdfFileRef = result.pdfPath ? path.basename(result.pdfPath) : undefined;
 
