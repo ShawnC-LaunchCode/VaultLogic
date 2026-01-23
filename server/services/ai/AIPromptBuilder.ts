@@ -23,7 +23,7 @@ export class AIPromptBuilder {
     const maxSections = constraints.maxSections || 10;
     const maxStepsPerSection = constraints.maxStepsPerSection || 10;
 
-    return `You are an expert workflow designer for VaultLogic, a professional document automation and workflow platform.
+    return `You are an expert workflow designer for ezBuildr, a professional document automation and workflow platform.
 Your task is to design a HIGH-QUALITY, PRODUCTION-READY workflow based on the user's description.
 
 User Description:
@@ -149,7 +149,7 @@ Output ONLY valid JSON, NO markdown code blocks, NO additional text.`;
     request: AIWorkflowSuggestionRequest,
     existingWorkflow: any,
   ): string {
-    return `You are a workflow improvement assistant for VaultLogic.
+    return `You are a workflow improvement assistant for ezBuildr.
 You are reviewing an existing workflow and suggesting improvements based on user request.
 
 User Request:
@@ -192,7 +192,7 @@ Output ONLY the JSON object, no additional text or markdown.`;
     variables: Array<{ alias: string; label: string; type: string }>,
     placeholders: string[],
   ): string {
-    return `You are a template binding assistant for VaultLogic.
+    return `You are a template binding assistant for ezBuildr.
 Your task is to match DOCX template placeholders to workflow variables.
 
 Available Workflow Variables:
@@ -242,8 +242,8 @@ Output ONLY the JSON object, no additional text or markdown.`;
     const stepDescriptions = steps
       .map((step) => {
         let desc = `- ${step.key} (${step.type})`;
-        if (step.label) {desc += `: ${step.label}`;}
-        if (step.description) {desc += ` - ${step.description}`;}
+        if (step.label) { desc += `: ${step.label}`; }
+        if (step.description) { desc += ` - ${step.description}`; }
         if (step.options && step.options.length > 0) {
           desc += ` [Options: ${step.options.join(', ')}]`;
         }
@@ -282,7 +282,7 @@ Do not include any markdown formatting, code blocks, or additional text. Return 
    * Build prompt for workflow revision
    */
   buildWorkflowRevisionPrompt(request: AIWorkflowRevisionRequest): string {
-    return `You are a VaultLogic Workflow Revision Engine.
+    return `You are a ezBuildr Workflow Revision Engine.
 Your task is to modify the Current Workflow based on the User Instruction and Conversation History.
 
 Current Workflow JSON:
@@ -370,7 +370,7 @@ CRITICAL REQUIREMENTS:
    * Build prompt for logic generation
    */
   buildLogicGenerationPrompt(request: AIConnectLogicRequest): string {
-    return `You are a Logic Architect for VaultLogic.
+    return `You are a Logic Architect for ezBuildr.
 Task: Generate logical conditions (logicRules) to connect steps based on the user's description.
 Workflow Context:
 ${JSON.stringify(request.currentWorkflow, null, 2)}

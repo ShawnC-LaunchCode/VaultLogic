@@ -21,7 +21,7 @@ Enterprise workflow automation platform combining visual workflow building, cond
 ## Directory Structure
 
 ```
-VaultLogic/
+ezBuildr/
 ├── client/src/
 │   ├── components/
 │   │   ├── builder/         # Workflow builder (5-tab nav, canvas, inspector)

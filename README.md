@@ -1,6 +1,6 @@
 # ezBuildr 🧠
 
-[![CI](https://github.com/ShawnC-LaunchCode/VaultLogic/workflows/CI/badge.svg)](https://github.com/ShawnC-LaunchCode/VaultLogic/actions/workflows/ci.yml)
+[![CI](https://github.com/ShawnC-LaunchCode/ezBuildr/workflows/CI/badge.svg)](https://github.com/ShawnC-LaunchCode/ezBuildr/actions/workflows/ci.yml)
 
 **Enterprise Workflow Automation Platform**
 
@@ -26,8 +26,8 @@ Originally inspired by Legacy App, evolved into next-generation workflow automat
 
 ```bash
 # Clone the repository
-git clone https://github.com/ShawnC-LaunchCode/VaultLogic.git
-cd VaultLogic
+git clone https://github.com/ShawnC-LaunchCode/ezBuildr.git
+cd ezBuildr
 
 # Install dependencies
 npm install
@@ -82,7 +82,7 @@ BASE_URL=http://localhost:5000
 VITE_BASE_URL=http://localhost:5000
 
 # Database (Neon PostgreSQL)
-DATABASE_URL=postgresql://user:password@host.neon.tech/vault_logic
+DATABASE_URL=postgresql://user:password@host.neon.tech/ezbuildr
 
 # Google OAuth2 (required for authentication)
 GOOGLE_CLIENT_ID=your-server-client-id.apps.googleusercontent.com
@@ -123,14 +123,14 @@ UPLOAD_DIR=./uploads
 **Option B: Local PostgreSQL Installation**
 
 ```bash
-# Create a database named 'vault_logic'
+# Create a database named 'ezbuildr'
 # Using psql command line:
 psql -U postgres
-CREATE DATABASE vault_logic;
+CREATE DATABASE ezbuildr;
 \q
 
 # Update DATABASE_URL in .env:
-# DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/vault_logic
+# DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/ezbuildr
 ```
 
 ---
@@ -467,7 +467,7 @@ The database uses **Drizzle ORM** with **80+ PostgreSQL tables** organized by do
 
 ### Key Implementation Details
 
-- **Environment Isolation:** Poll-Vault and Vault-Logic use separate Neon databases
+- **Environment Isolation:** Poll-Vault and ezBuildr use separate Neon databases
 - **Schema Management:** Run `npm run db:push` to sync schema changes
 - **File Uploads:** Handled via Multer with metadata stored in `files` table
 - **Logic Engine:** Located in `shared/conditionalLogic.ts` and `shared/workflowLogic.ts`

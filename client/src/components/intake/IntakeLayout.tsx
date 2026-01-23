@@ -22,7 +22,7 @@ export interface IntakeLayoutProps {
   /** Optional custom footer text */
   footerText?: string;
 
-  /** Show "Powered by VaultLogic" in footer */
+  /** Show "Powered by ezBuildr" in footer */
   showPoweredBy?: boolean;
 
   /** Additional CSS classes for main content area */

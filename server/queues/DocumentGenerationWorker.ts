@@ -271,7 +271,7 @@ async function sendWebhookNotification(webhookUrl: string, data: NotificationDat
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': 'VaultLogic-DocumentWorker/1.0',
+        'User-Agent': 'ezBuildr-DocumentWorker/1.0',
       },
       body: JSON.stringify({
         event: 'documents.generated',

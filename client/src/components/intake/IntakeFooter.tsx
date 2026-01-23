@@ -8,7 +8,7 @@ export interface IntakeFooterProps {
   /** Optional custom footer text */
   footerText?: string;
 
-  /** Show "Powered by VaultLogic" branding */
+  /** Show "Powered by ezBuildr" branding */
   showPoweredBy?: boolean;
 
   /** Additional CSS classes */

@@ -4,7 +4,7 @@
  * This service was used to insert survey templates into existing surveys.
  * It has been disabled as part of the survey system removal (November 2025).
  *
- * VaultLogic is now a workflow-first platform. For template functionality, see:
+ * ezBuildr is now a workflow-first platform. For template functionality, see:
  * - Document templates (DocumentTemplateRepository)
  * - Workflow templates (WorkflowTemplateRepository)
  * - Template binding system in workflow builder

@@ -34,8 +34,8 @@ export class MfaService {
     }> {
         // Generate TOTP secret
         const secret = speakeasy.generateSecret({
-            name: `VaultLogic (${userEmail})`,
-            issuer: 'VaultLogic',
+            name: `ezBuildr (${userEmail})`,
+            issuer: 'ezBuildr',
             length: 32
         });
 
