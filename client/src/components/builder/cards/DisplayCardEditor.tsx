@@ -18,24 +18,12 @@ import { Separator } from "@/components/ui/separator";
 import { useUpdateStep } from "@/lib/vault-hooks";
 
 import { TextAreaField, SwitchField, SectionHeader } from "./common/EditorField";
-import { LabelField } from "./common/LabelField";
 
 import type { DisplayConfig, DisplayAdvancedConfig } from "@/../../shared/types/stepConfigs";
 
-interface DisplayCardEditorProps {
-  stepId: string;
-  sectionId: string;
-  step: {
-    id: string;
-    type: string;
-    title: string;
-    alias: string | null;
-    required: boolean;
-    config: any;
-  };
-}
+import { StepEditorCommonProps } from "../StepEditorRouter";
 
-export function DisplayCardEditor({ stepId, sectionId, step }: DisplayCardEditorProps) {
+export function DisplayCardEditor({ stepId, sectionId, step, workflowId }: StepEditorCommonProps) {
   const updateStepMutation = useUpdateStep();
 
   // Parse config (works for both easy and advanced mode)
@@ -65,18 +53,12 @@ export function DisplayCardEditor({ stepId, sectionId, step }: DisplayCardEditor
     updateStepMutation.mutate({ id: stepId, sectionId, config: configToSave });
   };
 
-  const handleLabelChange = (title: string) => {
-    updateStepMutation.mutate({ id: stepId, sectionId, title });
-  };
+
 
   return (
     <div className="space-y-4 p-4 border-t bg-muted/30">
       {/* Label (optional for display blocks - used for builder clarity only) */}
-      <LabelField
-        value={step.title}
-        onChange={handleLabelChange}
-        description="Optional label for builder organization (not shown to end user)"
-      />
+      {/* Display Card Title is managed by StepCard now */}
 
       {/* No Alias field - display blocks don't output variables */}
       {/* No Required toggle - display blocks can't be required */}
@@ -96,7 +78,7 @@ export function DisplayCardEditor({ stepId, sectionId, step }: DisplayCardEditor
           onChange={(val) => handleUpdate({ markdown: val })}
           placeholder="# Welcome\n\nThis is a **display block** that shows formatted content."
           description="Supports markdown formatting"
-          rows={8}
+          rows={12}
           required
         />
       </div>

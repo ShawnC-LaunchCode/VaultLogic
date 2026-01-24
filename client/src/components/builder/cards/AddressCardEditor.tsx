@@ -17,26 +17,14 @@ import { useUpdateStep } from "@/lib/vault-hooks";
 
 import { AliasField } from "./common/AliasField";
 import { SwitchField, SectionHeader } from "./common/EditorField";
-import { LabelField } from "./common/LabelField";
+
 import { RequiredToggle } from "./common/RequiredToggle";
 
 
 import type { AddressConfig } from "@/../../shared/types/stepConfigs";
+import { StepEditorCommonProps } from "../StepEditorRouter";
 
-interface AddressCardEditorProps {
-  stepId: string;
-  sectionId: string;
-  step: {
-    id: string;
-    type: string;
-    title: string;
-    alias: string | null;
-    required: boolean;
-    config: any;
-  };
-}
-
-export function AddressCardEditor({ stepId, sectionId, step }: AddressCardEditorProps) {
+export function AddressCardEditor({ stepId, sectionId, step }: StepEditorCommonProps) {
   const updateStepMutation = useUpdateStep();
 
   // Parse config
@@ -83,9 +71,6 @@ export function AddressCardEditor({ stepId, sectionId, step }: AddressCardEditor
 
   return (
     <div className="space-y-4 p-4 border-t bg-muted/30">
-      {/* Label */}
-      <LabelField value={step.title} onChange={handleLabelChange} />
-
       {/* Alias */}
       <AliasField value={step.alias} onChange={handleAliasChange} />
 

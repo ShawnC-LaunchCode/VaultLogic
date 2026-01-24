@@ -26,26 +26,13 @@ import { useUpdateStep } from "@/lib/vault-hooks";
 
 import { AliasField } from "./common/AliasField";
 import { TextField, NumberField, SwitchField, SectionHeader } from "./common/EditorField";
-import { LabelField } from "./common/LabelField";
 import { RequiredToggle } from "./common/RequiredToggle";
 
 
 import type { ScaleConfig, ScaleAdvancedConfig } from "@/../../shared/types/stepConfigs";
+import { StepEditorCommonProps } from "../StepEditorRouter";
 
-interface ScaleCardEditorProps {
-  stepId: string;
-  sectionId: string;
-  step: {
-    id: string;
-    type: string;
-    title: string;
-    alias: string | null;
-    required: boolean;
-    config: any;
-  };
-}
-
-export function ScaleCardEditor({ stepId, sectionId, step }: ScaleCardEditorProps) {
+export function ScaleCardEditor({ stepId, sectionId, step }: StepEditorCommonProps) {
   const updateStepMutation = useUpdateStep();
   const { toast } = useToast();
 
@@ -153,10 +140,6 @@ export function ScaleCardEditor({ stepId, sectionId, step }: ScaleCardEditorProp
     handleUpdate(updates);
   };
 
-  const handleLabelChange = (title: string) => {
-    updateStepMutation.mutate({ id: stepId, sectionId, title });
-  };
-
   const handleAliasChange = (alias: string | null) => {
     updateStepMutation.mutate({ id: stepId, sectionId, alias });
   };
@@ -167,9 +150,6 @@ export function ScaleCardEditor({ stepId, sectionId, step }: ScaleCardEditorProp
 
   return (
     <div className="space-y-4 p-4 border-t bg-muted/30">
-      {/* Label */}
-      <LabelField value={step.title} onChange={handleLabelChange} />
-
       {/* Alias */}
       <AliasField value={step.alias} onChange={handleAliasChange} />
 

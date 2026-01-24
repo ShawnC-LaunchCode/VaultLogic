@@ -14,26 +14,14 @@ import { useUpdateStep } from "@/lib/vault-hooks";
 
 import { AliasField } from "./common/AliasField";
 import { TextField, NumberField, SectionHeader } from "./common/EditorField";
-import { LabelField } from "./common/LabelField";
 import { RequiredToggle } from "./common/RequiredToggle";
+import { DefaultValueField } from "./common/DefaultValueField";
 
 
 import type { TextAdvancedConfig } from "@/../../shared/types/stepConfigs";
+import { StepEditorCommonProps } from "../StepEditorRouter";
 
-interface TextCardEditorProps {
-  stepId: string;
-  sectionId: string;
-  step: {
-    id: string;
-    type: string;
-    title: string;
-    alias: string | null;
-    required: boolean;
-    config: any;
-  };
-}
-
-export function TextCardEditor({ stepId, sectionId, step }: TextCardEditorProps) {
+export function TextCardEditor({ stepId, sectionId, workflowId, step }: StepEditorCommonProps) {
   const updateStepMutation = useUpdateStep();
   const { toast } = useToast();
 
@@ -46,8 +34,8 @@ export function TextCardEditor({ stepId, sectionId, step }: TextCardEditorProps)
   const variant = isAdvancedMode
     ? (config?.variant || "short")
     : step.type === "long_text"
-    ? "long"
-    : "short";
+      ? "long"
+      : "short";
 
   const [localConfig, setLocalConfig] = useState({
     variant: variant,
@@ -63,8 +51,8 @@ export function TextCardEditor({ stepId, sectionId, step }: TextCardEditorProps)
     const newVariant = isAdvancedMode
       ? (config?.variant || "short")
       : step.type === "long_text"
-      ? "long"
-      : "short";
+        ? "long"
+        : "short";
 
     setLocalConfig({
       variant: newVariant,
@@ -76,7 +64,7 @@ export function TextCardEditor({ stepId, sectionId, step }: TextCardEditorProps)
   }, [step.config, step.type, isAdvancedMode, config]);
 
   const validatePattern = (pattern: string): string | null => {
-    if (!pattern.trim()) {return null;}
+    if (!pattern.trim()) { return null; }
 
     try {
       new RegExp(pattern);
@@ -105,7 +93,7 @@ export function TextCardEditor({ stepId, sectionId, step }: TextCardEditorProps)
     if (updates.pattern !== undefined) {
       const error = validatePattern(updates.pattern);
       setPatternError(error);
-      if (error) {return;} // Don't save if invalid
+      if (error) { return; } // Don't save if invalid
     }
 
     // Validate min/max
@@ -168,9 +156,7 @@ export function TextCardEditor({ stepId, sectionId, step }: TextCardEditorProps)
     }
   };
 
-  const handleLabelChange = (title: string) => {
-    updateStepMutation.mutate({ id: stepId, sectionId, title });
-  };
+
 
   const handleAliasChange = (alias: string | null) => {
     updateStepMutation.mutate({ id: stepId, sectionId, alias });
@@ -182,9 +168,6 @@ export function TextCardEditor({ stepId, sectionId, step }: TextCardEditorProps)
 
   return (
     <div className="space-y-4 p-4 border-t bg-muted/30">
-      {/* Label */}
-      <LabelField value={step.title} onChange={handleLabelChange} />
-
       {/* Alias */}
       <AliasField value={step.alias} onChange={handleAliasChange} />
 
@@ -286,6 +269,17 @@ export function TextCardEditor({ stepId, sectionId, step }: TextCardEditorProps)
             <p>{patternError}</p>
           </div>
         </div>
+      )}
+
+      {workflowId && (
+        <DefaultValueField
+          stepId={stepId}
+          sectionId={sectionId}
+          workflowId={workflowId}
+          defaultValue={step.defaultValue}
+          type={step.type}
+          mode={isEasyMode ? 'easy' : 'advanced'}
+        />
       )}
     </div>
   );

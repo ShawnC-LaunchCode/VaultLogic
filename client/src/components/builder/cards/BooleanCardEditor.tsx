@@ -10,30 +10,19 @@ import { useUpdateStep } from "@/lib/vault-hooks";
 
 import { AliasField } from "./common/AliasField";
 import { TextField, SwitchField, SectionHeader } from "./common/EditorField";
-import { LabelField } from "./common/LabelField";
 import { RequiredToggle } from "./common/RequiredToggle";
+import { DefaultValueField } from "./common/DefaultValueField";
 
 
 import type { BooleanAdvancedConfig, TrueFalseConfig } from "@/../../shared/types/stepConfigs";
+import { StepEditorCommonProps } from "../StepEditorRouter";
 
-interface BooleanCardEditorProps {
-  stepId: string;
-  sectionId: string;
-  step: {
-    id: string;
-    type: string;
-    title: string;
-    alias: string | null;
-    required: boolean;
-    config: any;
-  };
-}
-
-export function BooleanCardEditor({ stepId, sectionId, step }: BooleanCardEditorProps) {
+export function BooleanCardEditor({ stepId, sectionId, workflowId, step }: StepEditorCommonProps) {
   const updateStepMutation = useUpdateStep();
 
   // Determine if this is advanced mode (type === "boolean") or easy mode (yes_no/true_false)
   const isAdvancedMode = step.type === "boolean";
+  const isEasyMode = !isAdvancedMode;
 
   // Get config with defaults
   const config = step.config as BooleanAdvancedConfig | TrueFalseConfig | undefined;
@@ -108,9 +97,7 @@ export function BooleanCardEditor({ stepId, sectionId, step }: BooleanCardEditor
     }
   };
 
-  const handleLabelChange = (title: string) => {
-    updateStepMutation.mutate({ id: stepId, sectionId, title });
-  };
+
 
   const handleAliasChange = (alias: string | null) => {
     updateStepMutation.mutate({ id: stepId, sectionId, alias });
@@ -122,9 +109,6 @@ export function BooleanCardEditor({ stepId, sectionId, step }: BooleanCardEditor
 
   return (
     <div className="space-y-4 p-4 border-t bg-muted/30">
-      {/* Label */}
-      <LabelField value={step.title} onChange={handleLabelChange} />
-
       {/* Alias */}
       <AliasField value={step.alias} onChange={handleAliasChange} />
 
@@ -207,6 +191,17 @@ export function BooleanCardEditor({ stepId, sectionId, step }: BooleanCardEditor
             )}
           </div>
         </>
+      )}
+
+      {workflowId && (
+        <DefaultValueField
+          stepId={stepId}
+          sectionId={sectionId}
+          workflowId={workflowId}
+          defaultValue={step.defaultValue}
+          type={step.type}
+          mode={isEasyMode ? 'easy' : 'advanced'}
+        />
       )}
     </div>
   );

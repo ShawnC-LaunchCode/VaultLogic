@@ -33,29 +33,17 @@ import { TransformSummary } from "../TransformSummary";
 
 import { AliasField } from "./common/AliasField";
 import { SectionHeader } from "./common/EditorField";
-import { LabelField } from "./common/LabelField";
 import { RequiredToggle } from "./common/RequiredToggle";
+import { DefaultValueField } from "./common/DefaultValueField";
 
 
 import type { ChoiceAdvancedConfig, ChoiceOption, LegacyMultipleChoiceConfig, LegacyRadioConfig, DynamicOptionsConfig } from "@/../../shared/types/stepConfigs"
   ;
 
 
-interface ChoiceCardEditorProps {
-  stepId: string;
-  sectionId: string;
-  step: {
-    id: string;
-    type: string;
-    title: string;
-    alias: string | null;
-    required: boolean;
-    config: any;
-  };
-  workflowId: string;
-}
+import { StepEditorCommonProps } from "../StepEditorRouter";
 
-export function ChoiceCardEditor({ stepId, sectionId, step, workflowId }: ChoiceCardEditorProps) {
+export function ChoiceCardEditor({ stepId, sectionId, workflowId, step }: StepEditorCommonProps) {
   const updateStepMutation = useUpdateStep();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -646,7 +634,6 @@ export function ChoiceCardEditor({ stepId, sectionId, step, workflowId }: Choice
 
   return (
     <div className="space-y-4 p-4 border-t bg-muted/30">
-      <LabelField value={step.title} onChange={(val) => { void handleLabelChange(val); }} />
       <AliasField value={step.alias} onChange={(val) => { void handleAliasChange(val); }} />
       <RequiredToggle checked={step.required} onChange={(val) => { void handleRequiredChange(val); }} />
 
@@ -1042,6 +1029,14 @@ export function ChoiceCardEditor({ stepId, sectionId, step, workflowId }: Choice
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <DefaultValueField
+        stepId={stepId}
+        sectionId={sectionId}
+        workflowId={workflowId}
+        defaultValue={step.defaultValue}
+        type={step.type}
+        mode={isAdvancedMode ? 'advanced' : 'easy'}
+      />
     </div >
   );
 }

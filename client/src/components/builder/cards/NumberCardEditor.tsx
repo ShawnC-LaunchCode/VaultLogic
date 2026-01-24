@@ -13,32 +13,22 @@ import { useUpdateStep } from "@/lib/vault-hooks";
 
 import { AliasField } from "./common/AliasField";
 import { NumberField, SwitchField, SectionHeader } from "./common/EditorField";
-import { LabelField } from "./common/LabelField";
+
 import { RequiredToggle } from "./common/RequiredToggle";
+import { DefaultValueField } from "./common/DefaultValueField";
 
 
 import type { NumberConfig, CurrencyConfig, NumberAdvancedConfig } from "@/../../shared/types/stepConfigs";
+import { StepEditorCommonProps } from "../StepEditorRouter";
 
-interface NumberCardEditorProps {
-  stepId: string;
-  sectionId: string;
-  step: {
-    id: string;
-    type: string;
-    title: string;
-    alias: string | null;
-    required: boolean;
-    config: any;
-  };
-}
-
-export function NumberCardEditor({ stepId, sectionId, step }: NumberCardEditorProps) {
+export function NumberCardEditor({ stepId, sectionId, workflowId, step }: StepEditorCommonProps) {
   const updateStepMutation = useUpdateStep();
   const { toast } = useToast();
 
   // Determine mode and type
   const isAdvancedMode = step.type === "number" && (step.config as NumberAdvancedConfig)?.mode !== undefined;
   const isCurrency = step.type === "currency";
+  const isEasyMode = !isAdvancedMode && !isCurrency;
 
   // Get config
   const config = step.config as NumberConfig | CurrencyConfig | NumberAdvancedConfig | undefined;
@@ -176,9 +166,6 @@ export function NumberCardEditor({ stepId, sectionId, step }: NumberCardEditorPr
 
   return (
     <div className="space-y-4 p-4 border-t bg-muted/30">
-      {/* Label */}
-      <LabelField value={step.title} onChange={handleLabelChange} />
-
       {/* Alias */}
       <AliasField value={step.alias} onChange={handleAliasChange} />
 
@@ -295,6 +282,17 @@ export function NumberCardEditor({ stepId, sectionId, step }: NumberCardEditorPr
           <p className="text-sm font-mono">$12,345.67</p>
         )}
       </div>
+
+      {workflowId && (
+        <DefaultValueField
+          stepId={stepId}
+          sectionId={sectionId}
+          workflowId={workflowId}
+          defaultValue={step.defaultValue}
+          type={step.type}
+          mode={isEasyMode ? 'easy' : 'advanced'}
+        />
+      )}
     </div>
   );
 }

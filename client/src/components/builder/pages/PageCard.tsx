@@ -28,7 +28,7 @@ import type { ApiSection, ApiBlock, ApiStep } from "@/lib/vault-api";
 import { useTransformBlocks, useUpdateSection, useDeleteSection, useReorderBlocks, useWorkflowMode } from "@/lib/vault-hooks";
 import { useWorkflowBuilder } from "@/store/workflow-builder";
 import { FinalDocumentsSectionEditor } from "../final/FinalDocumentsSectionEditor";
-import { QuestionCard } from "../questions/QuestionCard";
+import { StepCard } from "../cards/StepCard";
 import { BlockCard } from "./BlockCard";
 import { LogicAddMenu } from "./LogicAddMenu";
 import { QuestionAddMenu } from "./QuestionAddMenu";
@@ -348,7 +348,7 @@ export function PageCard({ workflowId, page, blocks, allSteps: steps, index, tot
                     };
                     if (item.kind === "step") {
                       return (
-                        <QuestionCard
+                        <StepCard
                           key={item.id}
                           step={item.data}
                           sectionId={page.id}

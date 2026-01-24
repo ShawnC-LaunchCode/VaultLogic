@@ -10,26 +10,13 @@ import { useUpdateStep } from "@/lib/vault-hooks";
 
 import { AliasField } from "./common/AliasField";
 import { SwitchField, SectionHeader } from "./common/EditorField";
-import { LabelField } from "./common/LabelField";
 import { RequiredToggle } from "./common/RequiredToggle";
 
 
 import type { WebsiteConfig } from "@/../../shared/types/stepConfigs";
+import { StepEditorCommonProps } from "../StepEditorRouter";
 
-interface WebsiteCardEditorProps {
-  stepId: string;
-  sectionId: string;
-  step: {
-    id: string;
-    type: string;
-    title: string;
-    alias: string | null;
-    required: boolean;
-    config: any;
-  };
-}
-
-export function WebsiteCardEditor({ stepId, sectionId, step }: WebsiteCardEditorProps) {
+export function WebsiteCardEditor({ stepId, sectionId, step }: StepEditorCommonProps) {
   const updateStepMutation = useUpdateStep();
 
   const config = step.config as WebsiteConfig | undefined;
@@ -57,10 +44,6 @@ export function WebsiteCardEditor({ stepId, sectionId, step }: WebsiteCardEditor
     updateStepMutation.mutate({ id: stepId, sectionId, config: configToSave });
   };
 
-  const handleLabelChange = (title: string) => {
-    updateStepMutation.mutate({ id: stepId, sectionId, title });
-  };
-
   const handleAliasChange = (alias: string | null) => {
     updateStepMutation.mutate({ id: stepId, sectionId, alias });
   };
@@ -71,9 +54,6 @@ export function WebsiteCardEditor({ stepId, sectionId, step }: WebsiteCardEditor
 
   return (
     <div className="space-y-4 p-4 border-t bg-muted/30">
-      {/* Label */}
-      <LabelField value={step.title} onChange={handleLabelChange} />
-
       {/* Alias */}
       <AliasField value={step.alias} onChange={handleAliasChange} />
 

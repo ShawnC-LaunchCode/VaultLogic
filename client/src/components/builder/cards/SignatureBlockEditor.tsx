@@ -31,7 +31,6 @@ import { Separator } from "@/components/ui/separator";
 import { useUpdateStep } from "@/lib/vault-hooks";
 
 import { TextAreaField, TextField, SectionHeader } from "./common/EditorField";
-import { LabelField } from "./common/LabelField";
 
 
 import type { SignatureBlockConfig, LogicExpression } from "@/../../shared/types/stepConfigs";
@@ -93,9 +92,7 @@ export function SignatureBlockEditor({ stepId, sectionId, step }: SignatureBlock
     updateStepMutation.mutate({ id: stepId, sectionId, config: newConfig });
   };
 
-  const handleLabelChange = (title: string) => {
-    updateStepMutation.mutate({ id: stepId, sectionId, title });
-  };
+
 
   const handleAddDocument = () => {
     const newDocument = {
@@ -141,11 +138,8 @@ export function SignatureBlockEditor({ stepId, sectionId, step }: SignatureBlock
   return (
     <div className="space-y-4 p-4 border-t bg-muted/30">
       {/* Label */}
-      <LabelField
-        value={step.title}
-        onChange={handleLabelChange}
-        description="Label for builder organization"
-      />
+      {/* Label */}
+      {/* Title managed by StepCard */}
 
       <Separator />
 

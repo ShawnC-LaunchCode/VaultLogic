@@ -19,12 +19,36 @@ import type { DisplayConfig } from "@/../../shared/types/stepConfigs";
 
 export interface DisplayBlockProps {
   step: Step;
+  context?: Record<string, any>;
 }
 
-export function DisplayBlockRenderer({ step }: DisplayBlockProps) {
+// Helper to interpolate variables like {{variableName}}
+function interpolateVariables(text: string, context?: Record<string, any>): string {
+  if (!text || !context) return text;
+
+  return text.replace(/\{\{([^}]+)\}\}/g, (match, variableName) => {
+    const key = variableName.trim();
+    const value = context[key];
+
+    if (value === undefined || value === null) {
+      return ""; // Replace missing variables with empty string
+    }
+
+    if (typeof value === "object") {
+      return JSON.stringify(value);
+    }
+
+    return String(value);
+  });
+}
+
+export function DisplayBlockRenderer({ step, context }: DisplayBlockProps) {
   const config = step.config as DisplayConfig;
-  const markdown = config?.markdown || step.description || "";
+  const rawMarkdown = config?.markdown || step.description || "";
   const allowHtml = config?.allowHtml ?? false;
+
+  // Interpolate variables
+  const markdown = interpolateVariables(rawMarkdown, context);
 
   if (!markdown) {
     return (

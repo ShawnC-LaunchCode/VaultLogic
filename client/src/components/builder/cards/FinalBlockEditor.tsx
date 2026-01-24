@@ -26,7 +26,6 @@ import { Separator } from "@/components/ui/separator";
 import { useUpdateStep } from "@/lib/vault-hooks";
 
 import { TextAreaField, TextField, SectionHeader } from "./common/EditorField";
-import { LabelField } from "./common/LabelField";
 
 
 import type { FinalBlockConfig, LogicExpression } from "@/../../shared/types/stepConfigs";
@@ -70,9 +69,7 @@ export function FinalBlockEditor({ stepId, sectionId, step }: FinalBlockEditorPr
     updateStepMutation.mutate({ id: stepId, sectionId, config: newConfig });
   };
 
-  const handleLabelChange = (title: string) => {
-    updateStepMutation.mutate({ id: stepId, sectionId, title });
-  };
+
 
   const handleAddDocument = () => {
     // For now, create a placeholder document
@@ -117,11 +114,8 @@ export function FinalBlockEditor({ stepId, sectionId, step }: FinalBlockEditorPr
   return (
     <div className="space-y-4 p-4 border-t bg-muted/30">
       {/* Label (optional for builder clarity) */}
-      <LabelField
-        value={step.title}
-        onChange={handleLabelChange}
-        description="Label for builder organization (not shown to end user)"
-      />
+      {/* Label (optional for builder clarity) */}
+      {/* Title managed by StepCard */}
 
       {/* No Alias field - final blocks don't output variables */}
       {/* No Required toggle - final blocks can't be required */}

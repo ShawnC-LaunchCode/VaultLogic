@@ -10,26 +10,14 @@ import { useUpdateStep } from "@/lib/vault-hooks";
 
 import { AliasField } from "./common/AliasField";
 import { SwitchField, SectionHeader } from "./common/EditorField";
-import { LabelField } from "./common/LabelField";
+
 import { RequiredToggle } from "./common/RequiredToggle";
 
 
 import type { EmailConfig } from "@/../../shared/types/stepConfigs";
+import { StepEditorCommonProps } from "../StepEditorRouter";
 
-interface EmailCardEditorProps {
-  stepId: string;
-  sectionId: string;
-  step: {
-    id: string;
-    type: string;
-    title: string;
-    alias: string | null;
-    required: boolean;
-    config: any;
-  };
-}
-
-export function EmailCardEditor({ stepId, sectionId, step }: EmailCardEditorProps) {
+export function EmailCardEditor({ stepId, sectionId, step }: StepEditorCommonProps) {
   const updateStepMutation = useUpdateStep();
 
   const config = step.config as EmailConfig | undefined;
@@ -71,9 +59,6 @@ export function EmailCardEditor({ stepId, sectionId, step }: EmailCardEditorProp
 
   return (
     <div className="space-y-4 p-4 border-t bg-muted/30">
-      {/* Label */}
-      <LabelField value={step.title} onChange={handleLabelChange} />
-
       {/* Alias */}
       <AliasField value={step.alias} onChange={handleAliasChange} />
 

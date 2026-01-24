@@ -21,24 +21,11 @@ import { useUpdateStep } from "@/lib/vault-hooks";
 
 import { AliasField } from "./common/AliasField";
 import { SectionHeader } from "./common/EditorField";
-import { LabelField } from "./common/LabelField";
 import { RequiredToggle } from "./common/RequiredToggle";
 
 
 import type { MultiFieldConfig } from "@/../../shared/types/stepConfigs";
-
-interface MultiFieldCardEditorProps {
-  stepId: string;
-  sectionId: string;
-  step: {
-    id: string;
-    type: string;
-    title: string;
-    alias: string | null;
-    required: boolean;
-    config: any;
-  };
-}
+import { StepEditorCommonProps } from "../StepEditorRouter";
 
 // Layout presets
 const LAYOUT_PRESETS: Record<string, Array<{ key: string; label: string; type: string; required: boolean }>> = {
@@ -56,7 +43,7 @@ const LAYOUT_PRESETS: Record<string, Array<{ key: string; label: string; type: s
   ],
 };
 
-export function MultiFieldCardEditor({ stepId, sectionId, step }: MultiFieldCardEditorProps) {
+export function MultiFieldCardEditor({ stepId, sectionId, step }: StepEditorCommonProps) {
   const updateStepMutation = useUpdateStep();
 
   // Parse config
@@ -106,10 +93,6 @@ export function MultiFieldCardEditor({ stepId, sectionId, step }: MultiFieldCard
     handleUpdate({ fields: newFields });
   };
 
-  const handleLabelChange = (title: string) => {
-    updateStepMutation.mutate({ id: stepId, sectionId, title });
-  };
-
   const handleAliasChange = (alias: string | null) => {
     updateStepMutation.mutate({ id: stepId, sectionId, alias });
   };
@@ -120,9 +103,6 @@ export function MultiFieldCardEditor({ stepId, sectionId, step }: MultiFieldCard
 
   return (
     <div className="space-y-4 p-4 border-t bg-muted/30">
-      {/* Label */}
-      <LabelField value={step.title} onChange={handleLabelChange} />
-
       {/* Alias */}
       <AliasField value={step.alias} onChange={handleAliasChange} />
 

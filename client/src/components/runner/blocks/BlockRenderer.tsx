@@ -141,7 +141,7 @@ export function BlockRenderer(props: BlockRendererProps) {
 
       // Display blocks
       case "display":
-        return <DisplayBlockRenderer step={step} />;
+        return <DisplayBlockRenderer step={step} context={props.context} />;
 
       // Final block (output/completion)
       case "final_documents":
