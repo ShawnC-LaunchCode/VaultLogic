@@ -11,7 +11,7 @@
  */
 
 import { useQueryClient } from "@tanstack/react-query";
-import { GripVertical, Trash2, Plus, AlertCircle, RefreshCw, Wand2, ExternalLink, Unlink, Link } from "lucide-react";
+import { AlertCircle, RefreshCw, Wand2, Link } from "lucide-react";
 import React, { useState, useEffect, useMemo } from "react";
 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -24,9 +24,8 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { useTableColumns } from "@/hooks/useTableColumns";
 import { blockAPI } from "@/lib/vault-api";
-import { useUpdateStep, useWorkflowVariables, useBlocks, useSections, useWorkflow } from "@/lib/vault-hooks";
+import { useUpdateStep, useWorkflowVariables, useWorkflow } from "@/lib/vault-hooks";
 
 import { BlockEditorDialog, type UniversalBlock } from "../BlockEditorDialog";
 import { TransformSummary } from "../TransformSummary";
