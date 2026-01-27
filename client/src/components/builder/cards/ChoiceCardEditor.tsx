@@ -44,7 +44,7 @@ import type { ChoiceAdvancedConfig, ChoiceOption, LegacyMultipleChoiceConfig, Le
 
 import { StepEditorCommonProps } from "../StepEditorRouter";
 import { useChoiceConfig } from "@/hooks/useChoiceConfig";
-import { useListToolsValidation } from "@/hooks/useListToolsValidation";`r`nimport { StaticOptionsEditor } from "./StaticOptionsEditor";
+import { useListToolsValidation } from "@/hooks/useListToolsValidation";`r`nimport { StaticOptionsEditor } from "./StaticOptionsEditor";`r`nimport { DynamicOptionsEditor } from "./DynamicOptionsEditor";
 
 export function ChoiceCardEditor({ stepId, sectionId, workflowId, step }: StepEditorCommonProps) {
   const updateStepMutation = useUpdateStep();
@@ -523,225 +523,22 @@ export function ChoiceCardEditor({ stepId, sectionId, workflowId, step }: StepEd
         </TabsContent>
 
         <TabsContent value="dynamic" className="mt-0 space-y-4">
-          <div className="p-3 bg-background border rounded-md space-y-4">
-
-            {/* List Variable Selection */}
-            <div className="space-y-1.5">
-              <Label className="text-xs">List Variable (from Read Block)</Label>
-              <Select
-                value={localConfig.dynamicOptions.listVariable}
-                onValueChange={(val) => {
-                  const newDynamic = { ...localConfig.dynamicOptions, listVariable: val, labelPath: '', valuePath: '' };
-                  handleUpdate({ dynamicOptions: newDynamic });
-                }}
-              >
-                <SelectTrigger><SelectValue placeholder="Select a list variable..." /></SelectTrigger>
-                <SelectContent>
-                  {listVariables.length === 0 ? (
-                    <div className="p-2 text-xs text-muted-foreground text-center">No list variables found. Add a Read Table block first.</div>
-                  ) : (
-                    listVariables.map(v => (
-                      <SelectItem key={v.alias} value={v.alias || ''} className="flex items-center">
-                        <span className="font-mono">{v.alias}</span>
-                        {/* Optional: Show source table name if available */}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-              {localConfig.dynamicOptions.listVariable && !sourceTableId && listVariables.find(v => v.alias === localConfig.dynamicOptions.listVariable) && (
-                <p className="text-[10px] text-yellow-600 flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" />
-                  Source table not found. Columns may not load.
-                </p>
-              )}
-              {timingWarning && (
-                <div className="text-[10px] text-yellow-600 flex items-start gap-1 p-1 bg-yellow-50 rounded border border-yellow-200 mt-1">
-                  <AlertCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                  <span>{timingWarning}</span>
-                </div>
-              )}
-            </div>
-
-            {/* List Tools Linking */}
-            {localConfig.dynamicOptions.listVariable && (
-              <div className="space-y-2 border-t pt-3">
-                <Label className="text-xs font-medium">Options Transformation</Label>
-                {linkedBlock ? (
-                  <div className="space-y-3 bg-blue-50/50 border border-blue-200 rounded-md p-3">
-                    <div className="flex items-center gap-2">
-                      <Link className="h-4 w-4 text-blue-600" />
-                      <span className="text-xs font-medium text-blue-900">Linked to List Tools block</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-mono text-blue-700">{(linkedBlock.config)?.outputListVar || (linkedBlock.config)?.outputKey}</span>
-                    </div>
-
-                    {/* Transform Summary (Read-Only) */}
-                    <TransformSummary config={(linkedBlock.config)} />
-
-                    {/* Primary Action: Open Block */}
-                    <div className="space-y-1.5">
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="w-full h-8 text-xs font-medium"
-                        onClick={() => { void handleOpenLinkedBlock(); }}
-                      >
-                        <ExternalLink className="h-3 w-3 mr-1" />
-                        Open List Tools Block to Edit
-                      </Button>
-                      <p className="text-[10px] text-muted-foreground text-center">
-                        Edit filters, sorting, and transforms in the List Tools block
-                      </p>
-                    </div>
-
-                    {/* Secondary Actions */}
-                    <div className="flex gap-1 pt-1 border-t border-blue-200/50">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 text-xs flex-1"
-                        onClick={() => { void handleUnlinkListTools(); }}
-                      >
-                        <Unlink className="h-3 w-3 mr-1" />
-                        Unlink
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 text-xs flex-1"
-                        onClick={() => { void handleReplaceListTools(); }}
-                        disabled={isCreatingListTools}
-                      >
-                        <RefreshCw className="h-3 w-3 mr-1" />
-                        Replace
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <p className="text-[10px] text-muted-foreground">
-                      Create a List Tools block to filter, sort, and transform options before displaying them.
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full h-8 text-xs"
-                      onClick={() => { void handleCreateListTools(); }}
-                      disabled={isCreatingListTools || !localConfig.dynamicOptions.listVariable}
-                    >
-                      <Wand2 className="h-3 w-3 mr-1" />
-                      {isCreatingListTools ? "Creating..." : "Create List Tools Block"}
-                    </Button>
-                    {localConfig.dynamicOptions.transform && (
-                      <p className="text-[10px] text-amber-600 flex items-center gap-1">
-                        <AlertCircle className="h-3 w-3" />
-                        Current transforms will be moved to the new block
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Columns Selection */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Label Column (Display)</Label>
-                <Select
-                  value={localConfig.dynamicOptions.labelPath}
-                  onValueChange={(val) => handleUpdate({ dynamicOptions: { ...localConfig.dynamicOptions, labelPath: val } })}
-                  disabled={!sourceTableId || loadingColumns}
-                >
-                  <SelectTrigger><SelectValue placeholder="Select column..." /></SelectTrigger>
-                  <SelectContent>
-                    {columns.length > 0 ? columns.map((col: any) => (
-                      <SelectItem key={col.id} value={col.id}>{col.name}</SelectItem>
-                    )) : <div className="p-2 text-xs text-center text-muted-foreground">No columns</div>}
-                  </SelectContent>
-                </Select>
-                {labelColumnWarning && (
-                  <p className="text-[10px] text-yellow-600 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
-                    {labelColumnWarning}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Value Column (Saved)</Label>
-                <Select
-                  value={localConfig.dynamicOptions.valuePath}
-                  onValueChange={(val) => handleUpdate({ dynamicOptions: { ...localConfig.dynamicOptions, valuePath: val } })}
-                  disabled={!sourceTableId || loadingColumns}
-                >
-                  <SelectTrigger><SelectValue placeholder="Select column..." /></SelectTrigger>
-                  <SelectContent>
-                    {columns.length > 0 ? columns.map((col: any) => (
-                      <SelectItem key={col.id} value={col.id}>
-                        {col.name} {col.isPrimary ? '(ID)' : ''}
-                      </SelectItem>
-                    )) : <div className="p-2 text-xs text-center text-muted-foreground">No columns</div>}
-                  </SelectContent>
-                </Select>
-                {valueColumnWarning && (
-                  <p className="text-[10px] text-yellow-600 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
-                    {valueColumnWarning}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Transform Hint - Direct users to List Tools */}
-            {!linkedBlock && localConfig.dynamicOptions.listVariable && (
-              <div className="bg-amber-50/50 border border-amber-200 rounded-md p-3 space-y-2">
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
-                  <div className="space-y-1">
-                    <p className="text-xs font-medium text-amber-900">Need to filter, sort, or transform options?</p>
-                    <p className="text-[10px] text-amber-700">
-                      Create a List Tools block above to apply filters, multi-key sorting, deduplication, and other transforms.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Blank Option */}
-            <div className="space-y-3 pt-2 border-t">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs">Include Blank Option</Label>
-                <Switch
-                  checked={localConfig.dynamicOptions.includeBlankOption || false}
-                  onCheckedChange={(c) => handleUpdate({ dynamicOptions: { ...localConfig.dynamicOptions, includeBlankOption: c } })}
-                />
-              </div>
-              {localConfig.dynamicOptions.includeBlankOption && (
-                <div className="space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
-                  <Label className="text-xs">Blank Option Label</Label>
-                  <Input
-                    placeholder="(e.g. Select an option...)"
-                    value={localConfig.dynamicOptions.blankLabel || ''}
-                    onChange={(e) => { void handleUpdate({ dynamicOptions: { ...localConfig.dynamicOptions, blankLabel: e.target.value } }); }}
-                    className="text-xs"
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Label Template */}
-            <div className="space-y-1.5">
-              <Label className="text-xs">Label Template (Optional)</Label>
-              <Input
-                placeholder="{FirstName} {LastName}"
-                value={localConfig.dynamicOptions.labelTemplate || ''}
-                onChange={(e) => { void handleUpdate({ dynamicOptions: { ...localConfig.dynamicOptions, labelTemplate: e.target.value } }); }}
-                className="text-xs"
-              />
-              <p className="text-[10px] text-muted-foreground">Use column names in braces to combine fields.</p>
-            </div>
-          </div>
+          <DynamicOptionsEditor
+            config={localConfig.dynamicOptions}
+            listVariables={listVariables}
+            sourceBlock={sourceBlock}
+            sourceTableId={sourceTableId}
+            columns={columns}
+            loadingColumns={loadingColumns}
+            timingWarning={timingWarning}
+            labelColumnWarning={labelColumnWarning}
+            valueColumnWarning={valueColumnWarning}
+            onUpdate={(updates) => handleUpdate({ dynamicOptions: { ...localConfig.dynamicOptions, ...updates } })}
+            onCreateListTools={handleCreateListTools}
+            onEditBlock={handleOpenLinkedBlock}
+            onUnlinkBlock={() => setShowUnlinkConfirm(true)}
+            onReplaceBlock={() => setShowReplaceConfirm(true)}
+          />
         </TabsContent>
       </Tabs>
 
